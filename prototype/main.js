@@ -423,6 +423,7 @@ function startExtract(opt) {
   const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
   if (opt.mumu) args.push("--mumu", opt.mumu);
   if (opt.force) args.push("--force");
+  args.push("--cache", path.join(app.getPath("userData"), "tools-cache")); // platform-tools adb 등 (구버전 adb만 있는 PC용)
   if (opt.adb) args.push("--adb", opt.adb);
   if (opt.serial) args.push("--serial", opt.serial);
   console.log("extract:", py.exe, args.join(" "));
