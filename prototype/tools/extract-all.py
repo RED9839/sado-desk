@@ -18,6 +18,7 @@ VOICE_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise"
 ENV = dict(os.environ); ENV["MSYS_NO_PATHCONV"] = "1"
 JSON = False
 FORCE = False  # --force: 이미 있는 것도 다시 받기
+FAILED = False  # 단계 중 하나가 통째로 실패 → 종료 코드 7
 
 def log(step, msg, level="info", done=None, total=None):
     if JSON:
@@ -48,6 +49,39 @@ def _glob_paths(pats):
         else: out += glob.glob(pat)
     return out
 
+def short_path(p):
+    """윈도우 8.3 짧은 경로 (C:\\Users\\장권민 → C:\\Users\\C7C6~1) — 한글 경로를 adb가 못 써서 ASCII 별칭이 필요할 때"""
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(520)
+        n = ctypes.windll.kernel32.GetShortPathNameW(p, buf, 520)
+        return buf.value if 0 < n < 520 else None
+    except Exception: return None
+
+def pick_tmp_base():
+    """adb pull 대상이 될 임시 폴더: ASCII만·공백 없음. (adb는 한글이 든 로컬 경로에 파일을 못 만든다 — 사용자 이름이 한글이면 %TEMP%가 그렇다)"""
+    def ok(c): return bool(c) and c.isascii() and " " not in c
+    cands = []
+    for env in ("TEMP", "TMP", "LOCALAPPDATA"):
+        c = os.environ.get(env)
+        if not c: continue
+        cands.append(c)
+        if not ok(c):
+            try: os.makedirs(c, exist_ok=True)
+            except Exception: pass
+            sp = short_path(c)
+            if sp: cands.append(sp)
+    drive = os.environ.get("SystemDrive", "C:")
+    cands += [os.path.join(drive + os.sep, "Users", "Public", "sadodesk-tmp"), os.path.join(drive + os.sep, "sadodesk-tmp"), os.path.join(drive + os.sep, "Temp")]
+    for cand in cands:
+        if not ok(cand): continue
+        try:
+            os.makedirs(cand, exist_ok=True)
+            probe = os.path.join(cand, ".sadodesk-w"); open(probe, "w").close(); os.remove(probe)
+            return cand
+        except Exception: continue
+    return None
+
 MODERN_ADB = (1, 0, 41)
 PTOOLS_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 def ensure_modern_adb(adb_exe, cache_dir):
@@ -72,7 +106,7 @@ def ensure_modern_adb(adb_exe, cache_dir):
 _ADB_VER = {}
 def adb_version(exe):
     if exe not in _ADB_VER:
-        try: m = re.search(r"version (\d+)\.(\d+)\.(\d+)", subprocess.run([exe, "version"], capture_output=True, text=True, timeout=10).stdout); _ADB_VER[exe] = tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+        try: m = re.search(r"version (\d+)\.(\d+)\.(\d+)", subprocess.run([exe, "version"], capture_output=True, timeout=10).stdout.decode("utf-8", "ignore")); _ADB_VER[exe] = tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
         except Exception: _ADB_VER[exe] = (0, 0, 0)
     return _ADB_VER[exe]
 
@@ -379,6 +413,9 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
             for f in failed[:5]: log(kind, "복사 실패 " + f, "warn")
             root = local
     jobs = [(os.path.join(root, n), os.path.join(out, kind, n), kind) for n in todo if os.path.isdir(os.path.join(root, n))]
+    if todo and not jobs:
+        global FAILED; FAILED = True
+        log(kind, f"{label}: {len(todo)}세트 중 하나도 복사되지 않았어요 — 위 adb 오류를 확인해 주세요", "error"); return
     log(kind, f"{label} 디코드 중…", total=len(jobs), done=0)
     okn = 0; bad = []
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 4) - 1)) as ex:
@@ -447,6 +484,9 @@ def step_voice(adb_exe, dev, out, tmp):
             k = st.split(":")[0]; stats[k] = stats.get(k, 0) + 1
             if i % 200 == 0 or i == len(jobs): log("voice", f"보이스 변환 {i}/{len(jobs)}", done=i, total=len(jobs))
     build_voice_index(os.path.join(out, "voice"))
+    if todo and not stats:
+        global FAILED; FAILED = True
+        log("voice", f"보이스: {len(todo)}명 중 하나도 복사되지 않았어요 — 위 adb 오류를 확인해 주세요", "error"); return
     log("voice", f"보이스 완료 — {stats}", "ok")
 
 def build_voice_index(vdir):
@@ -556,11 +596,8 @@ def main():
         log("adb", f"연결됨 {dev}", "ok")
     except Exception as e:
         log("adb", str(e), "error"); sys.exit(3)
-    tmpbase = None
-    for cand in (os.environ.get("TEMP"), os.environ.get("TMP"), r"C:\\Temp", r"C:\\sadodesk-tmp"):
-        if cand and " " not in cand:
-            try: os.makedirs(cand, exist_ok=True); tmpbase = cand; break
-            except Exception: pass
+    tmpbase = pick_tmp_base()
+    log("adb", f"임시 폴더: {tmpbase}")
     tmp = tempfile.mkdtemp(prefix="sadodesk-", dir=tmpbase)
     try:
         if "minimi" in steps: step_minimi(adb_exe, dev, out, tmp)
@@ -568,6 +605,7 @@ def main():
         if "standing" in steps: step_spine_sets("standing", f"{BASE}/spine/standing", adb_exe, dev, out, tmp)
         if "ingame" in steps: step_spine_sets("ingame", f"{BASE}/spine/ingame/hero", adb_exe, dev, out, tmp)
         if "voice" in steps: step_voice(adb_exe, dev, out, tmp)
+        if FAILED: log("error", "일부 단계가 통째로 실패했어요 — 위 오류를 확인하고 다시 시도해 주세요", "error"); sys.exit(7)
         log("done", f"완료 — {out}", "ok")
     except Exception as e:
         log("error", str(e), "error"); sys.exit(1)
