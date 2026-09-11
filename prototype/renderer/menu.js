@@ -9,7 +9,9 @@
   const MOODS = [["", "기본"], ["smile", "미소"], ["anger", "분노"], ["sad", "슬픔"], ["happy", "행복"], ["eat", "냠냠"], ["sulky", "삐짐"], ["surprise", "놀람"]];
   const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
   const deepMerge = (b, p) => { const o = { ...b }; for (const [k, v] of Object.entries(p || {})) o[k] = isObj(v) && isObj(b[k]) ? deepMerge(b[k], v) : v; return o; };
-  const resize = () => host.menuResize(Math.ceil(menuEl.getBoundingClientRect().height) + 6);
+  // 창 높이는 실제 내용 높이(scrollHeight)로 — #menu에 max-height가 있어 rect 높이로 재면 창이 처음 크기에 갇혀 아래 항목(종료)이 잘려 보였음. 화면보다 길면 메인이 화면 높이로 자르고 #menu가 스크롤됨
+  let lastH = 0;
+  const resize = () => { const h = menuEl.scrollHeight + 6; if (h !== lastH) { lastH = h; host.menuResize(h); requestAnimationFrame(() => setTimeout(resize, 50)); } }; // 창 크기가 바뀐 뒤 내용 높이가 달라지면 한 번 더
 
   // 애니 목록: 현재 형태에 맞는 스켈레톤 애니 (마스코트가 카탈로그에 넣어준 것)
   const anims = (S.mode === "sd" && catalog.sdAnimations && catalog.sdAnimations.length) ? catalog.sdAnimations : catalog.animations.map(a => a.name);

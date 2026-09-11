@@ -214,7 +214,9 @@ function createMascotWindow() {
   });
   mascotWin = win; mascotLoaded = false;
   win.setAlwaysOnTop(true, "screen-saver");
-  win.setIgnoreMouseEvents(true, { forward: true }); // 항상 클릭 통과 (끄면 Chrome이 '가려짐'으로 보고 영상을 회색으로 멈춤)
+  // 항상 클릭 통과 (끄면 Chrome이 '가려짐'으로 보고 영상을 회색으로 멈춤). forward:true는 쓰지 않는다 — 커서 폴링(아래 setInterval)과 함께 켜면
+  // 같은 프로세스의 다른 창(설정창)을 제목줄로 끌어도 움직이지 않는 현상이 남(둘 중 하나만 끄면 정상). 호버는 폴링으로 처리하므로 forward가 필요 없음
+  win.setIgnoreMouseEvents(true);
   win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); // 생성 시 잘린 크기 재적용
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
   win.webContents.on("console-message", (ev) => {
@@ -345,7 +347,7 @@ function openMenu(id, sx, sy) {
   if (menuWin && !menuWin.isDestroyed()) { menuWin.setBounds({ x, y, width: MENU_W, height: h }); menuWin.webContents.send("settings", viewFor(id)); menuWin.show(); menuWin.focus(); return; }
   menuWin = new BrowserWindow({
     x, y, width: MENU_W, height: h, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
-    resizable: false, movable: false, hasShadow: false, backgroundColor: "#00000000",
+    resizable: false, movable: true, hasShadow: false, backgroundColor: "#00000000", // movable: 제목줄(-webkit-app-region: drag)을 잡고 옮길 수 있게
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false, additionalArguments: [`--instance=${id}`] },
   });
   menuWin.setAlwaysOnTop(true, "screen-saver");
@@ -508,7 +510,8 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
-if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize()); } }, 1500); }, 5000);
+if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize());
+  const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); } } }, 1500); }, 5000);
 if (argHas("--multi-test")) setTimeout(() => {
   const dump = (tag) => console.log(`MULTI ${tag} chars=${JSON.stringify(settings.characters.map(c => [c.id, c.skin, c.mode, c.scale]))} rects=${[...instances.keys()].join(",")} windows=${BrowserWindow.getAllWindows().length} hitFor=${hitFor} shown=${hitShown} rects=${[...instances.values()].map(i => i.rect ? JSON.stringify(screenRect(i.rect)) : "-").join(" ")}`);
   dump("start");

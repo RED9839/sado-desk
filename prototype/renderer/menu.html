@@ -2,13 +2,13 @@
 <html lang="ko"><head><meta charset="utf-8"><title>menu</title>
 <style>
   html,body{margin:0;background:transparent;overflow:hidden;user-select:none}
-  #menu{width:250px;max-height:calc(100vh - 4px);overflow:hidden;background:#2b2b31;color:#eee;border:1px solid #55555f;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
-  #menu .title{padding:8px 12px;font-weight:700;background:#3a3a44;border-radius:8px 8px 0 0}
+  #menu{width:250px;max-height:calc(100vh - 4px);overflow:auto;scrollbar-width:thin;background:#2b2b31;color:#eee;border:1px solid #55555f;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
+  #menu .title{padding:8px 12px;font-weight:700;background:#3a3a44;border-radius:8px 8px 0 0;cursor:move;-webkit-app-region:drag;user-select:none;position:sticky;top:0;z-index:2}
   #menu .item{padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
   #menu .item:hover{background:#44444f}
   #menu .item.danger{color:#ff8a8a}
   #menu .sep{height:1px;background:#4a4a55;margin:4px 0}
-  #menu .sub{display:none;max-height:38vh;overflow:auto;background:#24242a;border-top:1px solid #4a4a55;border-bottom:1px solid #4a4a55}
+  #menu .sub{display:none;max-height:320px;overflow:auto;overflow-x:hidden;background:#24242a;border-top:1px solid #4a4a55;border-bottom:1px solid #4a4a55}
   #menu .sub.open{display:block}
   #menu .sub .item{padding:5px 12px 5px 24px;font-size:12px}
   #menu .sub .group{padding:4px 12px;font-size:11px;color:#9a9aa8;background:#1e1e23;position:sticky;top:0}
