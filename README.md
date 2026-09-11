@@ -1,0 +1,48 @@
+# 사도 데스크 (SadoDesk)
+
+**트릭컬 리바이브** 사도를 윈도우 바탕화면에 살게 하는 데스크탑 마스코트. 비공식 팬 프로젝트입니다.
+
+- 게임 원본 Spine 애니메이션을 그대로 재생 — 미니미(스틱) 418종, 스탠딩 SD(사도 상세 화면)
+- 폴짝폴짝 돌아다니고, 클릭·드래그·던지기, 게임과 같은 교감 4종(볼 당기기 · 쓰다듬기 · 꿀밤 · 간지럽히기)과 그에 맞는 보이스
+- 여러 명 동시에, 캐릭터별 개별 설정. 멀티 모니터, 작업표시줄 위로 침범, 다른 창 위에서 바로 터치
+- 공식 유튜브·네이버 게임 라운지에 새 소식이 올라오면 **그 사도의 말투**로 말풍선 알림 (134명 말투 프로필, 스킨별 차이 반영)
+
+> 캐릭터·애니메이션·음성 등 게임 자산은 **EPID Games**의 저작물이며 이 저장소와 설치 파일에는 들어 있지 않습니다.
+> 앱을 처음 실행하면 **사용자 PC의 뮤뮤 앱플레이어에 설치된 트릭컬 리바이브**에서 직접 추출하는 화면이 뜹니다. 추출물은 본인 PC에서만 쓰고 재배포하지 마세요.
+
+## 설치 / 실행
+
+1. [Releases](../../releases)에서 `SadoDesk-Setup-x.y.z.exe`를 받아 설치합니다. 코드 서명이 없어 SmartScreen 경고가 뜨면 "추가 정보 → 실행".
+2. 첫 실행 → **에셋 가져오기** 창:
+   - 뮤뮤 앱플레이어에 트릭컬 리바이브가 설치·실행된 적이 있어야 합니다 (리소스가 기기에 내려받혀 있어야 함). 사도 상세 화면을 열어본 사도만 스탠딩이 있습니다.
+   - 뮤뮤 폴더는 자동으로 찾습니다 (`C:\Program Files\Netease\MuMuPlayer\nx_main`). 다른 곳이면 "찾기…"
+   - "추출 시작" — 미니미·효과음(필수), 스탠딩 SD(2~5분), 로비 보이스(5~10분). 게임 서버나 실행 중인 게임을 건드리지 않고, 에뮬레이터 저장소의 파일을 adb로 복사만 합니다. 게임 파일은 암호화되지 않은 표준 Unity AssetBundle이라 보호장치를 해제하는 과정이 없습니다.
+   - 추출물 저장 위치: `%APPDATA%\사도 데스크\assets`
+3. 캐릭터가 화면에 나타납니다. 우클릭 = 메뉴, 트레이 아이콘 = 설정.
+
+게임 이용약관상 데이터 추출 관련 조항은 직접 확인하시고 본인 책임으로 사용하세요. 이 도구는 치트·서버 우회·계정 관련 기능이 전혀 없습니다.
+
+## 개발
+
+```
+cd prototype
+npm install
+run.cmd                 # 개발 실행 (assets/ 가 있으면 그것을, 없으면 %APPDATA% 의 추출본을 사용)
+npm run pyruntime       # 설치판용 임베디드 Python(UnityPy·Pillow·ffmpeg) 준비 → pyruntime/ (약 150MB)
+npm run dist            # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe
+```
+
+- 추출기 단독 실행: `python tools/extract-all.py --out <폴더> --steps minimi,sfx,standing,voice` (Python 3.10+, `pip install UnityPy Pillow imageio-ffmpeg`)
+- 상세 구조·조작·설정·디버그 플래그: [prototype/README.md](prototype/README.md)
+- 분석·변경 기록: [docs/](docs/) — Little LUMI 분석, 트릭컬 클라이언트 리소스 분석, 보이스 카탈로그(STT로 카테고리 실측), 프로토타입 버전 기록
+
+## 라이선스와 출처
+
+- 소스 코드: [MIT](LICENSE)
+- 게임 자산(캐릭터·애니메이션·음성·효과음): © EPID Games. 저장소에 포함하지 않으며, 사용자가 개인 사용 목적으로 자기 게임에서 추출합니다.
+- `prototype/data/talk-ko.json`(사도별 말투 프로필·대사 표본)은 [나무위키 트릭컬 리바이브 문서](https://namu.wiki/w/트릭컬%20리바이브)의 대사표를 바탕으로 만들었으며 [CC BY-NC-SA 2.0 KR](https://creativecommons.org/licenses/by-nc-sa/2.0/kr/)을 따릅니다.
+- `prototype/data/names-ko.json`(사도·스킨 한글 이름표)은 게임 내 표기를 위키·[tr.triple-lab.com](https://tr.triple-lab.com)·[trickcaltool](https://github.com/)로 대조해 정리한 것입니다. 원본 데이터 파일은 저장소에 포함하지 않습니다.
+- 새 소식 알림은 유튜브 RSS와 네이버 게임 라운지의 공개 API를 사용합니다. 라운지 API는 비공식이라 예고 없이 바뀔 수 있습니다.
+- 애니메이션 런타임: [spine-ts](https://github.com/EsotericSoftware/spine-runtimes) 4.1 (Esoteric Software). 앱 아이콘은 이 프로젝트에서 직접 그린 것입니다.
+
+이 프로젝트는 EPID Games와 무관한 개인 팬 프로젝트입니다. 권리자의 요청이 있으면 즉시 조치합니다.

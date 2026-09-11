@@ -1,0 +1,83 @@
+{
+  "name": "sado-desk",
+  "version": "0.9.0",
+  "private": true,
+  "description": "사도 데스크 — 트릭컬 리바이브 사도 데스크탑 마스코트 (비공식 팬 프로젝트, Electron + spine-ts 4.1)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64",
+    "dist:dir": "electron-builder --win dir --x64",
+    "analyze": "node tools/analyze-minimi.js",
+    "pyruntime": "python tools/make-pyruntime.py"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "@esotericsoftware/spine-core": "^4.1.56",
+    "@esotericsoftware/spine-webgl": "^4.1.56"
+  },
+  "productName": "사도 데스크",
+  "build": {
+    "appId": "kr.sadodesk.app",
+    "productName": "사도 데스크",
+    "copyright": "개인 사용 프로토타입. 캐릭터·보이스는 EPID Games 트릭컬 리바이브의 자산이며 재배포하지 않습니다.",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "news.js",
+      "renderer/**/*",
+      "!renderer/**/*.bak.js",
+      "data/**/*",
+      "package.json",
+      "node_modules/@esotericsoftware/**"
+    ],
+    "extraResources": [
+      {
+        "from": "tools/extract-all.py",
+        "to": "tools/extract-all.py"
+      },
+      {
+        "from": "pyruntime",
+        "to": "pyruntime",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**"
+        ]
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "SadoDesk-Setup-${version}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "사도 데스크",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "SadoDesk-Setup-${version}.${ext}"
+    },
+    "compression": "normal",
+    "npmRebuild": false
+  }
+}

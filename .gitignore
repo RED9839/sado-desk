@@ -1,0 +1,24 @@
+# 게임에서 추출한 리소스·결과물 — 저작권상 공개 저장소에 올리지 않음 (사용자가 직접 추출)
+prototype/assets/
+prototype/assets_dev/
+prototype/out/
+prototype/dist/
+prototype/pyruntime/
+docs/samples/**/*.png
+docs/samples/**/*.atlas
+docs/samples/**/*.skel*
+docs/samples/**/*.bin
+docs/samples/**/*.wav
+docs/samples/**/*.ogg
+docs/samples/**/*.txt
+docs/samples/**/*.json
+# 남의 저장소에서 가져온 데이터 파일 (라이선스 확인 전) — README 참고
+prototype/tools/tr-costumes.ts
+prototype/tools/tr-trickcalChar.ts
+prototype/tools/trickcaltool-ko-KR.json
+# 빌드/실행
+node_modules/
+*.log
+run.log
+__pycache__/
+Thumbs.db

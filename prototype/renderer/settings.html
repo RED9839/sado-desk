@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 설정</title>
+<style>
+  :root{--bg:#1f1f24;--panel:#2b2b31;--panel2:#24242a;--line:#44444f;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.5 "Malgun Gothic","Segoe UI",sans-serif;user-select:none}
+  body{display:flex}
+  nav{width:150px;background:var(--panel2);border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+  nav .brand{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;font-weight:700}
+  nav .brand img{width:28px;height:28px;image-rendering:auto}
+  nav button{all:unset;display:block;padding:8px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
+  nav button:hover{background:#33333c;color:var(--text)}
+  nav button.on{background:var(--accent);color:#fff}
+  #content{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+  main{flex:1;overflow:auto;padding:14px 22px 18px}
+  section{display:none}section.on{display:block}
+  h2{margin:0 0 12px;font-size:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .card h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+  .row{display:flex;align-items:center;gap:10px;padding:5px 0;min-height:30px}
+  .row label{flex:1}
+  .row .hint{color:var(--muted);font-size:11px;display:block}
+  .row input[type=range]{width:220px;accent-color:var(--accent)}
+  .row .val{width:52px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .row.off{opacity:.45}
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
+  button.btn{all:unset;padding:6px 12px;border-radius:6px;background:#3a3a44;cursor:pointer;color:var(--text)}
+  button.btn:hover{filter:brightness(1.15)}
+  button.btn.primary{background:var(--accent);color:#fff}
+  button.btn.danger{background:#5a2e2e;color:var(--danger)}
+  select,input[type=text]{background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+  /* 캐릭터 그리드 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:calc(100vh - 300px);overflow:auto;padding:2px}
+  .tile{background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:6px 4px 4px;text-align:center;cursor:pointer;position:relative}
+  .tile:hover{border-color:#55556a}
+  .tile.on{border-color:var(--accent)}
+  .tile canvas{width:72px;height:96px;display:block;margin:0 auto}
+  .tile .nm{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+  .tile .vc{position:absolute;top:4px;right:6px;font-size:10px;color:var(--muted)}
+  .tile .vc.zero{color:var(--danger)}
+  .tile .q{position:absolute;top:22px;left:6px;font-size:10px;color:#f0c060}
+  .tile .sd{position:absolute;top:5px;left:6px;font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff}
+  .tile .sd.st{top:21px;background:#5a4a8a}
+  .tag{font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff;vertical-align:middle}
+  input[type=radio]{accent-color:var(--accent)}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .toolbar input{flex:1}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:12px}
+  .kv .k{color:var(--muted)}
+  code{background:#1a1a1f;padding:1px 5px;border-radius:4px;font-size:11px;user-select:text}
+  /* 캐릭터(인스턴스) 선택 바 */
+  #charbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 22px 0;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+  #char-chips{display:contents}
+  #charbar .lbl{color:var(--muted);font-size:12px;margin-right:4px}
+  #charbar .chip{padding:4px 10px;border-radius:14px;background:#3a3a44;cursor:pointer;font-size:12px;border:1px solid transparent;display:flex;align-items:center;gap:6px}
+  #charbar .chip:hover{filter:brightness(1.15)}
+  #charbar .chip.on{background:var(--accent);color:#fff}
+  #charbar .chip .n{opacity:.6;font-size:10px}
+  #charbar .chip.add{background:transparent;border-color:var(--line);color:var(--muted)}
+  #charbar .chip.rm{background:transparent;border-color:var(--line);color:var(--danger);margin-left:auto}
+  #charbar .chip.rm[disabled]{opacity:.35;pointer-events:none}
+  #charbar .hint{font-size:11px;color:var(--muted);width:100%}
+</style></head>
+<body>
+<nav>
+  <div class="brand"><img src="tray.png" alt=""><span>사도 데스크</span></div>
+  <button data-tab="character" class="on">캐릭터</button>
+  <button data-tab="behavior">행동</button>
+  <button data-tab="sound">사운드</button>
+  <button data-tab="display">화면</button>
+  <button data-tab="news">알림</button>
+  <button data-tab="about">정보</button>
+</nav>
+<div id="content">
+  <div id="charbar"><span class="lbl">설정할 캐릭터</span><span id="char-chips"></span><span class="chip add" id="char-add" title="같은 설정으로 하나 더 부르기">＋ 하나 더 부르기</span><span class="chip rm" id="char-remove" title="선택한 캐릭터를 화면에서 보냄">이 캐릭터 보내기</span><span class="hint" id="charbar-note">캐릭터·행동·크기·불투명도는 선택한 캐릭터에만 적용되고, 사운드·화면 동작은 전체 공통입니다.</span></div>
+<main>
+  <section id="tab-character" class="on">
+    <h2>캐릭터</h2>
+    <div class="card"><h3>형태</h3>
+      <div class="row">
+        <label class="toggle"><input type="radio" name="mode" value="minimi" data-s="mode">미니미 (스틱) — 게임 로비 하단의 폴짝폴짝 뛰는 SD. 418 스킨 전부</label>
+      </div>
+      <div class="row">
+        <label class="toggle"><input type="radio" name="mode" value="sd" data-s="mode"><b>SD</b> — 사도 상세 화면과 동일한 Spine(표정·쓰다듬기·간지럽히기 애니). 이동할 땐 미니미로 폴짝폴짝, 멈추면 스탠딩</label>
+      </div>
+      <div class="hint" id="mode-note"></div>
+    </div>
+    <div class="toolbar"><input type="text" id="skin-search" placeholder="이름 검색 (한글/영문, 스킨 이름도)"><label class="toggle"><input type="checkbox" id="skin-voiced">보이스 있는 것만</label><label class="toggle" style="display:none"><input type="checkbox" id="skin-sd">SD 있는 것만</label><span id="skin-count" class="hint"></span></div>
+    <div class="grid" id="skin-grid"></div>
+  </section>
+
+  <section id="tab-behavior">
+    <h2>행동</h2>
+    <div class="card"><h3>할 수 있는 것</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.hop">폴짝폴짝 이동</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.jump">큰 점프</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.idleActs">대기 중 잔동작 (고개 갸웃, 찌그러지기, 뒤집기 등)</label></div>
+      <div class="row"><label>모션 사이 쉬는 시간<span class="hint">한 동작이 끝난 뒤 대기 자세로 이만큼 쉬고 다음 동작 (대사 중이면 끝날 때까지 더 기다림)</span></label><input type="range" min="0" max="20" step="0.5" data-s="behavior.actGap"><span class="val" data-fmt="s"></span></div>
+    </div>
+    <div class="card"><h3>빈도와 속도</h3>
+      <div class="row"><label>이동 확률<span class="hint">대기가 끝난 뒤 이동을 고를 확률</span></label><input type="range" min="0" max="90" data-s="behavior.hopChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>큰 점프 확률</label><input type="range" min="0" max="50" data-s="behavior.jumpChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>이동 속도</label><input type="range" min="30" max="300" step="10" data-s="behavior.hopSpeed"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>한 번에 이동하는 거리</label><input type="range" min="100" max="1200" step="50" data-s="behavior.hopRange"><span class="val" data-fmt="px"></span></div>
+      <div class="row"><label>대기 시간 (최소)</label><input type="range" min="0.5" max="20" step="0.5" data-s="behavior.idleMin"><span class="val" data-fmt="s"></span></div>
+      <div class="row"><label>대기 시간 (최대)</label><input type="range" min="1" max="60" step="0.5" data-s="behavior.idleMax"><span class="val" data-fmt="s"></span></div>
+    </div>
+    <div class="card"><h3>지금 시키기</h3>
+      <div class="row"><select id="anim-select"></select><button class="btn" id="anim-play">▶ 재생</button><button class="btn" id="respawn">다시 등장</button></div>
+    </div>
+  </section>
+
+  <section id="tab-sound">
+    <h2>사운드</h2>
+    <div class="card">
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.muted">전체 음소거</label></div>
+      <div class="row" data-vol><label>전체 볼륨</label><input type="range" min="0" max="100" data-s="sound.master" data-scale="100"><span class="val" data-fmt="%"></span></div>
+      <div class="row" data-vol><label>목소리</label><input type="range" min="0" max="100" data-s="sound.voice" data-scale="100"><span class="val" data-fmt="%"></span><button class="btn" data-preview="voice">듣기</button></div>
+      <div class="row" data-vol><label>효과음</label><input type="range" min="0" max="100" data-s="sound.sfx" data-scale="100"><span class="val" data-fmt="%"></span><button class="btn" data-preview="sfx">듣기</button></div>
+    </div>
+    <div class="card"><h3>언제 소리를 낼까</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.clickVoice">클릭하면 대사 (터치)</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.landVoice">던져서 떨어지면 아파하는 대사 (놀람 · 간지럽히기 · 미안 · 분노)</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.landSfx">착지·튕김 효과음</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.spawnVoice">등장할 때 대사 (등장 · 인사)</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.greetOnSkin">캐릭터를 바꾸면 인사</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.motionVoice">모션에 맞는 대사<span class="hint">기쁨 동작 → 기쁨 대사, 분노 → 분노, 슬픔 → 슬픔, 놀람·그로기 → 놀람, 먹기 → 먹기, 멍·잡담 → 대기 대사 …</span></label></div>
+      <div class="row"><label>모션 대사 확률</label><input type="range" min="0" max="100" step="5" data-s="sound.motionVoiceChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>모션 대사 최소 간격</label><input type="range" min="0" max="60" step="1" data-s="sound.motionVoiceCooldown"><span class="val" data-fmt="s"></span></div>
+      <div class="hint" style="padding-top:6px">현재 캐릭터 보이스: <span id="voice-summary">-</span></div>
+      <div class="hint" id="name-note" style="padding-top:4px"></div>
+    </div>
+  </section>
+
+  <section id="tab-display">
+    <h2>화면</h2>
+    <div class="card"><h3>선택한 캐릭터</h3>
+      <div class="row"><label>크기</label><input type="range" min="20" max="150" step="5" data-s="scale" data-scale="100"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>불투명도</label><input type="range" min="20" max="100" step="5" data-s="opacity" data-scale="100"><span class="val" data-fmt="%"></span></div>
+    </div>
+    <div class="card"><h3>전체 공통</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="display.multiMonitor">모든 모니터로 이동<span class="hint">켜면 옆 모니터로 넘어가고(가끔 원정), 모니터마다 작업표시줄 높이에 맞춰 바닥이 바뀜</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="display.overTaskbar">작업표시줄 위로 그림 침범<span class="hint">발은 작업표시줄 위에 두고, 발 아래로 내려오는 무기·꼬리는 작업표시줄 위에 그려짐. 끄면 잘림</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="display.autoStart">윈도우 시작 시 자동 실행<span class="hint">설치판(사도 데스크.exe)에서만 동작. 개발 실행(run.cmd)에서는 무시</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="display.debug">디버그 표시 (상태 정보 · 판정 박스 · 바닥선 · 모니터 영역)</label></div>
+    </div>
+    <div class="card"><h3>동작 방식</h3>
+      <div class="hint">캐릭터는 각 모니터의 작업표시줄 위 바닥에서 지냅니다. 캐릭터 위가 아닌 곳은 클릭이 아래 창으로 통과하고, 캐릭터를 클릭해도 다른 창의 포커스를 빼앗지 않습니다. 스스로 최상위를 잡는 일부 게임(예: 메이플스토리) 위에서는 가려질 수 있습니다.</div>
+    </div>
+  </section>
+
+  <section id="tab-news">
+    <h2>알림</h2>
+    <div class="card"><h3>새 소식이 올라오면 크레페가 알려줘요</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.enabled">알림 켜기<span class="hint">공식 유튜브·네이버 게임 라운지를 주기적으로 확인해 새 글/영상이 있으면 캐릭터 위에 말풍선으로 알려줍니다 (크레페 말투). 처음 켤 때 있는 글은 알리지 않습니다</span></label></div>
+      <div class="row"><label>확인 주기</label><input type="range" min="2" max="60" step="1" data-s="news.intervalMin"><span class="val" data-fmt="min"></span></div>
+      <div class="row"><label>말풍선 표시 시간</label><input type="range" min="8" max="120" step="2" data-s="news.ttlSec"><span class="val" data-fmt="s0"></span></div>
+    </div>
+    <div class="card"><h3>어디를 볼까</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.youtube">공식 유튜브 (EPID Games) 새 영상</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.notice">라운지 · 📢 공지사항</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.update">라운지 · ⭐ 업데이트</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.devnote">라운지 · 📋 개발자 노트</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.event">라운지 · 🎁 진행 이벤트</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.pv">라운지 · 🎬 테마극장 PV</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.coupon">라운지 · 🧾 쿠폰 게시판</label></div>
+    </div>
+    <div class="card"><h3>알릴 때</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.sound">캐릭터가 말하는 모션 + 대사</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.toast">윈도우 알림(토스트)도 함께 표시</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.talkCrepe">말투를 크레페로 고정<span class="hint">끄면 첫 번째 캐릭터의 말투로 알려줍니다 (나무위키 대사표에서 사도별 어미·호칭·감탄사·실제 대사를 학습: 마요 "~함", 비비 "~사와요", 실비아 "~옵니다", 다야 "~거라", 쥬비 "~다비", 마에스트로 "확인 요망" …)</span></label></div>
+      <div class="row"><button class="btn" id="news-check">지금 확인</button><button class="btn" id="news-test">최근 소식 말풍선 미리보기</button><button class="btn" id="news-read">모두 읽음</button><span class="hint" id="news-status"></span></div>
+    </div>
+    <div class="card"><h3>최근 소식</h3><div id="news-list" class="hint">-</div></div>
+  </section>
+
+  <section id="tab-about">
+    <h2>정보</h2>
+    <div class="card"><div class="kv" id="about-kv"></div></div>
+    <div class="card"><h3>파일</h3>
+      <div class="row"><button class="btn" data-open="settings">설정 파일 위치 열기</button><button class="btn" data-open="assets">에셋 폴더 열기</button><button class="btn" id="assets-setup">에셋 다시 가져오기…</button></div>
+      <div class="hint">캐릭터·보이스 에셋은 이 앱에 들어 있지 않고, 사용자 PC의 뮤뮤 앱플레이어에 설치된 트릭컬 리바이브에서 직접 추출해 씁니다 (개인 사용 목적). 추출 결과물을 다른 사람에게 배포하지 마세요.</div>
+    </div>
+    <div class="card"><h3>초기화</h3>
+      <div class="row"><label>모든 설정을 기본값으로 되돌립니다 (캐릭터 → 크레페, 크기 50%, 목소리·효과음 50%)</label><button class="btn danger" id="reset">초기화…</button></div>
+    </div>
+    <div class="card"><h3>크레딧</h3>
+      <div class="hint">엔진: Electron + spine-ts 4.1 (Esoteric Software). 캐릭터·보이스 데이터는 트릭컬 리바이브(에피드게임즈) 클라이언트에서 추출한 것으로 개인 사용 프로토타입 용도이며 재배포하지 않습니다.</div>
+    </div>
+  </section>
+</main>
+</div>
+<script src="ko.js"></script>
+<script src="settings.js"></script>
+</body></html>
