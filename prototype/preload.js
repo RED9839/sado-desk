@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld("host", {
   assetsCancel: () => ipcRenderer.send("assets:cancel"),
   assetsOpenSetup: () => ipcRenderer.send("assets:open-setup"),
   assetsOpenRoot: () => ipcRenderer.send("assets:open-root"),
+  assetsOpenLog: () => ipcRenderer.send("assets:open-log"),
   // 새 소식 / 말풍선
   newsList: () => ipcRenderer.invoke("news:list"),
   newsCheck: () => ipcRenderer.invoke("news:check"),

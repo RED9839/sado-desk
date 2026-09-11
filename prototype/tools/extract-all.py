@@ -17,6 +17,7 @@ BASE = f"/sdcard/Android/data/{PKG}/files/Packages"
 VOICE_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise", "eat", "greeting", "spawn", "line", "ticklestart", "tickleduring", "dutchrubend")
 ENV = dict(os.environ); ENV["MSYS_NO_PATHCONV"] = "1"
 JSON = False
+FORCE = False  # --force: 이미 있는 것도 다시 받기
 
 def log(step, msg, level="info", done=None, total=None):
     if JSON:
@@ -322,8 +323,8 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
         try: pages = [l.strip() for l in open(at, encoding="utf-8", errors="ignore") if l.strip().lower().endswith(".png")]
         except Exception: return False
         return bool(pages) and all(os.path.exists(os.path.join(d, pg)) for pg in pages)
-    todo = [n for n in names if not complete(n)]
-    if not todo: log(kind, f"{label} {len(names)}세트 이미 있음 — 건너뜀", "ok"); return
+    todo = names if FORCE else [n for n in names if not complete(n)]
+    if not todo: log(kind, f"{label} {len(names)}세트 이미 있음 — 건너뜀 (다시 받으려면 '이미 있는 것도 다시 받기' 체크)", "ok"); return
     log(kind, f"{label} {len(todo)}세트 복사 중… (이미 있는 {len(names) - len(todo)}세트 제외)", total=len(todo), done=0)
     local = os.path.join(tmp, kind); os.makedirs(local, exist_ok=True)
     if len(todo) < len(names) * 0.5:  # 일부만 새로 받으면 그 폴더들만
@@ -347,7 +348,7 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
 
 def _voice_job(args):
     src, dst, ffmpeg = args
-    if os.path.exists(dst): return "skip"
+    if os.path.exists(dst) and not FORCE: return "skip"
     try:
         import UnityPy
         for o in UnityPy.load(src).objects:
@@ -370,8 +371,8 @@ def step_voice(adb_exe, dev, out, tmp):
     vout = os.path.join(out, "voice")
     def hero_done(h):
         d = os.path.join(vout, h); return os.path.isdir(d) and len([f for f in os.listdir(d) if f.endswith(".ogg")]) >= 10
-    todo = [h for h in heroes if not hero_done(h)]
-    if not todo: build_voice_index(vout); log("voice", f"보이스 {len(heroes)}명 이미 있음 — 건너뜀", "ok"); return
+    todo = heroes if FORCE else [h for h in heroes if not hero_done(h)]
+    if not todo: build_voice_index(vout); log("voice", f"보이스 {len(heroes)}명 이미 있음 — 건너뜀 (다시 받으려면 '이미 있는 것도 다시 받기' 체크)", "ok"); return
     log("voice", f"보이스: 사도 {len(todo)}명 폴더 복사 중… (이미 있는 {len(heroes) - len(todo)}명 제외 · 원본 1.6GB 중 로비 대사만 변환)", total=len(todo), done=0)
     vtmp = os.path.join(tmp, "voice"); os.makedirs(vtmp, exist_ok=True)
     if len(todo) >= len(heroes) * 0.5: adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero", vtmp); root = os.path.join(vtmp, "hero") if os.path.isdir(os.path.join(vtmp, "hero")) else vtmp  # 한 번에 (사도별 156회 pull보다 빠름)
@@ -421,7 +422,9 @@ def main():
     ap.add_argument("--mumu", default=None); ap.add_argument("--vm", default="0"); ap.add_argument("--json", action="store_true"); ap.add_argument("--keep-tmp", action="store_true")
     ap.add_argument("--adb", default=None, help="adb.exe 경로 (앱플레이어 것 또는 platform-tools)"); ap.add_argument("--serial", default=None, help="기기 serial (예 127.0.0.1:5555, emulator-5554)")
     ap.add_argument("--list-devices", action="store_true", help="붙을 수 있는 기기 목록만 JSON으로 출력")
+    ap.add_argument("--force", action="store_true", help="이미 있는 스탠딩·보이스도 다시 받아 덮어쓰기")
     a = ap.parse_args(); JSON = a.json
+    global FORCE; FORCE = a.force
     if a.list_devices:
         print(json.dumps(scan_devices(a.mumu, a.adb), ensure_ascii=False)); return
     if not a.out: ap.error("--out 이 필요해요")

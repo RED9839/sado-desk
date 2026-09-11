@@ -31,7 +31,7 @@
     log.innerHTML = ""; bar.style.width = "0%";
     const pick = devices[+el("device").value]; const manual = el("mumu").value.trim();
     const isAdb = /adb\.exe$/i.test(manual), isPort = /^\d{2,5}$/.test(manual), isSerial = /^[\w.-]+:\d{2,5}$/.test(manual) || /^emulator-\d+$/.test(manual);
-    const r = await host.assetsExtract({ steps, mumu: manual && !isAdb && !isPort && !isSerial ? manual : null, adb: pick ? pick.adb : (isAdb ? manual : null), serial: pick ? pick.serial : (isPort ? `127.0.0.1:${manual}` : isSerial ? manual : null) });
+    const r = await host.assetsExtract({ force: el("force").checked, steps, mumu: manual && !isAdb && !isPort && !isSerial ? manual : null, adb: pick ? pick.adb : (isAdb ? manual : null), serial: pick ? pick.serial : (isPort ? `127.0.0.1:${manual}` : isSerial ? manual : null) });
     if (!r.ok) { line(r.error, "error"); return; }
     running = true; el("start").disabled = true; el("cancel").disabled = false;
     line(`추출 시작 — ${steps.join(", ")}`);
@@ -43,6 +43,7 @@
     if (r.ok) { line(`에셋 폴더 지정: ${r.root}`, "ok"); refresh(); } else line(r.error, "error");
   });
   el("open-root").addEventListener("click", () => host.assetsOpenRoot());
+  el("open-log").addEventListener("click", () => host.assetsOpenLog());
   host.on("extract:progress", (o) => {
     if (o.total) bar.style.width = `${Math.round(100 * (o.done || 0) / o.total)}%`;
     if (o.level === "ok") bar.style.width = "100%";
