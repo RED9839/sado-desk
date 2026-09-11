@@ -17,6 +17,8 @@
   #menu .chip{flex:1;text-align:center;padding:3px 0;border-radius:4px;background:#3a3a44;cursor:pointer;font-size:11px}
   #menu .chip.on{background:#6c8cff;color:#fff}
   #menu .chip:hover{filter:brightness(1.15)}
+  #menu .chips.wrap{flex-wrap:wrap}
+  #menu .chips.wrap .chip{flex:1 0 22%}
   #menu .row{display:flex;align-items:center;gap:8px;padding:3px 12px;font-size:12px}
   #menu .row label{width:44px;color:#c9c9d4}
   #menu .row input[type=range]{flex:1;margin:0;accent-color:#6c8cff}
@@ -33,6 +35,8 @@
   <div class="sub" id="sub-skins"><input type="text" id="skin-filter" placeholder="이름 검색 (한글/영문)"><div id="skin-list"></div></div>
   <div class="item">크기</div>
   <div class="chips" id="scale-chips"></div>
+  <div class="item" id="mood-item" title="게임 스토리 표정 8종. 고르면 이동·잔동작을 멈추고 그 표정으로 서 있어요 (SD 형태)">표정 <span id="mood-state"></span></div>
+  <div class="chips wrap" id="mood-chips"></div>
   <div class="sep"></div>
   <div class="item" data-act="mute">사운드 <span id="mute-state"></span></div>
   <div class="row" data-vol="master"><label>전체</label><input type="range" min="0" max="100"><span class="val"></span></div>

@@ -44,9 +44,27 @@
       tickleIdle: ["Tickle_Idle_1", "Tickle_Idle"].find(n => data.findAnimation(n)) || null, tickleEnd: data.findAnimation("Tickle_End") ? "Tickle_End" : null,
       smash: ["Smash_End_1", "Smash_End"].filter(n => data.findAnimation(n)),
       hold: idles[0] || all[0]?.n, moveSpeed: 90, hopHeight: 22,
+      moods: moodPools(all),
     };
   }
-  const SD = { idleActs: [], idleQuiet: ["Idle_1"], idleLoop: new Set(["Idle_1"]), move: null, jump: [], spawn: [], react: [], land: null, drag: null, hold: "Idle_1", moveSpeed: 90, hopHeight: 22 };
+  // 표정 고정(스토리 표정 8종: 기본·미소·분노·슬픔·행복·냠냠·삐짐·놀람) — 애니를 한 번 재생하고 마지막 프레임에서 멈춰 '스탠딩'처럼 둔다.
+  //   미소 = Happy_1(가벼운 웃음)·Smile, 행복 = 그 밖의 Happy·Laugh·Dance. 없는 캐릭터(크레페 Sulky/Surprise 없음)는 비슷한 감정으로 대체
+  const MOOD_ORDER = ["smile", "anger", "sad", "happy", "eat", "sulky", "surprise"];
+  function moodPools(all) {
+    const by = (re, maxDur = 4) => all.filter(a => re.test(a.n) && a.d <= maxDur).map(a => a.n);
+    const first = (...cands) => cands.find(c => c.length) || [];
+    const happy = by(/^Happy_\d+$/), happyRest = happy.filter(n => n !== "Happy_1");
+    return {
+      smile: first(by(/^Smile_/), happy.slice(0, 1), by(/^Shy_/)),
+      happy: first(happyRest, by(/^(Laugh|Dance|Nicesmile|Excited)_/), happy),
+      anger: first(by(/^(Angry|Mad)_/), by(/^Upset_/)),
+      sad: first(by(/^Sad_/), by(/^(Cry|Sorry)_/)),
+      eat: first(by(/^Eat_/), by(/^(Hungry|Bread|Drink)_/)),
+      sulky: first(by(/^Sulky_/), by(/^(Upset|Mad|Serious)_/), by(/^Angry_\d+$/).slice(0, 1)),
+      surprise: first(by(/^(Surprise|Surprised|Shock)_/), by(/^Panic_/), by(/^Groggy_/)),
+    };
+  }
+  const SD = { idleActs: [], idleQuiet: ["Idle_1"], idleLoop: new Set(["Idle_1"]), move: null, jump: [], spawn: [], react: [], land: null, drag: null, hold: "Idle_1", moveSpeed: 90, hopHeight: 22, moods: {} };
   // ---- 인게임 SD(전투·마이홈) 애니: Idle / Move / Spawn / Victory / Groggy / Attack / Skill / Ultimate ... 414/416 세트에 Move 있음 ----
   function ingamePools(data) {
     const hasA = (n) => !!data.findAnimation(n);
@@ -181,6 +199,7 @@
     host.loaded(buildCatalog());
     requestAnimationFrame(loop);
     if (cfg.selftest) firstMascot()?.selftest();
+    if (cfg.moodTest) firstMascot()?.moodTest();
   }
 
   function buildCatalog() {
@@ -263,7 +282,9 @@
       else if (prev.scale !== S.scale) applyScale();
       applyOpacity();
       hud.style.display = S.display.debug ? "block" : "none";
+      if (prev && prev.mood !== S.mood && (m.state === "idle" || m.state === "mood" || m.state === "react" || m.state === "hop")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
     }
+    const moodOn = () => !!S.mood && isSD() && active.A.moods && (active.A.moods[S.mood] || []).some(has);
     // 불투명도: 창 하나에 여러 명이라 캔버스 대신 스켈레톤 색 알파로 (PMA 렌더러에서 슬롯 색에 곱해짐)
     function applyOpacity() { for (const s of [mini, sd, sdI]) if (s.skeleton) s.skeleton.color.a = S.opacity; }
 
@@ -467,6 +488,7 @@
 
     // 모션이 끝난 뒤: 대기 루프로 돌아가 actGap 초 쉬고 나서 다음 행동 결정 (연속 모션으로 끊기는 느낌 방지)
     function restThenDecide() {
+      if (moodOn()) { decideIdle(); return; }
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       m.state = "idle"; m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
@@ -486,6 +508,13 @@
     function decideIdle() {
       const B = S.behavior;
       m.state = "idle"; m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
+      if (moodOn()) {
+        useSlot(slotForRest());
+        const pool = active.A.moods[S.mood].filter(has);
+        const a = pool.length > 1 && m.anim && pool.includes(m.anim) ? pick(pool.filter(n => n !== m.anim)) : pick(pool);
+        play(a, false); m.state = "mood"; m.timer = B.idleMin + Math.random() * Math.max(0, B.idleMax - B.idleMin); motionVoice(a);
+        return;
+      }
       const r = Math.random() * 100;
       if (B.hop && r < B.hopChance && !holding()) {
         if (isSD()) useSlot(slotForMove());
@@ -518,6 +547,9 @@
       switch (m.state) {
         case "idle":
           if (voicePlaying()) m.timer = Math.max(m.timer, 0.5); // 대사가 끝나기 전엔 다음 모션 안 함
+          m.timer -= dt; if (m.timer <= 0) decideIdle(); break;
+        case "mood":
+          if (!moodOn()) { decideIdle(); break; }
           m.timer -= dt; if (m.timer <= 0) decideIdle(); break;
         case "hop": {
           const dir = Math.sign(m.targetX - m.x); m.x += dir * active.A.moveSpeed * scale() * 2 * (S.behavior.hopSpeed / 100) * dt;
@@ -668,6 +700,17 @@
 
     // ---- 셀프테스트 (첫 캐릭터에서만) ----
     function fire(type, x, y, button = 0) { onMouse({ type, x, y, button, buttons: 0 }); }
+    const shot = (name) => { const pad = 24; console.log(`SHOTREQ ${name} ${Math.round(m.x - m.w / 2 - pad)} ${Math.round(H - m.y - m.h - pad)} ${Math.round(m.w + pad * 2)} ${Math.round(m.h + pad * 2)}`); };
+    async function moodTest() {
+      const say = (s) => console.log("MOODTEST " + s);
+      await sleep(2500);
+      patchSettings({ mode: "sd", mood: "", sound: { muted: true } }); await sleep(1500);
+      for (const mood of ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"]) {
+        patchSettings({ mood }); await sleep(2200);
+        say(`mood=${mood || "default"} state=${m.state} anim=${m.anim} pool=${(active.A.moods?.[mood] || []).join("/")}`); shot(`mood-${mood || "default"}`); await sleep(600);
+      }
+      patchSettings({ mood: "" }); say("MOODTEST done");
+    }
     async function selftest() {
       const say = (s) => console.log("SELFTEST " + s);
       const settle = async () => { if (isSD()) useSlot(slotForRest()); m.state = "idle"; m.timer = 99; m.rot = 0; m.y = floorAt(m.x); play(active.A.hold, true); await sleep(120); };
@@ -777,7 +820,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, moodTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();
