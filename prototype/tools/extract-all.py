@@ -177,10 +177,14 @@ def scan_devices(mumu_hint=None, adb_hint=None):
                 if info: break
                 time.sleep(0.8)
             if not info: continue  # 응답 없는 중복 연결(다른 앱플레이어와 포트가 겹친 127.0.0.1:5555 등)은 건너뜀
-            if info["aid"] in seen_aid: continue
-            seen_aid.add(info["aid"])
             emu, tip2 = label_device(serial, info, ldnames)
-            result.append({"emulator": emu, "adb": adb_exe, "serial": serial, "tip": tip2, "hasGame": info["hasGame"], "android": info["android"], "model": info["model"]})
+            if info["aid"] in seen_aid:
+                # 같은 VM의 다른 이름: 더 구체적인 라벨(뮤뮤 16384 등)이면 라벨만 갱신 (serial은 먼저 잡힌 emulator-XXXX 유지)
+                for d in result:
+                    if d.get("aid") == info["aid"] and d["emulator"].startswith("안드로이드") and not emu.startswith("안드로이드"): d["emulator"], d["tip"] = emu, tip2
+                continue
+            seen_aid.add(info["aid"])
+            result.append({"emulator": emu, "adb": adb_exe, "serial": serial, "tip": tip2, "hasGame": info["hasGame"], "android": info["android"], "model": info["model"], "aid": info["aid"]})
         if result: break
     # LD플레이어가 켜져 있는데 그 포트(5555+2i)로 아무 기기도 안 잡히면 = LD 설정의 'ADB 디버깅'이 꺼진 것(기본값) → 안내 항목
     for idx, title in ld_running.items():
