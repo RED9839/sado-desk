@@ -292,12 +292,20 @@
     const voicePlaying = () => !!(currentVoice && !currentVoice.ended && !currentVoice.paused && currentVoice.currentTime < (currentVoice.duration || 99));
     let lastMotionVoiceAt = -1e9;
     // 모션에 맞는 대사. force=true(메뉴/클릭에서 직접 시킨 경우)면 확률·쿨다운 무시
+    // 감정 소리(joy/pleasure/anger/sorrow/surprise/sorry = 0.6~2초 웃음·으아악)는 짧은 리액션이라 대사(line/greeting/spawn, 2~5초 문장)보다 훨씬 자주 내도 안 시끄럽다.
+    // 웃는 포즈(Happy/Smile/Laugh)에 웃음소리가 거의 안 나던 원인 = 대사와 같은 30%/15초 게이트를 쓴 것
+    const EMOTE_CATS = new Set(["joy", "pleasure", "anger", "sorrow", "surprise", "sorry", "eat"]);
+    let lastEmoteAt = -1e9;
     function motionVoice(anim, force = false) {
       if (!S.sound.motionVoice && !force) return null;
       const cats = voiceCatsFor(anim); if (!cats) return null;
       const now = performance.now() / 1000;
-      if (!force) { if (Math.random() * 100 >= S.sound.motionVoiceChance) return null; if (now - lastMotionVoiceAt < S.sound.motionVoiceCooldown) return null; }
-      const f = playVoice(...cats); if (f) lastMotionVoiceAt = now; return f;
+      const emote = EMOTE_CATS.has(cats[0]);
+      if (!force) {
+        if (emote) { if (Math.random() * 100 >= (S.sound.emoteVoiceChance ?? 85)) return null; if (now - lastEmoteAt < 2.5) return null; }
+        else { if (Math.random() * 100 >= S.sound.motionVoiceChance) return null; if (now - lastMotionVoiceAt < S.sound.motionVoiceCooldown) return null; }
+      }
+      const f = playVoice(...cats); if (f) { if (emote) lastEmoteAt = now; else lastMotionVoiceAt = now; } return f;
     }
 
     // ---- 캐릭터 런타임 상태 ----
