@@ -126,7 +126,8 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.spawnVoice">등장할 때 대사 (등장 · 인사)</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.greetOnSkin">캐릭터를 바꾸면 인사</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.motionVoice">모션에 맞는 대사<span class="hint">기쁨 동작 → 기쁨 대사, 분노 → 분노, 슬픔 → 슬픔, 놀람·그로기 → 놀람, 먹기 → 먹기, 멍·잡담 → 대기 대사 …</span></label></div>
-      <div class="row"><label>모션 대사 확률</label><input type="range" min="0" max="100" step="5" data-s="sound.motionVoiceChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>감정 소리 확률<span class="hint">웃음·놀람·화남 같은 짧은 소리 (기쁨 동작 → 웃음). 최소 간격 2.5초</span></label><input type="range" min="0" max="100" step="5" data-s="sound.emoteVoiceChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>모션 대사 확률<span class="hint">잡담·인사 같은 문장 대사</span></label><input type="range" min="0" max="100" step="5" data-s="sound.motionVoiceChance"><span class="val" data-fmt="%"></span></div>
       <div class="row"><label>모션 대사 최소 간격</label><input type="range" min="0" max="60" step="1" data-s="sound.motionVoiceCooldown"><span class="val" data-fmt="s"></span></div>
       <div class="hint" style="padding-top:6px">현재 캐릭터 보이스: <span id="voice-summary">-</span></div>
       <div class="hint" id="name-note" style="padding-top:4px"></div>

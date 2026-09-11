@@ -44,7 +44,7 @@ const GLOBAL_DEFAULTS = {
   sound: {
     muted: false, master: 0.8, voice: 0.5, sfx: 0.5,
     clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
-    motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15,
+    motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
   display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false },
   assets: { root: "" }, // 비어 있으면 userData/assets
