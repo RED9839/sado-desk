@@ -39,7 +39,7 @@
 </div>
 
 <div class="card"><h3>1. 앱플레이어에서 추출</h3>
-  <div class="row"><label class="hint" style="flex:none;width:90px">기기</label><select id="device" style="flex:1;background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit"><option value="">검색 중…</option></select><button class="btn" id="scan">다시 검색</button></div>
+  <div class="row"><label class="hint" style="flex:none;width:90px">기기</label><select id="device" style="flex:1;background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit"><option value="">검색 중…</option></select><button class="btn" id="scan">다시 검색</button><button class="btn" id="ld-adb" style="display:none" title="LD플레이어 설정 파일에 ADB 디버깅(로컬)을 켜고 그 인스턴스를 재시작합니다">LD ADB 켜고 재시작</button></div>
   <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택을 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색하세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 보입니다.</div>
   <div class="row"><label class="hint" style="flex:none;width:90px">직접 지정</label><input type="text" id="mumu" placeholder="자동 검색이 안 될 때만: adb.exe 경로 · adb 포트(예 5555) · 127.0.0.1:5555 · 뮤뮤 nx_main 폴더"><button class="btn" id="pick-mumu">찾기…</button></div>
   <div id="steps">

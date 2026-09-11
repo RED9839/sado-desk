@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld("host", {
   assetsUseFolder: (folder) => ipcRenderer.invoke("assets:use-folder", folder),
   assetsExtract: (opt) => ipcRenderer.invoke("assets:extract", opt),
   assetsScan: () => ipcRenderer.invoke("assets:scan"),
+  assetsEnableLdAdb: (idx) => ipcRenderer.invoke("assets:enable-ld-adb", idx),
   assetsCancel: () => ipcRenderer.send("assets:cancel"),
   assetsOpenSetup: () => ipcRenderer.send("assets:open-setup"),
   assetsOpenRoot: () => ipcRenderer.send("assets:open-root"),

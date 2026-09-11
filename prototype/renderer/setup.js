@@ -22,10 +22,17 @@
       ? devices.map((d, i) => d.unavailable ? `<option value="" disabled>${d.emulator} — ${d.unavailable}</option>` : `<option value="${i}" ${d.hasGame && !devices.slice(0, i).some(x => x.hasGame) ? "selected" : ""}>${d.emulator} — ${d.serial} (Android ${d.android}) ${d.hasGame ? "✓ 트릭컬 데이터 있음" : "✗ 트릭컬 데이터 없음"}</option>`).join("") + `<option value="">자동 (트릭컬 데이터가 있는 첫 기기 / 뮤뮤 자동 실행)</option>`
       : `<option value="">붙을 수 있는 기기가 없어요 — 앱플레이어를 켜고 다시 검색 (자동: 뮤뮤 12가 설치돼 있으면 켜서 진행)</option>`;
     if (!r.ok && r.error) line(r.error, "warn");
+    const ldOff = devices.find(d => d.unavailable && d.ldIndex != null);
+    el("ld-adb").style.display = ldOff ? "" : "none"; el("ld-adb").dataset.idx = ldOff ? ldOff.ldIndex : "";
     for (const d of devices) if (d.unavailable) line(`${d.emulator}: ${d.unavailable}`, "warn"); else if (!d.hasGame) line(`${d.emulator} ${d.serial}: 트릭컬 데이터 없음 — 그 앱플레이어에서 게임을 실행해 리소스를 받아야 합니다`, "warn");
     el("scan").disabled = false;
   }
   el("scan").addEventListener("click", scan);
+  el("ld-adb").addEventListener("click", async () => {
+    const idx = +el("ld-adb").dataset.idx; el("ld-adb").disabled = true; line(`LD플레이어 인스턴스 ${idx}: ADB 디버깅을 켜고 재시작합니다…`);
+    const r = await host.assetsEnableLdAdb(idx); el("ld-adb").disabled = false;
+    if (!r.ok) line(r.error || "실패", "error"); else scan();
+  });
   el("start").addEventListener("click", async () => {
     const steps = [...document.querySelectorAll("[data-step]")].filter(c => c.checked).map(c => c.dataset.step);
     log.innerHTML = ""; bar.style.width = "0%";
