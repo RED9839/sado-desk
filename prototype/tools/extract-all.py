@@ -65,6 +65,7 @@ def pick_tmp_base():
     for env in ("TEMP", "TMP", "LOCALAPPDATA"):
         c = os.environ.get(env)
         if not c: continue
+        if env == "LOCALAPPDATA": c = os.path.join(c, "Temp")
         cands.append(c)
         if not ok(c):
             try: os.makedirs(c, exist_ok=True)
