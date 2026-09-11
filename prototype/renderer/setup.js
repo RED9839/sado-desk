@@ -14,10 +14,24 @@
     running = s.running; el("start").disabled = running; el("cancel").disabled = !running;
   }
   el("pick-mumu").addEventListener("click", async () => { const p = await host.assetsPickMumu(); if (p) el("mumu").value = p; });
+  let devices = [];
+  async function scan() {
+    const sel = el("device"); sel.innerHTML = `<option value="">검색 중…</option>`; el("scan").disabled = true;
+    const r = await host.assetsScan(); devices = r.devices || [];
+    sel.innerHTML = devices.length
+      ? devices.map((d, i) => `<option value="${i}" ${d.hasGame && !devices.slice(0, i).some(x => x.hasGame) ? "selected" : ""}>${d.emulator} — ${d.serial} (Android ${d.android}) ${d.hasGame ? "✓ 트릭컬 데이터 있음" : "✗ 트릭컬 데이터 없음"}</option>`).join("") + `<option value="">자동 (트릭컬 데이터가 있는 첫 기기 / 뮤뮤 자동 실행)</option>`
+      : `<option value="">붙을 수 있는 기기가 없어요 — 앱플레이어를 켜고 다시 검색 (자동: 뮤뮤 12가 설치돼 있으면 켜서 진행)</option>`;
+    if (!r.ok && r.error) line(r.error, "warn");
+    for (const d of devices) if (!d.hasGame) line(`${d.emulator} ${d.serial}: 트릭컬 데이터 없음 — 그 앱플레이어에서 게임을 실행해 리소스를 받아야 합니다`, "warn");
+    el("scan").disabled = false;
+  }
+  el("scan").addEventListener("click", scan);
   el("start").addEventListener("click", async () => {
     const steps = [...document.querySelectorAll("[data-step]")].filter(c => c.checked).map(c => c.dataset.step);
     log.innerHTML = ""; bar.style.width = "0%";
-    const r = await host.assetsExtract({ steps, mumu: el("mumu").value.trim() || null });
+    const pick = devices[+el("device").value]; const manual = el("mumu").value.trim();
+    const isAdb = /adb\.exe$/i.test(manual), isPort = /^\d{2,5}$/.test(manual), isSerial = /^[\w.-]+:\d{2,5}$/.test(manual) || /^emulator-\d+$/.test(manual);
+    const r = await host.assetsExtract({ steps, mumu: manual && !isAdb && !isPort && !isSerial ? manual : null, adb: pick ? pick.adb : (isAdb ? manual : null), serial: pick ? pick.serial : (isPort ? `127.0.0.1:${manual}` : isSerial ? manual : null) });
     if (!r.ok) { line(r.error, "error"); return; }
     running = true; el("start").disabled = true; el("cancel").disabled = false;
     line(`추출 시작 — ${steps.join(", ")}`);
@@ -42,5 +56,5 @@
     line(r.ok ? "완료! 캐릭터가 화면에 나타납니다. 이 창은 닫아도 됩니다." : `종료됨 (code ${r.code}) — 위 메시지를 확인해 주세요`, r.ok ? "ok" : "error");
     refresh();
   });
-  refresh();
+  refresh(); scan();
 })();

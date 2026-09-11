@@ -3,7 +3,9 @@
 앱이 읽는 형태(assets/)로 저장한다. 게임 파일은 암호화되지 않은 표준 Unity AssetBundle이라 UnityPy로 그대로 읽는다(보호장치 해제 없음).
 게임 서버·실행 중인 게임과는 통신하지 않고, 에뮬레이터 저장소의 파일을 adb로 복사만 한다. 추출물은 개인 사용 목적으로만.
 
-사용: python tools/extract-all.py --out <assets 폴더> [--steps minimi,sfx,standing,ingame,voice] [--mumu "C:\\Program Files\\Netease\\MuMuPlayer"] [--vm 0] [--json]
+지원 앱플레이어: 뮤뮤 12(꺼져 있으면 자동 실행)·뮤뮤 구버전·LD플레이어 4/9·블루스택 4/5(설정에서 ADB 켜기)·녹스·MEmu, 그 외 adb가 붙는 기기.
+사용: python tools/extract-all.py --out <assets 폴더> [--steps minimi,sfx,standing,ingame,voice] [--adb <adb.exe> --serial 127.0.0.1:5555] [--mumu <뮤뮤 폴더>] [--json]
+      python tools/extract-all.py --list-devices --json   # 붙을 수 있는 기기 목록
   --json  진행 상황을 한 줄 JSON으로 출력(앱 UI가 읽음): {"step":..,"msg":..,"done":n,"total":n,"level":"info|warn|error|ok"}
 필요 패키지: UnityPy(texture2ddecoder 포함), Pillow, imageio-ffmpeg(보이스 opus 변환)
 """
@@ -24,6 +26,73 @@ def log(step, msg, level="info", done=None, total=None):
         print(json.dumps(o, ensure_ascii=False), flush=True)
     else:
         print(f"[{step}] {msg}" + (f" ({done}/{total})" if done is not None else ""), flush=True)
+
+# ---------- 앱플레이어 감지 (뮤뮤·LD플레이어·블루스택·녹스·기타 adb) ----------
+# 각 앱플레이어는 자기 adb.exe를 갖고 있고 adb 포트가 다르다. 실행 중인 것들에 전부 붙어 보고, 트릭컬 데이터가 있는 기기를 고른다.
+EMULATORS = [
+    # (이름, adb 후보 경로들(글롭), 기본 포트들, 안내)
+    ("MuMu Player 12", [r"C:\Program Files\Netease\MuMuPlayer\nx_main\adb.exe", r"C:\Program Files\Netease\MuMu Player 12\shell\adb.exe", r"D:\Program Files\Netease\MuMuPlayer\nx_main\adb.exe", r"*:\Netease\MuMuPlayer\nx_main\adb.exe"], [16384, 16416, 16448, 16480], "뮤뮤는 꺼져 있으면 자동으로 켭니다"),
+    ("MuMu Player (구버전)", [r"C:\Program Files\Netease\MuMu\emulator\nemu\vmonitor\bin\adb_server.exe", r"*:\Netease\MuMu\emulator\nemu\vmonitor\bin\adb_server.exe"], [7555], "뮤뮤를 켠 상태여야 합니다"),
+    ("LDPlayer 9", [r"C:\LDPlayer\LDPlayer9\adb.exe", r"D:\LDPlayer\LDPlayer9\adb.exe", r"*:\LDPlayer\LDPlayer9\adb.exe", r"*:\LDPlayer9\adb.exe", r"C:\Program Files\LDPlayer\LDPlayer9\adb.exe"], [5555, 5557, 5559, 5561], "LD플레이어를 켠 상태여야 합니다 (설정 → 기타 → ADB 디버깅 '로컬 연결 열기')"),
+    ("LDPlayer 4", [r"C:\LDPlayer\LDPlayer4.0\adb.exe", r"*:\LDPlayer\LDPlayer4.0\adb.exe", r"C:\Changzhi\dnplayer2\adb.exe"], [5555, 5557, 5559], "LD플레이어를 켠 상태여야 합니다"),
+    ("BlueStacks 5", [r"C:\Program Files\BlueStacks_nxt\HD-Adb.exe", r"*:\BlueStacks_nxt\HD-Adb.exe"], [5555, 5565, 5575, 5585], "블루스택 설정 → 고급 → 'Android 디버그 브리지(ADB)'를 켜야 합니다 (포트는 그 화면에 표시)"),
+    ("BlueStacks 4", [r"C:\Program Files\BlueStacks\HD-Adb.exe", r"*:\BlueStacks\HD-Adb.exe"], [5555, 5565], "블루스택 설정에서 ADB를 켜야 합니다"),
+    ("NoxPlayer", [r"C:\Program Files (x86)\Nox\bin\nox_adb.exe", r"C:\Program Files\Nox\bin\nox_adb.exe", r"*:\Nox\bin\nox_adb.exe"], [62001, 62025, 62026, 62027], "녹스를 켠 상태여야 합니다"),
+    ("MEmu", [r"C:\Program Files\Microvirt\MEmu\adb.exe", r"*:\Microvirt\MEmu\adb.exe"], [21503, 21513, 21523], "MEmu를 켠 상태여야 합니다"),
+    ("Google Play Games (PC)", [], [6520], "개발자 에뮬레이터에서만 adb가 열려 있습니다"),
+]
+def _glob_paths(pats):
+    out = []
+    for pat in pats:
+        if pat.startswith("*:"):
+            for d in "CDEFGH":
+                out += glob.glob(d + pat[1:])
+        else: out += glob.glob(pat)
+    return out
+
+def find_adbs(extra=None):
+    """설치된 앱플레이어들의 adb.exe → [(이름, adb경로, 포트들, 안내)]"""
+    found = []
+    for name, pats, ports, tip in EMULATORS:
+        for p in _glob_paths(pats):
+            if os.path.exists(p): found.append((name, p, ports, tip)); break
+    if extra and os.path.exists(extra): found.insert(0, ("직접 지정", extra, [], ""))
+    # BlueStacks 5: 설정 파일에서 실제 adb 포트
+    conf = os.path.join(os.environ.get("ProgramData", r"C:\ProgramData"), "BlueStacks_nxt", "bluestacks.conf")
+    if os.path.exists(conf):
+        try:
+            ports = [int(m.group(1)) for m in re.finditer(r'adb_port="(\d+)"', open(conf, encoding="utf-8", errors="ignore").read())]
+            for i, (name, p, ps, tip) in enumerate(found):
+                if name.startswith("BlueStacks 5"): found[i] = (name, p, sorted(set(ports + ps)), tip)
+        except Exception: pass
+    # PATH의 adb (platform-tools) — 실제 스마트폰(USB 디버깅)도 이걸로
+    w = shutil.which("adb")
+    if w and all(os.path.normcase(w) != os.path.normcase(f[1]) for f in found): found.append(("adb (PATH)", w, [], "USB 디버깅을 켠 실제 기기 · 기타 앱플레이어"))
+    return found
+
+def probe_device(adb_exe, serial):
+    """기기에 트릭컬 데이터가 있는지, 안드로이드 버전"""
+    p = adb(adb_exe, serial, "shell", f"ls {BASE}/spine >/dev/null 2>&1 && echo HAS || echo NO; getprop ro.build.version.release", timeout=20)
+    out = p.stdout.decode("utf-8", "ignore").split()
+    return {"hasGame": "HAS" in out, "android": out[-1] if out and out[-1] not in ("HAS", "NO") else "?"}
+
+def scan_devices(mumu_hint=None, adb_hint=None):
+    """붙을 수 있는 기기 전부: [{emulator, adb, serial, hasGame, android, tip}]"""
+    seen = set(); result = []
+    for name, adb_exe, ports, tip in find_adbs(adb_hint or mumu_hint and os.path.join(mumu_hint, "adb.exe")):
+        for port in ports:
+            subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=8)
+        p = subprocess.run([adb_exe, "devices"], env=ENV, capture_output=True, timeout=20)
+        for line in p.stdout.decode("utf-8", "ignore").splitlines()[1:]:
+            parts = line.split()
+            if len(parts) < 2 or parts[1] != "device": continue
+            serial = parts[0]
+            if (name, serial) in seen: continue
+            seen.add((name, serial))
+            info = probe_device(adb_exe, serial)
+            result.append({"emulator": name, "adb": adb_exe, "serial": serial, "tip": tip, **info})
+    result.sort(key=lambda d: (not d["hasGame"], d["emulator"]))
+    return result
 
 # ---------- 뮤뮤 / adb ----------
 def find_mumu(hint=None):
@@ -238,24 +307,41 @@ def main():
     try: sys.stdout.reconfigure(encoding="utf-8"); sys.stderr.reconfigure(encoding="utf-8")
     except Exception: pass
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", required=True); ap.add_argument("--steps", default="minimi,sfx,standing,ingame,voice")
+    ap.add_argument("--out", default=None); ap.add_argument("--steps", default="minimi,sfx,standing,ingame,voice")
     ap.add_argument("--mumu", default=None); ap.add_argument("--vm", default="0"); ap.add_argument("--json", action="store_true"); ap.add_argument("--keep-tmp", action="store_true")
+    ap.add_argument("--adb", default=None, help="adb.exe 경로 (앱플레이어 것 또는 platform-tools)"); ap.add_argument("--serial", default=None, help="기기 serial (예 127.0.0.1:5555, emulator-5554)")
+    ap.add_argument("--list-devices", action="store_true", help="붙을 수 있는 기기 목록만 JSON으로 출력")
     a = ap.parse_args(); JSON = a.json
+    if a.list_devices:
+        print(json.dumps(scan_devices(a.mumu, a.adb), ensure_ascii=False)); return
+    if not a.out: ap.error("--out 이 필요해요")
     steps = [s.strip() for s in a.steps.split(",") if s.strip()]
     out = os.path.abspath(a.out); os.makedirs(out, exist_ok=True)
     try:
         import UnityPy  # noqa
     except ImportError:
         log("setup", "UnityPy가 없어요. pip install UnityPy Pillow imageio-ffmpeg", "error"); sys.exit(2)
-    mmdir = find_mumu(a.mumu)
-    if not mmdir: log("adb", "뮤뮤 앱플레이어를 찾지 못했어요. 설치 폴더(MuMuManager.exe·adb.exe가 있는 nx_main)를 지정해 주세요.", "error"); sys.exit(3)
-    log("adb", f"뮤뮤: {mmdir}")
     try:
-        dev = ensure_vm(mmdir, a.vm)
-        adb_exe = os.path.join(mmdir, "adb.exe")
-        adb_connect(adb_exe, dev)
+        adb_exe, dev = None, None
+        if a.serial and re.fullmatch(r"\d{2,5}", a.serial): a.serial = "127.0.0.1:" + a.serial  # 포트만 준 경우
+        if a.serial and not a.adb:  # 포트만 직접 지정 → 설치된 앱플레이어 adb 아무거나
+            found = find_adbs(); a.adb = found[0][1] if found else None
+            if not a.adb: log("adb", "adb.exe를 찾지 못했어요. adb 경로도 함께 지정해 주세요.", "error"); sys.exit(3)
+        if a.adb and a.serial:  # UI에서 고른 기기
+            adb_exe, dev = a.adb, a.serial
+            if ":" in dev: adb_connect(adb_exe, dev)
+            log("adb", f"기기: {dev} ({os.path.basename(os.path.dirname(adb_exe))})")
+        else:
+            devs = [d for d in scan_devices(a.mumu, a.adb) if d["hasGame"]]
+            if devs:
+                adb_exe, dev = devs[0]["adb"], devs[0]["serial"]; log("adb", f"{devs[0]['emulator']} {dev} 에서 트릭컬 데이터 발견")
+            else:
+                mmdir = find_mumu(a.mumu)  # 켜진 게 없으면 뮤뮤는 자동으로 켜 본다
+                if not mmdir: log("adb", "트릭컬이 설치된 앱플레이어를 찾지 못했어요. 앱플레이어(뮤뮤·LD플레이어·블루스택·녹스)를 켠 뒤 다시 시도하거나, adb 경로와 포트를 직접 지정해 주세요. 블루스택은 설정에서 ADB를 켜야 합니다.", "error"); sys.exit(3)
+                log("adb", f"뮤뮤: {mmdir}")
+                dev = ensure_vm(mmdir, a.vm); adb_exe = os.path.join(mmdir, "adb.exe"); adb_connect(adb_exe, dev)
         if not adb_ls(adb_exe, dev, f"{BASE}/spine"):
-            log("adb", f"뮤뮤 안에 트릭컬 리바이브 데이터가 없어요 ({BASE}). 게임을 한 번 실행해 리소스를 내려받은 뒤 다시 시도해 주세요.", "error"); sys.exit(4)
+            log("adb", f"이 기기({dev})에 트릭컬 리바이브 데이터가 없어요 ({BASE}). 그 앱플레이어에서 게임을 한 번 실행해 리소스를 내려받은 뒤 다시 시도해 주세요. (안드로이드 11 이상 실기기는 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다)", "error"); sys.exit(4)
         log("adb", f"연결됨 {dev}", "ok")
     except Exception as e:
         log("adb", str(e), "error"); sys.exit(3)

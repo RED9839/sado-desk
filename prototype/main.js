@@ -394,6 +394,16 @@ ipcMain.handle("assets:use-folder", (_e, folder) => {
   if (!hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel 이 없어요. 추출된 에셋 폴더(assets)를 골라 주세요." };
   updateSettings({ assets: { root: toSlash(folder) } }); rescanAssets(); startMascot(); if (tray) buildTray(); return { ok: true, root: ASSET_ROOT };
 });
+ipcMain.handle("assets:scan", () => new Promise((resolve) => {
+  const py = pythonExe(); const args = [...py.args, path.join(toolsDir(), "extract-all.py"), "--list-devices", "--json"];
+  let out = "", err = "";
+  try {
+    const p = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } });
+    p.stdout.on("data", (d) => out += d.toString("utf8")); p.stderr.on("data", (d) => err += d.toString("utf8"));
+    p.on("error", (e) => resolve({ ok: false, error: "python 실행 실패: " + e.message, devices: [] }));
+    p.on("exit", () => { try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
+  } catch (e) { resolve({ ok: false, error: e.message, devices: [] }); }
+}));
 ipcMain.handle("assets:extract", (_e, opt) => startExtract(opt));
 function startExtract(opt) {
   if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
@@ -401,6 +411,8 @@ function startExtract(opt) {
   const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
   const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
   if (opt.mumu) args.push("--mumu", opt.mumu);
+  if (opt.adb) args.push("--adb", opt.adb);
+  if (opt.serial) args.push("--serial", opt.serial);
   console.log("extract:", py.exe, args.join(" "));
   try { extractProc = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } }); }
   catch (e) { return { ok: false, error: "python 실행 실패: " + e.message }; }
