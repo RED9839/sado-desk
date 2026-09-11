@@ -75,7 +75,8 @@
       "shortcutName": "사도 데스크",
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
-      "artifactName": "SadoDesk-Setup-${version}.${ext}"
+      "artifactName": "SadoDesk-Setup-${version}.${ext}",
+      "allowElevation": false
     },
     "compression": "normal",
     "npmRebuild": false
