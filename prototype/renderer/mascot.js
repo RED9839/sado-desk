@@ -118,10 +118,16 @@
     const mm = skinName.replace(/^Mini_/, "").match(/^(.*?)(Skin\d+)?$/);
     const hero = mm[1].toLowerCase(), skin = mm[2] ? mm[2].toLowerCase() : "base";
     const h = voiceIndex[hero] || {};
-    const cats = { ...(h.base || {}), ...(h[skin] || {}) };
+    // 스킨 묶음은 스킨 전용 파일(X_skinN)만 들고 있다 → 같은 이름의 base 파일(X)만 대체하고 나머지 base(예: dutchrubend1 맞는 소리)는 유지
+    const cats = {}; for (const [c, l] of Object.entries(h.base || {})) cats[c] = [...l];
+    for (const [c, l] of Object.entries(h[skin] || {})) {
+      if (skin === "base") continue;
+      const stems = new Set(l.map(f => f.replace(/_skin\d+(?=\.ogg$)/, "")));
+      cats[c] = [...(cats[c] || []).filter(f => !stems.has(f)), ...l];
+    }
     // touch 파일은 두 묶음: touch1[_n] = 볼 당기기 대사(친밀도 3단계), touch2[_n] = 쓰다듬기 대사. 스킨 전용(_skinN)은 index가 이미 스킨 키로 분리해 둠
     if (cats.touch) { cats.cheek = cats.touch.filter(f => /touch1(_\d+)?(_skin\d+)?\.ogg$/.test(f)); cats.pat = cats.touch.filter(f => /touch2(_\d+)?(_skin\d+)?\.ogg$/.test(f)); }
-    return { hero: voiceIndex[hero] ? hero : null, skin, cats };
+    return { hero: voiceIndex[hero] ? hero : null, skin, cats, base: h.base || {} };
   }
   const countVoices = (vs) => Object.values(vs.cats).reduce((n, l) => n + l.length, 0);
   function loadImage(src) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src; }); }
@@ -289,7 +295,7 @@
     function applyOpacity() { for (const s of [mini, sd, sdI]) if (s.skeleton) s.skeleton.color.a = S.opacity; }
 
     // ---- 사운드 ----
-    let voiceSet = { hero: null, skin: "base", cats: {} };
+    let voiceSet = { hero: null, skin: "base", cats: {}, base: {} };
     let currentVoice = null, lastPlayed = null;
     function selectVoiceSet(skinName) { voiceSet = voiceSetFor(skinName); }
     const voiceCount = () => countVoices(voiceSet);
@@ -478,10 +484,27 @@
     const firstOf = (...names) => names.find(has) || null;
     function play(name, loop) { if (!has(name)) name = firstOf(active.A.hold, "Idle_1", "Idle1_1"); if (!name) return null; m.anim = name; return state().setAnimation(0, name, loop); }
     function playOnce(name, nextState) { m.state = nextState; m.rot = 0; play(name, false); }
+    // 꿀밤은 게임처럼 2단: Smash_End_1(맞는 순간, dutchrubend1 = "아얏" 소리) → 끝나면 Smash_End_2(머리 감싸는 포즈, dutchrubend2 = 대사 "머리 때리지 마!")
+    //   스킨 보이스 묶음엔 dutchrubend2_skinN만 있고 맞는 소리는 base에만 있어서 1단은 base에서 찾는다
+    function voiceFile(re, ...lists) { for (const l of lists) { const c = (l || []).filter(f => re.test(f)); if (c.length) return pick(c); } return null; }
+    function playVoiceFile(f) { if (f) playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; }
+    function smashHit() {
+      const a1 = has("Smash_End_1") ? "Smash_End_1" : active.A.smash[0], a2 = has("Smash_End_2") ? "Smash_End_2" : null;
+      playOnce(a1, a2 ? "smash1" : "react");
+      if (S.sound.clickVoice) {
+        const hit = voiceFile(/dutchrubend1/, voiceSet.cats.dutchrubend, voiceSet.base.dutchrubend);
+        if (hit) playVoiceFile(hit); else if (!a2) smashLine();
+      }
+    }
+    function smashLine() {
+      const line = voiceFile(/dutchrubend2/, voiceSet.cats.dutchrubend, voiceSet.base.dutchrubend);
+      if (line) playVoiceFile(line); else playVoice("dutchrubend", "anger", "surprise");
+    }
     function onComplete(slot, entry) {
       if (slot !== active) return;
       if (entry !== slot.state.getCurrent(0)) return; // 교체된 옛 엔트리의 지연 complete 무시
       if (entry.loop) return;
+      if (m.state === "smash1") { playOnce("Smash_End_2", "react"); if (S.sound.clickVoice) smashLine(); return; }
       if (m.state === "spawn" && S.sound.landSfx) playSfx("jump02");
       if (m.state === "spawn" || m.state === "react" || m.state === "jump" || m.state === "land") restThenDecide();
     }
@@ -684,8 +707,8 @@
         playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoice("pat", "pleasure", "joy");
       } else if (m.state === "tickle") {       // 간지럽히기 끝 → 웃음
         playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoice("tickleduring", "ticklestart", "joy");
-      } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤 (Smash_End + dutchrubend2 "머리 때리지 마!")
-        playOnce(pick(active.A.smash), "react"); if (S.sound.clickVoice) { const d = voiceSet.cats.dutchrubend || []; const line = d.filter(f => /dutchrubend2/.test(f)); if (line.length) { const f = pick(line); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); } else playVoice("dutchrubend", "anger", "surprise"); }
+      } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
+        smashHit();
       } else if (m.state === "touch" && active.A.touchEnd) { // 볼 당기기(게임의 기본 터치) 끝 → touch1_x ("당기지 마!")
         playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoice("cheek", "touch");
       } else {                                 // 미니미: 반응 모션 + 그에 맞는 대사
@@ -785,8 +808,9 @@
         const g = headGeom(); const topY = H - g.top, neckY = H - g.neckY, hx = g.headX, eyeSY = H - g.eyeY;
         say(`zones(erpin): head=${hb?.data.name} eyes=${eyeBones(sd).length} u=${g.u.toFixed(0)}px zone(top+20)=${zoneAt(hx, topY + 20)} zone(eye)=${zoneAt(hx, eyeSY)} zone(neck+10)=${zoneAt(hx, neckY - 10)} zone(body)=${zoneAt(cx, H - m.y - 30)} zone(beside head)=${zoneAt(hx + 4 * g.u, eyeSY)} (expect head / cheek / cheek / body / body)`);
         const py = topY + 25; fire("mousedown", hx, py); say(`press head → state=${m.state} anim=${m.anim} (expect touch Touch_Idle)`);
-        fire("mouseup", hx, py); await sleep(30); say(`tap head(꿀밤) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Smash_End_* + erpin/dutchrubend2*)`);
-        await sleep(2000); await settle(); fire("mousedown", hx, py);
+        fire("mouseup", hx, py); await sleep(30); say(`tap head(꿀밤 1단) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect smash1 Smash_End_1 + erpin/dutchrubend1)`);
+        await sleep(1400); say(`꿀밤 2단 → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Smash_End_2 + erpin/dutchrubend2*)`);
+        await sleep(3500); await settle(); fire("mousedown", hx, py);
         for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 6, py); } say(`pat drag → state=${m.state} anim=${m.anim} (expect pat Pat_Idle)`);
         fire("mouseup", hx + 48, py); await sleep(30); say(`pat release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Pat_End + erpin/touch2*)`);
         await sleep(3500); await settle(); sd.skeleton.getBounds(o, z, []); const cy2 = H - (hb ? hb.worldY : o.y + z.y * 0.55) - 12;
