@@ -9,7 +9,7 @@
   --json  진행 상황을 한 줄 JSON으로 출력(앱 UI가 읽음): {"step":..,"msg":..,"done":n,"total":n,"level":"info|warn|error|ok"}
 필요 패키지: UnityPy(texture2ddecoder 포함), Pillow, imageio-ffmpeg(보이스 opus 변환)
 """
-import argparse, json, os, re, shutil, subprocess, sys, tempfile, time, glob
+import argparse, json, os, re, shutil, subprocess, sys, tempfile, time, glob, io as _io, zipfile, urllib.request
 from concurrent.futures import ProcessPoolExecutor
 
 PKG = "com.epidgames.trickcalrevive"
@@ -47,6 +47,27 @@ def _glob_paths(pats):
                 out += glob.glob(d + pat[1:])
         else: out += glob.glob(pat)
     return out
+
+MODERN_ADB = (1, 0, 41)
+PTOOLS_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+def ensure_modern_adb(adb_exe, cache_dir):
+    """adb_exe가 구버전(<1.0.41)이면 platform-tools adb를 cache_dir에 내려받아(사용자 PC가 직접 구글에서 받음, 약 6MB) 그 경로를 돌려준다. 실패하면 원래 adb"""
+    if not adb_exe or adb_exe.lower().endswith("ldconsole.exe") or adb_version(adb_exe) >= MODERN_ADB: return adb_exe
+    if not cache_dir: return adb_exe
+    cached = os.path.join(cache_dir, "platform-tools", "adb.exe")
+    if os.path.exists(cached) and adb_version(cached) >= MODERN_ADB: return cached
+    try:
+        log("adb", f"앱플레이어의 adb가 구버전({'.'.join(map(str, adb_version(adb_exe)))})이라 큰 폴더 복사가 불안정해요 → 구글 platform-tools adb를 내려받습니다 (약 6MB, 1회)")
+        os.makedirs(cache_dir, exist_ok=True)
+        data = urllib.request.urlopen(PTOOLS_URL, timeout=60).read()
+        with zipfile.ZipFile(_io.BytesIO(data)) as z:
+            for n in z.namelist():
+                if n.startswith("platform-tools/") and (n.endswith("adb.exe") or n.endswith(".dll")): z.extract(n, cache_dir)
+        if os.path.exists(cached):
+            log("adb", f"platform-tools adb {'.'.join(map(str, adb_version(cached)))} 준비됨", "ok"); return cached
+    except Exception as e:
+        log("adb", f"platform-tools 내려받기 실패({e}) — 앱플레이어 adb로 계속합니다", "warn")
+    return adb_exe
 
 _ADB_VER = {}
 def adb_version(exe):
@@ -455,6 +476,7 @@ def main():
     ap.add_argument("--adb", default=None, help="adb.exe 경로 (앱플레이어 것 또는 platform-tools)"); ap.add_argument("--serial", default=None, help="기기 serial (예 127.0.0.1:5555, emulator-5554)")
     ap.add_argument("--list-devices", action="store_true", help="붙을 수 있는 기기 목록만 JSON으로 출력")
     ap.add_argument("--force", action="store_true", help="이미 있는 스탠딩·보이스도 다시 받아 덮어쓰기")
+    ap.add_argument("--cache", default=os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "sado-desk"), help="platform-tools 등 보조 도구 저장 폴더")
     a = ap.parse_args(); JSON = a.json
     global FORCE; FORCE = a.force
     if a.list_devices:
@@ -486,6 +508,31 @@ def main():
                 if not mmdir: log("adb", "트릭컬이 설치된 앱플레이어를 찾지 못했어요. 앱플레이어(뮤뮤·LD플레이어·블루스택·녹스)를 켠 뒤 다시 시도하거나, adb 경로와 포트를 직접 지정해 주세요. 블루스택은 설정에서 ADB를 켜야 합니다.", "error"); sys.exit(3)
                 log("adb", f"뮤뮤: {mmdir}")
                 dev = ensure_vm(mmdir, a.vm); adb_exe = os.path.join(mmdir, "adb.exe"); adb_connect(adb_exe, dev)
+        # 구버전 adb면 최신 platform-tools로 교체 (TCP serial은 새 adb로 다시 connect. emulator-XXXX 등록은 서버가 바뀌면 사라질 수 있어 conf 포트로 재탐색)
+        better = ensure_modern_adb(adb_exe, a.cache)
+        if better != adb_exe:
+            new_dev = dev
+            if not dev.startswith("ld:"):
+                if ":" not in dev:  # emulator-5554 → 그 앱플레이어의 TCP 포트로 (블루스택 conf 포트 / emulator-N → 127.0.0.1:N+1)
+                    cands = []
+                    conf = os.path.join(os.environ.get("ProgramData", r"C:\\ProgramData"), "BlueStacks_nxt", "bluestacks.conf")
+                    if os.path.exists(conf):
+                        try: cands += [f"127.0.0.1:{m.group(1)}" for m in re.finditer(r'adb_port="(\d+)"', open(conf, encoding="utf-8", errors="ignore").read())]
+                        except Exception: pass
+                    if dev.startswith("emulator-"): cands.append(f"127.0.0.1:{int(dev.split('-')[1]) + 1}")
+                    for c in dict.fromkeys(cands):
+                        try:
+                            adb_connect(better, c)
+                            if adb_ls(better, c, f"{BASE}/spine"): new_dev = c; break
+                        except Exception: continue
+                    else:
+                        # 등록형 serial이 그대로 보이면 그것도 시도
+                        try: adb_connect(better, dev); new_dev = dev
+                        except Exception: better = adb_exe
+                else:
+                    try: adb_connect(better, dev)
+                    except Exception: better = adb_exe
+            if better != adb_exe: adb_exe, dev = better, new_dev; log("adb", f"최신 adb로 전환: {dev}")
         if not adb_ls(adb_exe, dev, f"{BASE}/spine"):
             probe = adb(adb_exe, dev, "shell", "echo ok", timeout=15)
             if b"closed" in probe.stderr + probe.stdout or b"ok" not in probe.stdout:
