@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 — 에셋 가져오기</title>
+<style>
+  :root{--bg:#1f1f24;--panel:#2b2b31;--panel2:#24242a;--line:#44444f;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a;--ok:#7bd88f;--warn:#f0c060}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.55 "Malgun Gothic","Segoe UI",sans-serif;user-select:none}
+  body{display:flex;flex-direction:column;padding:18px 22px;gap:12px}
+  h1{margin:0;font-size:17px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .card h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+  .hint{color:var(--muted);font-size:12px}
+  .row{display:flex;align-items:center;gap:10px;padding:4px 0;min-height:30px}
+  .row label{flex:1}
+  .toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  input[type=text]{flex:1;background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;user-select:text}
+  button.btn{all:unset;padding:7px 14px;border-radius:6px;background:#3a3a44;cursor:pointer;color:var(--text);white-space:nowrap}
+  button.btn:hover{filter:brightness(1.15)}
+  button.btn.primary{background:var(--accent);color:#fff;font-weight:700}
+  button.btn.danger{background:#5a2e2e;color:var(--danger)}
+  button.btn[disabled]{opacity:.4;pointer-events:none}
+  #steps{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+  #progress{flex:1;min-height:120px;display:flex;flex-direction:column}
+  .bar{height:6px;background:#1a1a1f;border-radius:3px;overflow:hidden;margin:6px 0}
+  .bar i{display:block;height:100%;background:var(--accent);width:0%;transition:width .2s}
+  #log{flex:1;overflow:auto;background:#15151a;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:12px/1.5 Consolas,monospace;white-space:pre-wrap;user-select:text;min-height:90px;max-height:220px}
+  #log .ok{color:var(--ok)} #log .warn{color:var(--warn)} #log .error{color:var(--danger)} #log .info{color:#c9c9d4}
+  .status{font-size:12px;color:var(--muted)}
+  .status b{color:var(--text)}
+  code{background:#1a1a1f;padding:1px 5px;border-radius:4px;font-size:11px;user-select:text}
+</style></head>
+<body>
+<h1>에셋 가져오기</h1>
+<div class="hint">사도 데스크에는 캐릭터 그림·보이스가 들어 있지 않습니다. 이 PC의 <b>뮤뮤 앱플레이어</b>에 설치된 <b>트릭컬 리바이브</b>에서 직접 꺼내 옵니다.
+게임 서버나 실행 중인 게임에는 손대지 않고, 에뮬레이터 안의 파일을 복사해 앱이 읽는 형태로 바꿉니다. 추출물은 <b>본인 PC에서만</b> 쓰고 다른 사람에게 배포하지 마세요.</div>
+
+<div class="card"><h3>현재 상태</h3>
+  <div class="status" id="status">확인 중…</div>
+</div>
+
+<div class="card"><h3>1. 뮤뮤 앱플레이어에서 추출</h3>
+  <div class="row"><label class="hint" style="flex:none;width:90px">뮤뮤 폴더</label><input type="text" id="mumu" placeholder="비워두면 자동으로 찾음 (C:\Program Files\Netease\MuMuPlayer\nx_main)"><button class="btn" id="pick-mumu">찾기…</button></div>
+  <div id="steps">
+    <label class="toggle"><input type="checkbox" data-step="minimi" checked disabled>미니미 (필수 · 2MB)</label>
+    <label class="toggle"><input type="checkbox" data-step="sfx" checked disabled>효과음 (필수)</label>
+    <label class="toggle"><input type="checkbox" data-step="standing" checked>스탠딩 SD — 사도 상세 화면 캐릭터 <span class="hint">(기기에 내려받힌 사도만 · 수백 MB · 2~5분)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="voice" checked>보이스 — 로비 대사만 <span class="hint">(약 7,000개 · 5~10분)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="ingame">인게임 SD — 스탠딩이 없는 사도의 대체용 <span class="hint">(400MB · 선택)</span></label>
+  </div>
+  <div class="hint" style="margin-top:6px">게임에서 사도 상세 화면을 한 번 열어본 사도만 스탠딩이 기기에 내려받혀 있습니다. 나중에 더 받았으면 "에셋 다시 가져오기"를 하세요 (이미 있는 것은 건너뜁니다).</div>
+  <div class="row" style="margin-top:6px"><button class="btn primary" id="start">추출 시작</button><button class="btn danger" id="cancel" disabled>중단</button><span class="hint" id="pyinfo"></span></div>
+</div>
+
+<div class="card" id="progress"><h3>진행</h3>
+  <div class="bar"><i id="bar"></i></div>
+  <div id="log"></div>
+</div>
+
+<div class="card"><h3>2. 또는 이미 추출해 둔 폴더 사용</h3>
+  <div class="row"><span class="hint" style="flex:1">다른 PC에서 추출했거나 개발용 <code>prototype/assets</code>가 있으면 그 폴더를 지정합니다 (<code>minimi/</code>가 들어 있는 폴더).</span><button class="btn" id="use-folder">폴더 선택…</button><button class="btn" id="open-root">에셋 폴더 열기</button></div>
+</div>
+<script src="setup.js"></script>
+</body></html>

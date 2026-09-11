@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>menu</title>
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden;user-select:none}
+  #menu{width:250px;max-height:calc(100vh - 4px);overflow:hidden;background:#2b2b31;color:#eee;border:1px solid #55555f;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
+  #menu .title{padding:8px 12px;font-weight:700;background:#3a3a44;border-radius:8px 8px 0 0}
+  #menu .item{padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  #menu .item:hover{background:#44444f}
+  #menu .item.danger{color:#ff8a8a}
+  #menu .sep{height:1px;background:#4a4a55;margin:4px 0}
+  #menu .sub{display:none;max-height:38vh;overflow:auto;background:#24242a;border-top:1px solid #4a4a55;border-bottom:1px solid #4a4a55}
+  #menu .sub.open{display:block}
+  #menu .sub .item{padding:5px 12px 5px 24px;font-size:12px}
+  #menu .sub .group{padding:4px 12px;font-size:11px;color:#9a9aa8;background:#1e1e23;position:sticky;top:0}
+  #menu input[type=text]{width:calc(100% - 24px);margin:6px 12px;padding:4px 8px;border-radius:4px;border:1px solid #55555f;background:#1a1a1f;color:#eee;font:12px "Malgun Gothic",sans-serif}
+  #menu .chips{display:flex;gap:4px;padding:4px 12px 8px}
+  #menu .chip{flex:1;text-align:center;padding:3px 0;border-radius:4px;background:#3a3a44;cursor:pointer;font-size:11px}
+  #menu .chip.on{background:#6c8cff;color:#fff}
+  #menu .chip:hover{filter:brightness(1.15)}
+  #menu .row{display:flex;align-items:center;gap:8px;padding:3px 12px;font-size:12px}
+  #menu .row label{width:44px;color:#c9c9d4}
+  #menu .row input[type=range]{flex:1;margin:0;accent-color:#6c8cff}
+  #menu .row .val{width:34px;text-align:right;color:#9a9aa8;font-variant-numeric:tabular-nums}
+  #menu .row.off{opacity:.45}
+</style></head>
+<body>
+<div id="menu">
+  <div class="title" id="menu-title">사도 데스크</div>
+  <div class="item" data-toggle="anims">행동 시키기 <span>▸</span></div>
+  <div class="sub" id="sub-anims"></div>
+  <div class="item" data-act="mode">형태 <span id="mode-state"></span></div>
+  <div class="item" data-toggle="skins">캐릭터 바꾸기 <span id="skin-cur"></span></div>
+  <div class="sub" id="sub-skins"><input type="text" id="skin-filter" placeholder="이름 검색 (한글/영문)"><div id="skin-list"></div></div>
+  <div class="item">크기</div>
+  <div class="chips" id="scale-chips"></div>
+  <div class="sep"></div>
+  <div class="item" data-act="mute">사운드 <span id="mute-state"></span></div>
+  <div class="row" data-vol="master"><label>전체</label><input type="range" min="0" max="100"><span class="val"></span></div>
+  <div class="row" data-vol="voice"><label>목소리</label><input type="range" min="0" max="100"><span class="val"></span></div>
+  <div class="row" data-vol="sfx"><label>효과음</label><input type="range" min="0" max="100"><span class="val"></span></div>
+  <div class="sep"></div>
+  <div class="item" data-toggle="news">새 소식 <span id="news-state"></span></div>
+  <div class="sub" id="sub-news"></div>
+  <div class="item" data-act="settings">설정... <span>⚙</span></div>
+  <div class="item" data-act="add">하나 더 부르기 <span>＋</span></div>
+  <div class="item" data-act="remove" id="remove-item">이 캐릭터 보내기</div>
+  <div class="item" data-act="respawn">다시 등장</div>
+  <div class="item" data-act="debug">디버그 박스 <span id="debug-state"></span></div>
+  <div class="sep"></div>
+  <div class="item danger" data-act="quit">종료</div>
+</div>
+<script src="ko.js"></script>
+<script src="menu.js"></script>
+</body></html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>gif render</title>
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style></head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script src="../node_modules/@esotericsoftware/spine-webgl/dist/iife/spine-webgl.js"></script>
+<script>
+/* Spine 애니메이션을 프레임 단위로 렌더해 PNG data URL 배열로 돌려준다. main(tools/render-gif.js)이 호출.
+ * window.renderFrames({skelPath, atlasPath, skin, anim, fps, size, pad}) → { frames:[dataURL], duration, animations:[...], skins:[...] } */
+window.renderFrames = async function (opt) {
+  const canvas = document.getElementById("c");
+  canvas.width = opt.size; canvas.height = opt.size;
+  const ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true });
+  const gl = ctx.gl;
+  const renderer = new spine.SceneRenderer(canvas, ctx, true);
+
+  const readText = (p) => window.host.readText(p);
+  const atlasText = readText(opt.atlasPath);
+  const atlas = new spine.TextureAtlas(atlasText);
+  const dir = opt.atlasPath.replace(/[\\/][^\\/]*$/, "");
+  for (const page of atlas.pages) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = "file:///" + dir.replace(/\\/g, "/") + "/" + page.name; });
+    page.setTexture(new spine.GLTexture(ctx, img));
+  }
+  const pma = atlas.pages[0].pma;
+  const binary = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas));
+  binary.scale = 1;
+  const data = binary.readSkeletonData(window.host.readBytes(opt.skelPath));
+  const skeleton = new spine.Skeleton(data);
+  const skins = data.skins.map(s => s.name);
+  // 스킨: 지정 > "Normal"(게임 기본 모습) > default 외 첫 것 (Erpin: Event_1/Normal/Off_Crown, Butter: Gun/Normal)
+  const pickSkin = (opt.skin && data.findSkin(opt.skin)) || data.findSkin("Normal") || data.skins.find(s => s.name !== "default");
+  if (pickSkin) skeleton.setSkin(pickSkin);
+  skeleton.setSlotsToSetupPose();
+  const animations = data.animations.map(a => ({ name: a.name, duration: +a.duration.toFixed(3) }));
+  const anim = data.findAnimation(opt.anim) || data.animations[0];
+  const state = new spine.AnimationState(new spine.AnimationStateData(data));
+  state.setAnimation(0, anim.name, true);
+
+  // 전체 애니 동안의 바운딩 박스 → 카메라 맞추기
+  const off = new spine.Vector2(), size = new spine.Vector2();
+  let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  const n = Math.max(1, Math.round(anim.duration * opt.fps));
+  for (let i = 0; i < n; i++) {
+    skeleton.setToSetupPose(); anim.apply(skeleton, 0, i / opt.fps, false, [], 1, spine.MixBlend.setup, spine.MixDirection.mixIn);
+    skeleton.updateWorldTransform(); skeleton.getBounds(off, size, []);
+    minX = Math.min(minX, off.x); minY = Math.min(minY, off.y); maxX = Math.max(maxX, off.x + size.x); maxY = Math.max(maxY, off.y + size.y);
+  }
+  if (opt.fixedBounds) { // 스킨/애니 간 크기 통일용: 셋업 포즈 기준 + 여유
+    skeleton.setToSetupPose(); skeleton.updateWorldTransform(); skeleton.getBounds(off, size, []);
+    minX = off.x - size.x * 0.25; maxX = off.x + size.x * 1.25; minY = off.y - size.y * 0.1; maxY = off.y + size.y * 1.15;
+  }
+  const w = maxX - minX, h = maxY - minY, pad = opt.pad ?? 0.06;
+  const zoom = Math.max(w, h) * (1 + pad * 2) / opt.size;
+  renderer.camera.position.set((minX + maxX) / 2, (minY + maxY) / 2, 0);
+  renderer.camera.viewportWidth = opt.size * zoom; renderer.camera.viewportHeight = opt.size * zoom;
+  renderer.camera.zoom = 1; renderer.camera.update();
+
+  const frames = [];
+  state.setAnimation(0, anim.name, true);
+  for (let i = 0; i < n; i++) {
+    if (i > 0) state.update(1 / opt.fps);
+    state.apply(skeleton); skeleton.updateWorldTransform();
+    gl.viewport(0, 0, opt.size, opt.size);
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    renderer.begin(); renderer.drawSkeleton(skeleton, pma); renderer.end();
+    frames.push(canvas.toDataURL("image/png"));
+  }
+  return { frames, duration: anim.duration, anim: anim.name, animations, skins, pma, bounds: { w: +w.toFixed(0), h: +h.toFixed(0) } };
+};
+</script>
+</body></html>

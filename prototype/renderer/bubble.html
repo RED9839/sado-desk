@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>bubble</title>
+<style>
+  html,body{margin:0;background:transparent;overflow:hidden;user-select:none}
+  #bubble{position:relative;width:300px;margin:4px 4px 14px;background:#fffaf2;color:#3a2f2a;border:2px solid #f0b8c8;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.28);font:13px/1.55 "Malgun Gothic","Segoe UI",sans-serif;padding:10px 12px 10px;box-sizing:border-box}
+  #bubble:after{content:"";position:absolute;left:50%;bottom:-13px;margin-left:-9px;border:9px solid transparent;border-top-color:#f0b8c8;border-bottom:0}
+  #bubble:before{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top-color:#fffaf2;border-bottom:0;z-index:1}
+  .head{font-weight:700;color:#c85a7a;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center}
+  .head .x{cursor:pointer;color:#b8a9a2;font-weight:400;padding:0 4px}
+  .head .x:hover{color:#c85a7a}
+  .body{margin-bottom:6px}
+  .items{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+  .item{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #f3e2e8;border-radius:10px;padding:6px 8px;cursor:pointer}
+  .item:hover{background:#fff0f4;border-color:#f0b8c8}
+  .item img{width:56px;height:32px;object-fit:cover;border-radius:6px;background:#eee;flex:none}
+  .item .t{flex:1;min-width:0}
+  .item .lab{font-size:10px;color:#fff;background:#e88aa6;border-radius:4px;padding:0 5px;margin-right:4px;vertical-align:middle}
+  .item .lab.youtube{background:#e0443e}
+  .item .lab.update{background:#6c8cff}
+  .item .lab.devnote{background:#7bb26a}
+  .item .ttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}
+  .item .dt{font-size:10px;color:#a09590}
+  .tail{color:#8a7a74;font-size:12px}
+  .bar{height:3px;background:#f3e2e8;border-radius:2px;margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;background:#f0b8c8;width:100%;transform-origin:left;animation:shrink linear forwards}
+  @keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+</style></head>
+<body>
+<div id="bubble">
+  <div class="head"><span id="head"></span><span><span id="who" style="font-size:10px;color:#b8a9a2;font-weight:400;margin-right:6px"></span><span class="x" id="close" title="닫기">✕</span></span></div>
+  <div class="body" id="body"></div>
+  <div class="items" id="items"></div>
+  <div class="tail" id="tail"></div>
+  <div class="bar"><i id="bar"></i></div>
+</div>
+<script src="talk.js"></script>
+<script src="bubble.js"></script>
+</body></html>

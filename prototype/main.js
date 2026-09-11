@@ -1,0 +1,534 @@
+// 사도 데스크 — Electron 메인 프로세스
+// 캐릭터(인스턴스)마다 [마스코트 창(모니터 합집합, 항상 클릭 통과) + 히트 창(캐릭터 크기, 실제 입력 수신)] 한 쌍.
+// 설정: settings.json 하나. global(사운드·화면) + characters[](스킨·형태·크기·불투명도·행동). 렌더러엔 자기 캐릭터와 global을 합친 "뷰"를 준다.
+const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell } = require("electron");
+const path = require("node:path");
+const fs = require("node:fs");
+
+// 앱이 배포하는 데이터(한글 이름표·말투 프로필) = data/ (asar 안). 게임 에셋(스켈레톤·텍스처·보이스)은 배포하지 않고
+// 사용자가 자기 PC의 뮤뮤(트릭컬)에서 추출해 userData/assets 에 둔다 (tools/extract-all.py, 설정 창의 '에셋 가져오기').
+const DATA_ROOT = path.join(__dirname, "data").split(path.sep).join("/");
+const toSlash = (p) => p.split(path.sep).join("/");
+const hasAssets = (root) => !!root && fs.existsSync(path.join(root, "minimi", "minimi.skel")) && fs.existsSync(path.join(root, "minimi", "minimi.atlas"));
+let ASSET_ROOT = null; // resolveAssetRoot()에서 결정 (설정 로드 뒤)
+function resolveAssetRoot() {
+  const custom = settings && settings.global && settings.global.assets && settings.global.assets.root;
+  const cands = [custom, app.isPackaged ? null : path.join(__dirname, "assets"), path.join(app.getPath("userData"), "assets")].filter(Boolean); // 개발 중엔 prototype/assets 우선
+  const found = cands.find(hasAssets);
+  return toSlash(found || custom || path.join(app.getPath("userData"), "assets"));
+}
+// 앱 이름 변경(trickcal-crepe-mascot-proto → sado-desk): 예전 userData의 설정·소식 상태를 새 폴더로 한 번 옮긴다
+(() => { try {
+  const oldDir = path.join(app.getPath("appData"), "trickcal-crepe-mascot-proto"), newDir = app.getPath("userData");
+  if (fs.existsSync(oldDir)) { fs.mkdirSync(newDir, { recursive: true }); for (const f of ["settings.json", "news-state.json"]) { const src = path.join(oldDir, f), dst = path.join(newDir, f); if (fs.existsSync(src) && !fs.existsSync(dst)) { fs.copyFileSync(src, dst); console.log(`migrated ${f} ← ${oldDir}`); } } }
+} catch (e) { console.warn("userData migrate", e.message); } })();
+const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
+const argHas = (f) => process.argv.includes(f);
+const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
+let NAMES = { heroes: {}, skins: {} };
+try { NAMES = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "names-ko.json"), "utf8")); } catch {}
+function koSkin(skin) { const m = skin.replace(/^Mini_/, "").match(/^(.*?)(?:Skin(\d+))?$/); const base = NAMES.heroes[m[1]] || m[1]; return m[2] ? `${base} · ${NAMES.skins[m[1]]?.[m[2]] || "스킨 " + m[2]}` : base; }
+
+// ---- 설정 ----
+const CHAR_DEFAULTS = {
+  skin: "Mini_Crepe",
+  mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미)
+  scale: 0.5, opacity: 1,
+  behavior: {
+    hop: true, jump: true, idleActs: true,
+    hopChance: 45, jumpChance: 10, hopSpeed: 100, hopRange: 350,
+    idleMin: 4, idleMax: 10, actGap: 5.0,
+  },
+};
+const GLOBAL_DEFAULTS = {
+  sound: {
+    muted: false, master: 0.8, voice: 0.5, sfx: 0.5,
+    clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
+    motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15,
+  },
+  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false },
+  assets: { root: "" }, // 비어 있으면 userData/assets
+  // 새 소식 알림: 공식 유튜브 + 라운지 게시판(공지사항·업데이트·개발자 노트 기본). 크레페 말투 말풍선
+  news: { enabled: true, youtube: true, notice: true, update: true, devnote: true, event: false, pv: false, coupon: false, intervalMin: 10, ttlSec: 40, sound: true, toast: false, talkCrepe: false },
+};
+const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
+function deepMerge(base, patch) {
+  const out = { ...base };
+  for (const [k, v] of Object.entries(patch || {})) out[k] = isObj(v) && isObj(base[k]) ? deepMerge(base[k], v) : v;
+  return out;
+}
+function loadSettings() {
+  let raw = {}; try { raw = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")); } catch {}
+  let s;
+  if (raw.version === 2 && Array.isArray(raw.characters)) s = raw;
+  else { // v1(단일 캐릭터) → v2 이관
+    const c = { id: "c1", skin: raw.skin, mode: raw.mode, scale: raw.scale, opacity: raw.opacity, behavior: raw.behavior };
+    for (const k of Object.keys(c)) if (c[k] === undefined) delete c[k];
+    s = { version: 2, global: { sound: raw.sound, display: raw.display }, characters: [c] };
+  }
+  s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
+  s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
+  for (const c of s.characters) if (["standing", "ingame", "hybrid"].includes(c.mode)) c.mode = "sd";
+  return s;
+}
+let settings = loadSettings();
+let saveTimer = null;
+function saveSettings() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true }); fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); } catch (e) { console.error("settings save", e); } }, 150);
+}
+const charOf = (id) => settings.characters.find(c => c.id === id);
+// 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
+const viewsAll = () => settings.characters.map(c => viewFor(c.id));
+const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, count: settings.characters.length, unread: news ? news.unread : 0 }; };
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets"]);
+// patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각
+function updateSettings(patch, id, sourceId) {
+  const prevDisp = JSON.stringify(settings.global.display);
+  const g = {}, c = {};
+  for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;
+  if (Object.keys(g).length) settings.global = deepMerge(settings.global, g);
+  if (Object.keys(c).length && id) { const ch = charOf(id); if (ch) Object.assign(ch, deepMerge(ch, c)); }
+  saveSettings();
+  if (JSON.stringify(settings.global.display) !== prevDisp) { applyGeometry(); applyAutoStart(); }
+  if (g.news && news) news.start(); // 주기·게시판 변경 → 감시 재시작
+  broadcast(sourceId);
+}
+function broadcast(sourceId) {
+  if (mascotWin && !mascotWin.isDestroyed() && mascotLoaded && mascotWin.webContents.id !== sourceId) mascotWin.webContents.send("settings", viewsAll()); // 자기 패치의 에코는 안 보냄(연속 패치 때 옛 값으로 되돌아가는 문제)
+  for (const w of [settingsWin, menuWin]) if (w && !w.isDestroyed() && w.webContents.id !== sourceId) w.webContents.send("settings", w === settingsWin ? settings : viewFor(menuFor));
+  if (tray) buildTray();
+}
+
+// ---- 스탠딩/인게임 에셋 인덱스 ----
+function scanStanding(root) {
+  const hd = {}, game = {}, ingame = {};
+  if (!root) return { hd, game, ingame };
+  try { for (const hero of fs.readdirSync(path.join(root, "standing-hd"), { withFileTypes: true })) {
+    if (!hero.isDirectory()) continue;
+    const ids = fs.readdirSync(path.join(root, "standing-hd", hero.name)).filter(f => f.endsWith(".skel")).map(f => f.slice(0, -5));
+    if (ids.length) hd[hero.name.toLowerCase()] = { dir: hero.name, ids };
+  } } catch {}
+  try { for (const d of fs.readdirSync(path.join(root, "standing"), { withFileTypes: true })) {
+    if (d.isDirectory() && fs.existsSync(path.join(root, "standing", d.name, d.name + ".skel"))) game[d.name.toLowerCase()] = d.name;
+  } } catch {}
+  try { for (const d of fs.readdirSync(path.join(root, "ingame"), { withFileTypes: true })) {
+    const dir = path.join(root, "ingame", d.name);
+    if (d.isDirectory() && fs.existsSync(path.join(dir, d.name + ".skel")) && fs.existsSync(path.join(dir, d.name + ".atlas"))) ingame[d.name.toLowerCase()] = d.name;
+  } } catch {}
+  return { hd, game, ingame };
+}
+let STANDING = { hd: {}, game: {}, ingame: {} };
+function rescanAssets() {
+  ASSET_ROOT = resolveAssetRoot(); STANDING = scanStanding(ASSET_ROOT);
+  console.log(`assets: ${ASSET_ROOT} (${hasAssets(ASSET_ROOT) ? "ok" : "없음"}) — standing hd ${Object.keys(STANDING.hd).length}, game ${Object.keys(STANDING.game).length}, ingame ${Object.keys(STANDING.ingame).length}`);
+}
+rescanAssets();
+
+// ---- 윈도우 시작 시 자동 실행 (설치판에서만 의미 있음) ----
+function applyAutoStart() {
+  try { if (app.isPackaged) app.setLoginItemSettings({ openAtLogin: !!settings.global.display.autoStart, path: process.execPath, args: [] }); } catch (e) { console.warn("autoStart", e.message); }
+}
+
+// ---- 창 기하 ----
+function geometry() {
+  const all = screen.getAllDisplays(), prim = screen.getPrimaryDisplay();
+  const use = settings.global.display.multiMonitor ? all : [prim];
+  const rect = (d) => settings.global.display.overTaskbar ? d.bounds : d.workArea;
+  const x0 = Math.min(...use.map(d => rect(d).x)), y0 = Math.min(...use.map(d => rect(d).y));
+  const x1 = Math.max(...use.map(d => rect(d).x + rect(d).width)), y1 = Math.max(...use.map(d => rect(d).y + rect(d).height));
+  const displays = use.map(d => ({ id: d.id, primary: d.id === prim.id, x: rect(d).x - x0, w: rect(d).width, top: rect(d).y - y0, floor: d.workArea.y + d.workArea.height - y0, bottom: rect(d).y + rect(d).height - y0, scale: d.scaleFactor }));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, displays };
+}
+let geo = null;
+function applyGeometry() {
+  geo = geometry();
+  if (mascotWin && !mascotWin.isDestroyed()) { mascotWin.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); mascotWin.webContents.send("geo", geo); }
+  lastCursor = null;
+}
+
+let settingsWin = null, menuWin = null, menuFor = null, tray = null;
+let catalog = { animations: [], skins: [] };
+const sdAnimsOf = new Map(); // 캐릭터별 SD 애니 목록 (스킨마다 다름)
+
+// ---- 마스코트 창(하나) + 캐릭터별 히트 창 ----
+// 마스코트 창은 모니터 합집합 크기의 투명 창 하나에 캐릭터 전부를 그린다. 캐릭터마다 창을 띄우면 투명 창 합성 비용이 창 수에 비례해 두 명부터 렉 → 창 하나로.
+// 히트 창(캐릭터 크기, 실제 입력 수신)은 캐릭터마다 하나씩.
+let mascotWin = null, mascotLoaded = false;
+const instances = new Map(); // id → { rect } (렌더러가 30Hz로 보내는 캐릭터 바운딩, 창 기준 px)
+// 히트 창은 전체에 하나. 커서가 어느 캐릭터 위(근처)에 있을 때만 그 캐릭터 크기로 옮겨 보이고, 아니면 숨김.
+// (v0.6.1: 캐릭터마다 히트 창 = 렌더러 프로세스 하나씩 + 30Hz setBounds가 캐릭터 수만큼 → 추가할 때마다 무거워짐)
+let hitWin = null, hitFor = null, hitDown = false, hitShown = false, hitBounds = null;
+const HIT_NEAR = 12; // 커서가 이 px 안으로 들어오면 미리 옮겨 둠 (클릭 순간 창이 없는 일 방지)
+function createHitWindow() {
+  if (hitWin && !hitWin.isDestroyed()) return;
+  hitWin = new BrowserWindow({
+    x: 0, y: 0, width: 100, height: 100, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+    resizable: false, movable: false, hasShadow: false, focusable: false, backgroundColor: "#00000000",
+    webPreferences: { preload: path.join(__dirname, "renderer", "hit-preload.js"), contextIsolation: true, sandbox: true },
+  });
+  hitWin.setAlwaysOnTop(true, "screen-saver");
+  hitWin.loadFile(path.join(__dirname, "renderer", "hit.html"));
+  hitWin.on("closed", () => { hitWin = null; hitShown = false; });
+}
+const screenRect = (r) => ({ x: Math.round(geo.x + r.x), y: Math.round(geo.y + r.y), width: Math.max(8, Math.round(r.w)), height: Math.max(8, Math.round(r.h)) });
+const inRect = (r, x, y, pad) => r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
+function placeHit(id) {
+  if (!hitWin || hitWin.isDestroyed() || !geo) return;
+  const inst = id && instances.get(id);
+  if (!inst || !inst.rect) { if (hitShown) { hitWin.hide(); hitShown = false; } hitFor = null; hitBounds = null; return; }
+  const b = screenRect(inst.rect);
+  if (!hitBounds || hitBounds.x !== b.x || hitBounds.y !== b.y || hitBounds.width !== b.width || hitBounds.height !== b.height) { hitWin.setBounds(b); hitBounds = b; }
+  if (!hitShown) { hitWin.showInactive(); hitWin.setAlwaysOnTop(true, "screen-saver"); hitShown = true; }
+  hitFor = id;
+}
+// 커서 위치(창 기준)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
+function updateHitTarget(x, y) {
+  if (hitDown && hitFor && instances.has(hitFor)) { placeHit(hitFor); return; }
+  if (hitFor && inRect(instances.get(hitFor)?.rect, x, y, HIT_NEAR)) { placeHit(hitFor); return; } // 지금 대상 위면 유지(겹칠 때 깜빡임 방지)
+  let best = null;
+  for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
+  placeHit(best);
+}
+function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest") }; }
+function createMascotWindow() {
+  if (mascotWin && !mascotWin.isDestroyed()) return;
+  if (!geo) geo = geometry();
+  const win = new BrowserWindow({
+    x: geo.x, y: geo.y, width: geo.w, height: geo.h,
+    transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+    resizable: false, movable: false, hasShadow: false, focusable: false, backgroundColor: "#00000000",
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false, backgroundThrottling: false },
+  });
+  mascotWin = win; mascotLoaded = false;
+  win.setAlwaysOnTop(true, "screen-saver");
+  win.setIgnoreMouseEvents(true, { forward: true }); // 항상 클릭 통과 (끄면 Chrome이 '가려짐'으로 보고 영상을 회색으로 멈춤)
+  win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); // 생성 시 잘린 크기 재적용
+  win.loadFile(path.join(__dirname, "renderer", "index.html"));
+  win.webContents.on("console-message", (ev) => console.log(`[mascot:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
+  if (argHas("--devtools")) win.webContents.openDevTools({ mode: "detach" });
+  win.webContents.on("did-finish-load", () => {
+    win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h });
+    lastCursor = null; mascotLoaded = true;
+    win.webContents.send("config", mascotConfig());
+  });
+  win.on("closed", () => { mascotWin = null; mascotLoaded = false; });
+}
+function createInstance(id) { if (!instances.has(id)) instances.set(id, { rect: null }); }
+function destroyInstance(id) {
+  if (!instances.has(id)) return;
+  instances.delete(id); sdAnimsOf.delete(id);
+  if (hitFor === id) { hitDown = false; placeHit(null); }
+}
+function addCharacter(from) {
+  const src = charOf(from) || settings.characters[0];
+  let n = settings.characters.length + 1; while (charOf(`c${n}`)) n++;
+  const c = deepMerge({ ...CHAR_DEFAULTS, id: `c${n}` }, { skin: src.skin, mode: src.mode, scale: src.scale, opacity: src.opacity, behavior: src.behavior });
+  settings.characters.push(c); saveSettings(); createInstance(c.id); broadcast(); return c.id; // 마스코트 창은 settings 브로드캐스트로 새 캐릭터를 만든다
+}
+function removeCharacter(id) {
+  if (settings.characters.length <= 1) return false;
+  settings.characters = settings.characters.filter(c => c.id !== id); saveSettings(); destroyInstance(id);
+  if (menuFor === id && menuWin && !menuWin.isDestroyed()) menuWin.close();
+  broadcast(); return true;
+}
+// 메뉴 창은 --instance=id 로 만들어져 자기 캐릭터를 안다. 마스코트 창·설정 창은 id를 명시해서 보낸다
+const instanceOf = (webContents) => (menuWin && !menuWin.isDestroyed() && menuWin.webContents.id === webContents.id) ? menuFor : null;
+const sendMascot = (id, cmd, arg) => { if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("mascot", id, cmd, arg); };
+
+// ---- 설정 창 ----
+function openSettings(tab, forId) {
+  const tell = () => { if (tab) settingsWin.webContents.send("tab", tab); if (forId) settingsWin.webContents.send("select", forId); };
+  if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); tell(); return; }
+  settingsWin = new BrowserWindow({
+    width: 780, height: 600, minWidth: 660, minHeight: 460, title: "사도 데스크 설정", show: false,
+    backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
+  });
+  settingsWin.loadFile(path.join(__dirname, "renderer", "settings.html"));
+  settingsWin.webContents.on("console-message", (ev) => console.log(`[settings:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
+  settingsWin.once("ready-to-show", () => { settingsWin.show(); tell(); });
+  if (argHas("--shot-settings")) {
+    const tabs = ["character", "behavior", "sound", "display", "news", "about"]; let i = 0;
+    const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
+    setTimeout(shoot, 5000);
+  }
+  settingsWin.on("closed", () => { settingsWin = null; });
+  if (argHas("--devtools")) settingsWin.webContents.openDevTools({ mode: "detach" });
+}
+
+// ---- 새 소식 감시 + 말풍선 ----
+const { createNewsWatcher } = require("./news.js");
+const Talk = require("./renderer/talk.js");
+let talkData = null; try { talkData = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-ko.json"), "utf8")); console.log(`talk profiles: ${Object.keys(talkData.heroes).length}명`); } catch (e) { console.warn("talk-ko.json 없음 — 크레페 말투만 사용", e.message); }
+// 알림 말투: 첫 캐릭터의 사도 프로필(나무위키 대사 기반). 설정 news.talkCrepe면 크레페 고정
+function talkProfile() {
+  const cfg = settings.global.news || {};
+  if (!cfg.talkCrepe && talkData) { const p = Talk.profileFor(talkData, settings.characters[0].skin); if (p) return p; }
+  return (talkData && talkData.heroes.Crepe) || { style: "crepe", addr: "교주님", ko: "크레페" };
+}
+const NEWS_STATE = path.join(app.getPath("userData"), "news-state.json");
+let news = null, bubbleWin = null, bubbleFor = null, bubbleBounds = null;
+const BUBBLE_W = 308;
+function announce(items) {
+  const cfg = settings.global.news || {};
+  const id = settings.characters[0].id; // 첫 캐릭터가 알림 담당 (여러 명이 동시에 떠들지 않게)
+  const text = Talk.announce(items, talkProfile());
+  const ttl = Math.max(8, +cfg.ttlSec || 40) * 1000;
+  showBubble(id, { items, text, ttl });
+  sendMascot(id, "announce", { n: items.length, sound: cfg.sound !== false, hold: ttl + 2000 });
+  if (cfg.toast) { try { const { Notification } = require("electron"); if (Notification.isSupported()) new Notification({ title: `사도 데스크 — ${text.head}`, body: items.slice(0, 3).map(i => `[${i.label}] ${i.title}`).join("\n"), silent: true }).show(); } catch {} }
+  if (tray) buildTray();
+  broadcast();
+}
+let bubbleAnchor = null; // 띄운 순간의 캐릭터 머리 위 좌표(화면). 이후 높이 변경 때만 이 기준으로 재배치
+function bubblePlace(id) {
+  if (!bubbleWin || bubbleWin.isDestroyed() || !geo) return;
+  const inst = instances.get(id); const r = inst && inst.rect;
+  if (!bubbleAnchor || bubbleAnchor.id !== id) { if (!r) return; bubbleAnchor = { id, cx: Math.round(geo.x + r.x + r.w / 2), top: Math.round(geo.y + r.y) }; }
+  const h = bubbleBounds ? bubbleBounds.height : 200;
+  const sx = bubbleAnchor.cx - Math.round(BUBBLE_W / 2), sy = bubbleAnchor.top - h + 6;
+  const d = screen.getDisplayNearestPoint({ x: sx + BUBBLE_W / 2, y: sy + h / 2 }).workArea;
+  const b = { x: Math.min(Math.max(sx, d.x), d.x + d.width - BUBBLE_W), y: Math.max(d.y, sy), width: BUBBLE_W, height: h };
+  if (!bubbleBounds || b.x !== bubbleBounds.x || b.y !== bubbleBounds.y || b.height !== bubbleBounds.height) { bubbleWin.setBounds(b); bubbleBounds = b; }
+}
+function showBubble(id, payload) {
+  bubbleFor = id; bubbleBounds = null; // 위치는 지금 캐릭터 자리 기준으로 한 번만 잡고 고정 (따라다니면 읽기 힘듦)
+  if (!bubbleWin || bubbleWin.isDestroyed()) {
+    bubbleWin = new BrowserWindow({
+      x: 0, y: 0, width: BUBBLE_W, height: 200, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+      resizable: false, movable: false, hasShadow: false, focusable: false, backgroundColor: "#00000000",
+      webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false },
+    });
+    bubbleWin.setAlwaysOnTop(true, "screen-saver");
+    bubbleWin.loadFile(path.join(__dirname, "renderer", "bubble.html"));
+    bubbleWin.webContents.on("console-message", (ev) => console.log(`[bubble:${ev.level}] ${ev.message}`));
+    bubbleWin.on("closed", () => { bubbleWin = null; bubbleFor = null; bubbleBounds = null; bubbleAnchor = null; });
+    bubbleWin.webContents.once("did-finish-load", () => { bubbleWin.webContents.send("show", payload); bubblePlace(id); bubbleWin.showInactive(); });
+  } else { bubbleAnchor = null; bubbleWin.webContents.send("show", payload); bubblePlace(id); if (!bubbleWin.isVisible()) bubbleWin.showInactive(); }
+}
+function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.close(); }
+function initNews() {
+  news = createNewsWatcher({ stateFile: NEWS_STATE, getConfig: () => settings.global.news, onNew: announce, log: (...a) => console.log(...a) });
+  news.start();
+  if (argHas("--news-test-fake")) setTimeout(() => news.inject([
+    { source: "update", label: "업데이트", id: "test:1", title: "[업데이트] 9월 10일(목) 신규 업데이트 안내 (테스트)", url: "https://game.naver.com/lounge/Trickcal/board/11", date: new Date().toISOString(), writer: "GM아멜리아" },
+    { source: "youtube", label: "유튜브", id: "test:2", title: "[트릭컬 리바이브] 신규 사도 PV (테스트)", url: "https://www.youtube.com/@epidgames6350", date: new Date().toISOString(), thumb: "https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg" },
+  ]), 6000);
+  if (argHas("--news-test")) setTimeout(() => ipcMain.emit("news:test"), 4000);
+  if (argHas("--news-test") || argHas("--news-test-fake")) setTimeout(async () => { console.log("BUBBLE", bubbleWin && !bubbleWin.isDestroyed() ? JSON.stringify(bubbleWin.getBounds()) : null, "visible", bubbleWin?.isVisible(), "unread", news.unread, "url", bubbleWin?.webContents.getURL()); if (bubbleWin) { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "bubble-page.png"), img.toPNG()); console.log("BUBBLE page shot", img.getSize()); } }, 9000);
+}
+
+// ---- 우클릭 메뉴 창 ----
+const MENU_W = 256;
+function openMenu(id, sx, sy) {
+  menuFor = id;
+  const d = screen.getDisplayNearestPoint({ x: sx, y: sy }).workArea;
+  const h = 600;
+  const x = Math.min(Math.max(sx, d.x), d.x + d.width - MENU_W), y = Math.min(Math.max(sy, d.y), d.y + d.height - h);
+  if (menuWin && !menuWin.isDestroyed()) { menuWin.setBounds({ x, y, width: MENU_W, height: h }); menuWin.webContents.send("settings", viewFor(id)); menuWin.show(); menuWin.focus(); return; }
+  menuWin = new BrowserWindow({
+    x, y, width: MENU_W, height: h, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+    resizable: false, movable: false, hasShadow: false, backgroundColor: "#00000000",
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false, additionalArguments: [`--instance=${id}`] },
+  });
+  menuWin.setAlwaysOnTop(true, "screen-saver");
+  menuWin.loadFile(path.join(__dirname, "renderer", "menu.html"));
+  menuWin.once("ready-to-show", () => { menuWin.show(); menuWin.focus(); });
+  menuWin.on("blur", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.close(); });
+  menuWin.on("closed", () => { menuWin = null; menuFor = null; });
+  menuWin.webContents.on("console-message", (ev) => console.log(`[menu:${ev.level}] ${ev.message}`));
+}
+
+// ---- 커서 폴링 (모든 마스코트 창에) ----
+let lastCursor = null;
+setInterval(() => {
+  if (!geo || !mascotWin || mascotWin.isDestroyed()) return;
+  const p = screen.getCursorScreenPoint();
+  const x = p.x - geo.x, y = p.y - geo.y;
+  updateHitTarget(x, y);
+  if (lastCursor && lastCursor.x === x && lastCursor.y === y) return;
+  lastCursor = { x, y };
+  mascotWin.webContents.send("cursor", lastCursor);
+}, 16);
+
+// ---- IPC ----
+ipcMain.on("loaded", (e, info) => { catalog = info; lastCursor = null; buildTray(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("catalog", catalogPayload()); });
+ipcMain.on("quit", () => app.quit());
+ipcMain.handle("settings:get", (e, id) => id ? viewFor(id) : settings);
+ipcMain.on("settings:set", (e, patch, id) => updateSettings(patch, id || instanceOf(e.sender), e.sender.id));
+ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
+ipcMain.on("settings:reset", () => { settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, {}), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
+ipcMain.on("settings:open", (e, tab, id) => openSettings(tab, id || menuFor || instanceOf(e.sender)));
+ipcMain.handle("catalog:get", (e) => catalogPayload(instanceOf(e.sender) || menuFor));
+ipcMain.on("mascot", (e, cmd, arg, id) => sendMascot(id || instanceOf(e.sender) || menuFor || settings.characters[0].id, cmd, arg));
+// ---- 에셋 가져오기(추출) 창 ----
+const { dialog } = require("electron");
+const { spawn } = require("node:child_process");
+let setupWin = null, extractProc = null;
+function toolsDir() { return app.isPackaged ? path.join(process.resourcesPath, "tools") : path.join(__dirname, "tools"); }
+function pythonExe() {
+  const bundled = path.join(process.resourcesPath || "", "pyruntime", "python.exe");
+  if (app.isPackaged && fs.existsSync(bundled)) return { exe: bundled, args: [] };
+  const dev = path.join(__dirname, "pyruntime", "python.exe");
+  if (fs.existsSync(dev)) return { exe: dev, args: [] };
+  return { exe: "python", args: [] }; // 개발: PATH의 python (UnityPy 설치되어 있어야 함)
+}
+function openSetup() {
+  if (setupWin && !setupWin.isDestroyed()) { setupWin.show(); setupWin.focus(); return; }
+  setupWin = new BrowserWindow({
+    width: 720, height: 640, minWidth: 600, minHeight: 480, title: "사도 데스크 — 에셋 가져오기", show: false,
+    backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
+  });
+  setupWin.loadFile(path.join(__dirname, "renderer", "setup.html"));
+  setupWin.webContents.on("console-message", (ev) => console.log(`[setup:${ev.level}] ${ev.message}`));
+  setupWin.once("ready-to-show", () => setupWin.show());
+  setupWin.on("closed", () => { setupWin = null; });
+}
+const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
+ipcMain.handle("assets:status", () => ({ root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT), userDataRoot: toSlash(path.join(app.getPath("userData"), "assets")), running: !!extractProc, python: pythonExe().exe, standing: Object.keys(STANDING.game).length, ingame: Object.keys(STANDING.ingame).length, voice: fs.existsSync(path.join(ASSET_ROOT, "voice", "index.json")), packaged: app.isPackaged }));
+ipcMain.handle("assets:pick-folder", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "에셋 폴더 선택 (minimi/ 폴더가 들어 있는 곳)" }); return r.canceled ? null : r.filePaths[0]; });
+ipcMain.handle("assets:pick-mumu", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "뮤뮤 앱플레이어 설치 폴더 (MuMuManager.exe·adb.exe가 있는 nx_main)" }); return r.canceled ? null : r.filePaths[0]; });
+ipcMain.handle("assets:use-folder", (_e, folder) => {
+  if (!hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel 이 없어요. 추출된 에셋 폴더(assets)를 골라 주세요." };
+  updateSettings({ assets: { root: toSlash(folder) } }); rescanAssets(); startMascot(); if (tray) buildTray(); return { ok: true, root: ASSET_ROOT };
+});
+ipcMain.handle("assets:extract", (_e, opt) => startExtract(opt));
+function startExtract(opt) {
+  if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
+  const out = path.join(app.getPath("userData"), "assets"); fs.mkdirSync(out, { recursive: true });
+  const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
+  const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
+  if (opt.mumu) args.push("--mumu", opt.mumu);
+  console.log("extract:", py.exe, args.join(" "));
+  try { extractProc = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } }); }
+  catch (e) { return { ok: false, error: "python 실행 실패: " + e.message }; }
+  let buf = "";
+  extractProc.stdout.on("data", (d) => { buf += d.toString("utf8"); let i; while ((i = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue; let o; try { o = JSON.parse(line); } catch { o = { step: "log", msg: line, level: "info" }; } setupSend("extract:progress", o); } });
+  extractProc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) setupSend("extract:progress", { step: "stderr", msg: t.slice(0, 400), level: "warn" }); });
+  extractProc.on("error", (e) => { setupSend("extract:progress", { step: "error", msg: `python을 실행할 수 없어요 (${e.message}). Python 3.10+ 와 'pip install UnityPy Pillow imageio-ffmpeg' 가 필요해요.`, level: "error" }); extractProc = null; setupSend("extract:done", { ok: false }); });
+  extractProc.on("exit", (code) => {
+    extractProc = null;
+    if (code === 0) { updateSettings({ assets: { root: "" } }); rescanAssets(); if (hasAssets(ASSET_ROOT)) startMascot(); if (tray) buildTray(); }
+    setupSend("extract:done", { ok: code === 0, code, root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT) });
+    if (argHas("--setup-test")) console.log("SETUPTEST exit", code, "hasAssets", hasAssets(ASSET_ROOT), "root", ASSET_ROOT, "mascotStarted", mascotStarted);
+  });
+  return { ok: true };
+}
+if (argHas("--setup-test")) setTimeout(async () => { if (setupWin && !app.isPackaged) { try { const img = await setupWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "setup.png"), img.toPNG()); } catch {} } console.log("SETUPTEST start extract (minimi,sfx)"); startExtract({ steps: ["minimi", "sfx"] }); }, 4000);
+ipcMain.on("assets:cancel", () => { if (extractProc) { try { extractProc.kill(); } catch {} } });
+ipcMain.on("assets:open-setup", () => openSetup());
+ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
+
+// 새 소식
+ipcMain.handle("news:list", () => ({ items: news ? news.items : [], unread: news ? news.unread : 0, status: news ? news.status : null }));
+ipcMain.handle("news:check", async () => { if (!news) return { added: [], errors: ["감시 꺼짐"] }; const r = await news.check(true); if (tray) buildTray(); broadcast(); return { ...r, status: news.status, unread: news.unread }; });
+ipcMain.on("news:open", (_e, url, id) => { if (/^https?:\/\//.test(url || "")) shell.openExternal(url); if (news) { news.markRead(id); if (tray) buildTray(); broadcast(); } });
+ipcMain.on("news:read-all", () => { if (news) { news.markRead(null); if (tray) buildTray(); broadcast(); } });
+ipcMain.on("news:show", () => { if (news) { const items = news.items.slice(0, 4); if (items.length) showBubble(settings.characters[0].id, { items, text: Talk.announce(items, talkProfile()), ttl: 40000 }); } });
+ipcMain.on("news:test", async () => { // 미리보기: 지금 올라와 있는 실제 최신 글(유튜브 1 + 라운지 게시판별 1)을 말풍선으로. 본 것/안 읽음에는 영향 없음
+  if (!news) return; const items = await news.latest(); if (!items.length) return;
+  const id = settings.characters[0].id, ttl = Math.max(8, +(settings.global.news || {}).ttlSec || 40) * 1000;
+  showBubble(id, { items, text: Talk.announce(items, talkProfile()), ttl }); sendMascot(id, "announce", { n: items.length, sound: (settings.global.news || {}).sound !== false, hold: ttl + 2000 });
+});
+ipcMain.on("bubble:resize", (_e, h) => { if (bubbleWin && !bubbleWin.isDestroyed()) { bubbleBounds = { ...(bubbleBounds || { x: 0, y: 0, width: BUBBLE_W }), height: Math.max(80, Math.round(h)) }; bubblePlace(bubbleFor); } });
+ipcMain.on("bubble:close", () => closeBubble());
+ipcMain.on("open-path", (_e, which) => { if (which === "settings") shell.showItemInFolder(SETTINGS_FILE); else if (which === "assets") shell.openPath(ASSET_ROOT); });
+ipcMain.on("char:add", (e, from) => addCharacter(from || instanceOf(e.sender)));
+ipcMain.on("char:remove", (e, id) => removeCharacter(id || instanceOf(e.sender)));
+// 히트 창
+ipcMain.on("hit-rect", (e, r, id) => {
+  const inst = instances.get(id); if (!inst) return;
+  inst.rect = (r && r.w > 0) ? r : null;
+  if (hitFor === id) placeHit(id); // 대상 캐릭터가 움직이면(드래그·이동) 히트 창도 바로 따라감
+  // (말풍선은 띄울 때 자리를 잡고 고정 — 캐릭터를 따라다니지 않음)
+});
+ipcMain.on("hit-ev", (e, ev) => {
+  const id = ev.instance || hitFor; // 실제 히트 창 이벤트는 현재 대상 캐릭터에게. (테스트는 instance를 직접 지정)
+  if (!id || !instances.has(id) || !geo || !mascotWin || mascotWin.isDestroyed()) return;
+  if (ev.type === "mousedown") hitDown = true; else if (ev.type === "mouseup") hitDown = false;
+  mascotWin.webContents.send("hit-mouse", { instance: id, type: ev.type, x: ev.sx - geo.x, y: ev.sy - geo.y, button: ev.button, buttons: ev.buttons });
+});
+ipcMain.on("menu:open", (e, p, id) => { if (id && charOf(id) && geo) openMenu(id, geo.x + p.x, geo.y + p.y); });
+ipcMain.on("menu:close", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.close(); });
+ipcMain.on("menu:resize", (_e, h) => { if (menuWin && !menuWin.isDestroyed()) { const b = menuWin.getBounds(); const d = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea; const nh = Math.min(Math.round(h), d.height); menuWin.setBounds({ x: b.x, y: Math.min(b.y, d.y + d.height - nh), width: MENU_W, height: nh }); } });
+function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsOf.get(id)) || catalog.sdAnimations || [], standing: STANDING, assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, hasAssets: hasAssets(ASSET_ROOT), settingsFile: SETTINGS_FILE, version: app.getVersion(), electron: process.versions.electron }; }
+
+if (argHas("--hit-test")) setTimeout(() => {
+  const id = settings.characters[0].id, inst = instances.get(id); const b = screenRect(inst.rect); const sx = b.x + b.width / 2, sy = b.y + b.height / 2;
+  updateHitTarget(sx - geo.x, sy - geo.y);
+  const ev = (type, button) => ipcMain.emit("hit-ev", null, { type, sx, sy, button, buttons: 0 }); // instance 없이 → hitFor 로 라우팅되는지
+  console.log("HITTEST rect", JSON.stringify(b), "hitFor", hitFor, "shown", hitShown, "hitWin", hitWin ? JSON.stringify(hitWin.getBounds()) : null);
+  ev("mousedown", 0); setTimeout(() => ev("mouseup", 0), 60);
+  setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
+}, 6000);
+
+if (argHas("--multi-test")) setTimeout(() => {
+  const dump = (tag) => console.log(`MULTI ${tag} chars=${JSON.stringify(settings.characters.map(c => [c.id, c.skin, c.mode, c.scale]))} rects=${[...instances.keys()].join(",")} windows=${BrowserWindow.getAllWindows().length} hitFor=${hitFor} shown=${hitShown} rects=${[...instances.values()].map(i => i.rect ? JSON.stringify(screenRect(i.rect)) : "-").join(" ")}`);
+  dump("start");
+  const id2 = addCharacter(settings.characters[0].id);
+  setTimeout(() => {
+    dump("added");
+    updateSettings({ skin: "Mini_Erpin", scale: 0.8 }, id2);            // 개별 설정: 2번만 바뀌어야 함
+    updateSettings({ sound: { master: 0.3 } }, settings.characters[0].id); // 공통 설정
+    setTimeout(() => {
+      dump("patched"); console.log("MULTI global.sound.master=", settings.global.sound.master, "view(c1).skin=", viewFor(settings.characters[0].id).skin, "view(id2)=", viewFor(id2).skin, viewFor(id2).scale, "count", viewFor(id2).count);
+      const inst = instances.get(id2); const hb = screenRect(inst.rect); updateHitTarget(hb.x + hb.width / 2 - geo.x, hb.y + hb.height / 2 - geo.y); console.log("MULTI hover c2 → hitFor=", hitFor, "hitWin=", hitWin ? JSON.stringify(hitWin.getBounds()) : null);
+      ipcMain.emit("hit-ev", null, { instance: id2, type: "mousedown", sx: hb.x + hb.width / 2, sy: hb.y + hb.height / 2, button: 2, buttons: 0 });
+      setTimeout(() => {
+        console.log("MULTI menuFor=", menuFor, "menuWin=", menuWin ? JSON.stringify(menuWin.getBounds()) : null);
+        if (menuWin && !menuWin.isDestroyed()) menuWin.close();
+        removeCharacter(id2);
+        setTimeout(() => { dump("removed"); console.log("MULTI DONE"); app.quit(); }, 1500);
+      }, 2500);
+    }, 4000);
+  }, 6000);
+}, 5000);
+
+// ---- 트레이 ----
+function buildTray() {
+  const items = [
+    ...settings.characters.map(c => ({ label: `${koSkin(c.skin)} (${c.mode === "sd" ? "SD" : "미니미"})`, submenu: [
+      { label: "설정...", click: () => openSettings("character", c.id) },
+      { label: "다시 등장", click: () => sendMascot(c.id, "respawn") },
+      { label: "보내기", enabled: settings.characters.length > 1, click: () => removeCharacter(c.id) },
+    ] })),
+    { label: "하나 더 부르기", click: () => addCharacter() },
+    { type: "separator" },
+    { label: news && news.unread ? `새 소식 ${news.unread}개 보기` : "새 소식 (없음)", enabled: !!(news && news.items.length), click: () => { ipcMain.emit("news:show"); } },
+    { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
+    { type: "separator" },
+    { label: "설정...", click: () => openSettings() },
+    { label: hasAssets(ASSET_ROOT) ? "에셋 다시 가져오기..." : "에셋 가져오기...", click: () => openSetup() },
+    { label: "사운드 음소거", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
+    { type: "separator" },
+    { label: "종료", click: () => app.quit() },
+  ];
+  if (tray) { tray.setContextMenu(Menu.buildFromTemplate(items)); tray.setToolTip(`사도 데스크 — ${settings.characters.map(c => koSkin(c.skin)).join(", ")}`); return; }
+  const icon = nativeImage.createFromPath(path.join(__dirname, "renderer", "tray.png"));
+  tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon.resize({ width: 16, height: 16 }));
+  tray.setToolTip(`사도 데스크 — ${settings.characters.map(c => koSkin(c.skin)).join(", ")}`);
+  tray.setContextMenu(Menu.buildFromTemplate(items));
+  tray.on("click", () => openSettings());
+}
+
+if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
+let mascotStarted = false;
+function startMascot() {
+  if (mascotStarted) { if (mascotWin && !mascotWin.isDestroyed()) { mascotLoaded = false; mascotWin.reload(); } return; } // 재추출 뒤: 창 다시 로드 (did-finish-load에서 config 재전송)
+  mascotStarted = true;
+  createMascotWindow(); createHitWindow();
+  for (const c of settings.characters) createInstance(c.id);
+  initNews();
+}
+app.whenReady().then(() => {
+  geo = geometry();
+  buildTray(); applyAutoStart();
+  if (hasAssets(ASSET_ROOT)) startMascot();
+  else { console.log("에셋 없음 → 가져오기 창"); openSetup(); }
+  if (argHas("--settings")) setTimeout(() => openSettings(), +argVal("--settings-delay", 0) || 0);
+  for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
+});
+app.on("window-all-closed", () => { /* 트레이 상주 */ });
+app.on("before-quit", () => { if (extractProc) { try { extractProc.kill(); } catch {} } if (news) news.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
