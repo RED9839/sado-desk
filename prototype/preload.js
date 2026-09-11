@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld("host", {
   assetsPickMumu: () => ipcRenderer.invoke("assets:pick-mumu"),
   assetsUseFolder: (folder) => ipcRenderer.invoke("assets:use-folder", folder),
   assetsExtract: (opt) => ipcRenderer.invoke("assets:extract", opt),
+  assetsScan: () => ipcRenderer.invoke("assets:scan"),
   assetsCancel: () => ipcRenderer.send("assets:cancel"),
   assetsOpenSetup: () => ipcRenderer.send("assets:open-setup"),
   assetsOpenRoot: () => ipcRenderer.send("assets:open-root"),
