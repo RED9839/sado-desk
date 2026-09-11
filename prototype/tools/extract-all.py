@@ -3,7 +3,7 @@
 앱이 읽는 형태(assets/)로 저장한다. 게임 파일은 암호화되지 않은 표준 Unity AssetBundle이라 UnityPy로 그대로 읽는다(보호장치 해제 없음).
 게임 서버·실행 중인 게임과는 통신하지 않고, 에뮬레이터 저장소의 파일을 adb로 복사만 한다. 추출물은 개인 사용 목적으로만.
 
-지원 앱플레이어: 뮤뮤 12(꺼져 있으면 자동 실행)·뮤뮤 구버전·LD플레이어 4/9·블루스택 4/5(설정에서 ADB 켜기)·녹스·MEmu, 그 외 adb가 붙는 기기.
+지원 앱플레이어: 뮤뮤 12(꺼져 있으면 자동 실행)·뮤뮤 구버전·LD플레이어(ldconsole 경유, 포트 충돌 무관)·블루스택 4/5(설정에서 ADB 켜기), 그 외 adb가 붙는 기기.
 사용: python tools/extract-all.py --out <assets 폴더> [--steps minimi,sfx,standing,ingame,voice] [--adb <adb.exe> --serial 127.0.0.1:5555] [--mumu <뮤뮤 폴더>] [--json]
       python tools/extract-all.py --list-devices --json   # 붙을 수 있는 기기 목록
   --json  진행 상황을 한 줄 JSON으로 출력(앱 UI가 읽음): {"step":..,"msg":..,"done":n,"total":n,"level":"info|warn|error|ok"}
@@ -33,13 +33,10 @@ EMULATORS = [
     # (이름, adb 후보 경로들(글롭), 기본 포트들, 안내)
     ("MuMu Player 12", [r"C:\Program Files\Netease\MuMuPlayer\nx_main\adb.exe", r"C:\Program Files\Netease\MuMu Player 12\shell\adb.exe", r"D:\Program Files\Netease\MuMuPlayer\nx_main\adb.exe", r"*:\Netease\MuMuPlayer\nx_main\adb.exe"], [16384, 16416, 16448, 16480], "뮤뮤는 꺼져 있으면 자동으로 켭니다"),
     ("MuMu Player (구버전)", [r"C:\Program Files\Netease\MuMu\emulator\nemu\vmonitor\bin\adb_server.exe", r"*:\Netease\MuMu\emulator\nemu\vmonitor\bin\adb_server.exe"], [7555], "뮤뮤를 켠 상태여야 합니다"),
-    ("LDPlayer 9", [r"C:\LDPlayer\LDPlayer9\adb.exe", r"D:\LDPlayer\LDPlayer9\adb.exe", r"*:\LDPlayer\LDPlayer9\adb.exe", r"*:\LDPlayer9\adb.exe", r"C:\Program Files\LDPlayer\LDPlayer9\adb.exe"], [5555, 5557, 5559, 5561], "LD플레이어를 켠 상태여야 합니다 (설정 → 기타 → ADB 디버깅 '로컬 연결 열기')"),
+    ("LDPlayer", [r"*:\LDPlayer\LDPlayer*\adb.exe", r"*:\LDPlayer*\adb.exe", r"C:\Program Files\LDPlayer\LDPlayer*\adb.exe", r"*:\XuanZhi\LDPlayer*\adb.exe"], [5555, 5557, 5559, 5561, 5563], "LD플레이어를 켠 상태여야 합니다 (설정 → 기타 → ADB 디버깅 '로컬 연결 열기')"),
     ("LDPlayer 4", [r"C:\LDPlayer\LDPlayer4.0\adb.exe", r"*:\LDPlayer\LDPlayer4.0\adb.exe", r"C:\Changzhi\dnplayer2\adb.exe"], [5555, 5557, 5559], "LD플레이어를 켠 상태여야 합니다"),
     ("BlueStacks 5", [r"C:\Program Files\BlueStacks_nxt\HD-Adb.exe", r"*:\BlueStacks_nxt\HD-Adb.exe"], [5555, 5565, 5575, 5585], "블루스택 설정 → 고급 → 'Android 디버그 브리지(ADB)'를 켜야 합니다 (포트는 그 화면에 표시)"),
     ("BlueStacks 4", [r"C:\Program Files\BlueStacks\HD-Adb.exe", r"*:\BlueStacks\HD-Adb.exe"], [5555, 5565], "블루스택 설정에서 ADB를 켜야 합니다"),
-    ("NoxPlayer", [r"C:\Program Files (x86)\Nox\bin\nox_adb.exe", r"C:\Program Files\Nox\bin\nox_adb.exe", r"*:\Nox\bin\nox_adb.exe"], [62001, 62025, 62026, 62027], "녹스를 켠 상태여야 합니다"),
-    ("MEmu", [r"C:\Program Files\Microvirt\MEmu\adb.exe", r"*:\Microvirt\MEmu\adb.exe"], [21503, 21513, 21523], "MEmu를 켠 상태여야 합니다"),
-    ("Google Play Games (PC)", [], [6520], "개발자 에뮬레이터에서만 adb가 열려 있습니다"),
 ]
 def _glob_paths(pats):
     out = []
@@ -70,27 +67,110 @@ def find_adbs(extra=None):
     if w and all(os.path.normcase(w) != os.path.normcase(f[1]) for f in found): found.append(("adb (PATH)", w, [], "USB 디버깅을 켠 실제 기기 · 기타 앱플레이어"))
     return found
 
-def probe_device(adb_exe, serial):
-    """기기에 트릭컬 데이터가 있는지, 안드로이드 버전"""
-    p = adb(adb_exe, serial, "shell", f"ls {BASE}/spine >/dev/null 2>&1 && echo HAS || echo NO; getprop ro.build.version.release", timeout=20)
-    out = p.stdout.decode("utf-8", "ignore").split()
-    return {"hasGame": "HAS" in out, "android": out[-1] if out and out[-1] not in ("HAS", "NO") else "?"}
+def ldconsole_path():
+    for exe in _glob_paths([r"*:\\LDPlayer\\LDPlayer*\\ldconsole.exe", r"*:\\LDPlayer*\\ldconsole.exe", r"C:\\Program Files\\LDPlayer\\LDPlayer*\\ldconsole.exe"]):
+        return exe
+    return None
+
+def ld_instances():
+    """LD플레이어 인스턴스 [(index, 제목, 켜짐)] — ldconsole list2: index,title,top hwnd,bind hwnd,android_started,pid,..."""
+    exe = ldconsole_path(); out = []
+    if not exe: return out
+    try:
+        for line in subprocess.run([exe, "list2"], capture_output=True, text=True, timeout=10, encoding="utf-8", errors="ignore").stdout.splitlines():
+            f = line.split(",")
+            if len(f) >= 5 and f[0].isdigit(): out.append((int(f[0]), f[1], f[4] == "1"))
+    except Exception: pass
+    return out
+
+def device_info(adb_exe, serial):
+    """기기 하나의 식별 정보: 모델·안드로이드 버전·boot_id(중복 제거용 — 같은 VM이 emulator-5554와 127.0.0.1:5555 두 이름으로 보임. android_id는 뮤뮤12와 LD14가 같은 이미지라 겹쳐서 못 씀)·블루스택 여부·트릭컬 데이터 유무"""
+    p = adb(adb_exe, serial, "shell", f"getprop ro.product.model; getprop ro.build.version.release; cat /proc/sys/kernel/random/boot_id; getprop | grep -c 'ro.bst\\.'; ls {BASE}/spine >/dev/null 2>&1 && echo HAS || echo NO", timeout=20)
+    lines = [l.strip() for l in p.stdout.decode("utf-8", "ignore").splitlines() if l.strip()]
+    if len(lines) < 5: return None
+    return {"model": lines[0], "android": lines[1], "aid": lines[2], "bst": lines[3] != "0", "hasGame": lines[4] == "HAS"}
+
+def label_device(serial, info, ldnames):
+    port = None
+    if ":" in serial: port = int(serial.rsplit(":", 1)[1])
+    elif serial.startswith("emulator-"): port = int(serial.split("-")[1]) + 1  # emulator-5554 ↔ 127.0.0.1:5555
+    if info and info["bst"]: return "BlueStacks 5", "설정 → 고급 → 'Android 디버그 브리지(ADB)'가 켜져 있어야 합니다"
+    if port is not None:
+        if 16384 <= port < 17000 and (port - 16384) % 32 == 0: return "MuMu Player 12", "꺼져 있으면 자동으로 켭니다"
+        if port == 7555: return "MuMu Player (구버전)", ""
+        if 5555 <= port < 5600: return "안드로이드 에뮬레이터 (포트 %d)" % port, "LD플레이어는 ldconsole 경유로 따로 잡힘"
+    return "안드로이드 기기", "USB 디버깅 기기 또는 기타 에뮬레이터"
+
+def stable_devices(adb_exe, wait=6.0):
+    """adb devices 결과가 안정될 때까지(offline 없음) 기다림 — adb.exe 버전이 다르면 서버가 재시작돼 잠깐 offline이 됨"""
+    t0 = time.time(); last = []
+    while True:
+        p = subprocess.run([adb_exe, "devices"], env=ENV, capture_output=True, timeout=20)
+        rows = [l.split() for l in p.stdout.decode("utf-8", "ignore").splitlines()[1:] if l.strip()]
+        last = [(r[0], r[1]) for r in rows if len(r) >= 2]
+        if last and all(st == "device" for _, st in last): break
+        if time.time() - t0 > wait: break
+        time.sleep(0.7)
+    return [sn for sn, st in last if st == "device"]
 
 def scan_devices(mumu_hint=None, adb_hint=None):
-    """붙을 수 있는 기기 전부: [{emulator, adb, serial, hasGame, android, tip}]"""
-    seen = set(); result = []
-    for name, adb_exe, ports, tip in find_adbs(adb_hint or mumu_hint and os.path.join(mumu_hint, "adb.exe")):
-        for port in ports:
-            subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=8)
-        p = subprocess.run([adb_exe, "devices"], env=ENV, capture_output=True, timeout=20)
-        for line in p.stdout.decode("utf-8", "ignore").splitlines()[1:]:
-            parts = line.split()
-            if len(parts) < 2 or parts[1] != "device": continue
-            serial = parts[0]
-            if (name, serial) in seen: continue
-            seen.add((name, serial))
-            info = probe_device(adb_exe, serial)
-            result.append({"emulator": name, "adb": adb_exe, "serial": serial, "tip": tip, **info})
+    """붙을 수 있는 기기 전부: [{emulator, adb, serial, hasGame, android, model, tip}]. 같은 기기가 두 serial로 보이면(emulator-5554 = 127.0.0.1:5555) 하나만"""
+    adbs = find_adbs(adb_hint or (mumu_hint and os.path.join(mumu_hint, "adb.exe")))
+    if not adbs: return []
+    all_ports = sorted({pt for _, _, ports, _ in adbs for pt in ports} | {16384, 7555, 5555, 5557, 5559})
+    ldnames = {}
+    result = []; seen_aid = set()
+    # LD플레이어 인스턴스의 boot_id → 제목 (같은 VM이 일반 adb로 보이면 LD로 이름 붙이기 위해). LD 14는 뮤뮤 엔진(MuMuVMM)을 써서 16384 포트로도 잡힘
+    ldc = ldconsole_path(); ld_by_boot = {}
+    if ldc:
+        for idx, title, started in ld_instances():
+            if not started: continue
+            info = None
+            for _ in range(2):
+                info = device_info(ldc, f"ld:{idx}")
+                if info: break
+                time.sleep(0.8)
+            if info: ld_by_boot[info["aid"]] = (idx, title)
+    for name, adb_exe, ports, tip in adbs:  # adb 서버(5037)는 공유되므로 첫 adb로 전부 보인다. 안 보이면 다음 adb로
+        for port in sorted(set(all_ports)):
+            subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=6)
+        serials = stable_devices(adb_exe)
+        if not serials: continue
+        # 같은 VM이 여러 이름으로 보이면 emulator-XXXX(앱플레이어가 adb 서버에 직접 등록한 것)를 우선 — 127.0.0.1:포트 쪽은 블루스택 ADB 옵션이 꺼져 있으면 'closed'가 나기도 함
+        serials.sort(key=lambda sn: (0 if sn.startswith("emulator-") else 1, sn))
+        for serial in serials:
+            info = None
+            for _ in range(3):  # 서버 재시작 직후엔 shell이 빈 응답을 줄 수 있음 → 잠깐 뒤 재시도
+                info = device_info(adb_exe, serial)
+                if info: break
+                time.sleep(0.8)
+            if not info: continue  # 응답 없는 중복 연결(다른 앱플레이어와 포트가 겹친 127.0.0.1:5555 등)은 건너뜀
+            if info["aid"] in seen_aid: continue
+            seen_aid.add(info["aid"])
+            emu, tip2 = label_device(serial, info, ldnames)
+            if info["aid"] in ld_by_boot: emu, tip2 = f"LDPlayer — {ld_by_boot[info['aid']][1]}", "LD플레이어 인스턴스"
+            result.append({"emulator": emu, "adb": adb_exe, "serial": serial, "tip": tip2, "hasGame": info["hasGame"], "android": info["android"], "model": info["model"]})
+        if result: break
+    # LD플레이어: 일반 adb로 안 잡힌 인스턴스는 ldconsole로 직접 (다른 앱플레이어가 5555 포트를 점유해도 됨)
+    if ldc:
+        for idx, title, started in ld_instances():
+            if not started: continue
+            info = next((None for _ in ()), None)
+            for _ in range(2):
+                info = device_info(ldc, f"ld:{idx}")
+                if info: break
+                time.sleep(0.8)
+            if not info: continue
+            if info["aid"] in seen_aid: continue  # 일반 adb로 이미 잡힌 같은 VM (LD 14는 뮤뮤 엔진을 써서 16384 포트로도 보임)
+            seen_aid.add(info["aid"])
+            result.append({"emulator": f"LDPlayer — {title}", "adb": ldc, "serial": f"ld:{idx}", "tip": "LD플레이어 인스턴스 (ldconsole 경유)", "hasGame": info["hasGame"], "android": info["android"], "model": info["model"]})
+    # 블루스택이 켜져 있는데 어느 serial로도 응답이 없으면 = ADB 옵션이 꺼진 것 (포트는 열려 있어도 shell이 'closed') → 안내용 항목
+    if any(n.startswith("BlueStacks") for n, _, _, _ in adbs) and not any(d["emulator"].startswith("BlueStacks") for d in result):
+        try:
+            running = subprocess.run(["powershell", "-NoProfile", "-Command", "(Get-Process HD-Player -ErrorAction SilentlyContinue | Measure-Object).Count"], capture_output=True, text=True, timeout=15).stdout.strip()
+            if running and int(running) > 0:
+                result.append({"emulator": "BlueStacks 5", "adb": "", "serial": "", "tip": "ADB 꺼져 있음", "hasGame": False, "android": "?", "model": "", "unavailable": "블루스택 설정 → 고급 → 'Android 디버그 브리지(ADB)'를 켜고 블루스택을 다시 시작한 뒤 검색"})
+        except Exception: pass
     result.sort(key=lambda d: (not d["hasGame"], d["emulator"]))
     return result
 
@@ -135,9 +215,15 @@ def ensure_vm(mmdir, vm):
     return f"{host}:{port}"
 
 def adb(adb_exe, dev, *args, timeout=600):
+    # LD플레이어: 뮤뮤가 같은 PC에서 5555/7555/16384 포트를 다 점유하면 LD의 adb 포트가 밀려 일반 adb로는 닿지 않는다(emulator-5554도 뮤뮤로 연결됨).
+    # ldconsole.exe adb --index N --command "..." 은 LD가 자기 인스턴스로 직접 라우팅해 주므로 이 경로를 쓴다.
+    if dev.startswith("ld:"):
+        cmd = " ".join(args)  # ldconsole은 문자열을 그대로 adb에 넘김 — 따옴표를 붙이면 shell이 멈춤. 경로에 공백이 없게 임시 폴더를 잡는다
+        return subprocess.run([adb_exe, "adb", "--index", dev[3:], "--command", cmd], env=ENV, capture_output=True, timeout=timeout)
     return subprocess.run([adb_exe, "-s", dev, *args], env=ENV, capture_output=True, timeout=timeout)
 
 def adb_connect(adb_exe, dev):
+    if dev.startswith("ld:"): return
     subprocess.run([adb_exe, "connect", dev], env=ENV, capture_output=True, timeout=30)
     for _ in range(10):
         p = adb(adb_exe, dev, "shell", "echo ok", timeout=20)
@@ -229,11 +315,26 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
     label = {"standing": "스탠딩(사도 상세 화면 SD)", "ingame": "인게임 SD(전투·마이홈)"}[kind]
     names = [n for n in adb_ls(adb_exe, dev, remote) if re.match(r"^[a-z0-9_]+$", n)]
     if not names: log(kind, f"{label}: 기기에 내려받힌 것이 없어요 (게임에서 사도 상세를 열면 다운로드됨)", "warn"); return
-    log(kind, f"{label} {len(names)}세트 복사 중… (몇 분 걸릴 수 있어요)", total=len(names), done=0)
-    local = os.path.join(tmp, kind)
-    adb_pull(adb_exe, dev, remote, local)  # 폴더 통째로 (파일별 pull보다 훨씬 빠름)
-    root = local if os.path.isdir(os.path.join(local, names[0])) else os.path.join(local, os.path.basename(remote))
-    jobs = [(os.path.join(root, n), os.path.join(out, kind, n), kind) for n in names if os.path.isdir(os.path.join(root, n))]
+    # 이미 완성된 세트(skel·atlas·아틀라스가 가리키는 png 전부 있음)는 건너뜀 → 재추출은 새로 받은 사도만
+    def complete(n):
+        d = os.path.join(out, kind, n); at = os.path.join(d, n + ".atlas")
+        if not (os.path.exists(os.path.join(d, n + ".skel")) and os.path.exists(at)): return False
+        try: pages = [l.strip() for l in open(at, encoding="utf-8", errors="ignore") if l.strip().lower().endswith(".png")]
+        except Exception: return False
+        return bool(pages) and all(os.path.exists(os.path.join(d, pg)) for pg in pages)
+    todo = [n for n in names if not complete(n)]
+    if not todo: log(kind, f"{label} {len(names)}세트 이미 있음 — 건너뜀", "ok"); return
+    log(kind, f"{label} {len(todo)}세트 복사 중… (이미 있는 {len(names) - len(todo)}세트 제외)", total=len(todo), done=0)
+    local = os.path.join(tmp, kind); os.makedirs(local, exist_ok=True)
+    if len(todo) < len(names) * 0.5:  # 일부만 새로 받으면 그 폴더들만
+        for i, n in enumerate(todo, 1):
+            adb_pull(adb_exe, dev, f"{remote}/{n}", os.path.join(local, n))
+            if i % 10 == 0 or i == len(todo): log(kind, f"{label} 복사 {i}/{len(todo)}", done=i, total=len(todo))
+        root = local
+    else:
+        adb_pull(adb_exe, dev, remote, local)  # 폴더 통째로 (파일별 pull보다 훨씬 빠름)
+        root = local if os.path.isdir(os.path.join(local, todo[0])) else os.path.join(local, os.path.basename(remote))
+    jobs = [(os.path.join(root, n), os.path.join(out, kind, n), kind) for n in todo if os.path.isdir(os.path.join(root, n))]
     log(kind, f"{label} 디코드 중…", total=len(jobs), done=0)
     okn = 0; bad = []
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 4) - 1)) as ex:
@@ -264,21 +365,30 @@ def step_voice(adb_exe, dev, out, tmp):
     import imageio_ffmpeg
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     heroes = [h for h in adb_ls(adb_exe, dev, f"{BASE}/audio/kor/voice/hero") if re.match(r"^[a-z0-9_]+$", h)]
-    log("voice", f"보이스: 사도 {len(heroes)}명 폴더에서 로비 대사만 골라 복사 중… (터치·감정·인사·등장·잡담·간지럽히기·꿀밤)", total=len(heroes), done=0)
     cat_re = re.compile(r"^voice_([a-z0-9]+)_(" + "|".join(VOICE_CATS) + r")(\d[\d_]*)?(_skin\d+)?$")
+    # 이미 변환된 사도(index.json 기준 파일이 있음)는 다시 받지 않음 → 재추출 때는 새 사도만
+    vout = os.path.join(out, "voice")
+    def hero_done(h):
+        d = os.path.join(vout, h); return os.path.isdir(d) and len([f for f in os.listdir(d) if f.endswith(".ogg")]) >= 10
+    todo = [h for h in heroes if not hero_done(h)]
+    if not todo: build_voice_index(vout); log("voice", f"보이스 {len(heroes)}명 이미 있음 — 건너뜀", "ok"); return
+    log("voice", f"보이스: 사도 {len(todo)}명 폴더 복사 중… (이미 있는 {len(heroes) - len(todo)}명 제외 · 원본 1.6GB 중 로비 대사만 변환)", total=len(todo), done=0)
+    vtmp = os.path.join(tmp, "voice"); os.makedirs(vtmp, exist_ok=True)
+    if len(todo) >= len(heroes) * 0.5: adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero", vtmp); root = os.path.join(vtmp, "hero") if os.path.isdir(os.path.join(vtmp, "hero")) else vtmp  # 한 번에 (사도별 156회 pull보다 빠름)
+    else:
+        for i, h in enumerate(todo, 1):
+            adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero/{h}", os.path.join(vtmp, h))
+            if i % 5 == 0 or i == len(todo): log("voice", f"보이스 복사 {i}/{len(todo)}", done=i, total=len(todo))
+        root = vtmp
     jobs = []
-    for i, h in enumerate(heroes, 1):
-        files = [f for f in adb_ls(adb_exe, dev, f"{BASE}/audio/kor/voice/hero/{h}") if cat_re.match(f) and "_selective_" not in f]
-        # 폴더명과 접두어가 다른 파일: 변형 폴더가 기본 대사를 공유하는 경우(kommyswim ← voice_kommy_*)만
-        files = [f for f in files if cat_re.match(f).group(1) == h or h.startswith(cat_re.match(f).group(1))]
-        if not files: continue
-        local = os.path.join(tmp, "voice", h)
-        # 파일 단위 pull은 느리므로 폴더를 통째로 받고 필요한 것만 변환
-        adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero/{h}", os.path.join(tmp, "voice"))
-        for f in files:
-            m = re.match(r"^voice_[a-z0-9]+_(.+)$", f)
-            jobs.append((os.path.join(local, f), os.path.join(out, "voice", h, m.group(1) + ".ogg"), ffmpeg))
-        if i % 5 == 0 or i == len(heroes): log("voice", f"보이스 복사 {i}/{len(heroes)}", done=i, total=len(heroes))
+    for h in todo:
+        hdir = os.path.join(root, h)
+        if not os.path.isdir(hdir): continue
+        for f in os.listdir(hdir):
+            m = cat_re.match(f)
+            if not m or "_selective_" in f: continue
+            if m.group(1) != h and not h.startswith(m.group(1)): continue  # 변형 폴더가 기본 대사를 공유하는 경우(kommyswim ← voice_kommy_*)만
+            jobs.append((os.path.join(hdir, f), os.path.join(vout, h, re.match(r"^voice_[a-z0-9]+_(.+)$", f).group(1) + ".ogg"), ffmpeg))
     log("voice", f"보이스 {len(jobs)}개 opus 변환 중…", total=len(jobs), done=0)
     stats = {}
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 4) - 1)) as ex:
@@ -324,13 +434,14 @@ def main():
     try:
         adb_exe, dev = None, None
         if a.serial and re.fullmatch(r"\d{2,5}", a.serial): a.serial = "127.0.0.1:" + a.serial  # 포트만 준 경우
+        if a.serial and a.serial.startswith("ld:") and not (a.adb and a.adb.lower().endswith("ldconsole.exe")): a.adb = ldconsole_path()
         if a.serial and not a.adb:  # 포트만 직접 지정 → 설치된 앱플레이어 adb 아무거나
             found = find_adbs(); a.adb = found[0][1] if found else None
             if not a.adb: log("adb", "adb.exe를 찾지 못했어요. adb 경로도 함께 지정해 주세요.", "error"); sys.exit(3)
         if a.adb and a.serial:  # UI에서 고른 기기
             adb_exe, dev = a.adb, a.serial
             if ":" in dev: adb_connect(adb_exe, dev)
-            log("adb", f"기기: {dev} ({os.path.basename(os.path.dirname(adb_exe))})")
+            log("adb", f"기기: {dev} ({'LD플레이어 ldconsole' if dev.startswith('ld:') else os.path.basename(os.path.dirname(adb_exe))})")
         else:
             devs = [d for d in scan_devices(a.mumu, a.adb) if d["hasGame"]]
             if devs:
@@ -341,11 +452,19 @@ def main():
                 log("adb", f"뮤뮤: {mmdir}")
                 dev = ensure_vm(mmdir, a.vm); adb_exe = os.path.join(mmdir, "adb.exe"); adb_connect(adb_exe, dev)
         if not adb_ls(adb_exe, dev, f"{BASE}/spine"):
+            probe = adb(adb_exe, dev, "shell", "echo ok", timeout=15)
+            if b"closed" in probe.stderr + probe.stdout or b"ok" not in probe.stdout:
+                log("adb", f"기기({dev})가 adb 명령을 거부해요 ('closed'). 블루스택이면 설정 → 고급 → 'Android 디버그 브리지(ADB)'를 켜고 블루스택을 다시 시작한 뒤 시도해 주세요.", "error"); sys.exit(5)
             log("adb", f"이 기기({dev})에 트릭컬 리바이브 데이터가 없어요 ({BASE}). 그 앱플레이어에서 게임을 한 번 실행해 리소스를 내려받은 뒤 다시 시도해 주세요. (안드로이드 11 이상 실기기는 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다)", "error"); sys.exit(4)
         log("adb", f"연결됨 {dev}", "ok")
     except Exception as e:
         log("adb", str(e), "error"); sys.exit(3)
-    tmp = tempfile.mkdtemp(prefix="sadodesk-")
+    tmpbase = None
+    for cand in (os.environ.get("TEMP"), os.environ.get("TMP"), r"C:\\Temp", r"C:\\sadodesk-tmp"):
+        if cand and " " not in cand:
+            try: os.makedirs(cand, exist_ok=True); tmpbase = cand; break
+            except Exception: pass
+    tmp = tempfile.mkdtemp(prefix="sadodesk-", dir=tmpbase)
     try:
         if "minimi" in steps: step_minimi(adb_exe, dev, out, tmp)
         if "sfx" in steps: step_sfx(adb_exe, dev, out, tmp)

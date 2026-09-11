@@ -31,7 +31,7 @@
 </style></head>
 <body>
 <h1>에셋 가져오기</h1>
-<div class="hint">사도 데스크에는 캐릭터 그림·보이스가 들어 있지 않습니다. 이 PC의 <b>앱플레이어</b>(뮤뮤·LD플레이어·블루스택·녹스 등)에 설치된 <b>트릭컬 리바이브</b>에서 직접 꺼내 옵니다.
+<div class="hint">사도 데스크에는 캐릭터 그림·보이스가 들어 있지 않습니다. 이 PC의 <b>앱플레이어</b>(뮤뮤·LD플레이어·블루스택)에 설치된 <b>트릭컬 리바이브</b>에서 직접 꺼내 옵니다.
 게임 서버나 실행 중인 게임에는 손대지 않고, 에뮬레이터 안의 파일을 복사해 앱이 읽는 형태로 바꿉니다. 추출물은 <b>본인 PC에서만</b> 쓰고 다른 사람에게 배포하지 마세요.</div>
 
 <div class="card"><h3>현재 상태</h3>
@@ -40,7 +40,7 @@
 
 <div class="card"><h3>1. 앱플레이어에서 추출</h3>
   <div class="row"><label class="hint" style="flex:none;width:90px">기기</label><select id="device" style="flex:1;background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit"><option value="">검색 중…</option></select><button class="btn" id="scan">다시 검색</button></div>
-  <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택 · 녹스 · MEmu를 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색하세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 보입니다.</div>
+  <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택을 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색하세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 보입니다.</div>
   <div class="row"><label class="hint" style="flex:none;width:90px">직접 지정</label><input type="text" id="mumu" placeholder="자동 검색이 안 될 때만: adb.exe 경로 · adb 포트(예 5555) · 127.0.0.1:5555 · 뮤뮤 nx_main 폴더"><button class="btn" id="pick-mumu">찾기…</button></div>
   <div id="steps">
     <label class="toggle"><input type="checkbox" data-step="minimi" checked disabled>미니미 (필수 · 2MB)</label>
