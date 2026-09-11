@@ -17,6 +17,8 @@ function resolveAssetRoot() {
   const found = cands.find(hasAssets);
   return toSlash(found || custom || path.join(app.getPath("userData"), "assets"));
 }
+// 테스트용: 별도 userData (설치판과 락·설정을 공유하지 않게) — 사도 데스크.exe --userdata C:\sadodesk-test
+{ const i = process.argv.indexOf("--userdata"); if (i >= 0 && process.argv[i + 1]) app.setPath("userData", process.argv[i + 1]); }
 // 앱 이름 변경(trickcal-crepe-mascot-proto → sado-desk): 예전 userData의 설정·소식 상태를 새 폴더로 한 번 옮긴다
 (() => { try {
   const oldDir = path.join(app.getPath("appData"), "trickcal-crepe-mascot-proto"), newDir = app.getPath("userData");
@@ -183,8 +185,17 @@ function placeHit(id) {
   hitFor = id;
 }
 // 커서 위치(창 기준)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
+function cursorOverOurWindow(sx, sy) {
+  for (const w of [settingsWin, setupWin, menuWin, bubbleWin]) {
+    if (!w || w.isDestroyed() || !w.isVisible()) continue;
+    const b = w.getBounds(); if (sx >= b.x && sx < b.x + b.width && sy >= b.y && sy < b.y + b.height) return true;
+  }
+  return false;
+}
 function updateHitTarget(x, y) {
   if (hitDown && hitFor && instances.has(hitFor)) { placeHit(hitFor); return; }
+  // 설정창·가져오기 창·메뉴·말풍선 위에 커서가 있으면 히트 창을 치운다 — 히트 창이 항상 최상위라 캐릭터가 창 뒤에 있으면 그 창을 못 누르던 문제
+  if (geo && cursorOverOurWindow(geo.x + x, geo.y + y)) { placeHit(null); return; }
   if (hitFor && inRect(instances.get(hitFor)?.rect, x, y, HIT_NEAR)) { placeHit(hitFor); return; } // 지금 대상 위면 유지(겹칠 때 깜빡임 방지)
   let best = null;
   for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
@@ -411,27 +422,32 @@ function startExtract(opt) {
   const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
   const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
   if (opt.mumu) args.push("--mumu", opt.mumu);
+  if (opt.force) args.push("--force");
   if (opt.adb) args.push("--adb", opt.adb);
   if (opt.serial) args.push("--serial", opt.serial);
   console.log("extract:", py.exe, args.join(" "));
   try { extractProc = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } }); }
   catch (e) { return { ok: false, error: "python 실행 실패: " + e.message }; }
   let buf = "";
-  extractProc.stdout.on("data", (d) => { buf += d.toString("utf8"); let i; while ((i = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue; let o; try { o = JSON.parse(line); } catch { o = { step: "log", msg: line, level: "info" }; } setupSend("extract:progress", o); } });
-  extractProc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) setupSend("extract:progress", { step: "stderr", msg: t.slice(0, 400), level: "warn" }); });
+  const logFile = path.join(app.getPath("userData"), "extract.log"); // 진단용: 마지막 추출의 전체 로그
+  try { fs.writeFileSync(logFile, `[${new Date().toISOString()}] ${py.exe} ${args.join(" ")}\n`); } catch {}
+  const flog = (t) => { try { fs.appendFileSync(logFile, t + "\n"); } catch {} };
+  extractProc.stdout.on("data", (d) => { buf += d.toString("utf8"); let i; while ((i = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue; flog(line); let o; try { o = JSON.parse(line); } catch { o = { step: "log", msg: line, level: "info" }; } if (o.level === "error" || o.level === "warn") console.log("extract:", o.step, o.msg); setupSend("extract:progress", o); } });
+  extractProc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) { flog("[stderr] " + t); console.log("extract stderr:", t.slice(0, 300)); setupSend("extract:progress", { step: "stderr", msg: t.slice(0, 400), level: "warn" }); } });
   extractProc.on("error", (e) => { setupSend("extract:progress", { step: "error", msg: `python을 실행할 수 없어요 (${e.message}). Python 3.10+ 와 'pip install UnityPy Pillow imageio-ffmpeg' 가 필요해요.`, level: "error" }); extractProc = null; setupSend("extract:done", { ok: false }); });
   extractProc.on("exit", (code) => {
-    extractProc = null;
+    extractProc = null; flog(`[exit ${code}]`);
     if (code === 0) { updateSettings({ assets: { root: "" } }); rescanAssets(); if (hasAssets(ASSET_ROOT)) startMascot(); if (tray) buildTray(); }
     setupSend("extract:done", { ok: code === 0, code, root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT) });
     if (argHas("--setup-test")) console.log("SETUPTEST exit", code, "hasAssets", hasAssets(ASSET_ROOT), "root", ASSET_ROOT, "mascotStarted", mascotStarted);
   });
   return { ok: true };
 }
-if (argHas("--setup-test")) setTimeout(async () => { if (setupWin && !app.isPackaged) { try { const img = await setupWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "setup.png"), img.toPNG()); } catch {} } console.log("SETUPTEST start extract (minimi,sfx)"); startExtract({ steps: ["minimi", "sfx"] }); }, 4000);
+if (argHas("--setup-test")) setTimeout(async () => { if (setupWin && !app.isPackaged) { try { const img = await setupWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "setup.png"), img.toPNG()); } catch {} } const steps = (argVal("--setup-steps", "minimi,sfx") || "minimi,sfx").split(","); console.log("SETUPTEST start extract", steps.join(",")); startExtract({ steps }); }, 4000);
 ipcMain.on("assets:cancel", () => { if (extractProc) { try { extractProc.kill(); } catch {} } });
 ipcMain.on("assets:open-setup", () => openSetup());
 ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
+ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });
 
 // 새 소식
 ipcMain.handle("news:list", () => ({ items: news ? news.items : [], unread: news ? news.unread : 0, status: news ? news.status : null }));

@@ -47,6 +47,7 @@
     <label class="toggle"><input type="checkbox" data-step="sfx" checked disabled>효과음 (필수)</label>
     <label class="toggle"><input type="checkbox" data-step="standing" checked>스탠딩 SD — 사도 상세 화면 캐릭터 <span class="hint">(기기에 내려받힌 사도만 · 수백 MB · 2~5분)</span></label>
     <label class="toggle"><input type="checkbox" data-step="voice" checked>보이스 — 로비 대사만 <span class="hint">(약 7,000개 · 5~10분)</span></label>
+    <label class="toggle"><input type="checkbox" id="force">이미 있는 것도 다시 받기 <span class="hint">(끄면 새로 받은 사도·보이스만 추가)</span></label>
     <label class="toggle"><input type="checkbox" data-step="ingame">인게임 SD — 스탠딩이 없는 사도의 대체용 <span class="hint">(400MB · 선택)</span></label>
   </div>
   <div class="hint" style="margin-top:6px">게임에서 사도 상세 화면을 한 번 열어본 사도만 스탠딩이 기기에 내려받혀 있습니다. 나중에 더 받았으면 "에셋 다시 가져오기"를 하세요 (보이스는 이미 있는 것을 건너뜁니다). 실제 스마트폰은 안드로이드 11 이상에서 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다.</div>
@@ -59,7 +60,7 @@
 </div>
 
 <div class="card"><h3>2. 또는 이미 추출해 둔 폴더 사용</h3>
-  <div class="row"><span class="hint" style="flex:1">다른 PC에서 추출했거나 개발용 <code>prototype/assets</code>가 있으면 그 폴더를 지정합니다 (<code>minimi/</code>가 들어 있는 폴더).</span><button class="btn" id="use-folder">폴더 선택…</button><button class="btn" id="open-root">에셋 폴더 열기</button></div>
+  <div class="row"><span class="hint" style="flex:1">다른 PC에서 추출했거나 개발용 <code>prototype/assets</code>가 있으면 그 폴더를 지정합니다 (<code>minimi/</code>가 들어 있는 폴더).</span><button class="btn" id="use-folder">폴더 선택…</button><button class="btn" id="open-root">에셋 폴더 열기</button><button class="btn" id="open-log">추출 로그 열기</button></div>
 </div>
 <script src="setup.js"></script>
 </body></html>
