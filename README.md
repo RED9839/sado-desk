@@ -42,7 +42,7 @@ npm run dist            # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe
 - 소스 코드: [MIT](LICENSE)
 - 게임 자산(캐릭터·애니메이션·음성·효과음): © EPID Games. 저장소에 포함하지 않으며, 사용자가 개인 사용 목적으로 자기 게임에서 추출합니다.
 - `prototype/data/talk-ko.json`(사도별 말투 프로필·대사 표본)은 [나무위키 트릭컬 리바이브 문서](https://namu.wiki/w/트릭컬%20리바이브)의 대사표를 바탕으로 만들었으며 [CC BY-NC-SA 2.0 KR](https://creativecommons.org/licenses/by-nc-sa/2.0/kr/)을 따릅니다.
-- `prototype/data/names-ko.json`(사도·스킨 한글 이름표)은 게임 내 표기를 위키·[tr.triple-lab.com](https://tr.triple-lab.com)·[trickcaltool](https://github.com/)로 대조해 정리한 것입니다. 원본 데이터 파일은 저장소에 포함하지 않습니다.
+- `prototype/data/names-ko.json`(사도·스킨 한글 이름표)은 나무위키 사도 문서의 영문 표기·테마 사복 절과 게임 아이콘 대조로 직접 정리한 것입니다 (`tools/names-verified.json`, `tools/build-names.py`).
 - 새 소식 알림은 유튜브 RSS와 네이버 게임 라운지의 공개 API를 사용합니다. 라운지 API는 비공식이라 예고 없이 바뀔 수 있습니다.
 - 애니메이션 런타임: [spine-ts](https://github.com/EsotericSoftware/spine-runtimes) 4.1 (Esoteric Software). 앱 아이콘은 이 프로젝트에서 직접 그린 것입니다.
 
