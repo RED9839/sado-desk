@@ -40,9 +40,9 @@ run.cmd --multi-test # 캐릭터 추가 → 개별 설정 → 2번 캐릭터 메
 - 볼륨 = 전체 × 카테고리, 음소거 시 0. 슬라이더 놓으면 미리듣기. 트레이 메뉴에도 음소거 토글
 
 ## 한글 표기
-- 사도/스킨 이름: `assets/names-ko.json` ← `python tools/build-names.py`
-  - 사도 144명: [Triple3T/trickcaltool](https://tr.triple-lab.com) 로케일 104명 + [lsbim/t-r](https://github.com/lsbim/t-r) 사도 목록으로 확인 30명 + 추정 10명(더미·위스프 4·리뉴아 원형/알바·아이시아 냉장고·골디·영춘 — UI에 `?`)
-  - 스킨 273/274개: 로케일 번호표 138 + **게임 아이콘 대조 판별 78** (`tools/skin-decisions.json`) + 후보 1개 자동 57. 스킨 번호는 출시 순서와 다르므로(17% 불일치) 출시순 추정은 쓰지 않음. 미확정: SilviaSkin3(게임에 아이콘 없음)
+- 사도/스킨 이름: `data/names-ko.json` ← `python tools/build-names.py <나무위키 캐시>`
+  - 사도 144명: 나무위키 사도 문서 상단 표의 영문 표기(`Erpin | エルフィン | …`)로 게임 id ↔ 한글 이름 대응. 문서가 없는 것(더미·위스프 4종)은 추정(UI에 '?')
+  - 스킨 273/274개: 나무위키 '사복' 절의 테마 사복 이름 + **게임 아이콘 대조로 확정한 번호표** `tools/names-verified.json` (스킨 번호는 출시 순서와 17% 불일치해 이름만으로는 못 정함). 미확정: SilviaSkin3
 - 애니/보이스 종류 한글: `renderer/ko.js` (KO.anim, KO.voiceCat)
 
 ## GIF 추출 (스탠딩 Spine → 투명 GIF)
