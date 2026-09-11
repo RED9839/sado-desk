@@ -76,10 +76,17 @@ def adb_version(exe):
         except Exception: _ADB_VER[exe] = (0, 0, 0)
     return _ADB_VER[exe]
 
+ONLY = os.environ.get("SADODESK_ONLY", "").lower()  # 테스트용: "mumu" | "ld" | "bluestacks" — 그 앱플레이어만 설치된 PC처럼 동작
+def _only_ok(name):
+    if not ONLY: return True
+    n = name.lower()
+    return (ONLY == "mumu" and "mumu" in n) or (ONLY == "ld" and "ldplayer" in n) or (ONLY == "bluestacks" and "bluestacks" in n)
+
 def find_adbs(extra=None):
     """설치된 앱플레이어들의 adb.exe → [(이름, adb경로, 포트들, 안내)]. 새 버전 adb 우선(블루스택 HD-Adb 1.0.36은 폴더 pull이 실패해서 뒤로)"""
     found = []
     for name, pats, ports, tip in EMULATORS:
+        if not _only_ok(name): continue
         for p in _glob_paths(pats):
             if os.path.exists(p): found.append((name, p, ports, tip)); break
     if extra and os.path.exists(extra): found.insert(0, ("직접 지정", extra, [], ""))
@@ -92,12 +99,13 @@ def find_adbs(extra=None):
                 if name.startswith("BlueStacks 5"): found[i] = (name, p, sorted(set(ports + ps)), tip)
         except Exception: pass
     # PATH의 adb (platform-tools) — 실제 스마트폰(USB 디버깅)도 이걸로
-    w = shutil.which("adb")
+    w = None if ONLY else shutil.which("adb")
     if w and all(os.path.normcase(w) != os.path.normcase(f[1]) for f in found): found.append(("adb (PATH)", w, [], "USB 디버깅을 켠 실제 기기 · 기타 앱플레이어"))
     found.sort(key=lambda f: (0 if f[0] == "직접 지정" else 1, tuple(-v for v in adb_version(f[1]))))
     return found
 
 def ldconsole_path():
+    if ONLY and ONLY != "ld": return None
     for exe in _glob_paths([r"*:\\LDPlayer\\LDPlayer*\\ldconsole.exe", r"*:\\LDPlayer*\\ldconsole.exe", r"C:\\Program Files\\LDPlayer\\LDPlayer*\\ldconsole.exe"]):
         return exe
     return None
@@ -128,7 +136,10 @@ def label_device(serial, info, ldnames):
     if port is not None:
         if 16384 <= port < 17000 and (port - 16384) % 32 == 0: return "MuMu Player 12", "꺼져 있으면 자동으로 켭니다"
         if port == 7555: return "MuMu Player (구버전)", ""
-        if 5555 <= port < 5600: return "안드로이드 에뮬레이터 (포트 %d)" % port, "LD플레이어는 ldconsole 경유로 따로 잡힘"
+        if 5555 <= port < 5600:
+            idx = (port - 5555) // 2
+            if ldnames and idx in ldnames: return f"LDPlayer — {ldnames[idx]}", "LD플레이어 인스턴스"
+            return "안드로이드 에뮬레이터 (포트 %d)" % port, ""
     return "안드로이드 기기", "USB 디버깅 기기 또는 기타 에뮬레이터"
 
 def stable_devices(adb_exe, wait=6.0):
@@ -148,19 +159,10 @@ def scan_devices(mumu_hint=None, adb_hint=None):
     adbs = find_adbs(adb_hint or (mumu_hint and os.path.join(mumu_hint, "adb.exe")))
     if not adbs: return []
     all_ports = sorted({pt for _, _, ports, _ in adbs for pt in ports} | {16384, 7555, 5555, 5557, 5559})
-    ldnames = {}
     result = []; seen_aid = set()
-    # LD플레이어 인스턴스의 boot_id → 제목 (같은 VM이 일반 adb로 보이면 LD로 이름 붙이기 위해). LD 14는 뮤뮤 엔진(MuMuVMM)을 써서 16384 포트로도 잡힘
-    ldc = ldconsole_path(); ld_by_boot = {}
-    if ldc:
-        for idx, title, started in ld_instances():
-            if not started: continue
-            info = None
-            for _ in range(2):
-                info = device_info(ldc, f"ld:{idx}")
-                if info: break
-                time.sleep(0.8)
-            if info: ld_by_boot[info["aid"]] = (idx, title)
+    ldc = ldconsole_path()
+    ld_running = {idx: title for idx, title, started in ld_instances() if started} if ldc else {}
+    ldnames = ld_running
     for name, adb_exe, ports, tip in adbs:  # adb 서버(5037)는 공유되므로 첫 adb로 전부 보인다. 안 보이면 다음 adb로
         for port in sorted(set(all_ports)):
             subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=6)
@@ -178,22 +180,12 @@ def scan_devices(mumu_hint=None, adb_hint=None):
             if info["aid"] in seen_aid: continue
             seen_aid.add(info["aid"])
             emu, tip2 = label_device(serial, info, ldnames)
-            if info["aid"] in ld_by_boot: emu, tip2 = f"LDPlayer — {ld_by_boot[info['aid']][1]}", "LD플레이어 인스턴스"
             result.append({"emulator": emu, "adb": adb_exe, "serial": serial, "tip": tip2, "hasGame": info["hasGame"], "android": info["android"], "model": info["model"]})
         if result: break
-    # LD플레이어: 일반 adb로 안 잡힌 인스턴스는 ldconsole로 직접 (다른 앱플레이어가 5555 포트를 점유해도 됨)
-    if ldc:
-        for idx, title, started in ld_instances():
-            if not started: continue
-            info = next((None for _ in ()), None)
-            for _ in range(2):
-                info = device_info(ldc, f"ld:{idx}")
-                if info: break
-                time.sleep(0.8)
-            if not info: continue
-            if info["aid"] in seen_aid: continue  # 일반 adb로 이미 잡힌 같은 VM (LD 14는 뮤뮤 엔진을 써서 16384 포트로도 보임)
-            seen_aid.add(info["aid"])
-            result.append({"emulator": f"LDPlayer — {title}", "adb": ldc, "serial": f"ld:{idx}", "tip": "LD플레이어 인스턴스 (ldconsole 경유)", "hasGame": info["hasGame"], "android": info["android"], "model": info["model"]})
+    # LD플레이어가 켜져 있는데 그 포트(5555+2i)로 아무 기기도 안 잡히면 = LD 설정의 'ADB 디버깅'이 꺼진 것(기본값) → 안내 항목
+    for idx, title in ld_running.items():
+        if any(d["emulator"].startswith("LDPlayer") and (f":{5555 + 2 * idx}" in d["serial"] or d["serial"] == f"emulator-{5554 + 2 * idx}") for d in result): continue
+        result.append({"emulator": f"LDPlayer — {title}", "adb": "", "serial": f"ld:{idx}", "tip": "ADB 디버깅 꺼져 있음", "hasGame": False, "android": "?", "model": "", "unavailable": "LD플레이어 설정 → 기타 → 'ADB 디버깅'을 '로컬 연결 열기'로 바꾸고 재시작 (또는 아래 '켜기' 버튼)", "ldIndex": idx})
     # 블루스택이 켜져 있는데 어느 serial로도 응답이 없으면 = ADB 옵션이 꺼진 것 (포트는 열려 있어도 shell이 'closed') → 안내용 항목
     if any(n.startswith("BlueStacks") for n, _, _, _ in adbs) and not any(d["emulator"].startswith("BlueStacks") for d in result):
         try:
@@ -206,6 +198,7 @@ def scan_devices(mumu_hint=None, adb_hint=None):
 
 # ---------- 뮤뮤 / adb ----------
 def find_mumu(hint=None):
+    if ONLY and ONLY != "mumu": return None
     cands = [hint] if hint else []
     cands += [r"C:\Program Files\Netease\MuMuPlayer", r"C:\Program Files\Netease\MuMu Player 12", r"C:\Program Files (x86)\Netease\MuMuPlayer", r"D:\Program Files\Netease\MuMuPlayer"]
     for base in cands:
@@ -476,11 +469,29 @@ def main():
     ap.add_argument("--adb", default=None, help="adb.exe 경로 (앱플레이어 것 또는 platform-tools)"); ap.add_argument("--serial", default=None, help="기기 serial (예 127.0.0.1:5555, emulator-5554)")
     ap.add_argument("--list-devices", action="store_true", help="붙을 수 있는 기기 목록만 JSON으로 출력")
     ap.add_argument("--force", action="store_true", help="이미 있는 스탠딩·보이스도 다시 받아 덮어쓰기")
+    ap.add_argument("--enable-ld-adb", type=int, default=None, help="LD플레이어 인스턴스 N의 ADB 디버깅을 켜고 재시작")
     ap.add_argument("--cache", default=os.path.join(os.environ.get("LOCALAPPDATA", tempfile.gettempdir()), "sado-desk"), help="platform-tools 등 보조 도구 저장 폴더")
     a = ap.parse_args(); JSON = a.json
     global FORCE; FORCE = a.force
     if a.list_devices:
         print(json.dumps(scan_devices(a.mumu, a.adb), ensure_ascii=False)); return
+    if a.enable_ld_adb is not None:
+        ldc = ldconsole_path()
+        if not ldc: log("adb", "LD플레이어를 찾지 못했어요", "error"); sys.exit(3)
+        cfg = os.path.join(os.path.dirname(ldc), "vms", "config", f"leidian{a.enable_ld_adb}.config")
+        try:
+            c = json.load(open(cfg, encoding="utf-8")) if os.path.exists(cfg) else {}
+            c["basicSettings.adbDebug"] = 1
+            open(cfg, "w", encoding="utf-8").write(json.dumps(c, ensure_ascii=False, indent=4))
+            log("adb", f"LD플레이어 인스턴스 {a.enable_ld_adb}: ADB 디버깅(로컬) 켬 → 재시작 중… (30초쯤)")
+            subprocess.run([ldc, "reboot", "--index", str(a.enable_ld_adb)], capture_output=True, timeout=30)
+            for _ in range(40):
+                time.sleep(3)
+                if any(i == a.enable_ld_adb and st for i, _, st in ld_instances()): break
+            time.sleep(8)
+            log("adb", "재시작 완료 — 다시 검색해 주세요", "ok"); return
+        except Exception as e:
+            log("adb", f"설정 변경 실패: {e}", "error"); sys.exit(3)
     if not a.out: ap.error("--out 이 필요해요")
     steps = [s.strip() for s in a.steps.split(",") if s.strip()]
     out = os.path.abspath(a.out); os.makedirs(out, exist_ok=True)
@@ -491,7 +502,7 @@ def main():
     try:
         adb_exe, dev = None, None
         if a.serial and re.fullmatch(r"\d{2,5}", a.serial): a.serial = "127.0.0.1:" + a.serial  # 포트만 준 경우
-        if a.serial and a.serial.startswith("ld:") and not (a.adb and a.adb.lower().endswith("ldconsole.exe")): a.adb = ldconsole_path()
+        if a.serial and a.serial.startswith("ld:"): log("adb", "LD플레이어의 ADB 디버깅을 먼저 켜 주세요 (설정 → 기타 → ADB 디버깅: 로컬 연결 열기)", "error"); sys.exit(6)
         if a.serial and not a.adb:  # 포트만 직접 지정 → 설치된 앱플레이어 adb 아무거나
             found = find_adbs(); a.adb = found[0][1] if found else None
             if not a.adb: log("adb", "adb.exe를 찾지 못했어요. adb 경로도 함께 지정해 주세요.", "error"); sys.exit(3)

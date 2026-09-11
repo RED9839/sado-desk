@@ -445,6 +445,16 @@ function startExtract(opt) {
   return { ok: true };
 }
 if (argHas("--setup-test")) setTimeout(async () => { if (setupWin && !app.isPackaged) { try { const img = await setupWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "setup.png"), img.toPNG()); } catch {} } const steps = (argVal("--setup-steps", "minimi,sfx") || "minimi,sfx").split(","); console.log("SETUPTEST start extract", steps.join(",")); startExtract({ steps }); }, 4000);
+ipcMain.handle("assets:enable-ld-adb", (_e, idx) => new Promise((resolve) => { // LD플레이어 인스턴스의 ADB 디버깅 켜고 재시작 (extract-all.py --enable-ld-adb N)
+  const py = pythonExe(); const args = [...py.args, path.join(toolsDir(), "extract-all.py"), "--enable-ld-adb", String(idx), "--json"];
+  let out = "";
+  try {
+    const p = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } });
+    p.stdout.on("data", (d) => { out += d.toString("utf8"); for (const line of d.toString("utf8").split("\n")) { if (!line.trim()) continue; let o; try { o = JSON.parse(line); } catch { o = { step: "ld", msg: line, level: "info" }; } setupSend("extract:progress", o); } });
+    p.on("error", (e) => resolve({ ok: false, error: e.message }));
+    p.on("exit", (code) => resolve({ ok: code === 0, out }));
+  } catch (e) { resolve({ ok: false, error: e.message }); }
+}));
 ipcMain.on("assets:cancel", () => { if (extractProc) { try { extractProc.kill(); } catch {} } });
 ipcMain.on("assets:open-setup", () => openSetup());
 ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
