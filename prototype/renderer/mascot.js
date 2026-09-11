@@ -273,9 +273,12 @@
     function selectVoiceSet(skinName) { voiceSet = voiceSetFor(skinName); }
     const voiceCount = () => countVoices(voiceSet);
     function volumeOf(cat) { const s = S.sound; return s.muted ? 0 : Math.max(0, Math.min(1, s.master * s[cat])); }
-    function playSound(cat, name, src) {
+    const SFX_BASE = 0.4; // 효과음 원본이 피크 1.0 풀스케일로 녹음돼 있어 같은 % 에서도 목소리보다 훨씬 크게 들림 → 기본 감쇠
+    let lastSfxAt = -1e9;
+    function playSound(cat, name, src, gain = 1) {
       if (!src) return;
-      const v = volumeOf(cat); lastPlayed = { cat, name, volume: +v.toFixed(3) };
+      if (cat === "sfx") { const now = performance.now(); if (now - lastSfxAt < 220) return; lastSfxAt = now; } // 튕길 때 연타 방지
+      const v = Math.min(1, volumeOf(cat) * (cat === "sfx" ? SFX_BASE * gain : 1)); lastPlayed = { cat, name, volume: +v.toFixed(3) };
       if (v <= 0) return;
       if (cat === "voice" && currentVoice) { currentVoice.pause(); currentVoice = null; }
       const a = new Audio(src); a.volume = v; a.play().catch(() => {});
@@ -285,7 +288,7 @@
       for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(list); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
       return null;
     }
-    const playSfx = (name) => playSound("sfx", name, clips.sfx[name]);
+    const playSfx = (name, gain = 1) => playSound("sfx", name, clips.sfx[name], gain);
     const voicePlaying = () => !!(currentVoice && !currentVoice.ended && !currentVoice.paused && currentVoice.currentTime < (currentVoice.duration || 99));
     let lastMotionVoiceAt = -1e9;
     // 모션에 맞는 대사. force=true(메뉴/클릭에서 직접 시킨 경우)면 확률·쿨다운 무시
@@ -541,7 +544,10 @@
               m.vx = m.vy = 0; m.rot = 0; if (isSD()) useSlot(slotForRest()); applyFacing(); playOnce(firstOf(active.A.land || "", "Angry_1", "Idle_1", "Idle1_1"), "land");
               if (S.sound.landSfx) playSfx("jump02");
               if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoice("surprise", "sorry", "anger", "ticklestart"); }
-            } else { m.vy *= -0.45; m.vx *= 0.75; if (S.sound.landSfx) playSfx("jump02"); }
+            } else { // 튕김: 세게 떨어질 때만, 세기에 비례해 작게 (작은 튕김은 무음)
+              const impact = Math.abs(m.vy); m.vy *= -0.45; m.vx *= 0.75;
+              if (S.sound.landSfx && impact > 900) playSfx("jump02", Math.min(0.7, impact / 4000));
+            }
           }
           break;
         }
