@@ -35,6 +35,7 @@ function koSkin(skin) { const m = skin.replace(/^Mini_/, "").match(/^(.*?)(?:Ski
 const CHAR_DEFAULTS = {
   skin: "Mini_Crepe",
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미)
+  mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
   scale: 0.5, opacity: 1,
   behavior: {
     hop: true, jump: true, idleActs: true,
@@ -201,7 +202,7 @@ function updateHitTarget(x, y) {
   for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
   placeHit(best);
 }
-function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest") }; }
+function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test") }; }
 function createMascotWindow() {
   if (mascotWin && !mascotWin.isDestroyed()) return;
   if (!geo) geo = geometry();
@@ -216,7 +217,11 @@ function createMascotWindow() {
   win.setIgnoreMouseEvents(true, { forward: true }); // 항상 클릭 통과 (끄면 Chrome이 '가려짐'으로 보고 영상을 회색으로 멈춤)
   win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); // 생성 시 잘린 크기 재적용
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
-  win.webContents.on("console-message", (ev) => console.log(`[mascot:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
+  win.webContents.on("console-message", (ev) => {
+    console.log(`[mascot:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`);
+    const mm = /^SHOTREQ (\S+) (-?\d+) (-?\d+) (\d+) (\d+)$/.exec(ev.message); // 테스트: 렌더러가 요청한 영역을 캡처해 out/에 저장
+    if (mm && !app.isPackaged) win.webContents.capturePage({ x: +mm[2], y: +mm[3], width: +mm[4], height: +mm[5] }).then(img => { fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `shot-${mm[1]}.png`), img.toPNG()); console.log("SHOT saved", mm[1]); }).catch(e => console.log("SHOT fail", e.message));
+  });
   if (argHas("--devtools")) win.webContents.openDevTools({ mode: "detach" });
   win.webContents.on("did-finish-load", () => {
     win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h });
@@ -503,6 +508,7 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
+if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize()); } }, 1500); }, 5000);
 if (argHas("--multi-test")) setTimeout(() => {
   const dump = (tag) => console.log(`MULTI ${tag} chars=${JSON.stringify(settings.characters.map(c => [c.id, c.skin, c.mode, c.scale]))} rects=${[...instances.keys()].join(",")} windows=${BrowserWindow.getAllWindows().length} hitFor=${hitFor} shown=${hitShown} rects=${[...instances.values()].map(i => i.rect ? JSON.stringify(screenRect(i.rect)) : "-").join(" ")}`);
   dump("start");

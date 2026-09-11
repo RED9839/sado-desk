@@ -6,6 +6,7 @@
   KO.load(catalog.dataRoot || catalog.assetRoot);
   const menuEl = document.getElementById("menu");
   const set = (patch) => { S = deepMerge(S, patch); host.setSettings(patch); render(); };
+  const MOODS = [["", "기본"], ["smile", "미소"], ["anger", "분노"], ["sad", "슬픔"], ["happy", "행복"], ["eat", "냠냠"], ["sulky", "삐짐"], ["surprise", "놀람"]];
   const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
   const deepMerge = (b, p) => { const o = { ...b }; for (const [k, v] of Object.entries(p || {})) o[k] = isObj(v) && isObj(b[k]) ? deepMerge(b[k], v) : v; return o; };
   const resize = () => host.menuResize(Math.ceil(menuEl.getBoundingClientRect().height) + 6);
@@ -33,6 +34,8 @@
     document.getElementById("mode-state").textContent = S.mode === "sd" ? "SD" : "미니미";
     document.getElementById("skin-cur").textContent = KO.skinName(S.skin);
     document.getElementById("scale-chips").innerHTML = [0.3, 0.4, 0.5, 0.6, 0.8, 1.0].map(v => `<div class="chip ${v === S.scale ? "on" : ""}" data-scale="${v}">${Math.round(v * 100)}%</div>`).join("");
+    document.getElementById("mood-chips").innerHTML = MOODS.map(([k, label]) => `<div class="chip ${(S.mood || "") === k ? "on" : ""}" data-mood="${k}">${label}</div>`).join("");
+    document.getElementById("mood-state").textContent = (MOODS.find(([k]) => k === (S.mood || "")) || MOODS[0])[1] + (S.mode !== "sd" ? " (SD에서)" : "");
     document.getElementById("mute-state").textContent = S.sound.muted ? "음소거" : "켜짐";
     for (const row of menuEl.querySelectorAll("[data-vol]")) { const k = row.dataset.vol, v = Math.round(S.sound[k] * 100); row.querySelector("input").value = v; row.querySelector(".val").textContent = v + "%"; row.classList.toggle("off", S.sound.muted); }
     document.getElementById("debug-state").textContent = S.display.debug ? "켜짐" : "꺼짐";
@@ -45,7 +48,8 @@
     input.addEventListener("change", () => { set({ sound: { [row.dataset.vol]: input.value / 100 } }); host.mascot("preview", row.dataset.vol); });
   }
   menuEl.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-toggle],[data-act],[data-anim],[data-skin],[data-scale],[data-news]"); if (!t) return;
+    const t = e.target.closest("[data-toggle],[data-act],[data-anim],[data-skin],[data-scale],[data-news],[data-mood]"); if (!t) return;
+    if (t.dataset.mood !== undefined) { set(t.dataset.mood && S.mode !== "sd" ? { mood: t.dataset.mood, mode: "sd" } : { mood: t.dataset.mood }); return; }
     if (t.dataset.news) { const it = newsItems.find(i => i.id === t.dataset.news); if (it) host.openUrl(it.url, it.id); host.menuClose(); return; }
     if (t.dataset.toggle) { const sub = document.getElementById("sub-" + t.dataset.toggle); const was = sub.classList.contains("open"); for (const el of menuEl.querySelectorAll(".sub.open")) el.classList.remove("open"); if (!was) sub.classList.add("open"); if (t.dataset.toggle === "skins" && !was) setTimeout(() => filter.focus(), 0); resize(); return; }
     if (t.dataset.anim) { host.mascot("play", t.dataset.anim); return; }
