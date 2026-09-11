@@ -48,8 +48,15 @@ def _glob_paths(pats):
         else: out += glob.glob(pat)
     return out
 
+_ADB_VER = {}
+def adb_version(exe):
+    if exe not in _ADB_VER:
+        try: m = re.search(r"version (\d+)\.(\d+)\.(\d+)", subprocess.run([exe, "version"], capture_output=True, text=True, timeout=10).stdout); _ADB_VER[exe] = tuple(int(x) for x in m.groups()) if m else (0, 0, 0)
+        except Exception: _ADB_VER[exe] = (0, 0, 0)
+    return _ADB_VER[exe]
+
 def find_adbs(extra=None):
-    """설치된 앱플레이어들의 adb.exe → [(이름, adb경로, 포트들, 안내)]"""
+    """설치된 앱플레이어들의 adb.exe → [(이름, adb경로, 포트들, 안내)]. 새 버전 adb 우선(블루스택 HD-Adb 1.0.36은 폴더 pull이 실패해서 뒤로)"""
     found = []
     for name, pats, ports, tip in EMULATORS:
         for p in _glob_paths(pats):
@@ -66,6 +73,7 @@ def find_adbs(extra=None):
     # PATH의 adb (platform-tools) — 실제 스마트폰(USB 디버깅)도 이걸로
     w = shutil.which("adb")
     if w and all(os.path.normcase(w) != os.path.normcase(f[1]) for f in found): found.append(("adb (PATH)", w, [], "USB 디버깅을 켠 실제 기기 · 기타 앱플레이어"))
+    found.sort(key=lambda f: (0 if f[0] == "직접 지정" else 1, tuple(-v for v in adb_version(f[1]))))
     return found
 
 def ldconsole_path():
@@ -240,7 +248,9 @@ def adb_ls(adb_exe, dev, path):
 def adb_pull(adb_exe, dev, remote, local):
     os.makedirs(os.path.dirname(local) or ".", exist_ok=True)
     p = adb(adb_exe, dev, "pull", remote, local, timeout=3600)
-    if p.returncode != 0: raise RuntimeError(f"adb pull 실패 {remote}: {p.stderr.decode('utf-8', 'ignore')[:200]}")
+    if p.returncode != 0:
+        msg = (p.stderr.decode("utf-8", "ignore").strip() or p.stdout.decode("utf-8", "ignore").strip())[-300:]
+        raise RuntimeError(f"adb pull 실패 {remote}: {msg or f'code {p.returncode}'} (adb {'.'.join(map(str, adb_version(adb_exe))) if not dev.startswith('ld:') else 'ldconsole'})")
 
 # ---------- UnityPy 디코드 ----------
 def text_asset(path):
@@ -333,8 +343,23 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
             if i % 10 == 0 or i == len(todo): log(kind, f"{label} 복사 {i}/{len(todo)}", done=i, total=len(todo))
         root = local
     else:
-        adb_pull(adb_exe, dev, remote, local)  # 폴더 통째로 (파일별 pull보다 훨씬 빠름)
-        root = local if os.path.isdir(os.path.join(local, todo[0])) else os.path.join(local, os.path.basename(remote))
+        try:
+            adb_pull(adb_exe, dev, remote, local)  # 폴더 통째로 (파일별 pull보다 훨씬 빠름)
+            root = local if os.path.isdir(os.path.join(local, todo[0])) else os.path.join(local, os.path.basename(remote))
+        except RuntimeError as e:  # 구버전 adb(블루스택 HD-Adb 1.0.36)는 큰 폴더 pull이 실패함 → 세트별로
+            log(kind, f"폴더 일괄 복사 실패, 세트별로 다시 받습니다 — {e}", "warn")
+            shutil.rmtree(local, ignore_errors=True); os.makedirs(local, exist_ok=True)
+            try: adb_connect(adb_exe, dev)  # 다른 앱플레이어의 adb가 서버를 재시작해 끊긴 경우 다시 연결
+            except Exception: pass
+            failed = []
+            for i, n in enumerate(todo, 1):
+                try: adb_pull(adb_exe, dev, f"{remote}/{n}", os.path.join(local, n))
+                except RuntimeError:
+                    try: time.sleep(0.5); adb_pull(adb_exe, dev, f"{remote}/{n}", os.path.join(local, n))
+                    except RuntimeError as e2: failed.append(f"{n}: {e2}")
+                if i % 20 == 0 or i == len(todo): log(kind, f"{label} 복사 {i}/{len(todo)}", done=i, total=len(todo))
+            for f in failed[:5]: log(kind, "복사 실패 " + f, "warn")
+            root = local
     jobs = [(os.path.join(root, n), os.path.join(out, kind, n), kind) for n in todo if os.path.isdir(os.path.join(root, n))]
     log(kind, f"{label} 디코드 중…", total=len(jobs), done=0)
     okn = 0; bad = []
@@ -375,10 +400,17 @@ def step_voice(adb_exe, dev, out, tmp):
     if not todo: build_voice_index(vout); log("voice", f"보이스 {len(heroes)}명 이미 있음 — 건너뜀 (다시 받으려면 '이미 있는 것도 다시 받기' 체크)", "ok"); return
     log("voice", f"보이스: 사도 {len(todo)}명 폴더 복사 중… (이미 있는 {len(heroes) - len(todo)}명 제외 · 원본 1.6GB 중 로비 대사만 변환)", total=len(todo), done=0)
     vtmp = os.path.join(tmp, "voice"); os.makedirs(vtmp, exist_ok=True)
-    if len(todo) >= len(heroes) * 0.5: adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero", vtmp); root = os.path.join(vtmp, "hero") if os.path.isdir(os.path.join(vtmp, "hero")) else vtmp  # 한 번에 (사도별 156회 pull보다 빠름)
-    else:
+    root = None
+    if len(todo) >= len(heroes) * 0.5:
+        try: adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero", vtmp); root = os.path.join(vtmp, "hero") if os.path.isdir(os.path.join(vtmp, "hero")) else vtmp  # 한 번에 (사도별 156회 pull보다 빠름)
+        except RuntimeError as e:
+            log("voice", f"폴더 일괄 복사 실패, 사도별로 다시 받습니다 — {e}", "warn"); shutil.rmtree(vtmp, ignore_errors=True); os.makedirs(vtmp, exist_ok=True)
+            try: adb_connect(adb_exe, dev)
+            except Exception: pass
+    if root is None:
         for i, h in enumerate(todo, 1):
-            adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero/{h}", os.path.join(vtmp, h))
+            try: adb_pull(adb_exe, dev, f"{BASE}/audio/kor/voice/hero/{h}", os.path.join(vtmp, h))
+            except RuntimeError as e: log("voice", f"복사 실패 {h}: {e}", "warn")
             if i % 5 == 0 or i == len(todo): log("voice", f"보이스 복사 {i}/{len(todo)}", done=i, total=len(todo))
         root = vtmp
     jobs = []
