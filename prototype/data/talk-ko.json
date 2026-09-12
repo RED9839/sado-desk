@@ -50,7 +50,7 @@
   "Allet": {
    "ko": "알레트",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.02,
@@ -227,7 +227,7 @@
   "Ashur": {
    "ko": "에슈르",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.01,
@@ -1684,7 +1684,7 @@
   "LeviGraduate": {
    "ko": "레비(졸업)",
    "style": "polite",
-   "addr": "교주님",
+   "addr": "교주",
    "me": null,
    "interj": [
     "어라"
@@ -2048,7 +2048,7 @@
   },
   "Ner": {
    "ko": "네르",
-   "style": "formal",
+   "style": "polite",
    "addr": "교주님",
    "me": null,
    "interj": [
@@ -2075,7 +2075,7 @@
   },
   "NerRage": {
    "ko": "네르(빡침)",
-   "style": "formal",
+   "style": "polite",
    "addr": "교주님",
    "me": null,
    "interj": [
@@ -2200,7 +2200,7 @@
   "Patula": {
    "ko": "파트라",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.0,
@@ -2617,7 +2617,7 @@
   },
   "Sari": {
    "ko": "사리",
-   "style": "polite",
+   "style": "casual",
    "addr": "교주",
    "me": null,
    "interj": [],
@@ -3335,7 +3335,7 @@
   "Yumimi": {
    "ko": "유미미",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [
     "후후"

@@ -342,10 +342,14 @@ function chatPlace(id) {
   const b = { x: Math.min(Math.max(sx, d.x), d.x + d.width - CHAT_W), y: Math.max(d.y, sy), width: CHAT_W, height: h };
   if (!chatBounds || b.x !== chatBounds.x || b.y !== chatBounds.y || b.height !== chatBounds.height) { chatWin.setBounds(b); chatBounds = b; }
 }
+let talkStyle = null; try { talkStyle = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-style.json"), "utf8")); } catch {} // 보이스 STT 대본 분석(어미 비율·표본) — 없어도 됨
 function chatProfile(id) {
   const ch = charOf(id); if (!ch) return null;
   const p = talkData ? Talk.profileFor(talkData, ch.skin) : null;
-  return p || { ko: koSkin(ch.skin), style: "polite", addr: "교주", lines: [] };
+  const prof = p || { ko: koSkin(ch.skin), style: "polite", addr: "교주", lines: [] };
+  const hero = ch.skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase();
+  if (talkStyle && talkStyle[hero]) prof.styleInfo = talkStyle[hero];
+  return prof;
 }
 async function chatInitPayload(id) {
   const st = await Ai.status(settings.global.ai);
