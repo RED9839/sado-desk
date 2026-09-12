@@ -22,6 +22,7 @@ const DEFAULTS = {
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
   duo: true, // 소환된 사도가 둘 이상이면 가끔 둘이 잡담
+  bubbleSec: 6, // 잡담 말풍선 기본 표시 시간(초) + 글자당 0.12초
 };
 
 // ---- 키 ----
