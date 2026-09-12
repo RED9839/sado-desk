@@ -46,6 +46,17 @@ contextBridge.exposeInMainWorld("host", {
   newsReadAll: () => ipcRenderer.send("news:read-all"),
   openUrl: (url, id) => ipcRenderer.send("news:open", url, id),
   bubbleResize: (h) => ipcRenderer.send("bubble:resize", h),
+  // AI 대화
+  chatOpen: (id) => ipcRenderer.send("chat:open", id === undefined ? INSTANCE : id),
+  chatSend: (text) => ipcRenderer.send("chat:send", text),
+  chatClose: () => ipcRenderer.send("chat:close"),
+  chatClear: () => ipcRenderer.send("chat:clear"),
+  chatResize: (h) => ipcRenderer.send("chat:resize", h),
+  aiStatus: () => ipcRenderer.invoke("ai:status"),
+  aiSetKey: (provider, key) => ipcRenderer.invoke("ai:set-key", provider, key),
+  aiTest: (provider) => ipcRenderer.invoke("ai:test", provider),
+  aiPull: (model) => ipcRenderer.invoke("ai:pull", model),
+  aiOpenUrl: (which) => ipcRenderer.send("ai:open-url", which),
   bubbleClose: () => ipcRenderer.send("bubble:close"),
   on: (ch, fn) => ipcRenderer.on(ch, (_e, ...args) => fn(...args)),
 });

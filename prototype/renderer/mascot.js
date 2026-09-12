@@ -172,7 +172,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -415,6 +415,16 @@
     // 새 소식 알림: 말풍선은 메인이 띄우고, 여기선 "말하는" 모션 + 인사/잡담 대사. 잡고 있거나 공중이면 건드리지 않음
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
     const holding = () => performance.now() < holdUntil;
+    // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
+    function emote(arg) {
+      const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = performance.now() + arg.hold;
+      if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
+      if (isSD()) useSlot(slotForRest());
+      const pool = mood && active.A.moods ? (active.A.moods[mood] || []).filter(has) : [];
+      const a = pool.length ? pick(pool) : (mood ? (active.A.react || []).find(has) : null);
+      m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
+      if (a) { playOnce(a, "react"); if (S.sound.clickVoice !== false) motionVoice(a, true); }
+    }
     function announce(arg) {
       if (arg && arg.hold) holdUntil = performance.now() + arg.hold;
       if (["drag", "thrown", "touch", "pat", "tickle"].includes(m.state)) return;
@@ -869,7 +879,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();
