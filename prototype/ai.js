@@ -16,7 +16,7 @@ const EMOTIONS = { "행복": "happy", "기쁨": "happy", "미소": "smile", "분
 const DEFAULTS = {
   provider: "auto",
   ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b" },
-  gemini: { model: "gemini-2.5-flash" },
+  gemini: { model: "gemini-flash-latest" }, // 별칭 — 구글이 최신 Flash로 연결(2.5-flash는 신규 사용자에게 막힘)
   anthropic: { model: "claude-opus-5" },
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
@@ -81,15 +81,26 @@ function buildSystem(prof, opts = {}) {
     "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
     "- AI나 언어모델이라는 말은 하지 않는다. 캐릭터로서 답한다. 모르는 것은 캐릭터답게 모른다고 한다.",
     "- 사용자의 화면·현재 시각·상황이 주어지면 그걸 자연스럽게 언급할 수 있다.",
-    "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나.",
+    "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나. 태그를 빼먹지 말 것.",
+    "답 형식 예시:\n간식 좀 남은 거 없어? 배고파~!\n[감정:냠냠]",
     opts.extra || "",
   ].filter(Boolean).join("\n");
 }
 function parseEmotion(text) {
-  const m = /\[감정\s*[:：]\s*([^\]]+)\]\s*$/.exec((text || "").trim());
-  const clean = m ? text.trim().slice(0, m.index).trim() : (text || "").trim();
+  const t = (text || "").trim();
+  const m = /\[\s*감정\s*[:：]\s*([^\]]+)\]\s*$/.exec(t) || /\[\s*감정\s*[:：]\s*([^\]]+)\]/.exec(t); // 끝에 없으면 중간 어디든
+  const clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
   const key = m ? m[1].trim() : "";
-  return { text: clean, emotion: EMOTIONS[key] ?? "", raw: key };
+  if (key && EMOTIONS[key] !== undefined) return { text: clean, emotion: EMOTIONS[key], raw: key };
+  // 태그를 빼먹은 모델(작은 로컬 모델·Gemini가 가끔) → 본문에서 대충 추정
+  const guess = /(화나|화났|짜증|사과해|용서|건방|무례|감히|버릇|혼내|때린다)/.test(clean) ? "anger"
+    : /(슬퍼|슬프|울|눈물|외로|서운|힘들|미안)/.test(clean) ? "sad"
+    : /(먹|배고|간식|빵|케이크|맛있|냠)/.test(clean) ? "eat"
+    : /(\?!|!\?|깜짝|놀랐|뭐라고|정말\?|진짜\?)/.test(clean) ? "surprise"
+    : /(흥|삐졌|몰라|안 해|싫어|치사)/.test(clean) ? "sulky"
+    : /(하하|헤헤|히히|좋아|기뻐|재밌|신나|고마워|최고)/.test(clean) ? "happy"
+    : /(~|후후|훗)/.test(clean) ? "smile" : "";
+  return { text: clean, emotion: guess, raw: key || (guess ? "추정:" + guess : "") };
 }
 
 // ---- 대화 기록 (캐릭터별) ----
@@ -124,11 +135,19 @@ async function chatOllama(cfg, system, messages, onToken, signal) {
   for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
   return out;
 }
-async function chatGemini(cfg, key, system, messages, onToken, signal) {
+async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false) {
   const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(m.image ? [{ inline_data: { mime_type: m.image.mime || "image/png", data: m.image.data } }] : []), { text: m.text }] }));
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse`;
-  const r = await fetch(url, { method: "POST", signal, headers: { "content-type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ system_instruction: { parts: [{ text: system }] }, contents, generationConfig: { temperature: 0.9, maxOutputTokens: 300 } }) });
-  if (!r.ok) throw new Error(`Gemini ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  // Flash는 기본으로 '생각' 토큰을 쓰고 그게 maxOutputTokens에 포함돼 답이 잘림 → 생각 끄기(안 받는 모델이면 빼고 재시도) + 여유 있는 상한
+  const generationConfig = { temperature: 0.9, maxOutputTokens: 1024, ...(noThinkCfg ? {} : { thinkingConfig: { thinkingBudget: 0 } }) };
+  const r = await fetch(url, { method: "POST", signal, headers: { "content-type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ system_instruction: { parts: [{ text: system }] }, contents, generationConfig }) });
+  if (!r.ok) {
+    const body = await r.text();
+    if (r.status === 404 && /no longer available|not found/i.test(body) && cfg.model !== "gemini-flash-latest") return chatGemini({ ...cfg, model: "gemini-flash-latest" }, key, system, messages, onToken, signal, noThinkCfg); // 은퇴한 모델 → 최신 Flash 별칭으로
+    if (r.status === 400 && !noThinkCfg && /thinking/i.test(body)) return chatGemini(cfg, key, system, messages, onToken, signal, true);
+    let msg = body; try { msg = JSON.parse(body).error?.message || body; } catch {}
+    throw new Error(`Gemini ${r.status}: ${msg.slice(0, 300)}`);
+  }
   let out = "";
   for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const t = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } }
   return out;
@@ -179,6 +198,7 @@ function resolve(cfg, s) {
 function merge(ai) {
   const o = { ...DEFAULTS, ...(ai || {}) };
   for (const k of ["ollama", "gemini", "anthropic", "openai", "keys"]) o[k] = { ...DEFAULTS[k], ...((ai || {})[k] || {}) };
+  if (o.gemini.model === "gemini-2.5-flash") o.gemini.model = "gemini-flash-latest"; // 예전 기본값 → 신규 사용자에게 막힌 모델
   return o;
 }
 
