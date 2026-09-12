@@ -1,42 +1,62 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 설정</title>
 <style>
-  :root{--bg:#1f1f24;--panel:#2b2b31;--panel2:#24242a;--line:#44444f;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a}
+  :root{--bg:#1c1c21;--panel:#26262d;--panel2:#202026;--line:#3a3a45;--line2:#4a4a58;--text:#ececf1;--muted:#9a9aa8;--muted2:#7d7d8c;--accent:#6c8cff;--accent2:#4f6fe0;--danger:#ff8a8a;--ok:#7bd88f}
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.5 "Malgun Gothic","Segoe UI",sans-serif;user-select:none}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.55 "Malgun Gothic","Segoe UI",sans-serif;user-select:none}
   body{display:flex}
-  nav{width:150px;background:var(--panel2);border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
-  nav .brand{display:flex;align-items:center;gap:8px;padding:6px 8px 14px;font-weight:700}
-  nav .brand img{width:28px;height:28px;image-rendering:auto}
-  nav button{all:unset;display:block;padding:8px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
-  nav button:hover{background:#33333c;color:var(--text)}
-  nav button.on{background:var(--accent);color:#fff}
+  ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:5px;border:2px solid var(--bg)}::-webkit-scrollbar-thumb:hover{background:#4a4a58}
+  nav{width:164px;flex:none;background:var(--panel2);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+  nav .brand{display:flex;align-items:center;gap:8px;padding:4px 8px 16px;font-weight:700;font-size:14px}
+  nav .brand img{width:28px;height:28px;border-radius:7px}
+  nav button{all:unset;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px}
+  nav button:hover{background:#2e2e37;color:var(--text)}
+  nav button.on{background:var(--accent);color:#fff;font-weight:600}
+  nav .ver{margin-top:auto;padding:8px 12px;font-size:11px;color:var(--muted2)}
   #content{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
-  main{flex:1;overflow:auto;padding:14px 22px 18px}
-  section{display:none}section.on{display:block}
-  h2{margin:0 0 12px;font-size:16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
-  .card h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
-  .row{display:flex;align-items:center;gap:10px;padding:5px 0;min-height:30px}
-  .row label{flex:1}
-  .row .hint{color:var(--muted);font-size:11px;display:block}
-  .row input[type=range]{width:220px;accent-color:var(--accent)}
-  .row .val{width:52px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  main{flex:1;overflow:auto;padding:16px 24px 24px}
+  section{display:none;max-width:760px}section.on{display:block}
+  h2{margin:0 0 14px;font-size:17px;font-weight:700}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.02em;text-transform:none}
+  .card > .hint{color:var(--muted);font-size:12px;line-height:1.6}
+  .card > .hint b{color:var(--text)}
+  /* 행: [라벨(제목+설명)] [컨트롤] [값] */
+  .row{display:flex;align-items:center;gap:12px;padding:7px 0;min-height:34px;border-top:1px solid transparent}
+  .row + .row{border-top-color:#2e2e37}
+  .row > label{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .row .hint{color:var(--muted);font-size:11.5px;line-height:1.5}
+  .row input[type=range]{width:240px;flex:none;accent-color:var(--accent);margin:0}
+  .row .val{width:56px;flex:none;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
   .row.off{opacity:.45}
-  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
-  .toggle{display:flex;align-items:center;gap:8px;cursor:pointer}
-  button.btn{all:unset;padding:6px 12px;border-radius:6px;background:#3a3a44;cursor:pointer;color:var(--text)}
-  button.btn:hover{filter:brightness(1.15)}
+  .row > .btn + .hint,.row > .btn + .btn{margin-left:0}
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);margin:0}
+  input[type=radio]{accent-color:var(--accent);margin:0}
+  /* 토글: 체크박스 | 제목 (설명은 아래 줄, 제목에 맞춰 들여쓰기) */
+  .toggle,.row > label.toggle{display:grid;grid-template-columns:16px 1fr;column-gap:10px;align-items:start;cursor:pointer;flex:1}
+  .toggle > input{margin-top:3px}
+  .toggle .hint{grid-column:2;display:block;margin-top:1px}
+  /* 형태 같은 선택 카드 */
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:grid;grid-template-columns:16px 1fr;column-gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer}
+  .opt:hover{border-color:var(--line2)}
+  .opt:has(input:checked){border-color:var(--accent);background:#262b3d}
+  .opt > input{margin-top:3px}
+  .opt b{display:block;font-size:13px}
+  .opt small{display:block;color:var(--muted);font-size:11.5px;line-height:1.5;margin-top:2px}
+  button.btn{all:unset;padding:7px 14px;border-radius:8px;background:#34343f;cursor:pointer;color:var(--text);font-size:12.5px;line-height:1.3;border:1px solid transparent;white-space:nowrap}
+  button.btn:hover{background:#3e3e4a}
+  button.btn:disabled{opacity:.5;cursor:default}
   button.btn.primary{background:var(--accent);color:#fff}
-  button.btn.danger{background:#5a2e2e;color:var(--danger)}
-  select,input[type=text],input[type=password]{background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
-  #tab-ai .row{flex-wrap:wrap}
-  #tab-ai .row > label:not(.toggle){flex:0 0 96px}
-  #tab-ai .row > select,#tab-ai .row > input[type=text],#tab-ai .row > input[type=password]{flex:1 1 200px;min-width:0;max-width:480px;width:auto!important}
-  #tab-ai .row > .hint{flex:1 1 100%;padding-left:106px}
-  #tab-ai .row > .btn + .hint,#tab-ai .row > label + .hint{flex:1 1 auto;padding-left:0}
+  button.btn.primary:hover{background:var(--accent2)}
+  button.btn.danger{background:#4a2a2a;color:var(--danger)}
+  select,input[type=text],input[type=password]{background:#18181d;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;outline:none}
+  select:focus,input[type=text]:focus,input[type=password]:focus{border-color:var(--accent)}
+  .row > select,.row > input[type=text],.row > input[type=password]{flex:1 1 220px;min-width:0;max-width:460px;width:auto!important}
+  .row > label:not(.toggle) + select,.row > label:not(.toggle) + input[type=text],.row > label:not(.toggle) + input[type=password]{flex:0 1 320px}
+  a{color:var(--accent)}
   /* 캐릭터 그리드 */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:calc(100vh - 300px);overflow:auto;padding:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:calc(100vh - 330px);overflow:auto;padding:2px}
   .tile{background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:6px 4px 4px;text-align:center;cursor:pointer;position:relative}
   .tile:hover{border-color:#55556a}
   .tile.on{border-color:var(--accent)}
@@ -48,24 +68,23 @@
   .tile .sd{position:absolute;top:5px;left:6px;font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff}
   .tile .sd.st{top:21px;background:#5a4a8a}
   .tag{font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff;vertical-align:middle}
-  input[type=radio]{accent-color:var(--accent)}
-  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-  .toolbar input{flex:1}
-  .kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:12px}
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .toolbar input[type=text]{flex:1}
+  .toolbar .toggle{flex:none;display:flex;align-items:center;gap:6px}
+  .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:12px}
   .kv .k{color:var(--muted)}
-  code{background:#1a1a1f;padding:1px 5px;border-radius:4px;font-size:11px;user-select:text}
+  code{background:#18181d;padding:1px 6px;border-radius:4px;font-size:11px;user-select:text;color:#d6d6e0}
   /* 캐릭터(인스턴스) 선택 바 */
-  #charbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 22px 0;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+  #charbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 24px 0;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px}
   #char-chips{display:contents}
   #charbar .lbl{color:var(--muted);font-size:12px;margin-right:4px}
-  #charbar .chip{padding:4px 10px;border-radius:14px;background:#3a3a44;cursor:pointer;font-size:12px;border:1px solid transparent;display:flex;align-items:center;gap:6px}
+  #charbar .chip{padding:5px 11px;border-radius:16px;background:#34343f;cursor:pointer;font-size:12px;border:1px solid transparent;display:flex;align-items:center;gap:6px}
   #charbar .chip:hover{filter:brightness(1.15)}
   #charbar .chip.on{background:var(--accent);color:#fff}
   #charbar .chip .n{opacity:.6;font-size:10px}
-  #charbar .chip.add{background:transparent;border-color:var(--line);color:var(--muted)}
-  #charbar .chip.rm{background:transparent;border-color:var(--line);color:var(--danger);margin-left:auto}
-  #charbar .chip.rm[disabled]{opacity:.35;pointer-events:none}
-  #charbar .hint{font-size:11px;color:var(--muted);width:100%}
+  #charbar .chip.add{background:transparent;border-color:var(--line2);color:var(--muted)}
+  #charbar .chip.rm{background:transparent;border-color:var(--line2);color:var(--danger);margin-left:auto}
+  #charbar .note{flex-basis:100%;color:var(--muted2);font-size:11px;margin:2px 0 0 2px}
 </style></head>
 <body>
 <nav>
@@ -77,6 +96,7 @@
   <button data-tab="news">알림</button>
   <button data-tab="ai">AI 대화</button>
   <button data-tab="about">정보</button>
+  <div class="ver" id="nav-ver"></div>
 </nav>
 <div id="content">
   <div id="charbar"><span class="lbl">설정할 캐릭터</span><span id="char-chips"></span><span class="chip add" id="char-add" title="같은 설정으로 하나 더 부르기">＋ 하나 더 부르기</span><span class="chip rm" id="char-remove" title="선택한 캐릭터를 화면에서 보냄">이 캐릭터 보내기</span><span class="hint" id="charbar-note">캐릭터·행동·크기·불투명도는 선택한 캐릭터에만 적용되고, 사운드·화면 동작은 전체 공통입니다.</span></div>
@@ -84,14 +104,12 @@
   <section id="tab-character" class="on">
     <h2>캐릭터</h2>
     <div class="card"><h3>형태</h3>
-      <div class="row">
-        <label class="toggle"><input type="radio" name="mode" value="minimi" data-s="mode">미니미 (스틱) — 게임 로비 하단의 폴짝폴짝 뛰는 SD. 418 스킨 전부</label>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="mode" value="minimi" data-s="mode"><span><b>미니미</b><small>게임 로비 하단에서 폴짝폴짝 뛰는 스틱 SD. 418 스킨 전부 지원.</small></span></label>
+        <label class="opt"><input type="radio" name="mode" value="sd" data-s="mode"><span><b>SD (스탠딩)</b><small>사도 상세 화면과 같은 Spine. 표정·쓰다듬기·볼 당기기·꿀밤·간지럽히기. 이동할 땐 미니미로 폴짝, 멈추면 스탠딩.</small></span></label>
+        <label class="opt"><input type="radio" name="mode" value="ingame" data-s="mode"><span><b>인게임</b><small>전투·마이홈 모델 (Idle · Move · Spawn · Victory · 공격). 걷기 애니로 이동하고 표정·교감 애니는 없음. 에셋 가져오기에서 '인게임 SD' 단계 필요.</small></span></label>
       </div>
-      <div class="row">
-        <label class="toggle"><input type="radio" name="mode" value="sd" data-s="mode"><b>SD</b> — 사도 상세 화면과 동일한 Spine(표정·쓰다듬기·간지럽히기 애니). 이동할 땐 미니미로 폴짝폴짝, 멈추면 스탠딩</label>
-      </div>
-        <label class="toggle"><input type="radio" name="mode" value="ingame" data-s="mode"><b>인게임</b> — 전투·마이홈에서 쓰는 SD (Idle · Move · Spawn · Victory · 공격). 걷기 애니로 이동하고 표정·교감 애니는 없음. 가져오기에서 '인게임 SD' 단계를 받아야 함</label>
-      <div class="hint" id="mode-note"></div>
+      <div class="hint" id="mode-note" style="margin-top:8px"></div>
     </div>
     <div class="toolbar"><input type="text" id="skin-search" placeholder="이름 검색 (한글/영문, 스킨 이름도)"><label class="toggle"><input type="checkbox" id="skin-voiced">보이스 있는 것만</label><label class="toggle" style="display:none"><input type="checkbox" id="skin-sd">SD 있는 것만</label><span id="skin-count" class="hint"></span></div>
     <div class="grid" id="skin-grid"></div>
@@ -194,7 +212,8 @@
           <option value="gemini">Google Gemini — 무료 등급 키</option>
           <option value="anthropic">Anthropic Claude — API 키 (유료 · 말투 재현 최상)</option>
           <option value="openai">OpenAI 호환 (Groq · OpenRouter · LM Studio …)</option>
-        </select><span class="hint" id="ai-resolved"></span></div>
+        </select></div>
+      <div class="hint" id="ai-resolved" style="margin:-2px 0 6px"></div>
       <div class="row"><button class="btn" id="ai-test">지금 설정으로 한 마디 시켜보기</button><span class="hint" id="ai-test-out"></span></div>
     </div>
     <div class="card"><h3>Ollama (무료 · 로컬)</h3>
@@ -223,9 +242,12 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.proactive">가끔 사도가 먼저 말을 걸어요<span class="hint">한동안 대화가 없으면 인사·혼잣말·가벼운 질문을 던집니다</span></label></div>
       <div class="row"><label>먼저 말 걸기 간격</label><input type="range" min="10" max="180" step="5" data-s="ai.proactiveMin"><span class="val" data-fmt="min"></span></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.duo">사도끼리 잡담<span class="hint">둘 이상 소환돼 있으면 가끔 서로 다가가 몇 마디 나눕니다 (우클릭 메뉴 → 옆 사도와 잡담 시키기로 바로)</span></label></div>
-      <div class="row"><label>잡담 말풍선 시간</label><input type="range" min="2" max="12" step="1" data-s="ai.bubbleSec"><span class="val" data-fmt="s0"></span><span class="hint">+ 글자당 0.1초</span></div>
-      <div class="row"><label>먼저 말 건 대화창 자동 닫힘</label><input type="range" min="0" max="120" step="5" data-s="ai.chatAutoCloseSec"><span class="val" data-fmt="s0"></span><span class="hint">0 = 안 닫음. 입력하면 유지</span></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">캐릭터별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
+    </div>
+    <div class="card"><h3>표시 시간</h3>
+      <div class="row"><label>잡담 말풍선<span class="hint">사도끼리 잡담할 때 한 마디가 떠 있는 시간. 여기에 글자당 0.1초가 더해집니다</span></label><input type="range" min="2" max="12" step="1" data-s="ai.bubbleSec"><span class="val" data-fmt="s0"></span></div>
+      <div class="row"><label>먼저 말 건 대화창 자동 닫힘<span class="hint">사도가 먼저 말을 걸었을 때 이 시간 동안 입력이 없으면 닫힘. 0 = 안 닫음. 타이핑을 시작하면 유지</span></label><input type="range" min="0" max="120" step="5" data-s="ai.chatAutoCloseSec"><span class="val" data-fmt="s0"></span></div>
+      <div class="hint" style="margin-top:6px">새 소식 알림 말풍선 시간은 <b>알림</b> 탭에서.</div>
     </div>
   </section>
 
