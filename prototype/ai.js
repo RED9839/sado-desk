@@ -153,11 +153,10 @@ async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCf
     const body = await r.text();
     if (r.status === 404 && /no longer available|not found/i.test(body) && cfg.model !== "gemini-flash-latest") return chatGemini({ ...cfg, model: "gemini-flash-latest" }, key, system, messages, onToken, signal, noThinkCfg); // 은퇴한 모델 → 최신 Flash 별칭으로
     if (r.status === 400 && !noThinkCfg) return chatGemini(cfg, key, system, messages, onToken, signal, true, attempt); // 모델이 thinkingConfig를 안 받으면(lite 등 "invalid argument") 빼고 재시도
-    if (r.status === 429 && attempt >= 2 && !/lite/.test(cfg.model)) { // 무료 등급 일일 한도가 바닥난 듯 → 한도가 따로인 Flash-Lite로
-      onToken(""); return chatGemini({ ...cfg, model: "gemini-flash-lite-latest" }, key, system, messages, onToken, signal, noThinkCfg, 0);
-    }
-    if ((r.status === 429 || r.status === 503) && attempt < 2) { // 무료 등급 분당 한도 / 일시 과부하 → 잠깐 뒤 재시도
-      const ra = +(r.headers.get("retry-after") || 0); const wait = Math.min(20000, ra > 0 ? ra * 1000 : (r.status === 429 ? 8000 : 2500) * (attempt + 1));
+    // 429(무료 한도): Flash 계열은 한 버킷을 쓰고 Flash-Lite는 한도가 따로 → 기다리지 말고 바로 Lite로. Lite도 429면 6초 한 번 쉬고 재시도
+    if (r.status === 429 && !/lite/.test(cfg.model)) return chatGemini({ ...cfg, model: "gemini-flash-lite-latest" }, key, system, messages, onToken, signal, noThinkCfg, 0);
+    if ((r.status === 429 && attempt < 1) || (r.status === 503 && attempt < 2)) { // 분당 한도 / 일시 과부하 → 잠깐 뒤 재시도
+      const ra = +(r.headers.get("retry-after") || 0); const wait = Math.min(15000, ra > 0 ? ra * 1000 : (r.status === 429 ? 6000 : 2500) * (attempt + 1));
       await new Promise(res => setTimeout(res, wait)); if (signal && signal.aborted) throw new Error("취소됨");
       return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt + 1);
     }
