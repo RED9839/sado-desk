@@ -261,7 +261,7 @@ function openSettings(tab, forId) {
   const tell = () => { if (tab) settingsWin.webContents.send("tab", tab); if (forId) settingsWin.webContents.send("select", forId); };
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); tell(); return; }
   settingsWin = new BrowserWindow({
-    width: 780, height: 600, minWidth: 660, minHeight: 460, title: "사도 데스크 설정", show: false,
+    width: 900, height: 660, minWidth: 720, minHeight: 520, title: "사도 데스크 설정", show: false,
     backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
