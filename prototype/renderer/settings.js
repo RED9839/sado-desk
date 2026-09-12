@@ -62,7 +62,8 @@
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
-      mn.textContent = S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 인게임 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) SD 데이터가 없어 미니미로 표시됩니다`; }
+      mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 인게임 SD 데이터가 없어 스탠딩 SD로 표시됩니다 (에셋 가져오기 → '인게임 SD' 체크)` : `※ ${KO.skinName(S.skin)}은(는) SD 데이터가 없어 미니미로 표시됩니다`)
+        : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 인게임 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) SD 데이터가 없어 미니미로 표시됩니다`; }
     document.title = `사도 데스크 설정 — ${KO.skinName(S.skin)}${FULL.characters.length > 1 ? ` (${FULL.characters.findIndex(c => c.id === cur) + 1}/${FULL.characters.length})` : ""}`;
     renderCharBar();
     const note = document.getElementById("name-note");

@@ -14,7 +14,7 @@
   const resize = () => { const h = menuEl.scrollHeight + 6; if (h !== lastH) { lastH = h; host.menuResize(h); requestAnimationFrame(() => setTimeout(resize, 50)); } }; // 창 크기가 바뀐 뒤 내용 높이가 달라지면 한 번 더
 
   // 애니 목록: 현재 형태에 맞는 스켈레톤 애니 (마스코트가 카탈로그에 넣어준 것)
-  const anims = (S.mode === "sd" && catalog.sdAnimations && catalog.sdAnimations.length) ? catalog.sdAnimations : catalog.animations.map(a => a.name);
+  const anims = (S.mode !== "minimi" && catalog.sdAnimations && catalog.sdAnimations.length) ? catalog.sdAnimations : catalog.animations.map(a => a.name);
   const groups = {};
   for (const n of anims) { const g = n.replace(/[\d_].*$/, ""); (groups[g] ||= []).push(n); }
   document.getElementById("sub-anims").innerHTML = Object.entries(groups).sort().map(([g, list]) => `<div class="group">${KO.animGroup(g)} (${list.length})</div>` + list.map(n => `<div class="item" data-anim="${n}">${KO.anim(n)}</div>`).join("")).join("");
@@ -33,7 +33,9 @@
   }
   function render() {
     document.getElementById("menu-title").textContent = `${KO.skinName(S.skin, { withSkin: false })} — 사도 데스크`;
-    document.getElementById("mode-state").textContent = S.mode === "sd" ? "SD" : "미니미";
+    const cur = catalog.skins.find(s => s.name === S.skin), sdA = cur?.sd || {};
+    document.getElementById("mode-state").textContent = (S.mode === "sd" ? "SD" : S.mode === "ingame" ? "인게임" : "미니미") + " ▸";
+    document.getElementById("mode-item").title = "미니미 → SD → 인게임 순서로 바뀜" + (sdA.ingame ? "" : " (이 사도는 인게임 SD 데이터 없음 → 가져오기에서 '인게임 SD' 체크)");
     document.getElementById("skin-cur").textContent = KO.skinName(S.skin);
     document.getElementById("scale-chips").innerHTML = [0.3, 0.4, 0.5, 0.6, 0.8, 1.0].map(v => `<div class="chip ${v === S.scale ? "on" : ""}" data-scale="${v}">${Math.round(v * 100)}%</div>`).join("");
     document.getElementById("mood-chips").innerHTML = MOODS.map(([k, label]) => `<div class="chip ${(S.mood || "") === k ? "on" : ""}" data-mood="${k}">${label}</div>`).join("");
@@ -58,7 +60,10 @@
     if (t.dataset.skin) { set({ skin: t.dataset.skin }); return; }
     if (t.dataset.scale) { set({ scale: +t.dataset.scale }); return; }
     switch (t.dataset.act) {
-      case "mode": set({ mode: S.mode === "sd" ? "minimi" : "sd" }); break;
+      case "mode": { // 미니미 → SD → 인게임(있을 때) → 미니미
+        const cur = catalog.skins.find(s => s.name === S.skin), a = cur?.sd || {};
+        const next = S.mode === "minimi" ? "sd" : S.mode === "sd" ? (a.ingame ? "ingame" : "minimi") : "minimi";
+        set({ mode: next }); break; }
       case "mute": set({ sound: { muted: !S.sound.muted } }); break;
       case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;
