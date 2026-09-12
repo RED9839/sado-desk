@@ -389,7 +389,7 @@ async function chatTurn(id, userText, opts = {}) {
     const saved = [...hist, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
     if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
     if (opts.say) chatSend("chat:say", { text: r.text }); else chatSend("chat:done", { text: r.text, emotion: r.emotion });
-    sendMascot(id, "emote", { mood: r.emotion, hold: 12000 });
+    sendMascot(id, "emote", { mood: r.emotion, role: "speak", pose: Math.min(15000, 3000 + r.text.length * 90), hold: 15000 });
     console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
     return r;
   } catch (e) {
@@ -419,10 +419,14 @@ async function duoTalk(idA, idB, opts = {}) {
     for (const ln of r.lines) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
       const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
-      const ttl = 2600 + Math.min(60, ln.text.length) * 70;
+      const other = ln.who === "a" ? idB : idA;
+      const ttl = Math.round((Math.max(3, +settings.global.ai.bubbleSec || 6) * 1000) + Math.min(80, ln.text.length) * 120);
       showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who }, ttl });
-      sendMascot(id, "emote", { mood: ln.emotion, hold: ttl + 3000 });
-      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); } catch {} }, 700);
+      sendMascot(id, "emote", { mood: ln.emotion, role: "speak", pose: ttl, hold: ttl + 3000 });
+      // 듣는 쪽: 화난 말엔 놀라고, 기쁜 말엔 웃고, 그 외엔 듣는 포즈
+      const listen = ln.emotion === "anger" ? "surprise" : ln.emotion === "happy" ? "smile" : ln.emotion === "sad" ? "sad" : "";
+      setTimeout(() => sendMascot(other, "emote", { mood: listen, role: "listen", pose: Math.max(1500, ttl - 900), hold: ttl + 3000 }), 700);
+      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "ttl", ttl, "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); sendMascot(idA, "logstate", "A"); sendMascot(idB, "logstate", "B"); } catch {} }, 700);
       await new Promise(res => setTimeout(res, ttl + 400));
     }
     closeBubble();

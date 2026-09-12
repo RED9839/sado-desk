@@ -172,7 +172,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "meet") mas.meet(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "meet") mas.meet(arg); else if (cmd === "logstate") mas.logState(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -289,7 +289,7 @@
       else if (prev.scale !== S.scale) applyScale();
       applyOpacity();
       hud.style.display = S.display.debug ? "block" : "none";
-      if (prev && prev.mood !== S.mood && (m.state === "idle" || m.state === "mood" || m.state === "react" || m.state === "hop")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
+      if (prev && prev.mood !== S.mood && (m.state === "idle" || m.state === "mood" || m.state === "pose" || m.state === "react" || m.state === "hop")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
     }
     const moodOn = () => !!S.mood && isSD() && active.A.moods && (active.A.moods[S.mood] || []).some(has);
     // 불투명도: 창 하나에 여러 명이라 캔버스 대신 스켈레톤 색 알파로 (PMA 렌더러에서 슬롯 색에 곱해짐)
@@ -430,15 +430,26 @@
       m.faceAfter = arg.x < m.x ? -1 : 1; // 도착하면 상대를 본다 (restThenDecide 뒤)
     }
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
+    // AI 대답/잡담의 감정 → 표정 애니를 한 번 재생하고 마지막 프레임에서 멈춰(pose) 말풍선이 떠 있는 동안 그 표정을 유지.
+    //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(듣는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
     function emote(arg) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
       if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
       if (isSD()) useSlot(slotForRest());
-      const pool = mood && active.A.moods ? (active.A.moods[mood] || []).filter(has) : [];
-      const a = pool.length ? pick(pool) : (mood ? (active.A.react || []).find(has) : null);
+      const A = active.A;
+      const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
+      const SPEAK = ["Talk_1", "Talk_2", "Point_1", "Blank_1", "Happy_1", "Proud_1", "Taunt_1"], LISTEN = ["Blank_1", "Blank_2", "Nodding_1", "Think_1", "Thinking_1", "Curious_1", "Question_1"];
+      const role = arg && arg.role;
+      let a = pool.length ? pick(pool) : null;
+      if (!a) { const cands = (role === "listen" ? LISTEN : role === "speak" ? SPEAK : []).filter(has); a = cands.length ? pick(cands) : (mood ? (A.react || []).find(has) : null); }
       m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
-      if (a) { playOnce(a, "react"); if (S.sound.clickVoice !== false) motionVoice(a, true); }
+      if (!a) return;
+      const poseMs = arg && arg.pose ? arg.pose : 0;
+      if (poseMs > 0 && !A.idleLoop.has(a)) { play(a, false); m.state = "pose"; m.timer = poseMs / 1000; } // 마지막 프레임 유지
+      else playOnce(a, "react");
+      if (mood && S.sound.clickVoice !== false && role !== "listen") motionVoice(a, true);
     }
+    function logState(tag) { console.log(`STATE[${tag}] ${m.state} anim=${m.anim} timer=${(m.timer || 0).toFixed(1)} facing=${facing}`); }
     function announce(arg) {
       if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
       if (["drag", "thrown", "touch", "pat", "tickle"].includes(m.state)) return;
@@ -537,6 +548,7 @@
       if (entry.loop) return;
       if (m.state === "smash1") { playOnce("Smash_End_2", "react"); if (S.sound.clickVoice) smashLine(); return; }
       if (m.state === "spawn" && S.sound.landSfx) playSfx("jump02");
+      if (m.state === "pose") return; // 표정 유지 중 — 타이머가 끝내 준다
       if (m.state === "spawn" || m.state === "react" || m.state === "jump" || m.state === "land") restThenDecide();
     }
 
@@ -605,6 +617,8 @@
         case "mood":
           if (!moodOn()) { decideIdle(); break; }
           m.timer -= dt; if (m.timer <= 0) decideIdle(); break;
+        case "pose": // 표정 유지 (말풍선 동안) → 끝나면 대기
+          m.timer -= dt; if (m.timer <= 0) restThenDecide(); break;
         case "hop": {
           const dir = Math.sign(m.targetX - m.x); m.x += dir * active.A.moveSpeed * scale() * 2 * (S.behavior.hopSpeed / 100) * dt;
           const floorY = floorAt(m.x); if (active.A.move && has(active.A.move)) m.y = floorY;
@@ -893,7 +907,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();
