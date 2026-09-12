@@ -244,6 +244,11 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.duo">사도끼리 잡담<span class="hint">둘 이상 소환돼 있으면 가끔 서로 다가가 몇 마디 나눕니다 (우클릭 메뉴 → 옆 사도와 잡담 시키기로 바로)</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">캐릭터별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
     </div>
+    <div class="card"><h3>화면 보기</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.screen">사도가 내 화면을 볼 수 있게<span class="hint"><b>켜면 스크린샷이 선택한 AI 제공자에게 전송됩니다.</b> 캐릭터가 서 있는 모니터를 1280px로 줄여 보내고, PC에 저장하지 않습니다. 메뉴 '내 화면 보고 한마디', 대화창의 📷, 먼저 말 걸기 일부에서 씁니다. 개인정보를 읽지 말라고 지시하지만 AI가 화면의 글을 볼 수 있다는 점은 감안해 주세요.</span></label></div>
+      <div class="row"><label>먼저 말 걸 때 화면을 보는 비율<span class="hint">먼저 말을 걸거나 둘이 잡담할 때 이 비율만큼 화면을 함께 봅니다</span></label><input type="range" min="0" max="100" step="10" data-s="ai.screenProactive"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>Ollama 화면 보기 모델<span class="hint">Ollama는 이미지를 볼 수 있는 모델이 따로 필요합니다 (qwen2.5vl:7b · llava …). Gemini·Claude는 기본 모델이 화면을 봅니다</span></label><input type="text" data-s="ai.ollama.visionModel"></div>
+    </div>
     <div class="card"><h3>표시 시간</h3>
       <div class="row"><label>잡담 말풍선<span class="hint">사도끼리 잡담할 때 한 마디가 떠 있는 시간. 여기에 글자당 0.1초가 더해집니다</span></label><input type="range" min="2" max="12" step="1" data-s="ai.bubbleSec"><span class="val" data-fmt="s0"></span></div>
       <div class="row"><label>먼저 말 건 대화창 자동 닫힘<span class="hint">사도가 먼저 말을 걸었을 때 이 시간 동안 입력이 없으면 닫힘. 0 = 안 닫음. 타이핑을 시작하면 유지</span></label><input type="range" min="0" max="120" step="5" data-s="ai.chatAutoCloseSec"><span class="val" data-fmt="s0"></span></div>

@@ -15,7 +15,7 @@ const path = require("node:path");
 const EMOTIONS = { "행복": "happy", "기쁨": "happy", "미소": "smile", "분노": "anger", "화남": "anger", "슬픔": "sad", "놀람": "surprise", "냠냠": "eat", "삐짐": "sulky", "기본": "", "평온": "" };
 const DEFAULTS = {
   provider: "auto",
-  ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b" },
+  ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
   gemini: { model: "gemini-flash-latest" }, // 별칭 — 구글이 최신 Flash로 연결(2.5-flash는 신규 사용자에게 막힘)
   anthropic: { model: "claude-opus-5" },
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
@@ -23,6 +23,8 @@ const DEFAULTS = {
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
   duo: true, // 소환된 사도가 둘 이상이면 가끔 둘이 잡담
   bubbleSec: 4, // 잡담 말풍선 기본 표시 시간(초) + 글자당 0.1초 (40자 ≈ 8초)
+  screen: false, // 화면 보기(스크린샷을 AI에 보냄) — 명시적 동의가 필요해 기본 꺼짐
+  screenProactive: 30, // 먼저 말 걸 때 화면을 함께 보는 비율(%)
   chatAutoCloseSec: 30, // 사도가 먼저 말을 건 대화창: 이 시간 동안 아무 입력 없으면 스스로 닫힘 (0 = 안 닫음)
 };
 
@@ -84,6 +86,7 @@ function buildSystem(prof, opts = {}) {
     "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
     "- AI나 언어모델이라는 말은 하지 않는다. 캐릭터로서 답한다. 모르는 것은 캐릭터답게 모른다고 한다.",
     "- 사용자의 화면·현재 시각·상황이 주어지면 그걸 자연스럽게 언급할 수 있다.",
+    "- 화면 스크린샷이 첨부되면: 사용자가 지금 무엇을 하는지(게임·영상·코딩·문서·쇼핑·채팅 등)를 알아보고 캐릭터답게 반응한다. 화면에 보이는 이름·번호·주소·메시지 본문 같은 개인정보나 비밀은 절대 읽어 말하지 말고, 활동을 큰 틀에서만 언급한다. 바탕화면에 서 있는 SD 캐릭터(너 자신·다른 사도)나 말풍선은 무시한다.",
     "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나. 태그를 빼먹지 말 것.",
     "답 형식 예시:\n간식 좀 남은 거 없어? 배고파~!\n[감정:냠냠]",
     opts.extra || "",
@@ -131,8 +134,10 @@ async function* sse(body) { // "data: {...}" 줄만
 const imgPart = (img) => img ? { mime: img.mime || "image/png", data: img.data } : null; // {mime, data(base64)}
 
 async function chatOllama(cfg, system, messages, onToken, signal) {
+  const hasImg = messages.some(m => m.image);
+  if (hasImg && !cfg.visionModel) throw new Error("Ollama에 화면을 볼 수 있는 모델이 없어요 — 설정 → AI 대화 → Ollama '화면 보기 모델'에 qwen2.5vl 같은 비전 모델을 넣고 내려받아 주세요");
   const msgs = [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.text, ...(m.image ? { images: [m.image.data] } : {}) }))];
-  const r = await fetch(`${cfg.url}/api/chat`, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ model: cfg.model, messages: msgs, stream: true, options: { temperature: 0.9, num_predict: 300 } }) });
+  const r = await fetch(`${cfg.url}/api/chat`, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ model: hasImg ? cfg.visionModel : cfg.model, messages: msgs, stream: true, options: { temperature: 0.9, num_predict: 300 } }) });
   if (!r.ok) throw new Error(`Ollama ${r.status}: ${(await r.text()).slice(0, 200)}`);
   let out = "";
   for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
@@ -272,7 +277,7 @@ async function duo(ai, profA, profB, opts = {}) {
   const cfg = merge(ai); const s = await status(cfg); const provider = opts.provider || s.resolved;
   if (!provider) throw new Error("no-provider");
   const system = buildDuoSystem(profA, profB, opts);
-  const messages = [{ role: "user", text: `대화를 써라.${opts.topic ? " 화제: " + opts.topic : ""}` }];
+  const messages = [{ role: "user", text: `대화를 써라.${opts.topic ? " 화제: " + opts.topic : ""}${opts.image ? " 첨부한 스크린샷은 사용자(교주)의 PC 화면이다. 교주가 지금 뭘 하는지 두 사람이 구경하며 떠드는 내용으로. 개인정보·메시지 본문은 읽지 말고 활동만 큰 틀에서. 화면 속 SD 캐릭터·말풍선은 무시." : ""}`, ...(opts.image ? { image: opts.image } : {}) }];
   const noop = () => {}; let text;
   if (provider === "ollama") text = await chatOllama(cfg.ollama, system, messages, noop, opts.signal);
   else if (provider === "gemini") text = await chatGemini(cfg.gemini, decKey(cfg.keys.gemini), system, messages, noop, opts.signal);

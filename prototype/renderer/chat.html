@@ -23,6 +23,8 @@
   button{border:0;background:#e88aa6;color:#fff;border-radius:10px;padding:0 12px;height:32px;font:13px "Malgun Gothic",sans-serif;cursor:pointer}
   button:hover{background:#c85a7a}
   button:disabled{background:#e9d3da;cursor:default}
+  button.ghost{background:#fff;border:1px solid #f0b8c8;color:#c85a7a;padding:0 8px;font-size:14px}
+  button.ghost.on{background:#c85a7a;color:#fff}
   .hint{font-size:11px;color:#a09590;margin-top:4px;display:flex;justify-content:space-between}
   .hint a{color:#c85a7a;cursor:pointer}
   .setup{background:#fff;border:1px dashed #f0b8c8;border-radius:10px;padding:8px 10px;font-size:12px;color:#6a5a54}
@@ -32,7 +34,7 @@
 <div id="chat">
   <div class="head"><span id="who">사도</span><span class="r"><span class="prov" id="prov"></span><span class="clr" id="clear" title="대화 기록 지우기">기록 지우기</span><span class="x" id="close" title="닫기 (Esc)">✕</span></span></div>
   <div id="log"></div>
-  <div class="row"><textarea id="in" rows="1" placeholder="말을 걸어 보세요… (Enter 전송)"></textarea><button id="send">보내기</button></div>
+  <div class="row"><textarea id="in" rows="1" placeholder="말을 걸어 보세요… (Enter 전송)"></textarea><button id="cam" class="ghost" title="이 말과 함께 지금 화면을 보여줍니다 (설정에서 '화면 보기'를 켜야 함)">📷</button><button id="send">보내기</button></div>
   <div class="hint"><span id="status"></span><a id="settings">AI 설정…</a></div>
 </div>
 <script src="chat.js"></script>

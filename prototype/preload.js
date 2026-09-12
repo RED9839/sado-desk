@@ -49,7 +49,9 @@ contextBridge.exposeInMainWorld("host", {
   // AI 대화
   chatOpen: (id) => ipcRenderer.send("chat:open", id === undefined ? INSTANCE : id),
   chatDuo: (id) => ipcRenderer.send("chat:duo", id === undefined ? INSTANCE : id),
-  chatSend: (text) => ipcRenderer.send("chat:send", text),
+  chatSend: (text, withScreen) => ipcRenderer.send("chat:send", text, !!withScreen),
+  chatScreen: (id) => ipcRenderer.send("chat:screen", id === undefined ? INSTANCE : id),
+  chatDuoScreen: (id) => ipcRenderer.send("chat:duo-screen", id === undefined ? INSTANCE : id),
   chatClose: () => ipcRenderer.send("chat:close"),
   chatClear: () => ipcRenderer.send("chat:clear"),
   chatResize: (h) => ipcRenderer.send("chat:resize", h),
