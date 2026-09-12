@@ -1,7 +1,7 @@
 /* 사도 데스크 마스코트 — 렌더러(spine-webgl 4.1). 한 창에 캐릭터 여러 명.
  * 좌표계: 월드 = 창 픽셀, 원점 왼쪽 아래(y 위로 증가). 화면 y = H - 월드 y.
  * 상태: spawn → idle ⇄ hop(이동) / jump / react, 마우스로 drag → thrown → land → idle
- * 캐릭터 형태(S.mode): "minimi" = 스틱 미니미(공용 스켈레톤 + 스킨), "sd" = 인게임 로비 스탠딩 Spine(캐릭터별 skel).
+ * 캐릭터 형태(S.mode): "minimi" = 스틱 미니미(공용 스켈레톤 + 스킨), "sd" = 사도 상세 화면 스탠딩 Spine(캐릭터별 skel), "ingame" = 전투·마이홈 SD(Idle/Move/Spawn/Victory/Attack).
  *   두 형태는 같은 상태머신을 쓰고, 애니 이름 매핑(ANIM)과 이동 방식만 다르다.
  * 구조: 바깥 = 창 하나에 공유되는 것(WebGL 컨텍스트, 미니미 SkeletonData, 보이스 색인, 모니터 기하, 프레임 루프).
  *       Mascot(id, S) = 캐릭터 한 명의 모든 상태(슬롯·상태머신·마우스·보이스). 캐릭터마다 히트 창이 따로 있어 마우스 이벤트는 id로 라우팅.
@@ -76,7 +76,7 @@
       move: hasA("Move") ? "Move" : null, jump: [], spawn: hasA("Spawn") ? ["Spawn"] : [],
       react: ["Victory", "Attack1_1", "Attack2_1", "Skill1_1", "EasterEgg_Victory"].filter(shortish),
       land: ["Groggy", "Hit", "Die"].find(hasA) || null, drag: ["Groggy", "Idle"].find(hasA) || null,
-      hold: "Idle", moveSpeed: 120, hopHeight: 18,
+      hold: "Idle", moveSpeed: 120, hopHeight: 18, moods: {},
     };
   }
   // SD 배율: 스탠딩·인게임 스켈레톤은 같은 단위(에르핀 Head 본 y=429 동일)라 바운딩 박스로 맞추지 않고 단위→픽셀 고정 배율을 쓴다.
@@ -206,6 +206,7 @@
     requestAnimationFrame(loop);
     if (cfg.selftest) firstMascot()?.selftest();
     if (cfg.moodTest) firstMascot()?.moodTest();
+    if (cfg.ingameTest) firstMascot()?.ingameTest();
   }
 
   function buildCatalog() {
@@ -267,7 +268,7 @@
       if (active === slot || !slot.skeleton) return;
       active = slot; applyScale(); applyFacing();
     }
-    const isSD = () => S.mode === "sd" && !!sd.skeleton;
+    const isSD = () => (S.mode === "sd" || S.mode === "ingame") && !!sd.skeleton;
     // 이동 슬롯(SD 모드): 기본 = 미니미(게임에서 돌아다닐 때 쓰는 스틱 미니미로 폴짝) / 스탠딩 자체에 Move가 있으면(크레페) 스탠딩
     function slotForMove() {
       if (!sd.skeleton) return active;
@@ -377,17 +378,23 @@
     }
     let activating = 0;
     async function activateMode(first) {
-      const want = S.mode === "sd" ? "sd" : "minimi";
+      const want = S.mode === "sd" || S.mode === "ingame" ? "sd" : "minimi";
       const seq = ++activating;
       if (active === sdI) active = sd.skeleton ? sd : mini; // 전환 동안 인게임 슬롯이 교체될 수 있음
       if (want === "sd") {
         let ok = false;
         try {
-          // SD = 스탠딩(대기·상호작용). 스탠딩이 없는 캐릭터만 인게임 SD로 대체
-          const okS = await loadSlot(sd, resolveSD(S.skin));
-          const okI = !okS ? await loadSlot(sdI, resolveIngame(S.skin)) : (unloadSlot(sdI), false);
-          if (!okS && okI) { await loadSlot(sd, resolveIngame(S.skin)); unloadSlot(sdI); }
-          ok = okS || okI;
+          if (S.mode === "ingame") {
+            // 인게임 형태: 전투·마이홈 SD 스켈레톤을 그대로 (Move로 걷고 Spawn으로 등장). 없으면 스탠딩으로 대체
+            unloadSlot(sdI);
+            ok = await loadSlot(sd, resolveIngame(S.skin)) || await loadSlot(sd, resolveSD(S.skin));
+          } else {
+            // SD = 스탠딩(대기·상호작용). 스탠딩이 없는 캐릭터만 인게임 SD로 대체
+            const okS = await loadSlot(sd, resolveSD(S.skin));
+            const okI = !okS ? await loadSlot(sdI, resolveIngame(S.skin)) : (unloadSlot(sdI), false);
+            if (!okS && okI) { await loadSlot(sd, resolveIngame(S.skin)); unloadSlot(sdI); }
+            ok = okS || okI;
+          }
         } catch (e) { console.warn("SD 로드 실패", e); }
         if (seq !== activating) return; // 더 최신 요청이 있음
         if (!ok) { console.warn("SD 없음 → 미니미로", S.skin); }
@@ -724,6 +731,19 @@
     // ---- 셀프테스트 (첫 캐릭터에서만) ----
     function fire(type, x, y, button = 0) { onMouse({ type, x, y, button, buttons: 0 }); }
     const shot = (name) => { const pad = 24; console.log(`SHOTREQ ${name} ${Math.round(m.x - m.w / 2 - pad)} ${Math.round(H - m.y - m.h - pad)} ${Math.round(m.w + pad * 2)} ${Math.round(m.h + pad * 2)}`); };
+    async function ingameTest() {
+      const say = (s) => console.log("INGAMETEST " + s);
+      await sleep(2500);
+      for (const skin of ["Mini_Erpin", "Mini_Crepe", "Mini_ErpinSkin1"]) {
+        patchSettings({ mode: "ingame", skin, mood: "", sound: { muted: true } }); await sleep(3000);
+        say(`${skin}: active=${active === mini ? "minimi" : active.family} src=${sd.src} key=${sd.key?.split("/").slice(-1)[0]} anims=${sd.data?.animations.length} state=${m.state} anim=${m.anim} move=${active.A.move} h=${m.h.toFixed(0)}`);
+        shot(`ingame-${skin}`); await sleep(500);
+        // 이동 강제
+        const B0 = S.behavior.hopChance; S.behavior.hopChance = 100; m.state = "idle"; m.timer = 0; await sleep(700); say(`${skin} move: state=${m.state} slot=${active === mini ? "minimi" : active.family} anim=${m.anim} (expect hop + Move on ingame)`); S.behavior.hopChance = B0; await sleep(2500);
+      }
+      patchSettings({ mode: "sd", skin: "Mini_Erpin" }); await sleep(2000); say(`back to sd: src=${sd.src} anim=${m.anim} (expect standing/game)`);
+      say("done");
+    }
     async function moodTest() {
       const say = (s) => console.log("MOODTEST " + s);
       await sleep(2500);
@@ -844,7 +864,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, moodTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();

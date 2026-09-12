@@ -34,7 +34,7 @@ function koSkin(skin) { const m = skin.replace(/^Mini_/, "").match(/^(.*?)(?:Ski
 // ---- 설정 ----
 const CHAR_DEFAULTS = {
   skin: "Mini_Crepe",
-  mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미)
+  mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
   scale: 0.5, opacity: 1,
   behavior: {
@@ -202,7 +202,7 @@ function updateHitTarget(x, y) {
   for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
   placeHit(best);
 }
-function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test") }; }
+function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test") }; }
 function createMascotWindow() {
   if (mascotWin && !mascotWin.isDestroyed()) return;
   if (!geo) geo = geometry();
@@ -537,7 +537,7 @@ if (argHas("--multi-test")) setTimeout(() => {
 // ---- 트레이 ----
 function buildTray() {
   const items = [
-    ...settings.characters.map(c => ({ label: `${koSkin(c.skin)} (${c.mode === "sd" ? "SD" : "미니미"})`, submenu: [
+    ...settings.characters.map(c => ({ label: `${koSkin(c.skin)} (${c.mode === "sd" ? "SD" : c.mode === "ingame" ? "인게임" : "미니미"})`, submenu: [
       { label: "설정...", click: () => openSettings("character", c.id) },
       { label: "다시 등장", click: () => sendMascot(c.id, "respawn") },
       { label: "보내기", enabled: settings.characters.length > 1, click: () => removeCharacter(c.id) },

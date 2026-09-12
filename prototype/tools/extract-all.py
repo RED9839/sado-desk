@@ -200,8 +200,10 @@ def scan_devices(mumu_hint=None, adb_hint=None):
     ldnames = ld_running
     for name, adb_exe, ports, tip in adbs:  # adb 서버(5037)는 공유되므로 첫 adb로 전부 보인다. 안 보이면 다음 adb로
         for port in sorted(set(all_ports)):
-            subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=6)
-        serials = stable_devices(adb_exe)
+            try: subprocess.run([adb_exe, "connect", f"127.0.0.1:{port}"], env=ENV, capture_output=True, timeout=6)
+            except subprocess.TimeoutExpired: continue  # 구버전 adb(HD-Adb)가 서버 재시작 중 멈추기도 함 — 이 adb는 건너뜀
+        try: serials = stable_devices(adb_exe)
+        except Exception: serials = []
         if not serials: continue
         # 같은 VM이 여러 이름으로 보이면 emulator-XXXX(앱플레이어가 adb 서버에 직접 등록한 것)를 우선 — 127.0.0.1:포트 쪽은 블루스택 ADB 옵션이 꺼져 있으면 'closed'가 나기도 함
         serials.sort(key=lambda sn: (0 if sn.startswith("emulator-") else 1, sn))
