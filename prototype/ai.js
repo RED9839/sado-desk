@@ -22,7 +22,8 @@ const DEFAULTS = {
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
   duo: true, // 소환된 사도가 둘 이상이면 가끔 둘이 잡담
-  bubbleSec: 6, // 잡담 말풍선 기본 표시 시간(초) + 글자당 0.12초
+  bubbleSec: 4, // 잡담 말풍선 기본 표시 시간(초) + 글자당 0.1초 (40자 ≈ 8초)
+  chatAutoCloseSec: 30, // 사도가 먼저 말을 건 대화창: 이 시간 동안 아무 입력 없으면 스스로 닫힘 (0 = 안 닫음)
 };
 
 // ---- 키 ----

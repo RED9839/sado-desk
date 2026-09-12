@@ -223,7 +223,8 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.proactive">가끔 사도가 먼저 말을 걸어요<span class="hint">한동안 대화가 없으면 인사·혼잣말·가벼운 질문을 던집니다</span></label></div>
       <div class="row"><label>먼저 말 걸기 간격</label><input type="range" min="10" max="180" step="5" data-s="ai.proactiveMin"><span class="val" data-fmt="min"></span></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.duo">사도끼리 잡담<span class="hint">둘 이상 소환돼 있으면 가끔 서로 다가가 몇 마디 나눕니다 (우클릭 메뉴 → 옆 사도와 잡담 시키기로 바로)</span></label></div>
-      <div class="row"><label>잡담 말풍선 시간</label><input type="range" min="3" max="15" step="1" data-s="ai.bubbleSec"><span class="val" data-fmt="s0"></span></div>
+      <div class="row"><label>잡담 말풍선 시간</label><input type="range" min="2" max="12" step="1" data-s="ai.bubbleSec"><span class="val" data-fmt="s0"></span><span class="hint">+ 글자당 0.1초</span></div>
+      <div class="row"><label>먼저 말 건 대화창 자동 닫힘</label><input type="range" min="0" max="120" step="5" data-s="ai.chatAutoCloseSec"><span class="val" data-fmt="s0"></span><span class="hint">0 = 안 닫음. 입력하면 유지</span></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">캐릭터별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
     </div>
   </section>

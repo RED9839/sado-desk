@@ -420,13 +420,13 @@ async function duoTalk(idA, idB, opts = {}) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
       const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
       const other = ln.who === "a" ? idB : idA;
-      const ttl = Math.round((Math.max(3, +settings.global.ai.bubbleSec || 6) * 1000) + Math.min(80, ln.text.length) * 120);
+      const ttl = Math.round((Math.max(2, +settings.global.ai.bubbleSec || 4) * 1000) + Math.min(80, ln.text.length) * 100);
       showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who }, ttl });
       sendMascot(id, "emote", { mood: ln.emotion, role: "speak", pose: ttl, hold: ttl + 3000 });
       // 듣는 쪽: 화난 말엔 놀라고, 기쁜 말엔 웃고, 그 외엔 듣는 포즈
       const listen = ln.emotion === "anger" ? "surprise" : ln.emotion === "happy" ? "smile" : ln.emotion === "sad" ? "sad" : "";
       setTimeout(() => sendMascot(other, "emote", { mood: listen, role: "listen", pose: Math.max(1500, ttl - 900), hold: ttl + 3000 }), 700);
-      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "ttl", ttl, "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); sendMascot(idA, "logstate", "A"); sendMascot(idB, "logstate", "B"); } catch {} }, 700);
+      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "ttl", ttl, "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); sendMascot(idA, "logstate", "A"); sendMascot(idB, "logstate", "B"); setTimeout(() => { sendMascot(idA, "logstate", "A+3s"); sendMascot(idB, "logstate", "B+3s"); }, 3000); } catch {} }, 700);
       await new Promise(res => setTimeout(res, ttl + 400));
     }
     closeBubble();
@@ -476,7 +476,12 @@ setInterval(async () => {
   const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
   lastChatAt = Date.now();
   openChat(id, { quiet: true });
-  setTimeout(() => chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." }), 900);
+  setTimeout(async () => {
+    await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." });
+    const sec = +settings.global.ai.chatAutoCloseSec; if (!(sec > 0)) return;
+    const opened = lastChatAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
+    setTimeout(() => { if (chatWin && !chatWin.isDestroyed() && !chatWin.isFocused() && !chatBusy && lastChatAt === opened) closeChat(); }, sec * 1000);
+  }, 900);
 }, 60000);
 app._startedAt = Date.now();
 function initNews() {

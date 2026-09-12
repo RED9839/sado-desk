@@ -445,7 +445,12 @@
       m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
       if (!a) return;
       const poseMs = arg && arg.pose ? arg.pose : 0;
-      if (poseMs > 0 && !A.idleLoop.has(a)) { play(a, false); m.state = "pose"; m.timer = poseMs / 1000; } // 마지막 프레임 유지
+      if (poseMs > 0 && !A.idleLoop.has(a)) {
+        // 말풍선이 떠 있는 동안: 멈춰 있지 않고 같은 감정의 변형을 이어서 재생 (끝나면 onComplete가 다음 변형을 고름)
+        const cands = (role === "listen" ? LISTEN : SPEAK).filter(has);
+        m.posePool = pool.length ? pool : (cands.length ? cands : [a]);
+        play(a, false); m.state = "pose"; m.timer = poseMs / 1000;
+      }
       else playOnce(a, "react");
       if (mood && S.sound.clickVoice !== false && role !== "listen") motionVoice(a, true);
     }
@@ -543,12 +548,17 @@
       if (line) playVoiceFile(line); else playVoice("dutchrubend", "anger", "surprise");
     }
     function onComplete(slot, entry) {
+      if (cfg.logPos) console.log(`COMPLETE[${id}] state=${m.state} anim=${m.anim} entry=${entry.animation && entry.animation.name} cur=${slot.state.getCurrent(0) && slot.state.getCurrent(0).animation.name} active=${slot === active}`);
       if (slot !== active) return;
       if (entry !== slot.state.getCurrent(0)) return; // 교체된 옛 엔트리의 지연 complete 무시
       if (entry.loop) return;
       if (m.state === "smash1") { playOnce("Smash_End_2", "react"); if (S.sound.clickVoice) smashLine(); return; }
       if (m.state === "spawn" && S.sound.landSfx) playSfx("jump02");
-      if (m.state === "pose") return; // 표정 유지 중 — 타이머가 끝내 준다
+      if (m.state === "pose") { // 표정 유지 중 — 같은 감정의 다른 변형(없으면 같은 것)을 이어서 재생, 타이머가 끝내 준다
+        const pool = (m.posePool || []).filter(has); if (!pool.length) return;
+        const next = pool.length > 1 ? pick(pool.filter(n => n !== m.anim)) : pool[0];
+        play(next, false); return;
+      }
       if (m.state === "spawn" || m.state === "react" || m.state === "jump" || m.state === "land") restThenDecide();
     }
 
