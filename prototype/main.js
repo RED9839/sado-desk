@@ -347,6 +347,7 @@ function chatPlace(id) {
 let talkStyle = null; try { talkStyle = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-style.json"), "utf8")); } catch {} // 보이스 STT 대본 분석(어미 비율·표본) — 없어도 됨
 let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "relations.json"), "utf8")); } catch {} // 사도끼리 부르는 말·함께 등장 (tools/build-relations.py)
 let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
+let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch {} // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
 const koOfHero = (k) => (relations && relations[k] && relations[k].ko) || k;
 function chatProfile(id) {
   const ch = charOf(id); if (!ch) return null;
@@ -356,6 +357,7 @@ function chatProfile(id) {
   if (talkStyle && talkStyle[hero]) prof.styleInfo = talkStyle[hero];
   prof.key = hero; prof.koOf = koOfHero;
   if (relations && relations[hero]) prof.rel = relations[hero];
+  if (bible[hero]) prof.bible = bible[hero];
   prof.theaters = theaters.filter(t => (t.castKeys || []).includes(hero)).sort((x, y) => y.season - x.season);
   return prof;
 }
@@ -718,7 +720,7 @@ if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말�
   for (const skin of skins) {
     const p = talkData ? Talk.profileFor(talkData, skin) : null; if (!p) { console.log("PERSONA", skin, "프로필 없음"); continue; }
     const hero = skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase(); if (talkStyle && talkStyle[hero]) p.styleInfo = talkStyle[hero];
-    p.key = hero; p.koOf = koOfHero; if (relations && relations[hero]) p.rel = relations[hero]; p.theaters = theaters.filter(t => (t.castKeys || []).includes(hero));
+    p.key = hero; p.koOf = koOfHero; if (relations && relations[hero]) p.rel = relations[hero]; if (bible[hero]) p.bible = bible[hero]; p.theaters = theaters.filter(t => (t.castKeys || []).includes(hero));
     try { const r = await Ai.chat(settings.global.ai, p, [{ role: "user", text: q }], () => {}, {}); console.log(`PERSONA ${skin} [${p.style}/${p.addr}] → ${r.text.replace(/\n/g, " ")} {${r.raw}}`); }
     catch (e) { console.log(`PERSONA ${skin} ERROR ${e.message}`); }
     await new Promise(r => setTimeout(r, +argVal("--persona-gap", "7000") || 7000));
