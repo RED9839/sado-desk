@@ -422,7 +422,8 @@ async function screenTalk(id, userText) {
 // ---- 사도 둘이 잡담 (ai.duo): 서로 다가가 마주 보고, 대본을 말풍선으로 번갈아 ----
 let duoBusy = false;
 async function duoTalk(idA, idB, opts = {}) {
-  if (duoBusy || chatBusy) return null; duoBusy = true; lastChatAt = Date.now();
+  if (duoBusy || chatBusy) { if (!opts.quiet) showBubble(idA, { items: [], text: { head: "", body: "지금 다른 대화가 진행 중이에요. 끝나면 다시 시켜 주세요.", tail: "", who: "사도 데스크" }, ttl: 4000 }); return null; }
+  duoBusy = true; lastChatAt = Date.now();
   try {
     const A = instances.get(idA), B = instances.get(idB); if (!A || !B || !A.rect || !B.rect) return null;
     const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
@@ -436,7 +437,7 @@ async function duoTalk(idA, idB, opts = {}) {
     let image = null; if (opts.screen && screenAllowed()) { try { image = await captureScreenFor(idA); } catch (e) { console.log("duo capture:", e.message); } }
     const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image });
     console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
-    if (!r.lines.length) return r;
+    if (!r.lines.length) { showBubble(idA, { items: [], text: { head: "", body: "(대화 대본을 만들지 못했어요 — 한 번 더 시켜 주세요)", tail: "", who: "사도 데스크" }, ttl: 6000 }); return r; }
     await new Promise(res => setTimeout(res, 1500)); // 다가가는 시간
     for (const ln of r.lines) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
@@ -453,7 +454,16 @@ async function duoTalk(idA, idB, opts = {}) {
     }
     closeBubble();
     return r;
-  } catch (e) { console.log("duo error:", e.message); return null; }
+  } catch (e) {
+    console.log("duo error:", e.message);
+    // 사용자가 메뉴로 시켰는데 조용히 실패하면 "안 되는구나"밖에 모름 → 이유를 말풍선으로
+    const why = e.message === "no-provider" ? "AI 제공자가 없어요. 설정 → AI 대화에서 Ollama나 API 키를 넣어 주세요."
+      : /429|quota|한도/i.test(e.message) ? "AI 무료 한도를 잠깐 넘었어요. 몇 분 뒤 다시 시켜 주세요."
+      : /503|high demand/i.test(e.message) ? "AI 서버가 잠시 붐벼요. 잠시 뒤 다시 시켜 주세요."
+      : `AI 오류: ${String(e.message || e).slice(0, 120)}`;
+    if (!opts.quiet) showBubble(idA, { items: [], text: { head: "", body: why, tail: "", who: "사도 데스크" }, ttl: 8000 });
+    return null;
+  }
   finally { duoBusy = false; lastChatAt = Date.now(); }
 }
 function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사도 둘
@@ -497,7 +507,7 @@ setInterval(async () => {
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   const st = await Ai.status(ai); if (!st.resolved) return;
   const withScreen = screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0);
-  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { screen: withScreen }); return; } } // 둘 이상이면 절반은 둘이 잡담
+  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { screen: withScreen, quiet: true }); return; } } // 둘 이상이면 절반은 둘이 잡담 (자동은 실패해도 조용히)
   const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
   lastChatAt = Date.now();
   if (withScreen) { screenTalk(id, ""); return; }
