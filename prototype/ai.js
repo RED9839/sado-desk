@@ -118,10 +118,14 @@ function saveHistory(userData, id, msgs, max) {
 function clearHistory(userData, id) { try { fs.unlinkSync(historyFile(userData, id)); } catch {} }
 
 // ---- 제공자 ----
+let _tagsCache = { url: "", at: 0, v: null };
 async function ollamaTags(url) {
+  if (_tagsCache.url === url && Date.now() - _tagsCache.at < 20000) return _tagsCache.v; // 20초 캐시 — 꺼진 PC에서 매 호출 1.5초씩 기다리지 않게
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 1500);
-  try { const r = await fetch(`${url}/api/tags`, { signal: ctl.signal }); if (!r.ok) return null; const j = await r.json(); return (j.models || []).map(m => m.name); }
-  catch { return null; } finally { clearTimeout(t); }
+  let v = null;
+  try { const r = await fetch(`${url}/api/tags`, { signal: ctl.signal }); if (r.ok) { const j = await r.json(); v = (j.models || []).map(m => m.name); } }
+  catch { v = null; } finally { clearTimeout(t); }
+  _tagsCache = { url, at: Date.now(), v }; return v;
 }
 async function* ndjson(body) {
   const reader = body.getReader(); const dec = new TextDecoder(); let buf = "";
@@ -217,12 +221,27 @@ function merge(ai) {
   return o;
 }
 
+// 제공자들은 user/assistant 교대를 요구(Gemini: "alternate", Anthropic: 첫 메시지 user). 기록에 assistant만 연속으로 남는 경우('먼저 말 걸기'·화면 보기)를 정리
+function normalizeMessages(messages) {
+  const out = [];
+  for (const m of messages || []) {
+    if (!m || !(m.text || m.image)) continue;
+    const role = m.role === "assistant" ? "assistant" : "user";
+    if (!out.length && role === "assistant") out.push({ role: "user", text: "(대화 시작)" });
+    const last = out[out.length - 1];
+    if (last && last.role === role) { last.text = [last.text, m.text].filter(Boolean).join("\n"); if (m.image) last.image = m.image; } // 같은 역할 연속 → 합침
+    else out.push({ role, text: m.text || "", ...(m.image ? { image: m.image } : {}) });
+  }
+  if (out.length && out[out.length - 1].role === "assistant") out.push({ role: "user", text: "(계속)" }); // 마지막은 user여야 답을 낼 수 있음
+  return out;
+}
 /** 한 턴. messages = [{role:"user"|"assistant", text, image?}] (system 제외). onToken(delta). 반환 {text, emotion, provider, model} */
 async function chat(ai, prof, messages, onToken, opts = {}) {
   const cfg = merge(ai);
   const s = await status(cfg);
   const provider = opts.provider || s.resolved;
   if (!provider) throw new Error("no-provider");
+  messages = normalizeMessages(messages);
   const system = buildSystem(prof, { extra: opts.extra });
   const signal = opts.signal;
   let text;
@@ -293,4 +312,4 @@ async function duo(ai, profA, profB, opts = {}) {
   const lines = parseDuo(text, profA, profB);
   return { lines, raw: text, provider, model: cfg[provider]?.model || "" };
 }
-module.exports = { DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+module.exports = { DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };

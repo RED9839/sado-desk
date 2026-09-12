@@ -250,6 +250,8 @@ function removeCharacter(id) {
   if (settings.characters.length <= 1) return false;
   settings.characters = settings.characters.filter(c => c.id !== id); saveSettings(); destroyInstance(id);
   if (menuFor === id && menuWin && !menuWin.isDestroyed()) menuWin.close();
+  if (chatFor === id) closeChat();
+  if (bubbleFor === id) closeBubble();
   broadcast(); return true;
 }
 // 메뉴 창은 --instance=id 로 만들어져 자기 캐릭터를 안다. 마스코트 창·설정 창은 id를 명시해서 보낸다
@@ -376,7 +378,8 @@ function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
 const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
 // 한 턴 실행: history + user → 답변 스트리밍 → 기록 저장 → 표정/보이스
 async function chatTurn(id, userText, opts = {}) {
-  if (chatBusy) return; chatBusy = true; lastChatAt = Date.now();
+  if (chatBusy || duoBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
+  chatBusy = true; lastChatAt = Date.now();
   const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
   const hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
   const msgs = [...hist.map(m => ({ role: m.role, text: m.text })), ...(userText || opts.image ? [{ role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }] : [])];
@@ -473,10 +476,10 @@ function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사�
   }
   return best;
 }
-ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o); });
+ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o); });
 ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
-ipcMain.on("chat:duo-screen", (e, id) => { const me = id || instanceOf(e.sender); const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o, { screen: true }); });
+ipcMain.on("chat:duo-screen", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o, { screen: true }); });
 ipcMain.on("chat:close", () => closeChat());
 ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
 ipcMain.on("chat:resize", (_e, h) => { if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(Math.round(h), d.height) }; chatPlace(chatFor); } });
@@ -502,7 +505,7 @@ ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pul
 ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.com/download", gemini: "https://aistudio.google.com/apikey", anthropic: "https://console.anthropic.com/settings/keys", groq: "https://console.groq.com/keys" }[which]; if (u) shell.openExternal(u); });
 // 먼저 말 걸기: 대화가 없던 시간이 proactiveMin을 넘으면 가끔 (분마다 확인, 확률로 흩뿌림)
 setInterval(async () => {
-  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || !mascotStarted) return;
+  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || duoBusy || !mascotStarted) return;
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   const st = await Ai.status(ai); if (!st.resolved) return;
@@ -570,7 +573,7 @@ ipcMain.on("quit", () => app.quit());
 ipcMain.handle("settings:get", (e, id) => id ? viewFor(id) : settings);
 ipcMain.on("settings:set", (e, patch, id) => updateSettings(patch, id || instanceOf(e.sender), e.sender.id));
 ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
-ipcMain.on("settings:reset", () => { settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, {}), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
+ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
 ipcMain.on("settings:open", (e, tab, id) => openSettings(tab, id || menuFor || instanceOf(e.sender)));
 ipcMain.handle("catalog:get", (e) => catalogPayload(instanceOf(e.sender) || menuFor));
 ipcMain.on("mascot", (e, cmd, arg, id) => sendMascot(id || instanceOf(e.sender) || menuFor || settings.characters[0].id, cmd, arg));
