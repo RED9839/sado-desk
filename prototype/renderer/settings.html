@@ -207,7 +207,7 @@
       <div class="hint">캐릭터 우클릭 → <b>말 걸기</b> 또는 <code>Ctrl+Shift+Space</code>. 나무위키 대사표로 만든 말투 프로필(호칭·어미·감탄사·대표 대사)을 AI에 넘겨 그 사도처럼 답하고, 답의 감정에 맞춰 표정·소리를 냅니다. 대화 내용은 이 PC와 선택한 AI 제공자에만 전송됩니다.</div>
       <div class="row" style="margin-top:8px"><label>제공자</label>
         <select data-s="ai.provider">
-          <option value="auto">자동 (Ollama → Gemini → Anthropic → OpenAI 호환 순으로 쓸 수 있는 것)</option>
+          <option value="auto">자동 (Gemini → Anthropic → Ollama → OpenAI 호환 순으로 쓸 수 있는 것)</option>
           <option value="ollama">Ollama — 내 PC에서 실행 (무료 · 오프라인)</option>
           <option value="gemini">Google Gemini — 무료 등급 키</option>
           <option value="anthropic">Anthropic Claude — API 키 (유료 · 말투 재현 최상)</option>
@@ -217,7 +217,7 @@
       <div class="row"><button class="btn" id="ai-test">지금 설정으로 한 마디 시켜보기</button><span class="hint" id="ai-test-out"></span></div>
     </div>
     <div class="card"><h3>Ollama (무료 · 로컬)</h3>
-      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이 씁니다. 추천 <code>exaone3.5:7.8b</code>(LG, 한국어 강함, 약 4.8GB · RAM 8GB 이상) — 가벼운 PC는 <code>exaone3.5:2.4b</code>(1.6GB). 응답 품질은 Claude보다 단순하지만 잡담에는 충분합니다.</div>
+      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이, 대화가 PC 밖으로 나가지 않고 한도도 없습니다. 모델 <code>exaone3.5:7.8b</code>(LG, 약 4.8GB · GPU 또는 RAM 8GB 이상) — 가벼운 PC는 <code>exaone3.5:2.4b</code>(1.6GB). <b>품질은 Gemini/Claude보다 낮습니다</b>: 한국어는 자연스럽지만 사도 고유 어미(~다비·~그마·~입니닷)를 자주 놓치고 개성 표현이 옅어요(RTX 4080에서 답 6~8초).</div>
       <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
