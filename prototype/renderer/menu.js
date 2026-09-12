@@ -34,8 +34,9 @@
   function render() {
     document.getElementById("menu-title").textContent = `${KO.skinName(S.skin, { withSkin: false })} — 사도 데스크`;
     const cur = catalog.skins.find(s => s.name === S.skin), sdA = cur?.sd || {};
-    document.getElementById("mode-state").textContent = (S.mode === "sd" ? "SD" : S.mode === "ingame" ? "인게임" : "미니미") + " ▸";
-    document.getElementById("mode-item").title = "미니미 → SD → 인게임 순서로 바뀜" + (sdA.ingame ? "" : " (이 사도는 인게임 SD 데이터 없음 → 가져오기에서 '인게임 SD' 체크)");
+    const MODES = [["minimi", "미니미", true], ["sd", "SD", !!(sdA.standing || sdA.ingame)], ["ingame", "인게임", !!sdA.ingame]];
+    document.getElementById("mode-state").textContent = (MODES.find(([k]) => k === S.mode) || MODES[0])[1];
+    document.getElementById("mode-chips").innerHTML = MODES.map(([k, label, ok]) => `<div class="chip ${S.mode === k ? "on" : ""} ${ok ? "" : "off"}" data-mode="${k}" title="${ok ? "" : (k === "ingame" ? "이 사도는 인게임 SD 데이터가 없음 (에셋 가져오기 → '인게임 SD' 체크)" : "이 사도는 SD 데이터가 없음")}">${label}</div>`).join("");
     document.getElementById("skin-cur").textContent = KO.skinName(S.skin);
     document.getElementById("scale-chips").innerHTML = [0.3, 0.4, 0.5, 0.6, 0.8, 1.0].map(v => `<div class="chip ${v === S.scale ? "on" : ""}" data-scale="${v}">${Math.round(v * 100)}%</div>`).join("");
     document.getElementById("mood-chips").innerHTML = MOODS.map(([k, label]) => `<div class="chip ${(S.mood || "") === k ? "on" : ""}" data-mood="${k}">${label}</div>`).join("");
@@ -52,7 +53,8 @@
     input.addEventListener("change", () => { set({ sound: { [row.dataset.vol]: input.value / 100 } }); host.mascot("preview", row.dataset.vol); });
   }
   menuEl.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-toggle],[data-act],[data-anim],[data-skin],[data-scale],[data-news],[data-mood]"); if (!t) return;
+    const t = e.target.closest("[data-toggle],[data-act],[data-anim],[data-skin],[data-scale],[data-news],[data-mood],[data-mode]"); if (!t) return;
+    if (t.dataset.mode) { if (!t.classList.contains("off")) set({ mode: t.dataset.mode }); return; }
     if (t.dataset.mood !== undefined) { set(t.dataset.mood && S.mode !== "sd" ? { mood: t.dataset.mood, mode: "sd" } : { mood: t.dataset.mood }); return; }
     if (t.dataset.news) { const it = newsItems.find(i => i.id === t.dataset.news); if (it) host.openUrl(it.url, it.id); host.menuClose(); return; }
     if (t.dataset.toggle) { const sub = document.getElementById("sub-" + t.dataset.toggle); const was = sub.classList.contains("open"); for (const el of menuEl.querySelectorAll(".sub.open")) el.classList.remove("open"); if (!was) sub.classList.add("open"); if (t.dataset.toggle === "skins" && !was) setTimeout(() => filter.focus(), 0); resize(); return; }
@@ -60,10 +62,7 @@
     if (t.dataset.skin) { set({ skin: t.dataset.skin }); return; }
     if (t.dataset.scale) { set({ scale: +t.dataset.scale }); return; }
     switch (t.dataset.act) {
-      case "mode": { // 미니미 → SD → 인게임(있을 때) → 미니미
-        const cur = catalog.skins.find(s => s.name === S.skin), a = cur?.sd || {};
-        const next = S.mode === "minimi" ? "sd" : S.mode === "sd" ? (a.ingame ? "ingame" : "minimi") : "minimi";
-        set({ mode: next }); break; }
+
       case "mute": set({ sound: { muted: !S.sound.muted } }); break;
       case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;

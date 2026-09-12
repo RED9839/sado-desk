@@ -17,6 +17,9 @@
   #menu .chip{flex:1;text-align:center;padding:3px 0;border-radius:4px;background:#3a3a44;cursor:pointer;font-size:11px}
   #menu .chip.on{background:#6c8cff;color:#fff}
   #menu .chip:hover{filter:brightness(1.15)}
+  #menu .chip.off{opacity:.35;cursor:default}
+  #menu .item > span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  #menu .item{white-space:nowrap}
   #menu .chips.wrap{flex-wrap:wrap}
   #menu .chips.wrap .chip{flex:1 0 22%}
   #menu .row{display:flex;align-items:center;gap:8px;padding:3px 12px;font-size:12px}
@@ -30,7 +33,8 @@
   <div class="title" id="menu-title">사도 데스크</div>
   <div class="item" data-toggle="anims">행동 시키기 <span>▸</span></div>
   <div class="sub" id="sub-anims"></div>
-  <div class="item" data-act="mode" id="mode-item">형태 <span id="mode-state"></span></div>
+  <div class="item" id="mode-item" title="미니미 = 로비 스틱 SD · SD = 사도 상세 화면 스탠딩 · 인게임 = 전투/마이홈 모델">형태 <span id="mode-state"></span></div>
+  <div class="chips" id="mode-chips"></div>
   <div class="item" data-toggle="skins">캐릭터 바꾸기 <span id="skin-cur"></span></div>
   <div class="sub" id="sub-skins"><input type="text" id="skin-filter" placeholder="이름 검색 (한글/영문)"><div id="skin-list"></div></div>
   <div class="item">크기</div>
