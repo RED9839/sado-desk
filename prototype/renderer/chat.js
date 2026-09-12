@@ -4,16 +4,17 @@
   const host = window.host;
   const el = (id) => document.getElementById(id);
   const log = el("log"), input = el("in"), sendBtn = el("send");
-  let busy = false, cur = null;
+  let busy = false, cur = null, withScreen = false;
   const resize = () => requestAnimationFrame(() => host.chatResize(Math.ceil(el("chat").getBoundingClientRect().height) + 22));
   function add(role, text, cls = "") { const d = document.createElement("div"); d.className = `msg ${role} ${cls}`.trim(); d.textContent = text; log.appendChild(d); while (log.children.length > 40) log.firstChild.remove(); log.scrollTop = log.scrollHeight; resize(); return d; }
   function setBusy(b) { busy = b; sendBtn.disabled = b; input.disabled = b; if (!b) input.focus(); }
   function send() {
     const t = input.value.trim(); if (!t || busy) return;
     input.value = ""; input.style.height = "";
-    add("user", t); cur = add("bot", "", "typing"); setBusy(true);
-    host.chatSend(t);
+    add("user", (withScreen ? "📷 " : "") + t); cur = add("bot", "", "typing"); setBusy(true);
+    host.chatSend(t, withScreen); withScreen = false; el("cam").classList.remove("on");
   }
+  el("cam").addEventListener("click", () => { withScreen = !withScreen; el("cam").classList.toggle("on", withScreen); el("status").textContent = withScreen ? "다음 말과 함께 화면을 보여줍니다" : ""; input.focus(); });
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } if (e.key === "Escape") host.chatClose(); });
   input.addEventListener("input", () => { input.style.height = ""; input.style.height = Math.min(72, input.scrollHeight) + "px"; resize(); });

@@ -1,7 +1,7 @@
 // 사도 데스크 — Electron 메인 프로세스
 // 캐릭터(인스턴스)마다 [마스코트 창(모니터 합집합, 항상 클릭 통과) + 히트 창(캐릭터 크기, 실제 입력 수신)] 한 쌍.
 // 설정: settings.json 하나. global(사운드·화면) + characters[](스킨·형태·크기·불투명도·행동). 렌더러엔 자기 캐릭터와 global을 합친 "뷰"를 준다.
-const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell, globalShortcut } = require("electron");
+const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell, globalShortcut, desktopCapturer } = require("electron");
 const Ai = require("./ai.js");
 const path = require("node:path");
 const fs = require("node:fs");
@@ -85,7 +85,7 @@ function saveSettings() {
 const charOf = (id) => settings.characters.find(c => c.id === id);
 // 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
 const viewsAll = () => settings.characters.map(c => viewFor(c.id));
-const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, count: settings.characters.length, unread: news ? news.unread : 0 }; };
+const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, ai: { screen: !!(settings.global.ai && settings.global.ai.screen) }, count: settings.characters.length, unread: news ? news.unread : 0 }; };
 const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai"]);
 // patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각
 function updateSettings(patch, id, sourceId) {
@@ -379,7 +379,7 @@ async function chatTurn(id, userText, opts = {}) {
   if (chatBusy) return; chatBusy = true; lastChatAt = Date.now();
   const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
   const hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
-  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })), ...(userText ? [{ role: "user", text: userText }] : [])];
+  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })), ...(userText || opts.image ? [{ role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }] : [])];
   chatAbort = new AbortController();
   sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
   try {
@@ -398,6 +398,27 @@ async function chatTurn(id, userText, opts = {}) {
     return null;
   } finally { chatBusy = false; chatAbort = null; lastChatAt = Date.now(); }
 }
+// ---- 화면 보기: 캐릭터가 서 있는 모니터를 캡처해(축소 JPEG) AI에 첨부. 설정 ai.screen 이 켜져 있을 때만 ----
+async function captureScreenFor(id) {
+  const inst = instances.get(id); const r = inst && inst.rect;
+  const pt = r && geo ? { x: Math.round(geo.x + r.x + r.w / 2), y: Math.round(geo.y + r.y + r.h / 2) } : screen.getCursorScreenPoint();
+  const disp = screen.getDisplayNearestPoint(pt);
+  const maxW = 1280, scale = Math.min(1, maxW / disp.size.width);
+  const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: Math.round(disp.size.width * scale), height: Math.round(disp.size.height * scale) } });
+  const src = sources.find(s => String(s.display_id) === String(disp.id)) || sources[0];
+  if (!src || src.thumbnail.isEmpty()) throw new Error("화면을 캡처하지 못했어요");
+  return { mime: "image/jpeg", data: src.thumbnail.toJPEG(60).toString("base64"), display: disp.id };
+}
+const screenAllowed = () => !!(settings.global.ai && settings.global.ai.screen);
+// 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
+async function screenTalk(id, userText) {
+  const chatOpen = chatWin && !chatWin.isDestroyed() && chatFor === id;
+  if (!screenAllowed()) { if (!chatOpen) openChat(id); setTimeout(() => chatSend("chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
+  if (!chatOpen) openChat(id, { quiet: !userText });
+  sendMascot(id, "emote", { mood: "", role: "listen", pose: 4000, hold: 12000 }); // 화면을 살피는 포즈
+  let image; try { image = await captureScreenFor(id); } catch (e) { chatSend("chat:done", { error: e.message }); return; }
+  await chatTurn(id, userText || "", { image, say: !userText, extra: "사용자의 화면 스크린샷을 첨부했다. 지금 사용자가 무엇을 하고 있는지 알아보고, 네 성격대로 한두 문장으로 반응하라(감상·놀림·응원·질문 등)." });
+}
 // ---- 사도 둘이 잡담 (ai.duo): 서로 다가가 마주 보고, 대본을 말풍선으로 번갈아 ----
 let duoBusy = false;
 async function duoTalk(idA, idB, opts = {}) {
@@ -412,7 +433,8 @@ async function duoTalk(idA, idB, opts = {}) {
     sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
     sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
     const now = new Date();
-    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic });
+    let image = null; if (opts.screen && screenAllowed()) { try { image = await captureScreenFor(idA); } catch (e) { console.log("duo capture:", e.message); } }
+    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image });
     console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
     if (!r.lines.length) return r;
     await new Promise(res => setTimeout(res, 1500)); // 다가가는 시간
@@ -442,7 +464,9 @@ function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사�
   return best;
 }
 ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o); });
-ipcMain.on("chat:send", (_e, text) => { if (chatFor && typeof text === "string" && text.trim()) chatTurn(chatFor, text.trim().slice(0, 2000)); });
+ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
+ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
+ipcMain.on("chat:duo-screen", (e, id) => { const me = id || instanceOf(e.sender); const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o, { screen: true }); });
 ipcMain.on("chat:close", () => closeChat());
 ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
 ipcMain.on("chat:resize", (_e, h) => { if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(Math.round(h), d.height) }; chatPlace(chatFor); } });
@@ -472,9 +496,11 @@ setInterval(async () => {
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   const st = await Ai.status(ai); if (!st.resolved) return;
-  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b); return; } } // 둘 이상이면 절반은 둘이 잡담
+  const withScreen = screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0);
+  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { screen: withScreen }); return; } } // 둘 이상이면 절반은 둘이 잡담
   const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
   lastChatAt = Date.now();
+  if (withScreen) { screenTalk(id, ""); return; }
   openChat(id, { quiet: true });
   setTimeout(async () => {
     await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." });
@@ -668,7 +694,8 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
-if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
+if (argHas("--screen-test")) setTimeout(async () => { const id = settings.characters[0].id; try { const img = await captureScreenFor(id); fs.writeFileSync(path.join(__dirname, "out", "screen-cap.jpg"), Buffer.from(img.data, "base64")); console.log("SCREENTEST captured", img.data.length, "b64 chars display", img.display); } catch (e) { console.log("SCREENTEST capture error", e.message); } await screenTalk(id, argVal("--screen-msg", "") || ""); setTimeout(() => console.log("SCREENTEST history", JSON.stringify(Ai.loadHistory(app.getPath("userData"), id).slice(-2))), 1500); }, 7000);
+if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined, screen: argHas("--duo-screen") }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
 if (argHas("--chat-test")) setTimeout(async () => {
   const id = settings.characters[0].id; openChat(id);
