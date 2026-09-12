@@ -81,10 +81,12 @@ function buildSystem(prof, opts = {}) {
   const callsTxt = rel && rel.calls ? Object.entries(rel.calls).slice(0, 6).map(([o, fs]) => `${koOf(o)}→"${fs[0].form.replace(" (반말 호격)", "(이름+아/야)")}"`).join(", ") : "";
   const withTxt = rel && rel.with ? Object.keys(rel.with).slice(0, 6).map(koOf).join(", ") : "";
   const theaters = (p.theaters || []).slice(0, 3).map(t => `- ${t.title}${t.cast && t.cast.length ? ` (함께: ${t.cast.filter(c => c !== p.ko).slice(0, 4).join(", ")})` : ""}${t.synopsis ? `: ${t.synopsis.slice(0, 90)}` : ""}`).join("\n");
+  const bible = bibleBrief(p.bible, { rel: 8 });
   return [
     `너는 모바일 게임 <트릭컬 리바이브>의 사도 "${p.ko}"${p.skin ? ` (지금 입은 옷: ${p.skin})` : ""}이다. 지금은 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있고, 사용자는 게임의 플레이어(교주)다.`,
     `사용자를 부를 때는 "${p.addr || "교주"}"라고 부른다.${p.me ? ` 자신을 가리킬 때는 "${p.me}"라고 한다.` : ""}`,
     `말투: ${style}. 게임 속 성격과 세계관(엘리아스 대륙, 교단, 사도들)을 유지하되, 게임 지식이 확실치 않으면 아는 척하지 말고 자연스럽게 넘어간다.`,
+    bible,
     mix,
     interj ? `자주 쓰는 감탄사: ${interj}` : "",
     catch_ ? `자주 입에 올리는 사람·물건·소재(다른 사도보다 유난히): ${catch_}` : "",
@@ -104,9 +106,12 @@ function buildSystem(prof, opts = {}) {
 }
 function parseEmotion(text) {
   const t = (text || "").trim();
-  const m = /\[\s*감정\s*[:：]\s*([^\]]+)\]\s*$/.exec(t) || /\[\s*감정\s*[:：]\s*([^\]]+)\]/.exec(t); // 끝에 없으면 중간 어디든
+  // 정식은 [감정:분노]. 모델이 가끔 [분노:기본]·[감정 분노]·[분노]처럼 비틀어 쓰므로 대괄호 태그는 전부 떼고, 안의 낱말 중 감정 사전에 있는 첫 것을 고른다
+  const m = /\[\s*감정\s*[:：]\s*([^\]]+)\]\s*$/.exec(t) || /\[\s*감정\s*[:：]\s*([^\]]+)\]/.exec(t) // 끝에 없으면 중간 어디든
+    || /\[\s*([^\]]{1,24})\]\s*$/.exec(t);
   const clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
-  const key = m ? m[1].trim() : "";
+  const words = m ? m[1].split(/[\s:：,/|]+/).map(w => w.trim()).filter(Boolean) : [];
+  const key = words.find(w => EMOTIONS[w] !== undefined) || (m ? m[1].trim() : "");
   if (key && EMOTIONS[key] !== undefined) return { text: clean, emotion: EMOTIONS[key], raw: key };
   // 태그를 빼먹은 모델(작은 로컬 모델·Gemini가 가끔) → 본문에서 대충 추정
   const guess = /(화나|화났|짜증|사과해|용서|건방|무례|감히|버릇|혼내|때린다)/.test(clean) ? "anger"
@@ -157,12 +162,14 @@ async function chatOllama(cfg, system, messages, onToken, signal) {
   for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
   return out;
 }
-async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false, attempt = 0) {
+async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false, attempt = 0, relaxed = false) {
   const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(m.image ? [{ inline_data: { mime_type: m.image.mime || "image/png", data: m.image.data } }] : []), { text: m.text }] }));
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse`;
   // Flash는 기본으로 '생각' 토큰을 쓰고 그게 maxOutputTokens에 포함돼 답이 잘림 → 생각 끄기(안 받는 모델이면 빼고 재시도) + 여유 있는 상한
   const generationConfig = { temperature: 0.9, maxOutputTokens: 1024, ...(noThinkCfg ? {} : { thinkingConfig: { thinkingBudget: 0 } }) };
-  const r = await fetch(url, { method: "POST", signal, headers: { "content-type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ system_instruction: { parts: [{ text: system }] }, contents, generationConfig }) });
+  // 게임 캐릭터 잡담(전체이용가)인데 인물 소개의 '분노·매도·괴팍' 같은 낱말에 기본 필터가 과민 반응해 답이 중간에 잘리는 일이 있어 상한만 막는 수준으로
+  const safetySettings = ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"].map(category => ({ category, threshold: relaxed ? "BLOCK_NONE" : "BLOCK_ONLY_HIGH" })); // 차단되면 한 번은 필터를 끄고 재시도(사용자 본인 키·PG 캐릭터 잡담)
+  const r = await fetch(url, { method: "POST", signal, headers: { "content-type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ system_instruction: { parts: [{ text: system }] }, contents, generationConfig, safetySettings }) });
   if (!r.ok) {
     const body = await r.text();
     if (r.status === 404 && /no longer available|not found/i.test(body) && cfg.model !== "gemini-flash-latest") return chatGemini({ ...cfg, model: "gemini-flash-latest" }, key, system, messages, onToken, signal, noThinkCfg); // 은퇴한 모델 → 최신 Flash 별칭으로
@@ -177,8 +184,12 @@ async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCf
     let msg = body; try { const e = JSON.parse(body).error; msg = (e?.message || body) + (e?.details ? " " + JSON.stringify(e.details).slice(0, 600) : ""); } catch {}
     throw new Error(`Gemini ${r.status}: ${msg.slice(0, 900)}`);
   }
-  let out = "";
-  for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const t = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } }
+  let out = "", finish = "";
+  for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const c = j.candidates?.[0]; const t = (c?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } if (c?.finishReason) { finish = c.finishReason; if (finish !== "STOP") console.log("[ai] gemini candidate", JSON.stringify({ finish, ratings: c.safetyRatings, pf: j.promptFeedback, usage: j.usageMetadata }).slice(0, 600)); } if (j.promptFeedback?.blockReason) finish = "PROMPT_" + j.promptFeedback.blockReason; }
+  if (finish && !/^(STOP|MAX_TOKENS)$/.test(finish)) { // 필터에 걸려 중간에 끊긴 답은 말풍선에 반쪽만 뜨니 실패로 처리해 상위에서 알리게
+    if (out.trim().length < 12) { if (!relaxed && finish === "SAFETY") return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt, true); throw new Error(`Gemini 필터로 답이 차단됨 (${finish})`); }
+    console.log("[ai] gemini finishReason", finish, "→ 잘린 답", JSON.stringify(out.slice(-60)));
+  }
   return out;
 }
 async function chatAnthropic(cfg, key, system, messages, onToken, signal) {
@@ -266,10 +277,30 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
 }
 
 // 사도 둘의 짧은 대화(3~5줄). 한 번의 호출로 대본을 받아 줄마다 {who, text, emotion}. 작은 모델도 따르기 쉽게 JSON 대신 "이름: 대사 [감정:x]" 줄 형식
+// 인물 사전(data/bible.json — 나무위키 사도 문서 요약: 누구인지·성격·관계·행적·말버릇)을 프롬프트 몇 줄로
+function bibleBrief(b, o = {}) {
+  if (!b) return "";
+  const rel = (b.rel || []).slice(0, o.rel == null ? 6 : o.rel);
+  return [
+    b.who ? `인물: ${b.who}` : "",
+    b.traits && b.traits.length ? `성격·특징: ${b.traits.slice(0, o.traits || 6).join(" / ")}` : "",
+    rel.length ? `다른 사도와의 관계: ${rel.join(" · ")}` : "",
+    !o.short && b.story ? `원작 행적: ${b.story}` : "",
+    b.quirk ? `말버릇·버릇: ${b.quirk}` : "",
+  ].filter(Boolean).join("\n");
+}
 function personaBrief(p) {
   const si = p.styleInfo || null;
   const lines = [...(p.lines || []).slice(0, 4), ...((si && si.samples) || []).slice(0, 6)].map(l => `  - ${l}`).join("\n");
-  return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
+  const bible = p.bible ? bibleBrief({ who: p.bible.who, traits: p.bible.traits, quirk: p.bible.quirk }, { short: true, traits: 4 }).split("\n").map(l => `  ${l}`).join("\n") : "";
+  return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, bible, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
+}
+// A의 인물 사전에서 B(이름)에 대한 관계 서술 — "B: 설명" 형식 항목 중 이름이 앞에 오는 것
+function bibleRelTo(a, bKo) {
+  if (!a.bible || !a.bible.rel || !bKo) return "";
+  const base = bKo.replace(/\(.*\)$/, "");
+  const hit = a.bible.rel.find(r => { const head = r.split(":")[0]; return head.includes(base) || (head.includes("·") && head.split("·").some(h => h.trim().includes(base))); });
+  return hit ? hit.replace(/^[^:]*:\s*/, "") : "";
 }
 // 같은 사도 둘(스킨만 다르거나 완전히 같은)이면 이름을 구분해 준다: "벨라(존재감 넘치는 구미호)" / "벨라(기본)" — 그래도 같으면 "벨라 A"/"벨라 B"
 function duoLabels(a, b) {
@@ -287,11 +318,16 @@ function relationBrief(a, b, la, lb) {
   const callB = ka && kb && rb.calls && rb.calls[ka] ? rb.calls[ka].slice(0, 2).map(fm).join("/") : "";
   if (callA) out.push(`${la}은(는) ${lb}을(를) ${callA}이라고 부른다.`);
   if (callB) out.push(`${lb}은(는) ${la}을(를) ${callB}이라고 부른다.`);
+  if (a.ko !== b.ko) { // 인물 사전(나무위키 요약)에 적힌 서로에 대한 관계
+    const ba = bibleRelTo(a, b.ko), bb = bibleRelTo(b, a.ko);
+    if (ba) out.push(`${la}에게 ${lb}은(는): ${ba}.`);
+    if (bb) out.push(`${lb}에게 ${la}은(는): ${bb}.`);
+  }
   const n = ka && kb && ra.with ? ra.with[kb] : 0;
   const shared = (a.theaters || []).filter(t => (t.castKeys || []).includes(kb)).slice(0, 2);
   if (shared.length) out.push(`둘이 함께 주연으로 나온 이야기: ${shared.map(t => `'${t.title}'${t.synopsis ? "(" + t.synopsis.slice(0, 70) + "…)" : ""}`).join(", ")}`);
   else if (n) out.push(`원작 스토리에서 같은 장면에 ${n}번 이상 함께 나왔다(서로 아는 사이).`);
-  if (!out.length) return a.ko === b.ko ? "" : "원작에서 둘이 직접 얽힌 기록은 없다 — 서로 이름은 알지만 첫 대화처럼.";
+  if (!out.length) return a.ko === b.ko ? "" : "원작에서 둘이 직접 얽힌 기록은 없다 — 서로 이름은 알지만 첫 대화처럼. 각자의 인물 소개(성격·관계)를 바탕으로 자연스럽게 반응한다.";
   return "둘의 관계(원작 기준): " + out.join(" ");
 }
 function buildDuoSystem(a, b, opts = {}) {
@@ -340,4 +376,4 @@ async function duo(ai, profA, profB, opts = {}) {
   const lines = parseDuo(text, profA, profB);
   return { lines, raw: text, provider, model: cfg[provider]?.model || "" };
 }
-module.exports = { DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+module.exports = { bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
