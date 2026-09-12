@@ -21,6 +21,9 @@
     move: "Idle2_1", jump: ["Jump1", "Jump2", "Jump3", "Jump5", "Jump6"], spawn: ["Spawn1", "Spawn2"],
     react: ["Success", "Idle3_7", "Act6_1", "Idle2_4"], land: "Idle2_3", drag: "Idle1_1", hold: "Idle1_1",
     moveSpeed: 110, // px/s (scale 0.5 기준 ×2)
+    // 미니미는 그림이 하나라 '표정' 대신 몸짓으로: 행복=만세/폴짝, 미소=갸웃, 분노=공격/늘어나기, 슬픔=풀썩/납작, 놀람=뒤집기, 냠냠=동작, 삐짐=찌그러지기
+    moods: { happy: ["Success", "Jump1", "Jump2", "Idle2_2"], smile: ["Act6_1", "Idle1_2", "Idle3_5"], anger: ["Attack1_1", "Attack1_2", "Act5_1"], sad: ["Fail", "Idle2_5", "Idle2_3"], surprise: ["Idle3_7", "Jump3", "Idle2_4"], eat: ["Act2_1", "Act3_1", "Act1_1"], sulky: ["Idle2_3", "Idle2_5", "Act5_1"] },
+    speak: ["Act1_1", "Act6_1", "Idle3_5", "Idle3_6", "Act4_1"], listen: ["Idle1_2", "Act6_1", "Idle3_6"],
   };
   // ---- SD(스탠딩) 애니 — 캐릭터마다 구성이 달라서(에르핀 Angry 16개, 앨리스는 Move 없음) 로드 시 접두어로 자동 분류 ----
   function sdPools(data) {
@@ -76,7 +79,10 @@
       move: hasA("Move") ? "Move" : null, jump: [], spawn: hasA("Spawn") ? ["Spawn"] : [],
       react: ["Victory", "Attack1_1", "Attack2_1", "Skill1_1", "EasterEgg_Victory"].filter(shortish),
       land: ["Groggy", "Hit", "Die"].find(hasA) || null, drag: ["Groggy", "Idle"].find(hasA) || null,
-      hold: "Idle", moveSpeed: 120, hopHeight: 18, moods: {},
+      hold: "Idle", moveSpeed: 120, hopHeight: 18,
+      // 인게임 SD는 전투 모션뿐이라: 행복/미소=승리, 분노=공격/스킬, 슬픔·삐짐·놀람=그로기/피격
+      moods: { happy: ["Victory", "EasterEgg_Victory"].filter(hasA), smile: ["Victory"].filter(hasA), anger: ["Attack1_1", "Attack2_1", "Skill1_1"].filter(hasA), sad: ["Groggy"].filter(hasA), surprise: ["Groggy", "Hit"].filter(hasA), eat: ["Victory"].filter(hasA), sulky: ["Groggy"].filter(hasA) },
+      speak: ["Attack1_1", "Victory"].filter(hasA), listen: [],
     };
   }
   // SD 배율: 스탠딩·인게임 스켈레톤은 같은 단위(에르핀 Head 본 y=429 동일)라 바운딩 박스로 맞추지 않고 단위→픽셀 고정 배율을 쓴다.
@@ -438,7 +444,7 @@
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
-      const SPEAK = ["Talk_1", "Talk_2", "Point_1", "Blank_1", "Happy_1", "Proud_1", "Taunt_1"], LISTEN = ["Blank_1", "Blank_2", "Nodding_1", "Think_1", "Thinking_1", "Curious_1", "Question_1"];
+      const SPEAK = A.speak || ["Talk_1", "Talk_2", "Point_1", "Blank_1", "Happy_1", "Proud_1", "Taunt_1"], LISTEN = A.listen || ["Blank_1", "Blank_2", "Nodding_1", "Think_1", "Thinking_1", "Curious_1", "Question_1"]; // 형태별 (미니미/인게임은 자기 목록)
       const role = arg && arg.role;
       let a = pool.length ? pick(pool) : null;
       if (!a) { const cands = (role === "listen" ? LISTEN : role === "speak" ? SPEAK : []).filter(has); a = cands.length ? pick(cands) : (mood ? (A.react || []).find(has) : null); }

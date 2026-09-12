@@ -73,7 +73,7 @@ function loadSettings() {
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
   s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
-  for (const c of s.characters) if (["standing", "ingame", "hybrid"].includes(c.mode)) c.mode = "sd";
+  for (const c of s.characters) if (["standing", "hybrid"].includes(c.mode)) c.mode = "sd"; // 옛 모드 이름 → sd ("ingame"은 v0.9.12부터 정식 형태라 그대로)
   return s;
 }
 let settings = loadSettings();
