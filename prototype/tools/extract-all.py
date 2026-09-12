@@ -14,7 +14,10 @@ from concurrent.futures import ProcessPoolExecutor
 
 PKG = "com.epidgames.trickcalrevive"
 BASE = f"/sdcard/Android/data/{PKG}/files/Packages"
-VOICE_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise", "eat", "greeting", "spawn", "line", "ticklestart", "tickleduring", "dutchrubend")
+# 로비(SD·미니미) 대사 + 전투(인게임 형태) 대사. 나머지(affinity/growth/gacha/story _selective_ …)는 받지 않음
+LOBBY_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise", "eat", "greeting", "spawn", "line", "ticklestart", "tickleduring", "dutchrubend")
+BATTLE_CATS = ("shout", "hit", "ultimate", "spskill", "basicattack", "powerattack", "victory", "defeat", "die")
+VOICE_CATS = LOBBY_CATS + BATTLE_CATS
 ENV = dict(os.environ); ENV["MSYS_NO_PATHCONV"] = "1"
 JSON = False
 FORCE = False  # --force: 이미 있는 것도 다시 받기
@@ -444,19 +447,22 @@ def _voice_job(args):
     except Exception as e:
         return "err:" + str(e)[:80]
 
-KEY_RE = re.compile(r"^([a-z]+?)(\d[\d_]*)?(?:_(skin\d+))?$")
+KEY_RE = re.compile(r"^([a-z]+?)(\d[\d_-]*)?(?:_(skin\d+))?$")
 def step_voice(adb_exe, dev, out, tmp):
     import imageio_ffmpeg
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     heroes = [h for h in adb_ls(adb_exe, dev, f"{BASE}/audio/kor/voice/hero") if re.match(r"^[a-z0-9_]+$", h)]
-    cat_re = re.compile(r"^voice_([a-z0-9]+)_(" + "|".join(VOICE_CATS) + r")(\d[\d_]*)?(_skin\d+)?$")
+    cat_re = re.compile(r"^voice_([a-z0-9]+)_(" + "|".join(VOICE_CATS) + r")(\d[\d_-]*)?(_skin\d+)?$")
     # 이미 변환된 사도(index.json 기준 파일이 있음)는 다시 받지 않음 → 재추출 때는 새 사도만
     vout = os.path.join(out, "voice")
     def hero_done(h):
-        d = os.path.join(vout, h); return os.path.isdir(d) and len([f for f in os.listdir(d) if f.endswith(".ogg")]) >= 10
+        d = os.path.join(vout, h)
+        if not os.path.isdir(d): return False
+        fs_ = [f for f in os.listdir(d) if f.endswith(".ogg")]
+        return len(fs_) >= 10 and any(f.startswith(BATTLE_CATS) for f in fs_)  # 전투 대사(victory/die/…)가 없으면 예전 추출본 → 다시
     todo = heroes if FORCE else [h for h in heroes if not hero_done(h)]
     if not todo: build_voice_index(vout); log("voice", f"보이스 {len(heroes)}명 이미 있음 — 건너뜀 (다시 받으려면 '이미 있는 것도 다시 받기' 체크)", "ok"); return
-    log("voice", f"보이스: 사도 {len(todo)}명 폴더 복사 중… (이미 있는 {len(heroes) - len(todo)}명 제외 · 원본 1.6GB 중 로비 대사만 변환)", total=len(todo), done=0)
+    log("voice", f"보이스: 사도 {len(todo)}명 폴더 복사 중… (이미 있는 {len(heroes) - len(todo)}명 제외 · 원본 1.6GB 중 로비·전투 대사만 변환)", total=len(todo), done=0)
     vtmp = os.path.join(tmp, "voice"); os.makedirs(vtmp, exist_ok=True)
     root = None
     if len(todo) >= len(heroes) * 0.5:

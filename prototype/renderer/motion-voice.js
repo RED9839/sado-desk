@@ -3,10 +3,18 @@
  *   ticklestart/tickleduring=간지럽히기 웃음 · joy/pleasure/anger/sorrow/surprise/sorry = 짧은 감정 소리(웃음·으아악·미안) · eat greeting spawn line(잡담 대사)
  * 스탠딩 애니 접두어(137명 조사, tools/anim-survey.mjs): 전원 = Angry Eat Happy Idle Pat_* Sad Touch_* Smash_End Tickle_* Close
  *   다수 = Blank(113) Panic(105) Shy(85) Surprise(63) Sulky(56) Dance(44) Serious(39) Sorry(30) Talk Taunt Proud Thinking Tired Smile Mad Groggy ...
+ * 인게임 SD(전투·마이홈 형태) 애니 → 전투 대사: Spawn=spawn Victory=victory Attack=basicattack Skill=spskill Ultimate=ultimate Groggy/Hit=hit Die=die (416세트 조사)
  * 순서대로 첫 매치. 앞 카테고리가 없으면 뒤로 폴백. 매치 없음 = 대사 없음(Idle, Close, Pat_Idle 같은 루프/무표정).
  */
 (function (root) {
   const MOTION_VOICE = [
+    // ---- 인게임 SD (전투 애니는 이름이 고정: Attack1_1 / Skill1_1 / Ultimate1_1 / Victory / Groggy / Die / Spawn). 스탠딩 규칙보다 먼저 ----
+    [/^(Victory|EasterEgg_Victory)/i, ["victory", "pleasure", "joy"]],
+    [/^(OW\d_)?Attack\d/i, ["basicattack", "shout", "anger"]],
+    [/^(OW\d_)?(Skill\d|Cast\d)/i, ["spskill", "shout", "anger"]],
+    [/^(OW\d_)?Ultimate\d/i, ["ultimate", "shout", "anger"]],
+    [/^(Groggy|Hit|Bind)(_|$)/i, ["hit", "surprise", "sorry"]],
+    [/^Die(_|$)/i, ["die", "defeat", "sorrow"]],
     // 기쁨 계열
     [/^(Happy|Smile|Laugh|Excited|Nicesmile|Joy|Dance|Sing|Singing|Rhythm|Clap|Heart|Wink|Cute|Relaxed|EasterEgg_Happy|Success)/i, ["joy", "pleasure"]],
     // 뿌듯·자랑·승리
