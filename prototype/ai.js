@@ -21,6 +21,7 @@ const DEFAULTS = {
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
+  duo: true, // 소환된 사도가 둘 이상이면 가끔 둘이 잡담
 };
 
 // ---- 키 ----
@@ -220,4 +221,47 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
   return { ...parseEmotion(text), provider, model };
 }
 
-module.exports = { DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+// 사도 둘의 짧은 대화(3~5줄). 한 번의 호출로 대본을 받아 줄마다 {who, text, emotion}. 작은 모델도 따르기 쉽게 JSON 대신 "이름: 대사 [감정:x]" 줄 형식
+function personaBrief(p) {
+  const si = p.styleInfo || null;
+  const lines = [...(p.lines || []).slice(0, 4), ...((si && si.samples) || []).slice(0, 6)].map(l => `  - ${l}`).join("\n");
+  return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
+}
+function buildDuoSystem(a, b, opts = {}) {
+  return [
+    `너는 모바일 게임 <트릭컬 리바이브>의 두 사도가 나누는 짧은 대화를 쓰는 작가다. 두 사도는 지금 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있다가 마주쳤다. 사용자(교주)는 근처에서 보고 있을 수도 있다.`,
+    personaBrief(a), personaBrief(b),
+    "규칙:",
+    `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${a.ko}가 먼저 시작한다.`,
+    "- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 위 두 사도 이름 그대로)",
+    "- 원작에서 둘의 관계(친구·라이벌·동료·가족 등)를 안다면 반영하고, 모르면 첫 만남처럼 자연스럽게. 서로의 말투·성격이 뚜렷이 드러나게.",
+    "- 마크다운·이모지·설명·따옴표 금지. 대사만.",
+    opts.extra || "",
+  ].filter(Boolean).join("\n");
+}
+function parseDuo(text, a, b) {
+  const out = [];
+  for (const raw of (text || "").split(/\r?\n/)) {
+    const line = raw.replace(/^[-*\d.)\s]+/, "").trim(); if (!line) continue;
+    const m = /^(.{1,14}?)\s*[:：]\s*(.+)$/.exec(line); if (!m) continue;
+    const name = m[1].replace(/["'“”]/g, "").trim();
+    const who = name === a.ko || a.ko.startsWith(name) ? "a" : name === b.ko || b.ko.startsWith(name) ? "b" : null; if (!who) continue;
+    const pe = parseEmotion(m[2].replace(/^["'“]|["'”]$/g, ""));
+    if (pe.text) out.push({ who, text: pe.text, emotion: pe.emotion });
+  }
+  return out;
+}
+async function duo(ai, profA, profB, opts = {}) {
+  const cfg = merge(ai); const s = await status(cfg); const provider = opts.provider || s.resolved;
+  if (!provider) throw new Error("no-provider");
+  const system = buildDuoSystem(profA, profB, opts);
+  const messages = [{ role: "user", text: `대화를 써라.${opts.topic ? " 화제: " + opts.topic : ""}` }];
+  const noop = () => {}; let text;
+  if (provider === "ollama") text = await chatOllama(cfg.ollama, system, messages, noop, opts.signal);
+  else if (provider === "gemini") text = await chatGemini(cfg.gemini, decKey(cfg.keys.gemini), system, messages, noop, opts.signal);
+  else if (provider === "anthropic") text = await chatAnthropic(cfg.anthropic, decKey(cfg.keys.anthropic), system, messages, noop, opts.signal);
+  else text = await chatOpenAI(cfg.openai, decKey(cfg.keys.openai), system, messages, noop, opts.signal);
+  const lines = parseDuo(text, profA, profB);
+  return { lines, raw: text, provider, model: cfg[provider]?.model || "" };
+}
+module.exports = { DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
