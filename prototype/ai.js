@@ -227,25 +227,40 @@ function personaBrief(p) {
   const lines = [...(p.lines || []).slice(0, 4), ...((si && si.samples) || []).slice(0, 6)].map(l => `  - ${l}`).join("\n");
   return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
 }
+// 같은 사도 둘(스킨만 다르거나 완전히 같은)이면 이름을 구분해 준다: "벨라(존재감 넘치는 구미호)" / "벨라(기본)" — 그래도 같으면 "벨라 A"/"벨라 B"
+function duoLabels(a, b) {
+  if (a.ko !== b.ko) return [a.ko, b.ko];
+  let la = a.skin ? `${a.ko}(${a.skin})` : `${a.ko}(기본)`, lb = b.skin ? `${b.ko}(${b.skin})` : `${b.ko}(기본)`;
+  if (la === lb) { la = `${a.ko} A`; lb = `${b.ko} B`; }
+  return [la, lb];
+}
 function buildDuoSystem(a, b, opts = {}) {
+  const [la, lb] = duoLabels(a, b); const same = a.ko === b.ko;
   return [
     `너는 모바일 게임 <트릭컬 리바이브>의 두 사도가 나누는 짧은 대화를 쓰는 작가다. 두 사도는 지금 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있다가 마주쳤다. 사용자(교주)는 근처에서 보고 있을 수도 있다.`,
-    personaBrief(a), personaBrief(b),
+    same ? `특이 상황: 둘은 같은 사도 ${a.ko}가 둘이다(교주가 둘 소환함${a.skin !== b.skin ? ", 입은 옷만 다름" : ""}). 서로를 보고 놀라거나, 누가 진짜인지 다투거나, 죽이 맞아 장난치는 식으로 — 같은 성격이 둘이라 생기는 재미를 살려라. 이름은 아래 표기 그대로 구분해 쓴다.` : "",
+    personaBrief(a).replace(`■ ${a.ko}`, `■ ${la}`), personaBrief(b).replace(`■ ${b.ko}`, `■ ${lb}`),
     "규칙:",
-    `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${a.ko}가 먼저 시작한다.`,
-    "- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 위 두 사도 이름 그대로)",
+    `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${la}가 먼저 시작한다.`,
+    `- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 "${la}" / "${lb}" 그대로)`,
     "- 원작에서 둘의 관계(친구·라이벌·동료·가족 등)를 안다면 반영하고, 모르면 첫 만남처럼 자연스럽게. 서로의 말투·성격이 뚜렷이 드러나게.",
     "- 마크다운·이모지·설명·따옴표 금지. 대사만.",
     opts.extra || "",
   ].filter(Boolean).join("\n");
 }
 function parseDuo(text, a, b) {
-  const out = [];
+  const out = []; const [la, lb] = duoLabels(a, b); const same = a.ko === b.ko;
+  const norm = (s) => s.replace(/[\s"'“”()（）·]/g, "");
+  let turn = "a"; // 같은 사도 둘인데 라벨 없이 이름만 쓴 경우 → 번갈아 배정
   for (const raw of (text || "").split(/\r?\n/)) {
     const line = raw.replace(/^[-*\d.)\s]+/, "").trim(); if (!line) continue;
-    const m = /^(.{1,14}?)\s*[:：]\s*(.+)$/.exec(line); if (!m) continue;
-    const name = m[1].replace(/["'“”]/g, "").trim();
-    const who = name === a.ko || a.ko.startsWith(name) ? "a" : name === b.ko || b.ko.startsWith(name) ? "b" : null; if (!who) continue;
+    const m = /^(.{1,30}?)\s*[:：]\s*(.+)$/.exec(line); if (!m) continue;
+    const name = norm(m[1]);
+    let who = name === norm(la) ? "a" : name === norm(lb) ? "b" : null;
+    if (!who && !same) who = name === a.ko || a.ko.startsWith(name) || name.startsWith(a.ko) ? "a" : name === b.ko || b.ko.startsWith(name) || name.startsWith(b.ko) ? "b" : null;
+    if (!who && same && (name.startsWith(a.ko) || a.ko.startsWith(name))) who = turn;
+    if (!who) continue;
+    turn = who === "a" ? "b" : "a";
     const pe = parseEmotion(m[2].replace(/^["'“]|["'”]$/g, ""));
     if (pe.text) out.push({ who, text: pe.text, emotion: pe.emotion });
   }

@@ -419,9 +419,10 @@
     function meet(arg) {
       if (!arg || typeof arg.x !== "number") return;
       if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
-      holdUntil = performance.now() + (arg.hold || 30000);
-      const gap = Math.max(60, (m.w || 120) * 0.7);
-      const target = clampX(arg.x < m.x ? arg.x + gap : arg.x - gap); // 상대 옆에 서기
+      holdUntil = Math.max(holdUntil, performance.now() + (arg.hold || 30000));
+      // 메인이 자리(to)를 정해 주면 거기로(둘이 동시에 움직여도 겹치지 않게 중간점 기준), 아니면 상대 옆(폭 절반씩 + 여유)
+      const gap = ((m.w || 120) + (arg.w || m.w || 120)) / 2 + 48;
+      const target = clampX(typeof arg.to === "number" ? arg.to : (arg.x < m.x ? arg.x + gap : arg.x - gap));
       if (Math.abs(target - m.x) < 12) { facing = arg.x < m.x ? -1 : 1; applyFacing(); return; }
       if (isSD()) useSlot(slotForMove());
       m.state = "hop"; m.hopT = 0; m.targetX = target; facing = m.targetX < m.x ? -1 : 1; applyFacing();
@@ -430,7 +431,7 @@
     }
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
     function emote(arg) {
-      const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = performance.now() + arg.hold;
+      const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
       if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
       if (isSD()) useSlot(slotForRest());
       const pool = mood && active.A.moods ? (active.A.moods[mood] || []).filter(has) : [];
@@ -439,7 +440,7 @@
       if (a) { playOnce(a, "react"); if (S.sound.clickVoice !== false) motionVoice(a, true); }
     }
     function announce(arg) {
-      if (arg && arg.hold) holdUntil = performance.now() + arg.hold;
+      if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
       if (["drag", "thrown", "touch", "pat", "tickle"].includes(m.state)) return;
       if (isSD()) useSlot(slotForRest());
       const A = active.A;

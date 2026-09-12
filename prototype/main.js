@@ -406,8 +406,11 @@ async function duoTalk(idA, idB, opts = {}) {
     const A = instances.get(idA), B = instances.get(idB); if (!A || !B || !A.rect || !B.rect) return null;
     const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
     const profA = chatProfile(idA), profB = chatProfile(idB);
-    if (!profA || !profB || profA.ko === profB.ko) return null; // 같은 사도 둘은 건너뜀
-    sendMascot(idA, "meet", { x: bx, hold: 40000 }); sendMascot(idB, "meet", { x: ax, hold: 40000 });
+    if (!profA || !profB) return null;
+    // 둘이 동시에 걸어가므로 자리를 중간점 기준으로 미리 정한다 (서로 상대의 '지금' 위치를 향하면 엇갈려 겹침)
+    const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
+    sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
+    sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
     const now = new Date();
     const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic });
     console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
@@ -415,8 +418,9 @@ async function duoTalk(idA, idB, opts = {}) {
     await new Promise(res => setTimeout(res, 1500)); // 다가가는 시간
     for (const ln of r.lines) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
+      const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
       const ttl = 2600 + Math.min(60, ln.text.length) * 70;
-      showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who: prof.ko }, ttl });
+      showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who }, ttl });
       sendMascot(id, "emote", { mood: ln.emotion, hold: ttl + 3000 });
       if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); } catch {} }, 700);
       await new Promise(res => setTimeout(res, ttl + 400));
@@ -429,8 +433,6 @@ async function duoTalk(idA, idB, opts = {}) {
 function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사도 둘
   const ids = [...instances.keys()].filter(id => instances.get(id).rect && charOf(id)); let best = null;
   for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
-    const heroOf = (sk) => sk.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase();
-    const a = charOf(ids[i]), b = charOf(ids[j]); if (heroOf(a.skin) === heroOf(b.skin)) continue; // 같은 사도(스킨만 다른) 둘은 제외
     const d = Math.abs(instances.get(ids[i]).rect.x - instances.get(ids[j]).rect.x); if (!best || d < best.d) best = { a: ids[i], b: ids[j], d };
   }
   return best;
