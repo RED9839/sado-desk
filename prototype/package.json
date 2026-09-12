@@ -33,11 +33,13 @@
       "main.js",
       "preload.js",
       "news.js",
+      "ai.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
       "data/**/*",
       "package.json",
-      "node_modules/@esotericsoftware/**"
+      "node_modules/@esotericsoftware/**",
+      "node_modules/@anthropic-ai/**"
     ],
     "extraResources": [
       {
