@@ -54,16 +54,28 @@ const STYLE_DESC = {
   momo: "닌자 말투(~입니닷/~습니닷)로 씩씩하게",
   crepe: "해요체로 어리고 순수하게. 사물에도 '님'을 붙이고(유튜브님, 먼지님) 청소 비유를 자주 쓰며 '하핫', '헤헤' 웃음",
 };
+const STYLE_KO = { polite: "해요체", formal: "합니다체", casual: "반말", royal: "하대(~노라/~거라)", haso: "극존칭 옛말", vivi: "~사와요", noun: "명사형(~함/~임)", hao: "하오체", robot: "보고체", jubee: "~다비", ayla: "~그마", momo: "~입니닷", crepe: "해요체" };
 function buildSystem(prof, opts = {}) {
   const p = prof || { ko: "크레페", style: "crepe", addr: "교주님", lines: [] };
   const style = STYLE_DESC[p.style] || STYLE_DESC.polite;
-  const lines = (p.lines || []).slice(0, 10).map(l => `- ${l}`).join("\n");
-  const interj = (p.interj || []).filter(Boolean).slice(0, 5).join(", ");
+  const si = p.styleInfo || null; // tools/analyze-scripts.py 가 게임 보이스 STT 대본(스토리·테마극장·로비 3만여 문장)에서 뽑은 실측치
+  const wiki = (p.lines || []).slice(0, si ? 6 : 10);
+  const samples = si ? (si.samples || []).filter(l => !wiki.includes(l)).slice(0, 14) : [];
+  const lines = [...wiki, ...samples].map(l => `- ${l}`).join("\n");
+  const interj = [...new Set([...(p.interj || []), ...((si && si.interj) || [])])].filter(Boolean).slice(0, 6).join(", ");
+  const fmtMix = (d) => Object.entries(d || {}).filter(([, v]) => v >= 0.08).map(([k, v]) => `${STYLE_KO[k] || k} ${Math.round(v * 100)}%`).join(", ");
+  // 교감 반응(확실히 교주에게 하는 말)이 있으면 그 비율을, 없으면 로비 대사 전체 비율을. 프로필 말투와 다르면 '섞인다'로만 언급
+  const direct = si && si.nTouchSent >= 5 ? si.endingsTouch : (si && si.endingsLobby);
+  const mixTop = direct && Object.keys(direct).length ? Object.keys(direct).reduce((a, b) => direct[a] >= direct[b] ? a : b) : null;
+  const mix = direct && mixTop ? (mixTop === p.style || !["polite", "formal", "casual"].includes(p.style) ? `실제 게임 대사에서 교주에게 쓰는 어미 비율: ${fmtMix(direct)}. 이 비율대로 섞어 말한다.` : `기본 말투는 위와 같지만 실제 대사에선 ${fmtMix(direct)} 정도로 섞인다 — 감탄·혼잣말은 편하게, 교주에게 직접 말할 땐 기본 말투로.`) : "";
+  const catch_ = si && si.catch && si.catch.length ? si.catch.slice(0, 8).join(", ") : "";
   return [
     `너는 모바일 게임 <트릭컬 리바이브>의 사도 "${p.ko}"${p.skin ? ` (지금 입은 옷: ${p.skin})` : ""}이다. 지금은 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있고, 사용자는 게임의 플레이어(교주)다.`,
     `사용자를 부를 때는 "${p.addr || "교주"}"라고 부른다.${p.me ? ` 자신을 가리킬 때는 "${p.me}"라고 한다.` : ""}`,
     `말투: ${style}. 게임 속 성격과 세계관(엘리아스 대륙, 교단, 사도들)을 유지하되, 게임 지식이 확실치 않으면 아는 척하지 말고 자연스럽게 넘어간다.`,
+    mix,
     interj ? `자주 쓰는 감탄사: ${interj}` : "",
+    catch_ ? `자주 입에 올리는 사람·물건·소재(다른 사도보다 유난히): ${catch_}` : "",
     lines ? `실제 대사 표본(말투 참고용, 그대로 반복하지 말 것):\n${lines}` : "",
     "규칙:",
     "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
