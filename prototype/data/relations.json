@@ -1,0 +1,6389 @@
+{
+"alice": {
+"ko": "앨리스",
+"n": 169,
+"calls": {},
+"with": {
+"espi": 4,
+"speaki": 3,
+"erpin": 3,
+"canna": 3,
+"ashur": 3
+},
+"stories": {
+"espi": [
+"bookmarks",
+"kirakira",
+"main_ch07"
+],
+"speaki": [
+"bookmarks",
+"main_ch07"
+],
+"erpin": [
+"main_ch07"
+],
+"canna": [
+"main_ch07"
+],
+"ashur": [
+"main_ch07"
+]
+}
+},
+"allet": {
+"ko": "알레트",
+"n": 68,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"amelia": {
+"ko": "아멜리아",
+"n": 686,
+"calls": {
+"elena": [
+{
+"form": "시장님",
+"n": 68
+},
+{
+"form": "엘레나",
+"n": 10
+},
+{
+"form": "엘레나님",
+"n": 2
+}
+],
+"haley": [
+{
+"form": "헤일리",
+"n": 3
+}
+],
+"renewaawaken": [
+{
+"form": "리뉴아",
+"n": 2
+}
+],
+"erpin": [
+{
+"form": "여왕",
+"n": 1
+},
+{
+"form": "여왕님",
+"n": 1
+}
+]
+},
+"with": {
+"elena": 30,
+"erpin": 14,
+"sylla": 10,
+"ner": 10,
+"canna": 9,
+"ashur": 9,
+"tig": 8,
+"ameliar41": 7,
+"orr": 6,
+"mayo": 6,
+"naia": 6,
+"shady": 5
+},
+"stories": {
+"elena": [
+"acrossuniverses",
+"delusionalscenario_ch01",
+"main2_ch01",
+"main2_ch06",
+"main3_ch01",
+"main3_ch02"
+],
+"erpin": [
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch06",
+"main_ch09",
+"ontime"
+],
+"sylla": [
+"battleroyale",
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"ner": [
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"canna": [
+"electricsheep",
+"main3_ch03",
+"main_ch03",
+"main_ch06",
+"pray"
+],
+"ashur": [
+"main3_ch01",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"tig": [
+"battleroyale",
+"main_ch03",
+"main_ch09",
+"pray"
+],
+"ameliar41": [
+"acrossuniverses",
+"queensheart"
+],
+"orr": [
+"battleroyale",
+"main3_ch01"
+],
+"mayo": [
+"main_ch03",
+"pray",
+"queensheart"
+],
+"naia": [
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"shady": [
+"battleroyale",
+"main_ch06",
+"main_ch09"
+]
+}
+},
+"ameliar41": {
+"ko": "아멜리아(R41)",
+"n": 507,
+"calls": {
+"elena": [
+{
+"form": "엘레나",
+"n": 6
+}
+],
+"renewaawaken": [
+{
+"form": "리뉴아",
+"n": 3
+}
+],
+"amelia": [
+{
+"form": "아멜리아",
+"n": 2
+}
+]
+},
+"with": {
+"elena": 11,
+"amelia": 7,
+"mute": 5,
+"joanne": 5,
+"makasha": 5,
+"sylla": 5,
+"tighero": 4,
+"uros": 4,
+"nerrage": 4,
+"erpin": 4,
+"ner": 4,
+"erpinroyale": 3
+},
+"stories": {
+"elena": [
+"acrossuniverses",
+"main3_ch03",
+"queensheart"
+],
+"amelia": [
+"acrossuniverses",
+"queensheart"
+],
+"mute": [
+"acrossuniverses",
+"queensheart"
+],
+"joanne": [
+"main3_ch03",
+"queensheart"
+],
+"makasha": [
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"tighero": [
+"queensheart"
+],
+"uros": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+],
+"erpin": [
+"acrossuniverses",
+"queensheart"
+],
+"ner": [
+"acrossuniverses",
+"queensheart"
+],
+"erpinroyale": [
+"queensheart"
+]
+}
+},
+"aragnia": {
+"ko": "아라그니아",
+"n": 79,
+"calls": {
+"erpin": [
+{
+"form": "여왕",
+"n": 2
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"arco": {
+"ko": "아르코",
+"n": 125,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"arnet": {
+"ko": "아네트",
+"n": 79,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"asana": {
+"ko": "아사나",
+"n": 153,
+"calls": {
+"inkle": [
+{
+"form": "잉클",
+"n": 2
+}
+]
+},
+"with": {
+"laika": 3,
+"dayapureshine": 3,
+"inkle": 3,
+"shadytwisted": 3
+},
+"stories": {
+"laika": [
+"officebreak"
+],
+"dayapureshine": [
+"officebreak"
+],
+"inkle": [
+"officebreak"
+],
+"shadytwisted": [
+"officebreak"
+]
+}
+},
+"ashur": {
+"ko": "에슈르",
+"n": 591,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 19
+}
+],
+"elena": [
+{
+"form": "엘레나",
+"n": 3
+},
+{
+"form": "시장님",
+"n": 1
+}
+],
+"mayo": [
+{
+"form": "마요",
+"n": 3
+}
+],
+"ner": [
+{
+"form": "네르님",
+"n": 2
+},
+{
+"form": "네르",
+"n": 1
+}
+]
+},
+"with": {
+"erpin": 24,
+"ner": 12,
+"elena": 11,
+"canna": 10,
+"amelia": 9,
+"sylla": 8,
+"naia": 6,
+"velvet": 6,
+"shady": 5,
+"sist": 5,
+"fricle": 5,
+"marie": 5
+},
+"stories": {
+"erpin": [
+"magicbread",
+"main3_ch01",
+"main_ch01",
+"main_ch04",
+"main_ch06",
+"main_ch07"
+],
+"ner": [
+"main3_ch01",
+"main_ch01",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"elena": [
+"main3_ch01",
+"main_ch04",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"canna": [
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"amelia": [
+"main3_ch01",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"sylla": [
+"magicbread",
+"main_ch06",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"naia": [
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"velvet": [
+"main_ch04",
+"main_ch09"
+],
+"shady": [
+"main_ch06",
+"main_ch07",
+"main_ch09"
+],
+"sist": [
+"main_ch09",
+"pray"
+],
+"fricle": [
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"marie": [
+"main_ch01",
+"main_ch04",
+"main_ch09"
+]
+}
+},
+"ashurmagi": {
+"ko": "에슈르(마도)",
+"n": 219,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 7
+}
+],
+"ashur": [
+{
+"form": "에슈르",
+"n": 3
+}
+]
+},
+"with": {
+"ashur": 3
+},
+"stories": {
+"ashur": [
+"magicbread"
+]
+}
+},
+"aurora": {
+"ko": "오로라",
+"n": 529,
+"calls": {
+"velvet": [
+{
+"form": "벨벳님",
+"n": 8
+},
+{
+"form": "벨벳",
+"n": 2
+}
+]
+},
+"with": {
+"velvet": 6,
+"makasha": 3
+},
+"stories": {
+"velvet": [
+"youraurora"
+],
+"makasha": [
+"youraurora"
+]
+}
+},
+"aya": {
+"ko": "아야",
+"n": 509,
+"calls": {
+"vivi": [
+{
+"form": "비비",
+"n": 10
+}
+],
+"chloe": [
+{
+"form": "클로에",
+"n": 7
+}
+],
+"epica": [
+{
+"form": "에피카",
+"n": 6
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 2
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 2
+}
+],
+"erpin": [
+{
+"form": "여왕님",
+"n": 2
+}
+]
+},
+"with": {
+"epica": 8,
+"chloe": 8,
+"vivi": 6,
+"ui": 5,
+"sylla": 5,
+"ner": 4,
+"belita": 4,
+"erpin": 4,
+"renewaawaken": 4,
+"makasha": 4,
+"fricle": 3,
+"ashur": 3
+},
+"stories": {
+"epica": [
+"frozen",
+"lightashes",
+"pray"
+],
+"chloe": [
+"frozen",
+"lightashes",
+"pray"
+],
+"vivi": [
+"frozen",
+"main3_ch06",
+"pray"
+],
+"ui": [
+"frozen",
+"pray"
+],
+"sylla": [
+"frozen",
+"magicbread",
+"pray",
+"queensheart"
+],
+"ner": [
+"lightashes",
+"pray",
+"queensheart"
+],
+"belita": [
+"main3_ch07",
+"pray",
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"pray",
+"queensheart"
+],
+"renewaawaken": [
+"lightashes",
+"main3_ch07",
+"pray",
+"queensheart"
+],
+"makasha": [
+"erasesus",
+"lightashes",
+"queensheart"
+],
+"fricle": [
+"pray",
+"queensheart"
+],
+"ashur": [
+"magicbread",
+"pray"
+]
+}
+},
+"ayla": {
+"ko": "아일라",
+"n": 93,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"bana": {
+"ko": "바나",
+"n": 157,
+"calls": {
+"shoupan": [
+{
+"form": "슈팡",
+"n": 5
+}
+]
+},
+"with": {
+"shoupan": 4
+},
+"stories": {
+"shoupan": [
+"madway"
+]
+}
+},
+"barie": {
+"ko": "바리에",
+"n": 153,
+"calls": {
+"jade": [
+{
+"form": "제이드",
+"n": 2
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"barong": {
+"ko": "바롱",
+"n": 108,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"belita": {
+"ko": "벨리타",
+"n": 469,
+"calls": {
+"erpin": [
+{
+"form": "에르핀",
+"n": 9
+},
+{
+"form": "에르핀 (반말 호격)",
+"n": 2
+},
+{
+"form": "여왕",
+"n": 2
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 9
+}
+],
+"ner": [
+{
+"form": "네르",
+"n": 3
+}
+],
+"snorky": [
+{
+"form": "스노키",
+"n": 2
+}
+],
+"makasha": [
+{
+"form": "마카샤",
+"n": 2
+}
+]
+},
+"with": {
+"fricle": 12,
+"ner": 10,
+"mayo": 9,
+"renewaawaken": 8,
+"erpin": 8,
+"elena": 5,
+"snorky": 5,
+"sherum": 5,
+"amelia": 4,
+"sylla": 4,
+"aya": 4,
+"makasha": 4
+},
+"stories": {
+"fricle": [
+"existsalone",
+"lightashes",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"ner": [
+"existsalone",
+"lightashes",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"mayo": [
+"existsalone",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"renewaawaken": [
+"existsalone",
+"main3_ch07",
+"ontime",
+"pray",
+"queensheart"
+],
+"erpin": [
+"main_ch09",
+"ontime",
+"pray",
+"queensheart"
+],
+"elena": [
+"main3_ch05",
+"ontime",
+"pray",
+"queensheart"
+],
+"snorky": [
+"existsalone",
+"main3_ch07"
+],
+"sherum": [
+"existsalone"
+],
+"amelia": [
+"ontime",
+"pray",
+"queensheart"
+],
+"sylla": [
+"main_ch09",
+"pray",
+"queensheart"
+],
+"aya": [
+"main3_ch07",
+"pray",
+"queensheart"
+],
+"makasha": [
+"lightashes",
+"queensheart"
+]
+}
+},
+"beni": {
+"ko": "베니",
+"n": 142,
+"calls": {
+"kommy": [
+{
+"form": "코미",
+"n": 2
+}
+]
+},
+"with": {
+"rufo": 13,
+"tig": 12,
+"ner": 11,
+"erpin": 9,
+"mayo": 8,
+"marie": 7,
+"elena": 6,
+"ashur": 4,
+"butter": 4,
+"amelia": 4,
+"sist": 4,
+"canna": 3
+},
+"stories": {
+"rufo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"pray",
+"snakeroad"
+],
+"tig": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"pray",
+"snakeroad"
+],
+"ner": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"erpin": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"pray"
+],
+"mayo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"marie": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"ashur": [
+"main_ch04",
+"main_ch07",
+"pray"
+],
+"butter": [
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"amelia": [
+"main_ch03",
+"pray"
+],
+"sist": [
+"main_ch04",
+"pray"
+],
+"canna": [
+"main_ch07",
+"pray"
+]
+}
+},
+"benibeni": {
+"ko": "베니(베니)",
+"n": 94,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"bigwood": {
+"ko": "빅우드",
+"n": 120,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"blanchet": {
+"ko": "블랑셰",
+"n": 163,
+"calls": {
+"nicole": [
+{
+"form": "니콜",
+"n": 4
+}
+]
+},
+"with": {
+"nicole": 6,
+"ner": 5,
+"elena": 3
+},
+"stories": {
+"nicole": [
+"alongtake"
+],
+"ner": [
+"alongtake"
+],
+"elena": [
+"alongtake"
+]
+}
+},
+"butter": {
+"ko": "버터",
+"n": 225,
+"calls": {
+"lion": [
+{
+"form": "리온",
+"n": 2
+}
+],
+"kommy": [
+{
+"form": "코미",
+"n": 2
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 2
+}
+]
+},
+"with": {
+"tig": 8,
+"kommy": 7,
+"ner": 6,
+"erpin": 5,
+"rufo": 5,
+"mayo": 5,
+"suro": 5,
+"beni": 4,
+"diana": 4,
+"marie": 3
+},
+"stories": {
+"tig": [
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"kommy": [
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"ner": [
+"main2_ch03",
+"main_ch02",
+"main_ch03"
+],
+"erpin": [
+"main_ch02",
+"main_ch03"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"mayo": [
+"main_ch02",
+"main_ch03"
+],
+"suro": [
+"main2_ch03",
+"snakeroad"
+],
+"beni": [
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"diana": [
+"main2_ch03",
+"main_ch02",
+"main_ch03"
+],
+"marie": [
+"main_ch02"
+]
+}
+},
+"canna": {
+"ko": "칸나",
+"n": 266,
+"calls": {
+"elena": [
+{
+"form": "시장님",
+"n": 9
+}
+],
+"amelia": [
+{
+"form": "아멜리아님",
+"n": 4
+},
+{
+"form": "아멜리아",
+"n": 1
+}
+],
+"shoupan": [
+{
+"form": "슈팡",
+"n": 1
+},
+{
+"form": "슈팡 (반말 호격)",
+"n": 1
+}
+]
+},
+"with": {
+"erpin": 11,
+"ashur": 10,
+"amelia": 9,
+"elena": 8,
+"sylla": 5,
+"rim": 4,
+"shady": 4,
+"ner": 4,
+"naia": 4,
+"rufo": 3,
+"beni": 3,
+"tig": 3
+},
+"stories": {
+"erpin": [
+"main_ch03",
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"ashur": [
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"amelia": [
+"electricsheep",
+"main3_ch03",
+"main_ch03",
+"main_ch06",
+"pray"
+],
+"elena": [
+"main3_ch03",
+"main_ch03",
+"main_ch06",
+"pray"
+],
+"sylla": [
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"rim": [
+"main_ch07"
+],
+"shady": [
+"main_ch06",
+"main_ch07"
+],
+"ner": [
+"madway",
+"main_ch03",
+"pray"
+],
+"naia": [
+"main_ch06",
+"pray"
+],
+"rufo": [
+"main_ch07",
+"pray"
+],
+"beni": [
+"main_ch07",
+"pray"
+],
+"tig": [
+"main_ch07",
+"pray"
+]
+}
+},
+"canta": {
+"ko": "칸타",
+"n": 113,
+"calls": {},
+"with": {
+"pira": 3,
+"ner": 3
+},
+"stories": {
+"pira": [
+"main_chside"
+],
+"ner": [
+"main_chside"
+]
+}
+},
+"carren": {
+"ko": "카렌",
+"n": 66,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"chloe": {
+"ko": "클로에",
+"n": 591,
+"calls": {
+"epica": [
+{
+"form": "에피카",
+"n": 6
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 5
+},
+{
+"form": "비비언니",
+"n": 1
+}
+],
+"erpin": [
+{
+"form": "여왕님",
+"n": 2
+}
+]
+},
+"with": {
+"epica": 11,
+"vivi": 9,
+"aya": 8,
+"ui": 7,
+"ed": 6,
+"ner": 4,
+"joanne": 3,
+"elena": 3,
+"nerrage": 3,
+"eisia": 3,
+"belita": 3,
+"erpin": 3
+},
+"stories": {
+"epica": [
+"frozen",
+"lightashes",
+"pray"
+],
+"vivi": [
+"frozen",
+"main3_ch04",
+"main3_ch05"
+],
+"aya": [
+"frozen",
+"lightashes",
+"pray"
+],
+"ui": [
+"frozen",
+"main3_ch04",
+"pray"
+],
+"ed": [
+"frozen",
+"pray"
+],
+"ner": [
+"lightashes",
+"pray"
+],
+"joanne": [
+"lightashes",
+"pray"
+],
+"elena": [
+"pray",
+"queensheart"
+],
+"nerrage": [
+"main3_ch05",
+"queensheart"
+],
+"eisia": [
+"main3_ch05",
+"queensheart"
+],
+"belita": [
+"pray",
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"pray"
+]
+}
+},
+"chopi": {
+"ko": "쵸피",
+"n": 64,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"crepe": {
+"ko": "크레페",
+"n": 43,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"cuee": {
+"ko": "큐이",
+"n": 71,
+"calls": {
+"ui": [
+{
+"form": "우이",
+"n": 2
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"daya": {
+"ko": "다야",
+"n": 288,
+"calls": {
+"vivi": [
+{
+"form": "비비",
+"n": 14
+}
+],
+"erpin": [
+{
+"form": "에르핀 (반말 호격)",
+"n": 1
+},
+{
+"form": "여왕",
+"n": 1
+}
+],
+"jade": [
+{
+"form": "제이드",
+"n": 2
+}
+]
+},
+"with": {
+"vivi": 7,
+"erpin": 5,
+"ner": 5,
+"elena": 4,
+"ran": 4,
+"amelia": 3,
+"sylla": 3,
+"tig": 3,
+"belita": 3
+},
+"stories": {
+"vivi": [
+"drifter",
+"main2_ch08",
+"pray",
+"t_silvertown"
+],
+"erpin": [
+"main_ch08",
+"main_ch09",
+"pray"
+],
+"ner": [
+"main_ch08",
+"main_ch09",
+"pray"
+],
+"elena": [
+"main_ch09",
+"pray",
+"t_silvertown"
+],
+"ran": [
+"drifter",
+"main2_ch08"
+],
+"amelia": [
+"main_ch09",
+"pray",
+"t_silvertown"
+],
+"sylla": [
+"main_ch09",
+"pray"
+],
+"tig": [
+"main_ch09",
+"pray"
+],
+"belita": [
+"main_ch09",
+"pray"
+]
+}
+},
+"dayapureshine": {
+"ko": "다야(퓨어샤인)",
+"n": 279,
+"calls": {
+"vivi": [
+{
+"form": "비비",
+"n": 7
+}
+],
+"erpin": [
+{
+"form": "여왕",
+"n": 2
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 2
+}
+],
+"daya": [
+{
+"form": "다야",
+"n": 2
+}
+]
+},
+"with": {
+"shadytwisted": 5,
+"vivi": 4,
+"ameliar41": 3,
+"tighero": 3,
+"makasha": 3,
+"belita": 3,
+"nerrage": 3,
+"laika": 3,
+"inkle": 3,
+"asana": 3,
+"silvia": 3,
+"neti": 3
+},
+"stories": {
+"shadytwisted": [
+"officebreak",
+"queensheart"
+],
+"vivi": [
+"main3_ch04",
+"silvershell"
+],
+"ameliar41": [
+"queensheart"
+],
+"tighero": [
+"queensheart"
+],
+"makasha": [
+"main3_ch04",
+"queensheart"
+],
+"belita": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+],
+"laika": [
+"officebreak"
+],
+"inkle": [
+"officebreak"
+],
+"asana": [
+"officebreak"
+],
+"silvia": [
+"silvershell"
+],
+"neti": [
+"silvershell"
+]
+}
+},
+"delia": {
+"ko": "델리아",
+"n": 220,
+"calls": {
+"lion": [
+{
+"form": "리온",
+"n": 3
+},
+{
+"form": "리온언니",
+"n": 1
+}
+],
+"suro": [
+{
+"form": "슈로",
+"n": 2
+},
+{
+"form": "슈로언니",
+"n": 2
+}
+]
+},
+"with": {
+"guin": 7,
+"orr": 6,
+"mayocool": 4,
+"sparrot": 4,
+"haleysane": 4,
+"haley": 3,
+"erpin": 3,
+"joanne": 3,
+"ner": 3,
+"lion": 3,
+"suro": 3,
+"hilde": 3
+},
+"stories": {
+"guin": [
+"main3_ch01",
+"stresswave"
+],
+"orr": [
+"jollyroger",
+"main3_ch01"
+],
+"mayocool": [
+"main3_ch01"
+],
+"sparrot": [
+"deepseaclash",
+"jollyroger"
+],
+"haleysane": [
+"jollyroger",
+"stresswave"
+],
+"haley": [
+"main3_ch01",
+"stresswave"
+],
+"erpin": [
+"main3_ch01"
+],
+"joanne": [
+"main3_ch01"
+],
+"ner": [
+"main3_ch01"
+],
+"lion": [
+"stresswave"
+],
+"suro": [
+"stresswave"
+],
+"hilde": [
+"stresswave"
+]
+}
+},
+"diana": {
+"ko": "디아나",
+"n": 638,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 8
+},
+{
+"form": "에르핀",
+"n": 1
+}
+],
+"suro": [
+{
+"form": "슈로",
+"n": 3
+}
+],
+"ran": [
+{
+"form": "란 (반말 호격)",
+"n": 2
+}
+],
+"uros": [
+{
+"form": "우로스",
+"n": 2
+}
+]
+},
+"with": {
+"erpin": 11,
+"ner": 10,
+"tig": 9,
+"suro": 6,
+"polan": 5,
+"rufo": 4,
+"butter": 4,
+"mayo": 4,
+"elena": 4,
+"sylla": 4,
+"tighero": 4,
+"makasha": 4
+},
+"stories": {
+"erpin": [
+"bookmarks",
+"lightashes",
+"main2_ch01",
+"main2_ch06",
+"main_ch02",
+"main_ch03"
+],
+"ner": [
+"bookmarks",
+"lightashes",
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"main_ch04"
+],
+"tig": [
+"main2_ch03",
+"main2_ch04",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"suro": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"main2_ch06"
+],
+"polan": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"queensheart"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"main_ch04"
+],
+"butter": [
+"main2_ch03",
+"main_ch02",
+"main_ch03"
+],
+"mayo": [
+"main_ch02",
+"main_ch03",
+"queensheart"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"queensheart"
+],
+"sylla": [
+"main_ch09",
+"queensheart"
+],
+"tighero": [
+"lightashes",
+"queensheart"
+],
+"makasha": [
+"lightashes",
+"queensheart"
+]
+}
+},
+"dianayester": {
+"ko": "디아나(왕년)",
+"n": 243,
+"calls": {
+"diana": [
+{
+"form": "디아나",
+"n": 2
+}
+]
+},
+"with": {
+"ran": 3
+},
+"stories": {
+"ran": [
+"lightashes",
+"nowhereleft"
+]
+}
+},
+"ed": {
+"ko": "이드",
+"n": 335,
+"calls": {},
+"with": {
+"chloe": 6,
+"epica": 5,
+"ui": 5,
+"vivi": 4,
+"aya": 3
+},
+"stories": {
+"chloe": [
+"frozen",
+"pray"
+],
+"epica": [
+"frozen",
+"pray"
+],
+"ui": [
+"frozen",
+"pray"
+],
+"vivi": [
+"fantasyadventure",
+"frozen"
+],
+"aya": [
+"frozen",
+"pray"
+]
+}
+},
+"edrehab": {
+"ko": "이드(재활)",
+"n": 93,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"eisia": {
+"ko": "아이시아",
+"n": 244,
+"calls": {},
+"with": {
+"chloe": 3,
+"vivi": 3
+},
+"stories": {
+"chloe": [
+"main3_ch05",
+"queensheart"
+],
+"vivi": [
+"main3_ch04",
+"main3_ch05"
+]
+}
+},
+"elena": {
+"ko": "엘레나",
+"n": 1011,
+"calls": {
+"amelia": [
+{
+"form": "아멜리아",
+"n": 47
+},
+{
+"form": "아멜리아 (반말 호격)",
+"n": 1
+}
+],
+"erpin": [
+{
+"form": "에르핀",
+"n": 4
+},
+{
+"form": "여왕",
+"n": 4
+}
+],
+"renewaawaken": [
+{
+"form": "리뉴아",
+"n": 5
+}
+],
+"nicole": [
+{
+"form": "니콜",
+"n": 4
+}
+],
+"canna": [
+{
+"form": "칸나",
+"n": 2
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 2
+}
+]
+},
+"with": {
+"amelia": 30,
+"erpin": 20,
+"ner": 18,
+"ameliar41": 11,
+"ashur": 11,
+"canna": 8,
+"joanne": 7,
+"mayo": 7,
+"tig": 7,
+"sylla": 7,
+"mute": 6,
+"beni": 6
+},
+"stories": {
+"amelia": [
+"acrossuniverses",
+"delusionalscenario_ch01",
+"main2_ch01",
+"main2_ch06",
+"main3_ch01",
+"main3_ch02"
+],
+"erpin": [
+"acrossuniverses",
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch04",
+"main_ch06"
+],
+"ner": [
+"acrossuniverses",
+"alongtake",
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch04"
+],
+"ameliar41": [
+"acrossuniverses",
+"main3_ch03",
+"queensheart"
+],
+"ashur": [
+"main3_ch01",
+"main_ch04",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"canna": [
+"main3_ch03",
+"main_ch03",
+"main_ch06",
+"pray"
+],
+"joanne": [
+"main3_ch01",
+"main3_ch03",
+"pray",
+"queensheart"
+],
+"mayo": [
+"main_ch03",
+"main_ch04",
+"ontime",
+"pray"
+],
+"tig": [
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"sylla": [
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"mute": [
+"acrossuniverses",
+"main3_ch02",
+"main3_ch03"
+],
+"beni": [
+"main_ch03",
+"main_ch04",
+"pray"
+]
+}
+},
+"epica": {
+"ko": "에피카",
+"n": 320,
+"calls": {
+"chloe": [
+{
+"form": "클로에",
+"n": 3
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 3
+}
+]
+},
+"with": {
+"chloe": 11,
+"aya": 8,
+"ui": 6,
+"ed": 5,
+"vivi": 5,
+"ner": 4,
+"joanne": 3,
+"elena": 3,
+"erpin": 3
+},
+"stories": {
+"chloe": [
+"frozen",
+"lightashes",
+"pray"
+],
+"aya": [
+"frozen",
+"lightashes",
+"pray"
+],
+"ui": [
+"frozen",
+"pray"
+],
+"ed": [
+"frozen",
+"pray"
+],
+"vivi": [
+"frozen",
+"pray"
+],
+"ner": [
+"lightashes",
+"pray"
+],
+"joanne": [
+"lightashes",
+"pray"
+],
+"elena": [
+"pray"
+],
+"erpin": [
+"lightashes",
+"pray"
+]
+}
+},
+"erpin": {
+"ko": "에르핀",
+"n": 1722,
+"calls": {
+"ner": [
+{
+"form": "네르",
+"n": 9
+}
+],
+"elena": [
+{
+"form": "엘레나",
+"n": 8
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 7
+}
+],
+"sist": [
+{
+"form": "시스트",
+"n": 6
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 4
+},
+{
+"form": "프리클 (반말 호격)",
+"n": 1
+}
+],
+"rim": [
+{
+"form": "림 (반말 호격)",
+"n": 3
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 2
+},
+{
+"form": "벨리타님",
+"n": 1
+}
+],
+"rohne": [
+{
+"form": "로네 (반말 호격)",
+"n": 1
+},
+{
+"form": "로네",
+"n": 1
+}
+],
+"polan": [
+{
+"form": "폴랑",
+"n": 1
+},
+{
+"form": "폴랑 (반말 호격)",
+"n": 1
+}
+],
+"ashur": [
+{
+"form": "에슈르",
+"n": 2
+}
+],
+"daya": [
+{
+"form": "다야",
+"n": 2
+}
+],
+"velvet": [
+{
+"form": "벨벳",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 51,
+"ashur": 24,
+"elena": 20,
+"mayo": 20,
+"joanne": 15,
+"amelia": 14,
+"fricle": 13,
+"marie": 13,
+"tig": 12,
+"canna": 11,
+"diana": 11,
+"rufo": 10
+},
+"stories": {
+"ner": [
+"acrossuniverses",
+"bookmarks",
+"delusionalscenario_ch01",
+"lightashes",
+"madway",
+"main3_ch01"
+],
+"ashur": [
+"magicbread",
+"main3_ch01",
+"main_ch01",
+"main_ch04",
+"main_ch06",
+"main_ch07"
+],
+"elena": [
+"acrossuniverses",
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch04",
+"main_ch06"
+],
+"mayo": [
+"main_ch01",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"ontime"
+],
+"joanne": [
+"lightashes",
+"main2_ch01",
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"amelia": [
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch06",
+"main_ch09",
+"ontime"
+],
+"fricle": [
+"delusionalscenario_ch01",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"marie": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"tig": [
+"lightashes",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09"
+],
+"canna": [
+"main_ch03",
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"diana": [
+"bookmarks",
+"lightashes",
+"main2_ch01",
+"main2_ch06",
+"main_ch02",
+"main_ch03"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+]
+}
+},
+"erpinroyale": {
+"ko": "에르핀(왕도)",
+"n": 253,
+"calls": {
+"erpin": [
+{
+"form": "에르핀",
+"n": 4
+},
+{
+"form": "여왕님",
+"n": 2
+}
+],
+"patula": [
+{
+"form": "파트라",
+"n": 2
+}
+],
+"polan": [
+{
+"form": "폴랑",
+"n": 1
+},
+{
+"form": "폴랑 (반말 호격)",
+"n": 1
+}
+]
+},
+"with": {
+"joanne": 3,
+"ameliar41": 3,
+"tighero": 3,
+"amelia": 3,
+"sylla": 3,
+"rohnemayor": 3,
+"nerrage": 3,
+"belita": 3
+},
+"stories": {
+"joanne": [
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"tighero": [
+"queensheart"
+],
+"amelia": [
+"queensheart"
+],
+"sylla": [
+"magicbread",
+"queensheart"
+],
+"rohnemayor": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+],
+"belita": [
+"main3_ch07",
+"queensheart"
+]
+}
+},
+"espi": {
+"ko": "에스피",
+"n": 128,
+"calls": {
+"marie": [
+{
+"form": "마리 (반말 호격)",
+"n": 2
+}
+]
+},
+"with": {
+"alice": 4,
+"kishya": 3,
+"rohnemayor": 3
+},
+"stories": {
+"alice": [
+"bookmarks",
+"kirakira",
+"main_ch07"
+],
+"kishya": [
+"kirakira"
+],
+"rohnemayor": [
+"kirakira"
+]
+}
+},
+"festa": {
+"ko": "페스타",
+"n": 113,
+"calls": {},
+"with": {
+"ner": 4,
+"erpin": 3
+},
+"stories": {
+"ner": [
+"alongtake",
+"main3_ch01",
+"main_ch03"
+],
+"erpin": [
+"main3_ch01",
+"main_ch03"
+]
+}
+},
+"fricle": {
+"ko": "프리클",
+"n": 481,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 22
+},
+{
+"form": "여왕",
+"n": 4
+},
+{
+"form": "에르핀",
+"n": 1
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 7
+},
+{
+"form": "벨리타님",
+"n": 2
+}
+],
+"velvet": [
+{
+"form": "벨벳",
+"n": 4
+}
+],
+"picora": [
+{
+"form": "피코라",
+"n": 2
+}
+],
+"makasha": [
+{
+"form": "마카샤",
+"n": 2
+}
+],
+"asana": [
+{
+"form": "아사나",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 14,
+"erpin": 13,
+"mayo": 13,
+"belita": 12,
+"sherum": 6,
+"elena": 5,
+"rude": 5,
+"ashur": 5,
+"renewaawaken": 5,
+"amelia": 4,
+"makasha": 4,
+"marie": 4
+},
+"stories": {
+"ner": [
+"delusionalscenario_ch01",
+"existsalone",
+"lightashes",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"erpin": [
+"delusionalscenario_ch01",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"mayo": [
+"existsalone",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"belita": [
+"existsalone",
+"lightashes",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"sherum": [
+"bookmarks",
+"existsalone"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"rude": [
+"lightashes",
+"pray"
+],
+"ashur": [
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"renewaawaken": [
+"existsalone",
+"pray",
+"queensheart"
+],
+"amelia": [
+"main_ch03",
+"pray"
+],
+"makasha": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"marie": [
+"main_ch04",
+"main_ch09",
+"pray"
+]
+}
+},
+"gabia": {
+"ko": "가비아",
+"n": 132,
+"calls": {},
+"with": {
+"rohnemayor": 5,
+"kishya": 5,
+"ifrit": 4,
+"naia": 4,
+"sylla": 4,
+"pira": 3
+},
+"stories": {
+"rohnemayor": [
+"kirakira",
+"queensheart"
+],
+"kishya": [
+"kirakira"
+],
+"ifrit": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"naia": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"sylla": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"pira": [
+"kirakira"
+]
+}
+},
+"goldy": {
+"ko": "골디",
+"n": 4,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"guin": {
+"ko": "그윈",
+"n": 285,
+"calls": {
+"vela": [
+{
+"form": "벨라",
+"n": 3
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 2
+}
+]
+},
+"with": {
+"orr": 8,
+"delia": 7,
+"haleysane": 7,
+"vivi": 6,
+"sparrot": 6,
+"mayocool": 4,
+"haley": 3,
+"erpin": 3,
+"joanne": 3,
+"ner": 3,
+"lion": 3,
+"suro": 3
+},
+"stories": {
+"orr": [
+"jollyroger",
+"main3_ch01",
+"main3_ch07"
+],
+"delia": [
+"main3_ch01",
+"stresswave"
+],
+"haleysane": [
+"jollyroger",
+"main3_ch07",
+"stresswave"
+],
+"vivi": [
+"jollyroger",
+"main3_ch07"
+],
+"sparrot": [
+"jollyroger",
+"main3_ch07"
+],
+"mayocool": [
+"main3_ch01"
+],
+"haley": [
+"main3_ch01",
+"stresswave"
+],
+"erpin": [
+"main3_ch01"
+],
+"joanne": [
+"main3_ch01"
+],
+"ner": [
+"main3_ch01"
+],
+"lion": [
+"stresswave"
+],
+"suro": [
+"stresswave"
+]
+}
+},
+"haley": {
+"ko": "헤일리",
+"n": 165,
+"calls": {},
+"with": {
+"amelia": 5,
+"elena": 5,
+"mayocool": 3,
+"orr": 3,
+"ashur": 3,
+"guin": 3,
+"delia": 3,
+"ner": 3
+},
+"stories": {
+"amelia": [
+"main3_ch01",
+"pray"
+],
+"elena": [
+"main3_ch01",
+"pray"
+],
+"mayocool": [
+"main3_ch01"
+],
+"orr": [
+"main3_ch01"
+],
+"ashur": [
+"main3_ch01",
+"pray"
+],
+"guin": [
+"main3_ch01",
+"stresswave"
+],
+"delia": [
+"main3_ch01",
+"stresswave"
+],
+"ner": [
+"main3_ch01",
+"pray"
+]
+}
+},
+"haleysane": {
+"ko": "헤일리(멀쩡)",
+"n": 197,
+"calls": {
+"suro": [
+{
+"form": "슈로",
+"n": 5
+}
+],
+"haley": [
+{
+"form": "헤일리",
+"n": 2
+}
+]
+},
+"with": {
+"guin": 7,
+"orr": 6,
+"sparrot": 5,
+"delia": 4,
+"vivi": 4,
+"lion": 3,
+"suro": 3,
+"hilde": 3
+},
+"stories": {
+"guin": [
+"jollyroger",
+"main3_ch07",
+"stresswave"
+],
+"orr": [
+"jollyroger",
+"main3_ch07"
+],
+"sparrot": [
+"jollyroger",
+"main3_ch07"
+],
+"delia": [
+"jollyroger",
+"stresswave"
+],
+"vivi": [
+"jollyroger",
+"main3_ch07"
+],
+"lion": [
+"stresswave"
+],
+"suro": [
+"stresswave"
+],
+"hilde": [
+"stresswave"
+]
+}
+},
+"heidi": {
+"ko": "하이디",
+"n": 146,
+"calls": {
+"amelia": [
+{
+"form": "아멜리아",
+"n": 4
+}
+],
+"haley": [
+{
+"form": "헤일리",
+"n": 3
+}
+],
+"elena": [
+{
+"form": "엘레나",
+"n": 1
+},
+{
+"form": "시장님",
+"n": 1
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"hilde": {
+"ko": "힐데",
+"n": 330,
+"calls": {
+"suro": [
+{
+"form": "슈로",
+"n": 3
+},
+{
+"form": "슈로양",
+"n": 1
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 3
+}
+],
+"guin": [
+{
+"form": "그윈",
+"n": 2
+},
+{
+"form": "그윈씨",
+"n": 1
+}
+],
+"tig": [
+{
+"form": "티그양",
+"n": 2
+}
+],
+"haley": [
+{
+"form": "헤일리",
+"n": 2
+}
+]
+},
+"with": {
+"suro": 8,
+"guin": 3,
+"haleysane": 3,
+"delia": 3,
+"lion": 3
+},
+"stories": {
+"suro": [
+"main2_ch04",
+"main2_ch05",
+"main2_ch06",
+"stresswave"
+],
+"guin": [
+"stresswave"
+],
+"haleysane": [
+"stresswave"
+],
+"delia": [
+"stresswave"
+],
+"lion": [
+"stresswave"
+]
+}
+},
+"ifrit": {
+"ko": "이프리트",
+"n": 209,
+"calls": {},
+"with": {
+"gabia": 4,
+"naia": 4,
+"sylla": 4,
+"amelia": 3,
+"elena": 3,
+"rude": 3,
+"fricle": 3,
+"ran": 3
+},
+"stories": {
+"gabia": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"naia": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"sylla": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"amelia": [
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"elena": [
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"rude": [
+"lightashes",
+"pray"
+],
+"fricle": [
+"lightashes",
+"pray"
+],
+"ran": [
+"lightashes",
+"main2_ch07"
+]
+}
+},
+"inkle": {
+"ko": "잉클",
+"n": 218,
+"calls": {},
+"with": {
+"erpin": 3,
+"ner": 3,
+"laika": 3,
+"dayapureshine": 3,
+"asana": 3,
+"shadytwisted": 3
+},
+"stories": {
+"erpin": [
+"delusionalscenario_ch01"
+],
+"ner": [
+"delusionalscenario_ch01"
+],
+"laika": [
+"officebreak"
+],
+"dayapureshine": [
+"officebreak"
+],
+"asana": [
+"officebreak"
+],
+"shadytwisted": [
+"officebreak"
+]
+}
+},
+"jade": {
+"ko": "제이드",
+"n": 134,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 4
+},
+{
+"form": "여왕",
+"n": 2
+}
+],
+"daya": [
+{
+"form": "다야님",
+"n": 2
+},
+{
+"form": "다야",
+"n": 1
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"joanne": {
+"ko": "죠안",
+"n": 1018,
+"calls": {
+"ner": [
+{
+"form": "사제장",
+"n": 15
+},
+{
+"form": "네르",
+"n": 5
+}
+],
+"erpin": [
+{
+"form": "여왕님",
+"n": 19
+},
+{
+"form": "여왕",
+"n": 1
+}
+],
+"skea": [
+{
+"form": "스키아",
+"n": 9
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 2
+},
+{
+"form": "자매님",
+"n": 2
+}
+],
+"makasha": [
+{
+"form": "마카샤",
+"n": 2
+}
+],
+"yomi": [
+{
+"form": "요미",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 21,
+"erpin": 15,
+"elena": 7,
+"polan": 7,
+"makasha": 6,
+"skea": 6,
+"ameliar41": 5,
+"ran": 5,
+"sherum": 5,
+"amelia": 4,
+"mayo": 4,
+"uros": 4
+},
+"stories": {
+"ner": [
+"drifter",
+"existsalone",
+"lightashes",
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"main2_ch01",
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"elena": [
+"main3_ch01",
+"main3_ch03",
+"pray",
+"queensheart"
+],
+"polan": [
+"lightashes",
+"main2_ch08",
+"queensheart"
+],
+"makasha": [
+"lightashes",
+"main2_ch08",
+"queensheart"
+],
+"skea": [
+"silentprayer"
+],
+"ameliar41": [
+"main3_ch03",
+"queensheart"
+],
+"ran": [
+"drifter",
+"lightashes",
+"main2_ch08"
+],
+"sherum": [
+"existsalone",
+"main2_ch01"
+],
+"amelia": [
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"mayo": [
+"existsalone",
+"pray"
+],
+"uros": [
+"lightashes",
+"main2_ch09",
+"queensheart"
+]
+}
+},
+"jubee": {
+"ko": "쥬비",
+"n": 78,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"kathy": {
+"ko": "캐시",
+"n": 168,
+"calls": {},
+"with": {
+"shady": 3,
+"amelia": 3,
+"sylla": 3,
+"orr": 3,
+"tig": 3
+},
+"stories": {
+"shady": [
+"battleroyale"
+],
+"amelia": [
+"battleroyale"
+],
+"sylla": [
+"battleroyale"
+],
+"orr": [
+"battleroyale"
+],
+"tig": [
+"battleroyale"
+]
+}
+},
+"kidian": {
+"ko": "키디언",
+"n": 141,
+"calls": {},
+"with": {
+"sherum": 3,
+"renewaawaken": 3,
+"mayo": 3,
+"belita": 3,
+"fricle": 3
+},
+"stories": {
+"sherum": [
+"existsalone"
+],
+"renewaawaken": [
+"existsalone"
+],
+"mayo": [
+"existsalone"
+],
+"belita": [
+"existsalone"
+],
+"fricle": [
+"existsalone"
+]
+}
+},
+"kishya": {
+"ko": "키샤",
+"n": 358,
+"calls": {
+"pira": [
+{
+"form": "피라",
+"n": 3
+}
+]
+},
+"with": {
+"rohnemayor": 5,
+"gabia": 5,
+"pira": 4,
+"espi": 3
+},
+"stories": {
+"rohnemayor": [
+"kirakira"
+],
+"gabia": [
+"kirakira"
+],
+"pira": [
+"kirakira"
+],
+"espi": [
+"kirakira"
+]
+}
+},
+"kommy": {
+"ko": "코미",
+"n": 182,
+"calls": {
+"butter": [
+{
+"form": "버터",
+"n": 4
+},
+{
+"form": "버터 (반말 호격)",
+"n": 1
+}
+]
+},
+"with": {
+"ner": 8,
+"erpin": 7,
+"butter": 7,
+"mayo": 7,
+"tig": 6,
+"marie": 5,
+"rufo": 4,
+"diana": 4,
+"beni": 3,
+"suro": 3
+},
+"stories": {
+"ner": [
+"main2_ch03",
+"main_ch02",
+"main_ch03"
+],
+"erpin": [
+"main_ch02",
+"main_ch03"
+],
+"butter": [
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"mayo": [
+"main_ch02",
+"main_ch03"
+],
+"tig": [
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"marie": [
+"main_ch02"
+],
+"rufo": [
+"main_ch02",
+"main_ch03"
+],
+"diana": [
+"main2_ch03",
+"main_ch02"
+],
+"beni": [
+"main_ch02",
+"main_ch03"
+],
+"suro": [
+"main2_ch03",
+"snakeroad"
+]
+}
+},
+"kommyswim": {
+"ko": "코미(수영복)",
+"n": 114,
+"calls": {
+"kommy": [
+{
+"form": "코미",
+"n": 3
+},
+{
+"form": "코미 (반말 호격)",
+"n": 2
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"kyarot": {
+"ko": "캬롯",
+"n": 142,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"laika": {
+"ko": "라이카",
+"n": 248,
+"calls": {},
+"with": {
+"dayapureshine": 3,
+"inkle": 3,
+"asana": 3,
+"shadytwisted": 3
+},
+"stories": {
+"dayapureshine": [
+"officebreak"
+],
+"inkle": [
+"officebreak"
+],
+"asana": [
+"officebreak"
+],
+"shadytwisted": [
+"officebreak"
+]
+}
+},
+"lazy": {
+"ko": "레이지",
+"n": 62,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"leets": {
+"ko": "리츠",
+"n": 122,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"lethe": {
+"ko": "레테",
+"n": 77,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"levi": {
+"ko": "레비",
+"n": 144,
+"calls": {
+"velvet": [
+{
+"form": "벨벳님",
+"n": 1
+},
+{
+"form": "벨벳",
+"n": 1
+}
+]
+},
+"with": {
+"velvet": 4
+},
+"stories": {
+"velvet": [
+"main_ch09",
+"nowhereleft"
+]
+}
+},
+"levigraduate": {
+"ko": "레비(졸업)",
+"n": 79,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"lion": {
+"ko": "리온",
+"n": 173,
+"calls": {},
+"with": {
+"suro": 5,
+"guin": 3,
+"haleysane": 3,
+"delia": 3,
+"hilde": 3
+},
+"stories": {
+"suro": [
+"snakeroad",
+"stresswave"
+],
+"guin": [
+"stresswave"
+],
+"haleysane": [
+"stresswave"
+],
+"delia": [
+"stresswave"
+],
+"hilde": [
+"stresswave"
+]
+}
+},
+"maestromk2": {
+"ko": "마에스트로 2호",
+"n": 83,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"mago": {
+"ko": "마고",
+"n": 126,
+"calls": {
+"velvet": [
+{
+"form": "벨벳",
+"n": 5
+},
+{
+"form": "벨벳 (반말 호격)",
+"n": 3
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"maison": {
+"ko": "메죵",
+"n": 64,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"makasha": {
+"ko": "마카샤",
+"n": 664,
+"calls": {
+"uros": [
+{
+"form": "우로스",
+"n": 8
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 3
+}
+],
+"suro": [
+{
+"form": "슈로",
+"n": 2
+}
+],
+"erpin": [
+{
+"form": "여왕님",
+"n": 2
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 2
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 2
+}
+],
+"velvet": [
+{
+"form": "벨벳",
+"n": 2
+}
+]
+},
+"with": {
+"polan": 8,
+"uros": 7,
+"ner": 7,
+"joanne": 6,
+"tighero": 6,
+"erpin": 6,
+"ameliar41": 5,
+"vivi": 5,
+"sylla": 4,
+"belita": 4,
+"diana": 4,
+"fricle": 4
+},
+"stories": {
+"polan": [
+"lightashes",
+"main2_ch08",
+"main3_ch04",
+"queensheart"
+],
+"uros": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"ner": [
+"lightashes",
+"queensheart"
+],
+"joanne": [
+"lightashes",
+"main2_ch08",
+"queensheart"
+],
+"tighero": [
+"lightashes",
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"vivi": [
+"main3_ch04",
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"belita": [
+"lightashes",
+"queensheart"
+],
+"diana": [
+"lightashes",
+"queensheart"
+],
+"fricle": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+]
+}
+},
+"marie": {
+"ko": "마리",
+"n": 219,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 5
+}
+],
+"mayo": [
+{
+"form": "마요",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 16,
+"mayo": 13,
+"erpin": 13,
+"rufo": 7,
+"beni": 7,
+"tig": 7,
+"sist": 5,
+"ashur": 5,
+"velvet": 5,
+"kommy": 5,
+"elena": 4,
+"fricle": 4
+},
+"stories": {
+"ner": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"mayo": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"erpin": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"rufo": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"beni": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"tig": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"sist": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"ashur": [
+"main_ch01",
+"main_ch04",
+"main_ch09"
+],
+"velvet": [
+"main_ch04",
+"main_ch09"
+],
+"kommy": [
+"main_ch02"
+],
+"elena": [
+"main_ch04",
+"pray"
+],
+"fricle": [
+"main_ch04",
+"main_ch09",
+"pray"
+]
+}
+},
+"mayo": {
+"ko": "마요",
+"n": 273,
+"calls": {
+"erpin": [
+{
+"form": "여왕",
+"n": 3
+}
+]
+},
+"with": {
+"ner": 22,
+"erpin": 20,
+"fricle": 13,
+"marie": 13,
+"belita": 9,
+"rufo": 8,
+"beni": 8,
+"tig": 8,
+"kommy": 7,
+"elena": 7,
+"renewaawaken": 7,
+"amelia": 6
+},
+"stories": {
+"ner": [
+"existsalone",
+"main_ch01",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"erpin": [
+"main_ch01",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"ontime"
+],
+"fricle": [
+"existsalone",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"marie": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"belita": [
+"existsalone",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"pray"
+],
+"beni": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"tig": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"kommy": [
+"main_ch02",
+"main_ch03"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"ontime",
+"pray"
+],
+"renewaawaken": [
+"existsalone",
+"main2_ch02",
+"queensheart"
+],
+"amelia": [
+"main_ch03",
+"pray",
+"queensheart"
+]
+}
+},
+"mayocool": {
+"ko": "마요(멋짐)",
+"n": 138,
+"calls": {},
+"with": {
+"orr": 5,
+"guin": 4,
+"delia": 4,
+"amelia": 3,
+"haley": 3,
+"elena": 3,
+"erpin": 3,
+"joanne": 3,
+"ner": 3
+},
+"stories": {
+"orr": [
+"main3_ch01"
+],
+"guin": [
+"main3_ch01"
+],
+"delia": [
+"main3_ch01"
+],
+"amelia": [
+"main3_ch01"
+],
+"haley": [
+"main3_ch01"
+],
+"elena": [
+"main3_ch01"
+],
+"erpin": [
+"main3_ch01"
+],
+"joanne": [
+"main3_ch01"
+],
+"ner": [
+"main3_ch01"
+]
+}
+},
+"meluna": {
+"ko": "멜루나",
+"n": 120,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"miro": {
+"ko": "미로",
+"n": 93,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"momo": {
+"ko": "모모",
+"n": 117,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"mute": {
+"ko": "뮤트",
+"n": 288,
+"calls": {
+"elena": [
+{
+"form": "엘레나",
+"n": 5
+}
+]
+},
+"with": {
+"elena": 6,
+"ameliar41": 5,
+"amelia": 4
+},
+"stories": {
+"elena": [
+"acrossuniverses",
+"main3_ch02",
+"main3_ch03"
+],
+"ameliar41": [
+"acrossuniverses",
+"queensheart"
+],
+"amelia": [
+"acrossuniverses",
+"main3_ch02"
+]
+}
+},
+"mynx": {
+"ko": "밍스",
+"n": 65,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"naia": {
+"ko": "나이아",
+"n": 242,
+"calls": {
+"ifrit": [
+{
+"form": "이프리트",
+"n": 3
+}
+]
+},
+"with": {
+"sylla": 9,
+"erpin": 6,
+"amelia": 6,
+"elena": 6,
+"ashur": 6,
+"canna": 4,
+"ifrit": 4,
+"gabia": 4,
+"ner": 3
+},
+"stories": {
+"sylla": [
+"main2_ch06",
+"main2_ch07",
+"main2_ch08",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"erpin": [
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"amelia": [
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"elena": [
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"ashur": [
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"canna": [
+"main_ch06",
+"pray"
+],
+"ifrit": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"gabia": [
+"main2_ch07",
+"main2_ch08",
+"pray",
+"queensheart"
+],
+"ner": [
+"main2_ch06",
+"main_ch09",
+"pray"
+]
+}
+},
+"ner": {
+"ko": "네르",
+"n": 1494,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 75
+},
+{
+"form": "여왕",
+"n": 3
+},
+{
+"form": "에르핀",
+"n": 2
+}
+],
+"vivi": [
+{
+"form": "자매님",
+"n": 21
+},
+{
+"form": "비비",
+"n": 1
+}
+],
+"shoupan": [
+{
+"form": "슈팡",
+"n": 10
+},
+{
+"form": "슈팡 (반말 호격)",
+"n": 1
+}
+],
+"skea": [
+{
+"form": "스키아",
+"n": 8
+}
+],
+"nicole": [
+{
+"form": "니콜",
+"n": 7
+}
+],
+"pira": [
+{
+"form": "피라",
+"n": 5
+},
+{
+"form": "피라씨",
+"n": 1
+}
+],
+"belita": [
+{
+"form": "벨리타님",
+"n": 3
+},
+{
+"form": "벨리타",
+"n": 2
+}
+],
+"guin": [
+{
+"form": "그윈",
+"n": 3
+},
+{
+"form": "그윈씨",
+"n": 1
+}
+],
+"polan": [
+{
+"form": "폴랑",
+"n": 3
+},
+{
+"form": "폴랑 (반말 호격)",
+"n": 1
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 4
+}
+],
+"blanchet": [
+{
+"form": "블랑셰",
+"n": 2
+}
+],
+"mayo": [
+{
+"form": "마요",
+"n": 2
+}
+]
+},
+"with": {
+"erpin": 51,
+"mayo": 22,
+"joanne": 21,
+"elena": 18,
+"marie": 16,
+"tig": 15,
+"fricle": 14,
+"ashur": 12,
+"rufo": 12,
+"beni": 11,
+"amelia": 10,
+"diana": 10
+},
+"stories": {
+"erpin": [
+"acrossuniverses",
+"bookmarks",
+"delusionalscenario_ch01",
+"lightashes",
+"madway",
+"main3_ch01"
+],
+"mayo": [
+"existsalone",
+"main_ch01",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"joanne": [
+"drifter",
+"existsalone",
+"lightashes",
+"main3_ch01",
+"pray",
+"queensheart"
+],
+"elena": [
+"acrossuniverses",
+"alongtake",
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch04"
+],
+"marie": [
+"main_ch01",
+"main_ch02",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"tig": [
+"lightashes",
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"fricle": [
+"delusionalscenario_ch01",
+"existsalone",
+"lightashes",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"ashur": [
+"main3_ch01",
+"main_ch01",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"beni": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"amelia": [
+"delusionalscenario_ch01",
+"main3_ch01",
+"main_ch03",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"diana": [
+"bookmarks",
+"lightashes",
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"main_ch04"
+]
+}
+},
+"nerrage": {
+"ko": "네르(빡침)",
+"n": 212,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 6
+},
+{
+"form": "에르핀",
+"n": 3
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 3
+}
+],
+"vivi": [
+{
+"form": "비비씨",
+"n": 1
+},
+{
+"form": "자매님",
+"n": 1
+}
+],
+"chloe": [
+{
+"form": "클로에",
+"n": 2
+}
+],
+"elena": [
+{
+"form": "엘레나",
+"n": 1
+},
+{
+"form": "시장님",
+"n": 1
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 6,
+"joanne": 4,
+"ameliar41": 4,
+"tighero": 4,
+"makasha": 3,
+"amelia": 3,
+"sylla": 3,
+"uros": 3,
+"erpinroyale": 3,
+"rohnemayor": 3,
+"elena": 3,
+"dayapureshine": 3
+},
+"stories": {
+"ner": [
+"alongtake",
+"queensheart",
+"silentprayer",
+"thousandreasons"
+],
+"joanne": [
+"queensheart",
+"silentprayer",
+"thousandreasons"
+],
+"ameliar41": [
+"queensheart"
+],
+"tighero": [
+"queensheart"
+],
+"makasha": [
+"queensheart"
+],
+"amelia": [
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"uros": [
+"queensheart"
+],
+"erpinroyale": [
+"queensheart"
+],
+"rohnemayor": [
+"queensheart"
+],
+"elena": [
+"alongtake",
+"queensheart"
+],
+"dayapureshine": [
+"queensheart"
+]
+}
+},
+"neti": {
+"ko": "네티",
+"n": 150,
+"calls": {
+"daya": [
+{
+"form": "다야",
+"n": 5
+},
+{
+"form": "다야님",
+"n": 2
+}
+],
+"opal": [
+{
+"form": "오팔 (반말 호격)",
+"n": 1
+},
+{
+"form": "오팔",
+"n": 1
+}
+]
+},
+"with": {
+"dayapureshine": 3,
+"vivi": 3
+},
+"stories": {
+"dayapureshine": [
+"silvershell"
+],
+"vivi": [
+"main3_ch04",
+"silvershell"
+]
+}
+},
+"nicole": {
+"ko": "니콜",
+"n": 488,
+"calls": {
+"elena": [
+{
+"form": "시장님",
+"n": 2
+},
+{
+"form": "엘레나",
+"n": 1
+}
+]
+},
+"with": {
+"blanchet": 6,
+"ner": 6,
+"elena": 3
+},
+"stories": {
+"blanchet": [
+"alongtake"
+],
+"ner": [
+"alongtake"
+],
+"elena": [
+"alongtake"
+]
+}
+},
+"opal": {
+"ko": "오팔",
+"n": 121,
+"calls": {
+"erpin": [
+{
+"form": "에르핀",
+"n": 1
+},
+{
+"form": "여왕님",
+"n": 1
+}
+]
+},
+"with": {},
+"stories": {}
+},
+"orr": {
+"ko": "오르",
+"n": 256,
+"calls": {
+"haley": [
+{
+"form": "헤일리",
+"n": 4
+}
+]
+},
+"with": {
+"guin": 8,
+"amelia": 6,
+"delia": 6,
+"haleysane": 6,
+"mayocool": 5,
+"sparrot": 5,
+"vivi": 4,
+"shady": 3,
+"sylla": 3,
+"kathy": 3,
+"tig": 3,
+"haley": 3
+},
+"stories": {
+"guin": [
+"jollyroger",
+"main3_ch01",
+"main3_ch07"
+],
+"amelia": [
+"battleroyale",
+"main3_ch01"
+],
+"delia": [
+"jollyroger",
+"main3_ch01"
+],
+"haleysane": [
+"jollyroger",
+"main3_ch07"
+],
+"mayocool": [
+"main3_ch01"
+],
+"sparrot": [
+"jollyroger",
+"main3_ch07"
+],
+"vivi": [
+"jollyroger",
+"main3_ch07"
+],
+"shady": [
+"battleroyale"
+],
+"sylla": [
+"battleroyale"
+],
+"kathy": [
+"battleroyale"
+],
+"tig": [
+"battleroyale"
+],
+"haley": [
+"main3_ch01"
+]
+}
+},
+"patula": {
+"ko": "파트라",
+"n": 107,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 5
+}
+],
+"ashur": [
+{
+"form": "에슈르",
+"n": 3
+}
+]
+},
+"with": {
+"ashur": 4
+},
+"stories": {
+"ashur": [
+"magicbread"
+]
+}
+},
+"picora": {
+"ko": "피코라",
+"n": 124,
+"calls": {},
+"with": {
+"sherum": 4,
+"belita": 4,
+"fricle": 4,
+"snorky": 3,
+"mayo": 3,
+"vela": 3
+},
+"stories": {
+"sherum": [
+"existsalone"
+],
+"belita": [
+"existsalone"
+],
+"fricle": [
+"existsalone"
+],
+"snorky": [
+"existsalone"
+],
+"mayo": [
+"existsalone"
+],
+"vela": [
+"existsalone"
+]
+}
+},
+"pira": {
+"ko": "피라",
+"n": 239,
+"calls": {
+"kishya": [
+{
+"form": "키샤",
+"n": 3
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 2
+}
+]
+},
+"with": {
+"ner": 5,
+"kishya": 4,
+"rohnemayor": 3,
+"gabia": 3,
+"canta": 3
+},
+"stories": {
+"ner": [
+"main_chside"
+],
+"kishya": [
+"kirakira"
+],
+"rohnemayor": [
+"kirakira"
+],
+"gabia": [
+"kirakira"
+],
+"canta": [
+"main_chside"
+]
+}
+},
+"polan": {
+"ko": "폴랑",
+"n": 400,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 7
+},
+{
+"form": "에르핀",
+"n": 2
+},
+{
+"form": "여왕",
+"n": 1
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 8
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 5
+}
+]
+},
+"with": {
+"makasha": 8,
+"joanne": 7,
+"ner": 7,
+"erpin": 6,
+"vela": 6,
+"diana": 5,
+"marie": 4,
+"elena": 3,
+"ameliar41": 3,
+"sylla": 3,
+"tighero": 3,
+"vivi": 3
+},
+"stories": {
+"makasha": [
+"lightashes",
+"main2_ch08",
+"main3_ch04",
+"queensheart"
+],
+"joanne": [
+"lightashes",
+"main2_ch08",
+"queensheart"
+],
+"ner": [
+"lightashes",
+"main2_ch03",
+"main3_ch05",
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"vela": [
+"main2_ch04",
+"returningsunset"
+],
+"diana": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"queensheart"
+],
+"marie": [
+"returningsunset"
+],
+"elena": [
+"main3_ch05",
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"tighero": [
+"lightashes",
+"queensheart"
+],
+"vivi": [
+"main3_ch04",
+"queensheart"
+]
+}
+},
+"posher": {
+"ko": "포셔",
+"n": 132,
+"calls": {
+"elena": [
+{
+"form": "시장님",
+"n": 2
+}
+]
+},
+"with": {
+"elena": 3
+},
+"stories": {
+"elena": [
+"acrossuniverses",
+"main3_ch03"
+]
+}
+},
+"ran": {
+"ko": "란",
+"n": 896,
+"calls": {
+"uros": [
+{
+"form": "우로스",
+"n": 13
+},
+{
+"form": "우로스 (반말 호격)",
+"n": 1
+}
+],
+"suro": [
+{
+"form": "슈로",
+"n": 7
+}
+],
+"vivi": [
+{
+"form": "비비",
+"n": 6
+}
+]
+},
+"with": {
+"vivi": 7,
+"joanne": 5,
+"makasha": 4,
+"ner": 4,
+"rude": 4,
+"fricle": 4,
+"daya": 4,
+"dianayester": 3,
+"polan": 3,
+"uros": 3,
+"diana": 3,
+"belita": 3
+},
+"stories": {
+"vivi": [
+"drifter",
+"main2_ch04",
+"main2_ch08"
+],
+"joanne": [
+"drifter",
+"lightashes",
+"main2_ch08"
+],
+"makasha": [
+"lightashes"
+],
+"ner": [
+"drifter",
+"lightashes"
+],
+"rude": [
+"lightashes"
+],
+"fricle": [
+"lightashes"
+],
+"daya": [
+"drifter",
+"main2_ch08"
+],
+"dianayester": [
+"lightashes",
+"nowhereleft"
+],
+"polan": [
+"lightashes",
+"main2_ch04",
+"main2_ch08"
+],
+"uros": [
+"lightashes"
+],
+"diana": [
+"drifter",
+"lightashes",
+"main2_ch04"
+],
+"belita": [
+"lightashes"
+]
+}
+},
+"renewaawaken": {
+"ko": "리뉴아",
+"n": 285,
+"calls": {
+"mayo": [
+{
+"form": "마요씨",
+"n": 3
+},
+{
+"form": "마요",
+"n": 3
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 5
+}
+],
+"erpin": [
+{
+"form": "여왕님",
+"n": 3
+},
+{
+"form": "에르핀",
+"n": 1
+}
+],
+"speaki": [
+{
+"form": "스피키씨",
+"n": 2
+},
+{
+"form": "스피키",
+"n": 2
+}
+],
+"snorky": [
+{
+"form": "스노키",
+"n": 2
+}
+]
+},
+"with": {
+"belita": 8,
+"mayo": 7,
+"fricle": 5,
+"aya": 4,
+"amelia": 3,
+"ner": 3,
+"makasha": 3,
+"snorky": 3,
+"sherum": 3,
+"kidian": 3
+},
+"stories": {
+"belita": [
+"existsalone",
+"main3_ch07",
+"ontime",
+"pray",
+"queensheart"
+],
+"mayo": [
+"existsalone",
+"main2_ch02",
+"queensheart"
+],
+"fricle": [
+"existsalone",
+"pray",
+"queensheart"
+],
+"aya": [
+"lightashes",
+"main3_ch07",
+"pray",
+"queensheart"
+],
+"amelia": [
+"ontime",
+"pray",
+"queensheart"
+],
+"ner": [
+"existsalone",
+"pray",
+"queensheart"
+],
+"makasha": [
+"lightashes",
+"queensheart"
+],
+"snorky": [
+"existsalone",
+"main3_ch07"
+],
+"sherum": [
+"existsalone"
+],
+"kidian": [
+"existsalone"
+]
+}
+},
+"ricota": {
+"ko": "리코타",
+"n": 94,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"rim": {
+"ko": "림",
+"n": 222,
+"calls": {},
+"with": {
+"erpin": 6,
+"canna": 4,
+"ashur": 4,
+"shady": 3
+},
+"stories": {
+"erpin": [
+"bookmarks",
+"main_ch07",
+"queensheart"
+],
+"canna": [
+"main_ch07"
+],
+"ashur": [
+"main_ch07"
+],
+"shady": [
+"bookmarks",
+"main_ch07"
+]
+}
+},
+"rimchaos": {
+"ko": "림(혼돈)",
+"n": 121,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"risty": {
+"ko": "리스티",
+"n": 107,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"rohne": {
+"ko": "로네",
+"n": 285,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 5
+},
+{
+"form": "에르핀",
+"n": 1
+}
+],
+"elena": [
+{
+"form": "시장님",
+"n": 4
+}
+]
+},
+"with": {
+"erpin": 8,
+"ner": 8,
+"mayo": 5,
+"amelia": 4,
+"elena": 4,
+"sherum": 3
+},
+"stories": {
+"erpin": [
+"bookmarks",
+"main_ch03",
+"pray"
+],
+"ner": [
+"bookmarks",
+"main_ch03",
+"pray"
+],
+"mayo": [
+"main_ch03",
+"pray"
+],
+"amelia": [
+"main2_ch06",
+"main_ch03"
+],
+"elena": [
+"main2_ch06",
+"main_ch03"
+],
+"sherum": [
+"bookmarks"
+]
+}
+},
+"rohnemayor": {
+"ko": "로네(시장)",
+"n": 233,
+"calls": {
+"elena": [
+{
+"form": "시장님",
+"n": 5
+},
+{
+"form": "엘레나",
+"n": 1
+}
+],
+"haley": [
+{
+"form": "헤일리",
+"n": 4
+}
+],
+"kishya": [
+{
+"form": "키샤",
+"n": 2
+}
+]
+},
+"with": {
+"kishya": 5,
+"gabia": 5,
+"amelia": 4,
+"joanne": 3,
+"espi": 3,
+"pira": 3,
+"elena": 3,
+"ameliar41": 3,
+"tighero": 3,
+"erpinroyale": 3,
+"nerrage": 3
+},
+"stories": {
+"kishya": [
+"kirakira"
+],
+"gabia": [
+"kirakira",
+"queensheart"
+],
+"amelia": [
+"queensheart"
+],
+"joanne": [
+"kirakira",
+"queensheart"
+],
+"espi": [
+"kirakira"
+],
+"pira": [
+"kirakira"
+],
+"elena": [
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"tighero": [
+"queensheart"
+],
+"erpinroyale": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+]
+}
+},
+"rollett": {
+"ko": "롤렛",
+"n": 97,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"rude": {
+"ko": "루드",
+"n": 129,
+"calls": {
+"leets": [
+{
+"form": "리츠",
+"n": 5
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 2
+}
+],
+"daya": [
+{
+"form": "다야님",
+"n": 2
+}
+],
+"silphir": [
+{
+"form": "실피르",
+"n": 2
+}
+]
+},
+"with": {
+"fricle": 5,
+"ner": 4,
+"ran": 4,
+"ifrit": 3,
+"belita": 3
+},
+"stories": {
+"fricle": [
+"lightashes",
+"pray"
+],
+"ner": [
+"lightashes",
+"main_ch08",
+"pray"
+],
+"ran": [
+"lightashes"
+],
+"ifrit": [
+"lightashes",
+"pray"
+],
+"belita": [
+"lightashes",
+"pray"
+]
+}
+},
+"rufo": {
+"ko": "루포",
+"n": 195,
+"calls": {
+"beni": [
+{
+"form": "베니",
+"n": 6
+}
+],
+"erpin": [
+{
+"form": "여왕",
+"n": 2
+},
+{
+"form": "에르핀",
+"n": 1
+}
+]
+},
+"with": {
+"beni": 13,
+"tig": 13,
+"ner": 12,
+"erpin": 10,
+"mayo": 8,
+"marie": 7,
+"butter": 5,
+"elena": 5,
+"ashur": 4,
+"kommy": 4,
+"amelia": 4,
+"diana": 4
+},
+"stories": {
+"beni": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"pray",
+"snakeroad"
+],
+"tig": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"ner": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"erpin": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"mayo": [
+"main_ch02",
+"main_ch03",
+"pray"
+],
+"marie": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"butter": [
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"ashur": [
+"main_ch04",
+"main_ch07",
+"pray"
+],
+"kommy": [
+"main_ch02",
+"main_ch03"
+],
+"amelia": [
+"main_ch03",
+"pray"
+],
+"diana": [
+"main_ch02",
+"main_ch03",
+"main_ch04"
+]
+}
+},
+"sari": {
+"ko": "사리",
+"n": 64,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"scizor": {
+"ko": "시저",
+"n": 106,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"selline": {
+"ko": "셀리네",
+"n": 142,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"shady": {
+"ko": "셰이디",
+"n": 300,
+"calls": {},
+"with": {
+"erpin": 7,
+"sylla": 7,
+"ashur": 5,
+"amelia": 5,
+"tig": 5,
+"sherum": 4,
+"canna": 4,
+"ner": 4,
+"fricle": 3,
+"rim": 3,
+"orr": 3,
+"kathy": 3
+},
+"stories": {
+"erpin": [
+"bookmarks",
+"main_ch06",
+"main_ch07",
+"main_ch09"
+],
+"sylla": [
+"battleroyale",
+"main_ch06",
+"main_ch07",
+"main_ch09"
+],
+"ashur": [
+"main_ch06",
+"main_ch07",
+"main_ch09"
+],
+"amelia": [
+"battleroyale",
+"main_ch06",
+"main_ch09"
+],
+"tig": [
+"battleroyale",
+"main_ch09"
+],
+"sherum": [
+"bookmarks",
+"existsalone",
+"realmupsidedown"
+],
+"canna": [
+"main_ch06",
+"main_ch07"
+],
+"ner": [
+"bookmarks",
+"existsalone",
+"main_ch09"
+],
+"fricle": [
+"bookmarks",
+"existsalone",
+"main_ch07"
+],
+"rim": [
+"bookmarks",
+"main_ch07"
+],
+"orr": [
+"battleroyale"
+],
+"kathy": [
+"battleroyale"
+]
+}
+},
+"shadytwisted": {
+"ko": "셰이디(역전)",
+"n": 211,
+"calls": {},
+"with": {
+"dayapureshine": 5,
+"laika": 3,
+"inkle": 3,
+"asana": 3
+},
+"stories": {
+"dayapureshine": [
+"officebreak",
+"queensheart"
+],
+"laika": [
+"officebreak"
+],
+"inkle": [
+"officebreak"
+],
+"asana": [
+"officebreak"
+]
+}
+},
+"shasha": {
+"ko": "샤샤",
+"n": 109,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"sherum": {
+"ko": "셰럼",
+"n": 679,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 11
+},
+{
+"form": "여왕",
+"n": 2
+},
+{
+"form": "에르핀",
+"n": 1
+}
+],
+"belita": [
+{
+"form": "벨리타",
+"n": 10
+},
+{
+"form": "벨리타님",
+"n": 1
+}
+],
+"fricle": [
+{
+"form": "프리클",
+"n": 4
+},
+{
+"form": "프리클 (반말 호격)",
+"n": 2
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 4
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 3
+}
+],
+"makasha": [
+{
+"form": "마카샤님",
+"n": 2
+}
+]
+},
+"with": {
+"erpin": 7,
+"fricle": 6,
+"ner": 5,
+"belita": 5,
+"joanne": 5,
+"shady": 4,
+"snorky": 4,
+"mayo": 4,
+"picora": 4,
+"rohne": 3,
+"kidian": 3,
+"renewaawaken": 3
+},
+"stories": {
+"erpin": [
+"bookmarks",
+"main2_ch01"
+],
+"fricle": [
+"bookmarks",
+"existsalone"
+],
+"ner": [
+"bookmarks",
+"existsalone"
+],
+"belita": [
+"existsalone"
+],
+"joanne": [
+"existsalone",
+"main2_ch01"
+],
+"shady": [
+"bookmarks",
+"existsalone",
+"realmupsidedown"
+],
+"snorky": [
+"existsalone"
+],
+"mayo": [
+"existsalone"
+],
+"picora": [
+"existsalone"
+],
+"rohne": [
+"bookmarks"
+],
+"kidian": [
+"existsalone"
+],
+"renewaawaken": [
+"existsalone"
+]
+}
+},
+"shoupan": {
+"ko": "슈팡",
+"n": 328,
+"calls": {
+"erpin": [
+{
+"form": "여왕님",
+"n": 3
+},
+{
+"form": "여왕",
+"n": 1
+}
+],
+"ner": [
+{
+"form": "사제장",
+"n": 2
+}
+]
+},
+"with": {
+"bana": 4,
+"ner": 3
+},
+"stories": {
+"bana": [
+"madway"
+],
+"ner": [
+"madway"
+]
+}
+},
+"silphir": {
+"ko": "실피르",
+"n": 100,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"silvia": {
+"ko": "실비아",
+"n": 364,
+"calls": {
+"ui": [
+{
+"form": "우이",
+"n": 6
+}
+],
+"chloe": [
+{
+"form": "클로에",
+"n": 2
+}
+]
+},
+"with": {
+"vivi": 5,
+"dayapureshine": 3
+},
+"stories": {
+"vivi": [
+"silvershell"
+],
+"dayapureshine": [
+"silvershell"
+]
+}
+},
+"sist": {
+"ko": "시스트",
+"n": 145,
+"calls": {},
+"with": {
+"ner": 7,
+"erpin": 5,
+"ashur": 5,
+"marie": 5,
+"mayo": 5,
+"tig": 4,
+"beni": 4,
+"elena": 3,
+"rufo": 3,
+"joanne": 3,
+"velvet": 3,
+"fricle": 3
+},
+"stories": {
+"ner": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"erpin": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"ashur": [
+"main_ch09",
+"pray"
+],
+"marie": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"mayo": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"tig": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"beni": [
+"main_ch04",
+"pray"
+],
+"elena": [
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"rufo": [
+"pray"
+],
+"joanne": [
+"pray"
+],
+"velvet": [
+"main_ch04",
+"main_ch09"
+],
+"fricle": [
+"main_ch04",
+"main_ch09"
+]
+}
+},
+"skea": {
+"ko": "스키아",
+"n": 630,
+"calls": {
+"ner": [
+{
+"form": "사제장",
+"n": 3
+}
+]
+},
+"with": {
+"joanne": 6,
+"ner": 5
+},
+"stories": {
+"joanne": [
+"silentprayer"
+],
+"ner": [
+"silentprayer"
+]
+}
+},
+"snorky": {
+"ko": "스노키",
+"n": 124,
+"calls": {
+"belita": [
+{
+"form": "벨리타",
+"n": 2
+}
+]
+},
+"with": {
+"belita": 5,
+"sherum": 4,
+"fricle": 4,
+"renewaawaken": 3,
+"mayo": 3,
+"picora": 3
+},
+"stories": {
+"belita": [
+"existsalone",
+"main3_ch07"
+],
+"sherum": [
+"existsalone"
+],
+"fricle": [
+"existsalone"
+],
+"renewaawaken": [
+"existsalone",
+"main3_ch07"
+],
+"mayo": [
+"existsalone"
+],
+"picora": [
+"existsalone"
+]
+}
+},
+"sparrot": {
+"ko": "스패럿",
+"n": 651,
+"calls": {
+"vela": [
+{
+"form": "벨라",
+"n": 2
+}
+]
+},
+"with": {
+"guin": 6,
+"vivi": 6,
+"haleysane": 5,
+"orr": 5,
+"delia": 4
+},
+"stories": {
+"guin": [
+"jollyroger",
+"main3_ch07"
+],
+"vivi": [
+"jollyroger",
+"main3_ch07"
+],
+"haleysane": [
+"jollyroger",
+"main3_ch07"
+],
+"orr": [
+"jollyroger",
+"main3_ch07"
+],
+"delia": [
+"deepseaclash",
+"jollyroger"
+]
+}
+},
+"speaki": {
+"ko": "스피키",
+"n": 270,
+"calls": {
+"crepe": [
+{
+"form": "크레페",
+"n": 1
+},
+{
+"form": "크레페 (반말 호격)",
+"n": 1
+}
+],
+"vela": [
+{
+"form": "벨라",
+"n": 2
+}
+]
+},
+"with": {
+"alice": 3,
+"erpin": 3,
+"mayo": 3
+},
+"stories": {
+"alice": [
+"bookmarks",
+"main_ch07"
+],
+"erpin": [
+"main_ch07",
+"main_ch09"
+],
+"mayo": [
+"main2_ch02"
+]
+}
+},
+"speakimaid": {
+"ko": "스피키(메이드)",
+"n": 93,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"suro": {
+"ko": "슈로",
+"n": 585,
+"calls": {
+"uros": [
+{
+"form": "우로스",
+"n": 3
+},
+{
+"form": "우로스 (반말 호격)",
+"n": 2
+}
+]
+},
+"with": {
+"tig": 10,
+"hilde": 8,
+"diana": 6,
+"butter": 5,
+"lion": 5,
+"kommy": 3,
+"polan": 3,
+"guin": 3,
+"haleysane": 3,
+"delia": 3,
+"uros": 3
+},
+"stories": {
+"tig": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"main2_ch05",
+"nowhereleft",
+"snakeroad"
+],
+"hilde": [
+"main2_ch04",
+"main2_ch05",
+"main2_ch06",
+"stresswave"
+],
+"diana": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"main2_ch06"
+],
+"butter": [
+"main2_ch03",
+"snakeroad"
+],
+"lion": [
+"snakeroad",
+"stresswave"
+],
+"kommy": [
+"main2_ch03",
+"snakeroad"
+],
+"polan": [
+"lightashes",
+"main2_ch03",
+"main2_ch04"
+],
+"guin": [
+"stresswave"
+],
+"haleysane": [
+"stresswave"
+],
+"delia": [
+"stresswave"
+],
+"uros": [
+"lightashes",
+"stresswave"
+]
+}
+},
+"sylla": {
+"ko": "실라",
+"n": 330,
+"calls": {
+"ashur": [
+{
+"form": "에슈르",
+"n": 4
+}
+],
+"ifrit": [
+{
+"form": "이프리트",
+"n": 2
+}
+]
+},
+"with": {
+"erpin": 10,
+"amelia": 10,
+"naia": 9,
+"ashur": 8,
+"shady": 7,
+"elena": 7,
+"ner": 7,
+"tig": 6,
+"canna": 5,
+"vivi": 5,
+"aya": 5,
+"ameliar41": 5
+},
+"stories": {
+"erpin": [
+"main_ch06",
+"main_ch07",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"amelia": [
+"battleroyale",
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"naia": [
+"main2_ch06",
+"main2_ch07",
+"main2_ch08",
+"main_ch06",
+"main_ch09",
+"pray"
+],
+"ashur": [
+"magicbread",
+"main_ch06",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"shady": [
+"battleroyale",
+"main_ch06",
+"main_ch07",
+"main_ch09"
+],
+"elena": [
+"main_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"ner": [
+"main2_ch06",
+"main_ch09",
+"pray",
+"queensheart"
+],
+"tig": [
+"battleroyale",
+"main_ch09",
+"pray"
+],
+"canna": [
+"main_ch06",
+"main_ch07",
+"pray"
+],
+"vivi": [
+"dew",
+"frozen",
+"pray",
+"queensheart"
+],
+"aya": [
+"frozen",
+"magicbread",
+"pray",
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+]
+}
+},
+"taida": {
+"ko": "타이다",
+"n": 73,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"tig": {
+"ko": "티그",
+"n": 620,
+"calls": {
+"beni": [
+{
+"form": "베니",
+"n": 8
+}
+],
+"suro": [
+{
+"form": "슈로",
+"n": 4
+}
+],
+"lion": [
+{
+"form": "리온",
+"n": 4
+}
+],
+"butter": [
+{
+"form": "버터",
+"n": 4
+}
+],
+"diana": [
+{
+"form": "디아나",
+"n": 3
+}
+]
+},
+"with": {
+"ner": 15,
+"rufo": 13,
+"erpin": 12,
+"beni": 12,
+"suro": 10,
+"diana": 9,
+"amelia": 8,
+"butter": 8,
+"mayo": 8,
+"elena": 7,
+"marie": 7,
+"sylla": 6
+},
+"stories": {
+"ner": [
+"lightashes",
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"rufo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09",
+"pray"
+],
+"erpin": [
+"lightashes",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"main_ch09"
+],
+"beni": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch07",
+"pray",
+"snakeroad"
+],
+"suro": [
+"lightashes",
+"main2_ch03",
+"main2_ch04",
+"main2_ch05",
+"nowhereleft",
+"snakeroad"
+],
+"diana": [
+"main2_ch03",
+"main2_ch04",
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"main_ch09"
+],
+"amelia": [
+"battleroyale",
+"main_ch03",
+"main_ch09",
+"pray"
+],
+"butter": [
+"main2_ch03",
+"main_ch02",
+"main_ch03",
+"snakeroad"
+],
+"mayo": [
+"main_ch02",
+"main_ch03",
+"main_ch04",
+"pray"
+],
+"elena": [
+"main_ch03",
+"main_ch04",
+"main_ch09",
+"pray"
+],
+"marie": [
+"main_ch02",
+"main_ch04",
+"pray"
+],
+"sylla": [
+"battleroyale",
+"main_ch09",
+"pray"
+]
+}
+},
+"tighero": {
+"ko": "티그(영웅)",
+"n": 204,
+"calls": {
+"suro": [
+{
+"form": "슈로",
+"n": 4
+}
+],
+"uros": [
+{
+"form": "우로스",
+"n": 3
+}
+]
+},
+"with": {
+"makasha": 6,
+"uros": 6,
+"ameliar41": 4,
+"nerrage": 4,
+"diana": 4,
+"joanne": 3,
+"amelia": 3,
+"sylla": 3,
+"erpinroyale": 3,
+"rohnemayor": 3,
+"dayapureshine": 3,
+"belita": 3
+},
+"stories": {
+"makasha": [
+"lightashes",
+"queensheart"
+],
+"uros": [
+"lightashes",
+"main2_ch09",
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+],
+"diana": [
+"lightashes",
+"queensheart"
+],
+"joanne": [
+"lightashes",
+"main2_ch09",
+"queensheart"
+],
+"amelia": [
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"erpinroyale": [
+"queensheart"
+],
+"rohnemayor": [
+"queensheart"
+],
+"dayapureshine": [
+"queensheart"
+],
+"belita": [
+"queensheart"
+]
+}
+},
+"ui": {
+"ko": "우이",
+"n": 432,
+"calls": {},
+"with": {
+"vivi": 12,
+"chloe": 7,
+"epica": 6,
+"aya": 5,
+"ed": 5,
+"sylla": 4
+},
+"stories": {
+"vivi": [
+"dew",
+"frozen",
+"main3_ch04",
+"pray",
+"silvershell"
+],
+"chloe": [
+"frozen",
+"main3_ch04",
+"pray"
+],
+"epica": [
+"frozen",
+"pray"
+],
+"aya": [
+"frozen",
+"pray"
+],
+"ed": [
+"frozen",
+"pray"
+],
+"sylla": [
+"dew",
+"frozen",
+"pray"
+]
+}
+},
+"uros": {
+"ko": "우로스",
+"n": 493,
+"calls": {},
+"with": {
+"makasha": 7,
+"tighero": 6,
+"joanne": 4,
+"ameliar41": 4,
+"erpin": 4,
+"diana": 4,
+"sylla": 3,
+"nerrage": 3,
+"polan": 3,
+"ner": 3,
+"fricle": 3,
+"ran": 3
+},
+"stories": {
+"makasha": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"tighero": [
+"lightashes",
+"main2_ch09",
+"queensheart"
+],
+"joanne": [
+"lightashes",
+"main2_ch09",
+"queensheart"
+],
+"ameliar41": [
+"queensheart"
+],
+"erpin": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"diana": [
+"lightashes",
+"queensheart"
+],
+"sylla": [
+"queensheart"
+],
+"nerrage": [
+"queensheart"
+],
+"polan": [
+"lightashes",
+"main3_ch04",
+"queensheart"
+],
+"ner": [
+"lightashes",
+"queensheart"
+],
+"fricle": [
+"lightashes",
+"queensheart"
+],
+"ran": [
+"lightashes"
+]
+}
+},
+"vela": {
+"ko": "벨라",
+"n": 610,
+"calls": {},
+"with": {
+"polan": 6,
+"marie": 4,
+"amelia": 3,
+"elena": 3,
+"sherum": 3,
+"picora": 3,
+"belita": 3,
+"fricle": 3,
+"ran": 3,
+"diana": 3
+},
+"stories": {
+"polan": [
+"main2_ch04",
+"returningsunset"
+],
+"marie": [
+"returningsunset"
+],
+"amelia": [
+"main2_ch06",
+"main3_ch03"
+],
+"elena": [
+"main2_ch06",
+"main3_ch03"
+],
+"sherum": [
+"existsalone"
+],
+"picora": [
+"existsalone"
+],
+"belita": [
+"existsalone"
+],
+"fricle": [
+"existsalone"
+],
+"ran": [
+"lightashes",
+"main2_ch04",
+"main2_ch08"
+],
+"diana": [
+"main2_ch04"
+]
+}
+},
+"velvet": {
+"ko": "벨벳",
+"n": 537,
+"calls": {
+"fricle": [
+{
+"form": "프리클 (반말 호격)",
+"n": 5
+},
+{
+"form": "프리클",
+"n": 3
+}
+],
+"erpin": [
+{
+"form": "여왕",
+"n": 4
+}
+]
+},
+"with": {
+"erpin": 7,
+"ner": 7,
+"ashur": 6,
+"aurora": 6,
+"marie": 5,
+"elena": 4,
+"mayo": 4,
+"levi": 4,
+"fricle": 4,
+"sist": 3,
+"makasha": 3
+},
+"stories": {
+"erpin": [
+"main_ch04",
+"main_ch09"
+],
+"ner": [
+"main_ch04",
+"main_ch09"
+],
+"ashur": [
+"main_ch04",
+"main_ch09"
+],
+"aurora": [
+"youraurora"
+],
+"marie": [
+"main_ch04",
+"main_ch09"
+],
+"elena": [
+"main_ch04"
+],
+"mayo": [
+"main_ch04",
+"main_ch09"
+],
+"levi": [
+"main_ch09",
+"nowhereleft"
+],
+"fricle": [
+"main_ch04",
+"main_ch09"
+],
+"sist": [
+"main_ch04",
+"main_ch09"
+],
+"makasha": [
+"youraurora"
+]
+}
+},
+"veroo": {
+"ko": "베루",
+"n": 64,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"vivi": {
+"ko": "비비",
+"n": 1495,
+"calls": {
+"ui": [
+{
+"form": "우이",
+"n": 12
+}
+],
+"chloe": [
+{
+"form": "클로에",
+"n": 5
+}
+],
+"yumimi": [
+{
+"form": "유미미",
+"n": 4
+}
+]
+},
+"with": {
+"ui": 12,
+"chloe": 9,
+"daya": 7,
+"ran": 7,
+"aya": 6,
+"guin": 6,
+"sparrot": 6,
+"epica": 5,
+"sylla": 5,
+"makasha": 5,
+"silvia": 5,
+"ed": 4
+},
+"stories": {
+"ui": [
+"dew",
+"frozen",
+"main3_ch04",
+"pray",
+"silvershell"
+],
+"chloe": [
+"frozen",
+"main3_ch04",
+"main3_ch05"
+],
+"daya": [
+"drifter",
+"main2_ch08",
+"pray",
+"t_silvertown"
+],
+"ran": [
+"drifter",
+"main2_ch04",
+"main2_ch08"
+],
+"aya": [
+"frozen",
+"main3_ch06",
+"pray"
+],
+"guin": [
+"jollyroger",
+"main3_ch07"
+],
+"sparrot": [
+"jollyroger",
+"main3_ch07"
+],
+"epica": [
+"frozen",
+"pray"
+],
+"sylla": [
+"dew",
+"frozen",
+"pray",
+"queensheart"
+],
+"makasha": [
+"main3_ch04",
+"queensheart"
+],
+"silvia": [
+"silvershell"
+],
+"ed": [
+"fantasyadventure",
+"frozen"
+]
+}
+},
+"yomi": {
+"ko": "요미",
+"n": 130,
+"calls": {},
+"with": {
+"nerrage": 3
+},
+"stories": {
+"nerrage": [
+"queensheart",
+"silentprayer"
+]
+}
+},
+"youngchun": {
+"ko": "영춘",
+"n": 25,
+"calls": {},
+"with": {},
+"stories": {}
+},
+"yumimi": {
+"ko": "유미미",
+"n": 64,
+"calls": {},
+"with": {},
+"stories": {}
+}
+}

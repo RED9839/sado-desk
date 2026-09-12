@@ -76,6 +76,11 @@ function buildSystem(prof, opts = {}) {
   const mixTop = direct && Object.keys(direct).length ? Object.keys(direct).reduce((a, b) => direct[a] >= direct[b] ? a : b) : null;
   const mix = direct && mixTop ? (mixTop === p.style || !["polite", "formal", "casual"].includes(p.style) ? `실제 게임 대사에서 교주에게 쓰는 어미 비율: ${fmtMix(direct)}. 이 비율대로 섞어 말한다.` : `기본 말투는 위와 같지만 실제 대사에선 ${fmtMix(direct)} 정도로 섞인다 — 감탄·혼잣말은 편하게, 교주에게 직접 말할 땐 기본 말투로.`) : "";
   const catch_ = si && si.catch && si.catch.length ? si.catch.slice(0, 8).join(", ") : "";
+  // 관계(tools/build-relations.py: 스토리 대본에서 다른 사도를 부르는 말) · 테마극장(나무위키: 출연작·줄거리)
+  const rel = p.rel || null, koOf = p.koOf || ((k) => k);
+  const callsTxt = rel && rel.calls ? Object.entries(rel.calls).slice(0, 6).map(([o, fs]) => `${koOf(o)}→"${fs[0].form.replace(" (반말 호격)", "(이름+아/야)")}"`).join(", ") : "";
+  const withTxt = rel && rel.with ? Object.keys(rel.with).slice(0, 6).map(koOf).join(", ") : "";
+  const theaters = (p.theaters || []).slice(0, 3).map(t => `- ${t.title}${t.cast && t.cast.length ? ` (함께: ${t.cast.filter(c => c !== p.ko).slice(0, 4).join(", ")})` : ""}${t.synopsis ? `: ${t.synopsis.slice(0, 90)}` : ""}`).join("\n");
   return [
     `너는 모바일 게임 <트릭컬 리바이브>의 사도 "${p.ko}"${p.skin ? ` (지금 입은 옷: ${p.skin})` : ""}이다. 지금은 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있고, 사용자는 게임의 플레이어(교주)다.`,
     `사용자를 부를 때는 "${p.addr || "교주"}"라고 부른다.${p.me ? ` 자신을 가리킬 때는 "${p.me}"라고 한다.` : ""}`,
@@ -83,6 +88,9 @@ function buildSystem(prof, opts = {}) {
     mix,
     interj ? `자주 쓰는 감탄사: ${interj}` : "",
     catch_ ? `자주 입에 올리는 사람·물건·소재(다른 사도보다 유난히): ${catch_}` : "",
+    callsTxt ? `다른 사도를 부르는 말(원작 대사 기준): ${callsTxt}` : "",
+    withTxt ? `원작 스토리에서 자주 얽히는 사도: ${withTxt}` : "",
+    theaters ? `네가 주연으로 나온 테마극장(원작 이벤트 스토리):\n${theaters}` : "",
     lines ? `실제 대사 표본(말투 참고용, 그대로 반복하지 말 것):\n${lines}` : "",
     "규칙:",
     "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
@@ -270,12 +278,29 @@ function duoLabels(a, b) {
   if (la === lb) { la = `${a.ko} A`; lb = `${b.ko} B`; }
   return [la, lb];
 }
+// 두 사도의 관계: A가 B를 부르는 말(스토리 대본 실측), 함께 나온 에피소드 수, 둘이 같이 주연인 테마극장
+function relationBrief(a, b, la, lb) {
+  const ra = a.rel || {}, rb = b.rel || {}, ka = a.key, kb = b.key;
+  const out = [];
+  const fm = (f) => `"${f.form.replace(" (반말 호격)", "(이름+아/야, 반말)")}"`;
+  const callA = ka && kb && ra.calls && ra.calls[kb] ? ra.calls[kb].slice(0, 2).map(fm).join("/") : "";
+  const callB = ka && kb && rb.calls && rb.calls[ka] ? rb.calls[ka].slice(0, 2).map(fm).join("/") : "";
+  if (callA) out.push(`${la}은(는) ${lb}을(를) ${callA}이라고 부른다.`);
+  if (callB) out.push(`${lb}은(는) ${la}을(를) ${callB}이라고 부른다.`);
+  const n = ka && kb && ra.with ? ra.with[kb] : 0;
+  const shared = (a.theaters || []).filter(t => (t.castKeys || []).includes(kb)).slice(0, 2);
+  if (shared.length) out.push(`둘이 함께 주연으로 나온 이야기: ${shared.map(t => `'${t.title}'${t.synopsis ? "(" + t.synopsis.slice(0, 70) + "…)" : ""}`).join(", ")}`);
+  else if (n) out.push(`원작 스토리에서 같은 장면에 ${n}번 이상 함께 나왔다(서로 아는 사이).`);
+  if (!out.length) return a.ko === b.ko ? "" : "원작에서 둘이 직접 얽힌 기록은 없다 — 서로 이름은 알지만 첫 대화처럼.";
+  return "둘의 관계(원작 기준): " + out.join(" ");
+}
 function buildDuoSystem(a, b, opts = {}) {
   const [la, lb] = duoLabels(a, b); const same = a.ko === b.ko;
   return [
     `너는 모바일 게임 <트릭컬 리바이브>의 두 사도가 나누는 짧은 대화를 쓰는 작가다. 두 사도는 지금 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있다가 마주쳤다. 사용자(교주)는 근처에서 보고 있을 수도 있다.`,
     same ? `특이 상황: 둘은 같은 사도 ${a.ko}가 둘이다(교주가 둘 소환함${a.skin !== b.skin ? ", 입은 옷만 다름" : ""}). 서로를 보고 놀라거나, 누가 진짜인지 다투거나, 죽이 맞아 장난치는 식으로 — 같은 성격이 둘이라 생기는 재미를 살려라. 이름은 아래 표기 그대로 구분해 쓴다.` : "",
     personaBrief(a).replace(`■ ${a.ko}`, `■ ${la}`), personaBrief(b).replace(`■ ${b.ko}`, `■ ${lb}`),
+    relationBrief(a, b, la, lb),
     "규칙:",
     `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${la}가 먼저 시작한다.`,
     `- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 "${la}" / "${lb}" 그대로)`,
