@@ -12,7 +12,9 @@ const { safeStorage } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const EMOTIONS = { "행복": "happy", "기쁨": "happy", "미소": "smile", "분노": "anger", "화남": "anger", "슬픔": "sad", "놀람": "surprise", "냠냠": "eat", "삐짐": "sulky", "기본": "", "평온": "" };
+// 태그 표준 8종 + 작은 모델이 멋대로 쓰는 유사어(기대·평화·즐거움·당황·짜증…)도 받아 준다
+const EMOTIONS = { "행복": "happy", "기쁨": "happy", "즐거움": "happy", "기대": "happy", "설렘": "happy", "신남": "happy", "웃음": "happy", "미소": "smile", "만족": "smile", "자랑": "smile", "뿌듯": "smile", "평화": "smile", "여유": "smile",
+  "분노": "anger", "화남": "anger", "짜증": "anger", "불만": "anger", "슬픔": "sad", "우울": "sad", "서운": "sad", "걱정": "sad", "미안": "sad", "놀람": "surprise", "당황": "surprise", "경악": "surprise", "궁금": "surprise", "냠냠": "eat", "배고픔": "eat", "먹기": "eat", "삐짐": "sulky", "심심": "sulky", "지루": "sulky", "졸림": "sulky", "기본": "", "평온": "", "무표정": "", "차분": "" };
 const DEFAULTS = {
   provider: "auto",
   ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
@@ -206,11 +208,12 @@ async function status(ai) {
   s.resolved = resolve(cfg, s);
   return s;
 }
+// auto: 키가 있는 클라우드(품질·고유 어미 재현이 낫음) → 로컬 Ollama → OpenAI 호환. Ollama를 우선하려면 제공자를 명시
 function resolve(cfg, s) {
   if (cfg.provider !== "auto") return cfg.provider;
-  if (s.ollama.running && s.ollama.hasModel) return "ollama";
   if (s.gemini.key) return "gemini";
   if (s.anthropic.key) return "anthropic";
+  if (s.ollama.running && s.ollama.hasModel) return "ollama";
   if (s.openai.key) return "openai";
   return "";
 }
