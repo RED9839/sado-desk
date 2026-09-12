@@ -1,45 +1,54 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>menu</title>
 <style>
+  :root{--bg:#26262d;--bg2:#1f1f25;--line:#3a3a45;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a}
   html,body{margin:0;background:transparent;overflow:hidden;user-select:none}
-  #menu{width:250px;max-height:calc(100vh - 4px);overflow:auto;scrollbar-width:thin;background:#2b2b31;color:#eee;border:1px solid #55555f;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
-  #menu .title{padding:8px 12px;font-weight:700;background:#3a3a44;border-radius:8px 8px 0 0;cursor:move;-webkit-app-region:drag;user-select:none;position:sticky;top:0;z-index:2}
-  #menu .item{padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-  #menu .item:hover{background:#44444f}
-  #menu .item.danger{color:#ff8a8a}
-  #menu .sep{height:1px;background:#4a4a55;margin:4px 0}
-  #menu .sub{display:none;max-height:320px;overflow:auto;overflow-x:hidden;background:#24242a;border-top:1px solid #4a4a55;border-bottom:1px solid #4a4a55}
+  #menu{width:262px;max-height:calc(100vh - 4px);overflow:auto;scrollbar-width:thin;background:var(--bg);color:var(--text);border:1px solid #4a4a58;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.5);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
+  #menu::-webkit-scrollbar{width:8px}#menu::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:4px}
+  #menu .title{padding:10px 14px 9px;font-weight:700;font-size:13.5px;background:#30303a;border-radius:12px 12px 0 0;cursor:move;-webkit-app-region:drag;user-select:none;position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px}
+  #menu .title .tsub{font-weight:400;font-size:11px;color:var(--muted);margin-left:auto}
+  #menu .item{padding:7px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:6px;margin:1px 5px}
+  #menu .item:hover{background:#363642}
+  #menu .item > span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:var(--muted);font-size:12px}
+  #menu .item.danger{color:var(--danger)}
+  #menu .item.danger:hover{background:#4a2a2a}
+  #menu .item .key{font-size:10.5px;color:#7d7d8c;background:#1f1f25;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+  #menu .item .arrow{color:#7d7d8c;font-size:11px}
+  #menu .head{padding:8px 14px 3px;font-size:11px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  #menu .head > span{font-weight:400;color:#c9c9d4}
+  #menu .sep{height:1px;background:var(--line);margin:6px 0}
+  #menu .sub{display:none;max-height:320px;overflow:auto;overflow-x:hidden;scrollbar-width:thin;background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:2px 0 4px}
   #menu .sub.open{display:block}
-  #menu .sub .item{padding:5px 12px 5px 24px;font-size:12px}
-  #menu .sub .group{padding:4px 12px;font-size:11px;color:#9a9aa8;background:#1e1e23;position:sticky;top:0}
-  #menu input[type=text]{width:calc(100% - 24px);margin:6px 12px;padding:4px 8px;border-radius:4px;border:1px solid #55555f;background:#1a1a1f;color:#eee;font:12px "Malgun Gothic",sans-serif}
-  #menu .chips{display:flex;gap:4px;padding:4px 12px 8px}
-  #menu .chip{flex:1;text-align:center;padding:3px 0;border-radius:4px;background:#3a3a44;cursor:pointer;font-size:11px}
-  #menu .chip.on{background:#6c8cff;color:#fff}
-  #menu .chip:hover{filter:brightness(1.15)}
-  #menu .chip.off{opacity:.35;cursor:default}
-  #menu .item > span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
-  #menu .item{white-space:nowrap}
+  #menu .sub .item{padding:5px 12px 5px 26px;font-size:12px;margin:0 4px;border-radius:5px}
+  #menu .sub .group{padding:5px 12px 3px;font-size:10.5px;color:var(--muted);background:var(--bg2);position:sticky;top:0;font-weight:600}
+  #menu input[type=text]{width:calc(100% - 24px);margin:8px 12px 4px;padding:6px 9px;border-radius:7px;border:1px solid var(--line);background:#18181d;color:var(--text);font:12px "Malgun Gothic",sans-serif;outline:none}
+  #menu input[type=text]:focus{border-color:var(--accent)}
+  #menu .chips{display:flex;gap:5px;padding:2px 14px 8px}
   #menu .chips.wrap{flex-wrap:wrap}
   #menu .chips.wrap .chip{flex:1 0 22%}
-  #menu .row{display:flex;align-items:center;gap:8px;padding:3px 12px;font-size:12px}
+  #menu .chip{flex:1;text-align:center;padding:4px 0;border-radius:7px;background:#34343f;cursor:pointer;font-size:11.5px;border:1px solid transparent;white-space:nowrap}
+  #menu .chip.on{background:var(--accent);color:#fff;font-weight:600}
+  #menu .chip:hover:not(.off){filter:brightness(1.15)}
+  #menu .chip.off{opacity:.3;cursor:default}
+  #menu .row{display:flex;align-items:center;gap:10px;padding:3px 14px;font-size:12px}
   #menu .row label{width:44px;color:#c9c9d4}
-  #menu .row input[type=range]{flex:1;margin:0;accent-color:#6c8cff}
-  #menu .row .val{width:34px;text-align:right;color:#9a9aa8;font-variant-numeric:tabular-nums}
-  #menu .row.off{opacity:.45}
+  #menu .row input[type=range]{flex:1;margin:0;accent-color:var(--accent);height:18px}
+  #menu .row .val{width:34px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px}
+  #menu .row.off{opacity:.4}
 </style></head>
 <body>
 <div id="menu">
-  <div class="title" id="menu-title">사도 데스크</div>
-  <div class="item" data-toggle="anims">행동 시키기 <span>▸</span></div>
+  <div class="title"><span id="menu-title">사도 데스크</span><span class="tsub" id="menu-sub"></span></div>
+  <div class="item" data-toggle="anims">행동 시키기 <span class="arrow">▸</span></div>
   <div class="sub" id="sub-anims"></div>
-  <div class="item" id="mode-item" title="미니미 = 로비 스틱 SD · SD = 사도 상세 화면 스탠딩 · 인게임 = 전투/마이홈 모델">형태 <span id="mode-state"></span></div>
-  <div class="chips" id="mode-chips"></div>
   <div class="item" data-toggle="skins">캐릭터 바꾸기 <span id="skin-cur"></span></div>
   <div class="sub" id="sub-skins"><input type="text" id="skin-filter" placeholder="이름 검색 (한글/영문)"><div id="skin-list"></div></div>
-  <div class="item">크기</div>
+  <div class="sep"></div>
+  <div class="head" id="mode-item" title="미니미 = 로비 스틱 SD · SD = 사도 상세 화면 스탠딩 · 인게임 = 전투/마이홈 모델">형태 <span id="mode-state"></span></div>
+  <div class="chips" id="mode-chips"></div>
+  <div class="head">크기</div>
   <div class="chips" id="scale-chips"></div>
-  <div class="item" id="mood-item" title="게임 스토리 표정 8종. 고르면 이동·잔동작을 멈추고 그 표정으로 서 있어요 (SD 형태)">표정 <span id="mood-state"></span></div>
+  <div class="head" id="mood-item" title="게임 스토리 표정 8종. 고르면 이동·잔동작을 멈추고 그 표정으로 서 있어요 (SD 형태)">표정 <span id="mood-state"></span></div>
   <div class="chips wrap" id="mood-chips"></div>
   <div class="sep"></div>
   <div class="item" data-act="mute">사운드 <span id="mute-state"></span></div>
@@ -47,17 +56,18 @@
   <div class="row" data-vol="voice"><label>목소리</label><input type="range" min="0" max="100"><span class="val"></span></div>
   <div class="row" data-vol="sfx"><label>효과음</label><input type="range" min="0" max="100"><span class="val"></span></div>
   <div class="sep"></div>
+  <div class="item" data-act="chat">말 걸기 <span class="key">Ctrl+Shift+Space</span></div>
+  <div class="item" data-act="duo" id="duo-item" title="가장 가까운 다른 사도와 짧은 잡담 (AI)">옆 사도와 잡담 시키기</div>
   <div class="item" data-toggle="news">새 소식 <span id="news-state"></span></div>
   <div class="sub" id="sub-news"></div>
-  <div class="item" data-act="chat">말 걸기 <span style="color:#9a9aa8;font-size:11px">Ctrl+Shift+Space</span></div>
-  <div class="item" data-act="duo" id="duo-item" title="가장 가까운 다른 사도와 짧은 잡담 (AI)">옆 사도와 잡담 시키기</div>
-  <div class="item" data-act="settings">설정... <span>⚙</span></div>
+  <div class="sep"></div>
   <div class="item" data-act="add">하나 더 부르기 <span>＋</span></div>
   <div class="item" data-act="remove" id="remove-item">이 캐릭터 보내기</div>
   <div class="item" data-act="respawn">다시 등장</div>
+  <div class="item" data-act="settings">설정… <span>⚙</span></div>
   <div class="item" data-act="debug">디버그 박스 <span id="debug-state"></span></div>
   <div class="sep"></div>
-  <div class="item danger" data-act="quit">종료</div>
+  <div class="item danger" data-act="quit">사도 데스크 종료</div>
 </div>
 <script src="ko.js"></script>
 <script src="menu.js"></script>

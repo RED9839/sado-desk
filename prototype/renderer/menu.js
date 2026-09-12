@@ -32,7 +32,8 @@
     document.getElementById("sub-news").innerHTML = `<div class="item" data-act="news-check">지금 확인하기</div><div class="item" data-act="news-show">크레페한테 다시 듣기</div>` + (newsItems.length ? `<div class="group">최근 소식 (${newsItems.length})</div>` + newsItems.slice(0, 12).map(i => `<div class="item" data-news="${i.id}" title="${i.title}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${i.read ? "opacity:.6" : "font-weight:700"}">[${i.label}] ${i.title}</span><span style="color:#9a9aa8;flex:none;margin-left:6px">${fmtDate(i.date)}</span></div>`).join("") : `<div class="group">아직 새 소식 없음 (${r.status?.lastCheck ? "마지막 확인 " + new Date(r.status.lastCheck).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "확인 전"})</div>`) + (r.status?.lastError ? `<div class="group" style="color:#ff8a8a">${r.status.lastError}</div>` : "");
   }
   function render() {
-    document.getElementById("menu-title").textContent = `${KO.skinName(S.skin, { withSkin: false })} — 사도 데스크`;
+    document.getElementById("menu-title").textContent = KO.skinName(S.skin, { withSkin: false });
+    document.getElementById("menu-sub").textContent = (S.count || 1) > 1 ? `${S.count}명 소환 중` : "사도 데스크";
     const cur = catalog.skins.find(s => s.name === S.skin), sdA = cur?.sd || {};
     const MODES = [["minimi", "미니미", true], ["sd", "SD", !!(sdA.standing || sdA.ingame)], ["ingame", "인게임", !!sdA.ingame]];
     document.getElementById("mode-state").textContent = (MODES.find(([k]) => k === S.mode) || MODES[0])[1];

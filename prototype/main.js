@@ -46,7 +46,7 @@ const CHAR_DEFAULTS = {
 };
 const GLOBAL_DEFAULTS = {
   sound: {
-    muted: false, master: 0.8, voice: 0.5, sfx: 0.5,
+    muted: false, master: 0.6, voice: 0.4, sfx: 0.3, // 기본 볼륨 (v0.10.9: 0.8/0.5/0.5 → 0.6/0.4/0.3)
     clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
     motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
@@ -496,7 +496,7 @@ function initNews() {
 }
 
 // ---- 우클릭 메뉴 창 ----
-const MENU_W = 256;
+const MENU_W = 270;
 function openMenu(id, sx, sy) {
   menuFor = id;
   const d = screen.getDisplayNearestPoint({ x: sx, y: sy }).workArea;
