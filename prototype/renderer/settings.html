@@ -29,7 +29,12 @@
   button.btn:hover{filter:brightness(1.15)}
   button.btn.primary{background:var(--accent);color:#fff}
   button.btn.danger{background:#5a2e2e;color:var(--danger)}
-  select,input[type=text]{background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+  select,input[type=text],input[type=password]{background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit}
+  #tab-ai .row{flex-wrap:wrap}
+  #tab-ai .row > label:not(.toggle){flex:0 0 96px}
+  #tab-ai .row > select,#tab-ai .row > input[type=text],#tab-ai .row > input[type=password]{flex:1 1 200px;min-width:0;max-width:480px;width:auto!important}
+  #tab-ai .row > .hint{flex:1 1 100%;padding-left:106px}
+  #tab-ai .row > .btn + .hint,#tab-ai .row > label + .hint{flex:1 1 auto;padding-left:0}
   /* 캐릭터 그리드 */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:calc(100vh - 300px);overflow:auto;padding:2px}
   .tile{background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:6px 4px 4px;text-align:center;cursor:pointer;position:relative}
@@ -70,6 +75,7 @@
   <button data-tab="sound">사운드</button>
   <button data-tab="display">화면</button>
   <button data-tab="news">알림</button>
+  <button data-tab="ai">AI 대화</button>
   <button data-tab="about">정보</button>
 </nav>
 <div id="content">
@@ -175,6 +181,49 @@
       <div class="row"><button class="btn" id="news-check">지금 확인</button><button class="btn" id="news-test">최근 소식 말풍선 미리보기</button><button class="btn" id="news-read">모두 읽음</button><span class="hint" id="news-status"></span></div>
     </div>
     <div class="card"><h3>최근 소식</h3><div id="news-list" class="hint">-</div></div>
+  </section>
+
+  <section id="tab-ai">
+    <h2>AI 대화</h2>
+    <div class="card"><h3>사도가 자기 말투로 대답해요</h3>
+      <div class="hint">캐릭터 우클릭 → <b>말 걸기</b> 또는 <code>Ctrl+Shift+Space</code>. 나무위키 대사표로 만든 말투 프로필(호칭·어미·감탄사·대표 대사)을 AI에 넘겨 그 사도처럼 답하고, 답의 감정에 맞춰 표정·소리를 냅니다. 대화 내용은 이 PC와 선택한 AI 제공자에만 전송됩니다.</div>
+      <div class="row" style="margin-top:8px"><label>제공자</label>
+        <select data-s="ai.provider">
+          <option value="auto">자동 (Ollama → Gemini → Anthropic → OpenAI 호환 순으로 쓸 수 있는 것)</option>
+          <option value="ollama">Ollama — 내 PC에서 실행 (무료 · 오프라인)</option>
+          <option value="gemini">Google Gemini — 무료 등급 키</option>
+          <option value="anthropic">Anthropic Claude — API 키 (유료 · 말투 재현 최상)</option>
+          <option value="openai">OpenAI 호환 (Groq · OpenRouter · LM Studio …)</option>
+        </select><span class="hint" id="ai-resolved"></span></div>
+      <div class="row"><button class="btn" id="ai-test">지금 설정으로 한 마디 시켜보기</button><span class="hint" id="ai-test-out"></span></div>
+    </div>
+    <div class="card"><h3>Ollama (무료 · 로컬)</h3>
+      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이 씁니다. 추천 <code>exaone3.5:7.8b</code>(LG, 한국어 강함, 약 4.8GB · RAM 8GB 이상) — 가벼운 PC는 <code>exaone3.5:2.4b</code>(1.6GB). 응답 품질은 Claude보다 단순하지만 잡담에는 충분합니다.</div>
+      <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
+      <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
+      <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
+    </div>
+    <div class="card"><h3>Google Gemini (무료 등급)</h3>
+      <div class="hint"><a href="#" data-ai-url="gemini">Google AI Studio</a>에서 무료 API 키를 만들 수 있어요 (Flash 계열 무료 등급: 분당 10~15회, 하루 250~1000회 정도). 키는 이 PC에 암호화 저장됩니다.</div>
+      <div class="row" style="margin-top:6px"><label>API 키</label><input type="password" id="ai-key-gemini" placeholder="AIza…" style="width:260px"><button class="btn" data-savekey="gemini">저장</button><span class="hint" id="ai-key-gemini-state"></span></div>
+      <div class="row"><label>모델</label><input type="text" data-s="ai.gemini.model" style="width:220px"><span class="hint">gemini-2.5-flash · gemini-2.5-flash-lite …</span></div>
+    </div>
+    <div class="card"><h3>Anthropic Claude (유료)</h3>
+      <div class="hint"><a href="#" data-ai-url="anthropic">Anthropic Console</a>에서 키 발급. 말투·유머·상황 파악이 가장 좋습니다. 대화 한 번에 약 ₩10~15(Opus 5), ₩4~6(Sonnet 5), ₩2~3(Haiku 4.5) — 페르소나는 프롬프트 캐시로 절약.</div>
+      <div class="row" style="margin-top:6px"><label>API 키</label><input type="password" id="ai-key-anthropic" placeholder="sk-ant-…" style="width:260px"><button class="btn" data-savekey="anthropic">저장</button><span class="hint" id="ai-key-anthropic-state"></span></div>
+      <div class="row"><label>모델</label><select data-s="ai.anthropic.model"><option value="claude-opus-5">Claude Opus 5</option><option value="claude-sonnet-5">Claude Sonnet 5</option><option value="claude-haiku-4-5">Claude Haiku 4.5</option></select></div>
+    </div>
+    <div class="card"><h3>OpenAI 호환 엔드포인트</h3>
+      <div class="hint">Groq(<a href="#" data-ai-url="groq">무료 키</a>), OpenRouter, LM Studio(로컬, 키 없이) 등 <code>/v1/chat/completions</code>를 제공하는 서비스.</div>
+      <div class="row" style="margin-top:6px"><label>Base URL</label><input type="text" data-s="ai.openai.base" style="width:300px"></div>
+      <div class="row"><label>API 키</label><input type="password" id="ai-key-openai" style="width:260px"><button class="btn" data-savekey="openai">저장</button><span class="hint" id="ai-key-openai-state"></span></div>
+      <div class="row"><label>모델</label><input type="text" data-s="ai.openai.model" style="width:260px"></div>
+    </div>
+    <div class="card"><h3>행동</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.proactive">가끔 사도가 먼저 말을 걸어요<span class="hint">한동안 대화가 없으면 인사·혼잣말·가벼운 질문을 던집니다</span></label></div>
+      <div class="row"><label>먼저 말 걸기 간격</label><input type="range" min="10" max="180" step="5" data-s="ai.proactiveMin"><span class="val" data-fmt="min"></span></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">캐릭터별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
+    </div>
   </section>
 
   <section id="tab-about">

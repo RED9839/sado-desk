@@ -1,7 +1,8 @@
 // 사도 데스크 — Electron 메인 프로세스
 // 캐릭터(인스턴스)마다 [마스코트 창(모니터 합집합, 항상 클릭 통과) + 히트 창(캐릭터 크기, 실제 입력 수신)] 한 쌍.
 // 설정: settings.json 하나. global(사운드·화면) + characters[](스킨·형태·크기·불투명도·행동). 렌더러엔 자기 캐릭터와 global을 합친 "뷰"를 준다.
-const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell } = require("electron");
+const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell, globalShortcut } = require("electron");
+const Ai = require("./ai.js");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -50,7 +51,8 @@ const GLOBAL_DEFAULTS = {
     motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
   display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false },
-  assets: { root: "" }, // 비어 있으면 userData/assets
+  assets: { root: "" },
+  ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 새 소식 알림: 공식 유튜브 + 라운지 게시판(공지사항·업데이트·개발자 노트 기본). 크레페 말투 말풍선
   news: { enabled: true, youtube: true, notice: true, update: true, devnote: true, event: false, pv: false, coupon: false, intervalMin: 10, ttlSec: 40, sound: true, toast: false, talkCrepe: false },
 };
@@ -84,7 +86,7 @@ const charOf = (id) => settings.characters.find(c => c.id === id);
 // 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
 const viewsAll = () => settings.characters.map(c => viewFor(c.id));
 const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, count: settings.characters.length, unread: news ? news.unread : 0 }; };
-const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets"]);
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai"]);
 // patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각
 function updateSettings(patch, id, sourceId) {
   const prevDisp = JSON.stringify(settings.global.display);
@@ -187,7 +189,7 @@ function placeHit(id) {
 }
 // 커서 위치(창 기준)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
 function cursorOverOurWindow(sx, sy) {
-  for (const w of [settingsWin, setupWin, menuWin, bubbleWin]) {
+  for (const w of [settingsWin, setupWin, menuWin, bubbleWin, chatWin]) {
     if (!w || w.isDestroyed() || !w.isVisible()) continue;
     const b = w.getBounds(); if (sx >= b.x && sx < b.x + b.width && sy >= b.y && sy < b.y + b.height) return true;
   }
@@ -267,7 +269,7 @@ function openSettings(tab, forId) {
   settingsWin.webContents.on("console-message", (ev) => console.log(`[settings:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
   settingsWin.once("ready-to-show", () => { settingsWin.show(); tell(); });
   if (argHas("--shot-settings")) {
-    const tabs = ["character", "behavior", "sound", "display", "news", "about"]; let i = 0;
+    const tabs = ["character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
     const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
     setTimeout(shoot, 5000);
   }
@@ -326,6 +328,108 @@ function showBubble(id, payload) {
   } else { bubbleAnchor = null; bubbleWin.webContents.send("show", payload); bubblePlace(id); if (!bubbleWin.isVisible()) bubbleWin.showInactive(); }
 }
 function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.close(); }
+
+// ---- AI 대화 창 (ai.js) ----
+let chatWin = null, chatFor = null, chatBounds = null, chatAnchor = null, chatBusy = false, chatAbort = null, lastChatAt = 0;
+const CHAT_W = 332;
+function chatPlace(id) {
+  if (!chatWin || chatWin.isDestroyed() || !geo) return;
+  const inst = instances.get(id); const r = inst && inst.rect;
+  if (!chatAnchor || chatAnchor.id !== id) { if (!r) return; chatAnchor = { id, cx: Math.round(geo.x + r.x + r.w / 2), top: Math.round(geo.y + r.y) }; }
+  const h = chatBounds ? chatBounds.height : 220;
+  const sx = chatAnchor.cx - Math.round(CHAT_W / 2), sy = chatAnchor.top - h + 6;
+  const d = screen.getDisplayNearestPoint({ x: sx + CHAT_W / 2, y: sy + h / 2 }).workArea;
+  const b = { x: Math.min(Math.max(sx, d.x), d.x + d.width - CHAT_W), y: Math.max(d.y, sy), width: CHAT_W, height: h };
+  if (!chatBounds || b.x !== chatBounds.x || b.y !== chatBounds.y || b.height !== chatBounds.height) { chatWin.setBounds(b); chatBounds = b; }
+}
+function chatProfile(id) {
+  const ch = charOf(id); if (!ch) return null;
+  const p = talkData ? Talk.profileFor(talkData, ch.skin) : null;
+  return p || { ko: koSkin(ch.skin), style: "polite", addr: "교주", lines: [] };
+}
+async function chatInitPayload(id) {
+  const st = await Ai.status(settings.global.ai);
+  const prof = chatProfile(id);
+  const prov = st.resolved ? `${st.resolved}${st.resolved === "ollama" ? " · " + Ai.merge(settings.global.ai).ollama.model : ""}` : "";
+  return { who: prof ? prof.ko : "사도", prov, ready: !!st.resolved, history: settings.global.ai.memory !== false ? Ai.loadHistory(app.getPath("userData"), id) : [] };
+}
+function openChat(id, opt = {}) {
+  id = id || settings.characters[0].id; chatFor = id; chatBounds = null; chatAnchor = null;
+  const send = async () => { if (chatWin && !chatWin.isDestroyed()) { chatWin.webContents.send("chat:init", await chatInitPayload(id)); chatPlace(id); if (opt.quiet) chatWin.showInactive(); else { chatWin.show(); chatWin.focus(); } } };
+  if (chatWin && !chatWin.isDestroyed()) { send(); return; }
+  chatWin = new BrowserWindow({
+    x: 0, y: 0, width: CHAT_W, height: 220, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+    resizable: false, movable: true, hasShadow: false, backgroundColor: "#00000000",
+    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false },
+  });
+  chatWin.setAlwaysOnTop(true, "screen-saver");
+  chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
+  chatWin.webContents.on("console-message", (ev) => console.log(`[chat:${ev.level}] ${ev.message}`));
+  chatWin.on("closed", () => { chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) { chatAbort.abort(); chatAbort = null; } chatBusy = false; });
+  chatWin.webContents.once("did-finish-load", send);
+}
+function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
+const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
+// 한 턴 실행: history + user → 답변 스트리밍 → 기록 저장 → 표정/보이스
+async function chatTurn(id, userText, opts = {}) {
+  if (chatBusy) return; chatBusy = true; lastChatAt = Date.now();
+  const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
+  const hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
+  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })), ...(userText ? [{ role: "user", text: userText }] : [])];
+  chatAbort = new AbortController();
+  sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
+  try {
+    const now = new Date();
+    const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
+    const r = await Ai.chat(ai, prof, msgs.length ? msgs : [{ role: "user", text: "(사용자가 조용히 있다)" }], (d) => chatSend("chat:token", { delta: d }), { extra, signal: chatAbort.signal });
+    const saved = [...hist, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
+    if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
+    if (opts.say) chatSend("chat:say", { text: r.text }); else chatSend("chat:done", { text: r.text, emotion: r.emotion });
+    sendMascot(id, "emote", { mood: r.emotion, hold: 12000 });
+    console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
+    return r;
+  } catch (e) {
+    const msg = e.name === "AbortError" ? "" : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
+    if (msg) chatSend("chat:done", { error: msg }); console.log("chat error:", e.message);
+    return null;
+  } finally { chatBusy = false; chatAbort = null; lastChatAt = Date.now(); }
+}
+ipcMain.on("chat:send", (_e, text) => { if (chatFor && typeof text === "string" && text.trim()) chatTurn(chatFor, text.trim().slice(0, 2000)); });
+ipcMain.on("chat:close", () => closeChat());
+ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
+ipcMain.on("chat:resize", (_e, h) => { if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(Math.round(h), d.height) }; chatPlace(chatFor); } });
+ipcMain.on("chat:open", (e, id) => openChat(id || instanceOf(e.sender) || settings.characters[0].id));
+// 설정창용
+ipcMain.handle("ai:status", () => Ai.status(settings.global.ai));
+ipcMain.handle("ai:set-key", (_e, provider, key) => { if (!["gemini", "anthropic", "openai"].includes(provider)) return false; updateSettings({ ai: { keys: { [provider]: Ai.encKey(String(key || "").trim()) } } }); return true; });
+ipcMain.handle("ai:test", async (_e, provider) => {
+  const prof = chatProfile(settings.characters[0].id); let out = "";
+  try { const r = await Ai.chat(settings.global.ai, prof, [{ role: "user", text: "안녕! 한 마디만 해 줘." }], (d) => { out += d; }, { provider: provider || undefined }); return { ok: true, text: r.text, emotion: r.raw, provider: r.provider, model: r.model }; }
+  catch (e) { return { ok: false, error: e.message === "no-provider" ? "쓸 수 있는 제공자가 없어요" : String(e.message || e).slice(0, 300) }; }
+});
+let pullProc = null;
+ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pull <model> (CLI가 PATH에 있어야 함)
+  if (pullProc) return resolve({ ok: false, error: "이미 내려받는 중" });
+  const { spawn } = require("node:child_process"); let last = "";
+  try { pullProc = spawn("ollama", ["pull", model], { windowsHide: true }); } catch (err) { return resolve({ ok: false, error: err.message }); }
+  const relay = (d) => { const t = d.toString("utf8").replace(/\r/g, "\n").split("\n").map(s => s.trim()).filter(Boolean); if (t.length) { last = t[t.length - 1]; if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("ai:pull-progress", last); } };
+  pullProc.stdout.on("data", relay); pullProc.stderr.on("data", relay);
+  pullProc.on("error", (err) => { pullProc = null; resolve({ ok: false, error: err.code === "ENOENT" ? "ollama 명령을 찾지 못했어요 — Ollama를 설치하고 다시 시도해 주세요" : err.message }); });
+  pullProc.on("exit", (code) => { pullProc = null; resolve({ ok: code === 0, error: code === 0 ? "" : last }); });
+}));
+ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.com/download", gemini: "https://aistudio.google.com/apikey", anthropic: "https://console.anthropic.com/settings/keys", groq: "https://console.groq.com/keys" }[which]; if (u) shell.openExternal(u); });
+// 먼저 말 걸기: 대화가 없던 시간이 proactiveMin을 넘으면 가끔 (분마다 확인, 확률로 흩뿌림)
+setInterval(async () => {
+  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || !mascotStarted) return;
+  const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
+  if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
+  const st = await Ai.status(ai); if (!st.resolved) return;
+  const id = settings.characters[0].id;
+  lastChatAt = Date.now();
+  openChat(id, { quiet: true });
+  setTimeout(() => chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." }), 900);
+}, 60000);
+app._startedAt = Date.now();
 function initNews() {
   news = createNewsWatcher({ stateFile: NEWS_STATE, getConfig: () => settings.global.news, onNew: announce, log: (...a) => console.log(...a) });
   news.start();
@@ -510,6 +614,10 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
+if (argHas("--chat-test")) setTimeout(async () => {
+  const id = settings.characters[0].id; openChat(id);
+  setTimeout(async () => { const st = await Ai.status(settings.global.ai); console.log("CHATTEST status", JSON.stringify(st)); await chatWin.webContents.executeJavaScript(`document.getElementById("in").value = "안녕 에르핀! 오늘 뭐 했어?"; document.getElementById("send").click();`); await new Promise(r => setTimeout(r, 2500)); const r = Ai.loadHistory(app.getPath("userData"), id); console.log("CHATTEST history", JSON.stringify(r)); console.log("CHATTEST ui", await chatWin.webContents.executeJavaScript(`JSON.stringify({sendDisabled: document.getElementById("send").disabled, inDisabled: document.getElementById("in").disabled, bg: getComputedStyle(document.getElementById("send")).backgroundColor})`)); setTimeout(async () => { if (chatWin) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat.png"), img.toPNG()); console.log("CHAT shot", img.getSize(), JSON.stringify(chatWin.getBounds())); } }, 1200); }, 2500);
+}, 5000);
 if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize());
   const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); } } }, 1500); }, 5000);
 if (argHas("--multi-test")) setTimeout(() => {
@@ -547,6 +655,7 @@ function buildTray() {
     { label: news && news.unread ? `새 소식 ${news.unread}개 보기` : "새 소식 (없음)", enabled: !!(news && news.items.length), click: () => { ipcMain.emit("news:show"); } },
     { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
     { type: "separator" },
+    { label: "말 걸기 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
     { label: "설정...", click: () => openSettings() },
     { label: hasAssets(ASSET_ROOT) ? "에셋 다시 가져오기..." : "에셋 가져오기...", click: () => openSetup() },
     { label: "사운드 음소거", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
@@ -569,6 +678,7 @@ function startMascot() {
   createMascotWindow(); createHitWindow();
   for (const c of settings.characters) createInstance(c.id);
   initNews();
+  try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(settings.characters[0].id); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
 }
 app.whenReady().then(() => {
   geo = geometry();

@@ -66,6 +66,7 @@
       case "mute": set({ sound: { muted: !S.sound.muted } }); break;
       case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;
+      case "chat": host.chatOpen(); host.menuClose(); break;
       case "add": host.addCharacter(); host.menuClose(); break;
       case "news-check": { t.textContent = "확인 중…"; host.newsCheck().then(r => { t.textContent = r.added.length ? `새 소식 ${r.added.length}개!` : (r.errors && r.errors.length ? "확인 실패: " + r.errors[0] : "새 소식 없음"); loadNews().then(resize); }); break; }
       case "news-show": host.newsShow(); host.menuClose(); break;

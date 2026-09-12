@@ -4,9 +4,9 @@
   // FULL = {version, global:{sound,display}, characters:[...]} (메인 원본). S = 선택한 캐릭터 뷰 {skin,mode,scale,opacity,behavior,sound,display}
   let FULL = await host.getSettings();
   let cur = FULL.characters[0].id;
-  const GLOBAL_KEYS = new Set(["sound", "display", "news"]);
+  const GLOBAL_KEYS = new Set(["sound", "display", "news", "ai"]);
   const charOf = (id) => FULL.characters.find(c => c.id === id);
-  const view = () => { const c = charOf(cur) || FULL.characters[0]; cur = c.id; return { ...c, sound: FULL.global.sound, display: FULL.global.display, news: FULL.global.news || {} }; };
+  const view = () => { const c = charOf(cur) || FULL.characters[0]; cur = c.id; return { ...c, sound: FULL.global.sound, display: FULL.global.display, news: FULL.global.news || {}, ai: FULL.global.ai || {} }; };
   let S = view();
   let catalog = await host.getCatalog();
   let voiceIndex = {};
@@ -50,6 +50,8 @@
         el.addEventListener("input", () => { const v = el.value / mul; setLocal(p, v); if (val) val.textContent = fmt(el.value, val.dataset.fmt); });
         el.addEventListener("change", () => set(p, el.value / mul));
       }
+      else if (el.tagName === "SELECT") el.addEventListener("change", () => set(p, el.value));
+      else if (el.type === "text") el.addEventListener("change", () => set(p, el.value.trim()));
     }
   }
   function renderControls() {
@@ -58,7 +60,9 @@
       if (el.type === "checkbox") el.checked = !!v;
       else if (el.type === "radio") el.checked = (v === el.value);
       else if (el.type === "range") { el.value = v * mul; const val = el.parentElement.querySelector(".val"); if (val) val.textContent = fmt(v * mul, val.dataset.fmt); }
+      else if (el.tagName === "SELECT" || el.type === "text") { if (document.activeElement !== el) el.value = v ?? ""; }
     }
+    if (document.getElementById("tab-ai")) refreshAi();
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
@@ -159,6 +163,22 @@
     document.getElementById("news-list").innerHTML = r.items.length ? r.items.slice(0, 20).map(i => `<div style="padding:3px 0;${i.read ? "" : "font-weight:700;color:var(--text)"}"><a href="#" data-url="${i.url}" data-id="${i.id}" style="color:inherit;text-decoration:none">[${i.label}] ${i.title}</a> <span style="color:var(--muted);font-size:11px">${i.date ? new Date(i.date).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span></div>`).join("") : "아직 새 소식이 없어요. 처음 켠 시점 이후 올라오는 글부터 알립니다.";
   }
   document.getElementById("news-list").addEventListener("click", (e) => { const a = e.target.closest("[data-url]"); if (!a) return; e.preventDefault(); host.openUrl(a.dataset.url, a.dataset.id); setTimeout(renderNews, 300); });
+  // ---- AI 대화 탭 ----
+  let aiTimer = null;
+  async function refreshAi() {
+    clearTimeout(aiTimer); aiTimer = setTimeout(async () => {
+      const st = await host.aiStatus(); if (!st) return;
+      const names = { ollama: "Ollama", gemini: "Gemini", anthropic: "Claude", openai: "OpenAI 호환" };
+      document.getElementById("ai-resolved").textContent = st.resolved ? `→ 지금 쓰는 것: ${names[st.resolved]}` : "→ 쓸 수 있는 제공자가 없어요 (아래에서 하나를 준비해 주세요)";
+      const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "실행 중 아님 — Ollama를 설치·실행해 주세요 (설치하면 자동으로 켜져 있음)" : o.hasModel ? `실행 중 · 모델 있음 (${o.models.length}개 설치됨)` : `실행 중 · 모델 없음 → '내려받기' (설치된 것: ${o.models.join(", ") || "-"})`;
+      for (const k of ["gemini", "anthropic", "openai"]) document.getElementById(`ai-key-${k}-state`).textContent = st[k].key ? "저장됨 ✓" : "없음";
+    }, 50);
+  }
+  for (const b of document.querySelectorAll("[data-savekey]")) b.addEventListener("click", async () => { const k = b.dataset.savekey, inp = document.getElementById(`ai-key-${k}`); await host.aiSetKey(k, inp.value); inp.value = ""; refreshAi(); });
+  for (const a of document.querySelectorAll("[data-ai-url]")) a.addEventListener("click", (e) => { e.preventDefault(); host.aiOpenUrl(a.dataset.aiUrl); });
+  document.getElementById("ai-test").addEventListener("click", async (e) => { const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "생각 중…"; const r = await host.aiTest(); e.target.disabled = false; out.textContent = r.ok ? `[${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `실패: ${r.error}`; });
+  document.getElementById("ai-pull").addEventListener("click", async (e) => { const model = getPath(FULL.global, "ai.ollama.model"); const out = document.getElementById("ai-pull-out"); e.target.disabled = true; out.textContent = `${model} 내려받는 중…`; const r = await host.aiPull(model); e.target.disabled = false; out.textContent = r.ok ? "완료 ✓" : `실패: ${r.error}`; refreshAi(); });
+  host.on("ai:pull-progress", (t) => { document.getElementById("ai-pull-out").textContent = t; });
   document.getElementById("news-check").addEventListener("click", async (e) => { e.target.textContent = "확인 중…"; const r = await host.newsCheck(); e.target.textContent = "지금 확인"; document.getElementById("news-status").textContent = r.added.length ? `새 소식 ${r.added.length}개!` : (r.errors?.length ? "확인 실패: " + r.errors.join(" / ") : "새 소식 없음"); setTimeout(renderNews, 500); });
   document.getElementById("news-test").addEventListener("click", () => { host.newsTest(); setTimeout(renderNews, 500); });
   document.getElementById("news-read").addEventListener("click", () => { host.newsReadAll(); setTimeout(renderNews, 300); });
