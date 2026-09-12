@@ -172,7 +172,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "meet") mas.meet(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -415,6 +415,19 @@
     // 새 소식 알림: 말풍선은 메인이 띄우고, 여기선 "말하는" 모션 + 인사/잡담 대사. 잡고 있거나 공중이면 건드리지 않음
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
     const holding = () => performance.now() < holdUntil;
+    // 다른 사도 쪽으로 다가가서(창 기준 x) 그쪽을 본다 — 둘이 잡담할 때. 도착하면 holdUntil 동안 제자리
+    function meet(arg) {
+      if (!arg || typeof arg.x !== "number") return;
+      if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
+      holdUntil = performance.now() + (arg.hold || 30000);
+      const gap = Math.max(60, (m.w || 120) * 0.7);
+      const target = clampX(arg.x < m.x ? arg.x + gap : arg.x - gap); // 상대 옆에 서기
+      if (Math.abs(target - m.x) < 12) { facing = arg.x < m.x ? -1 : 1; applyFacing(); return; }
+      if (isSD()) useSlot(slotForMove());
+      m.state = "hop"; m.hopT = 0; m.targetX = target; facing = m.targetX < m.x ? -1 : 1; applyFacing();
+      play(active.A.move && has(active.A.move) ? active.A.move : active.A.hold, true);
+      m.faceAfter = arg.x < m.x ? -1 : 1; // 도착하면 상대를 본다 (restThenDecide 뒤)
+    }
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
     function emote(arg) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = performance.now() + arg.hold;
@@ -600,7 +613,7 @@
             const hh = gentle ? 7 : active.A.hopHeight;
             m.y = floorY + Math.abs(Math.sin(ph * Math.PI)) * hh * scale() * 2; m.rot = Math.sin(ph * Math.PI * 2) * (gentle ? 2 : 4) * -dir;
           }
-          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; restThenDecide(); }
+          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; restThenDecide(); if (m.faceAfter) { facing = m.faceAfter; m.faceAfter = 0; applyFacing(); } }
           break;
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
@@ -879,7 +892,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();

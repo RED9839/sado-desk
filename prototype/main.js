@@ -398,6 +398,44 @@ async function chatTurn(id, userText, opts = {}) {
     return null;
   } finally { chatBusy = false; chatAbort = null; lastChatAt = Date.now(); }
 }
+// ---- 사도 둘이 잡담 (ai.duo): 서로 다가가 마주 보고, 대본을 말풍선으로 번갈아 ----
+let duoBusy = false;
+async function duoTalk(idA, idB, opts = {}) {
+  if (duoBusy || chatBusy) return null; duoBusy = true; lastChatAt = Date.now();
+  try {
+    const A = instances.get(idA), B = instances.get(idB); if (!A || !B || !A.rect || !B.rect) return null;
+    const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
+    const profA = chatProfile(idA), profB = chatProfile(idB);
+    if (!profA || !profB || profA.ko === profB.ko) return null; // 같은 사도 둘은 건너뜀
+    sendMascot(idA, "meet", { x: bx, hold: 40000 }); sendMascot(idB, "meet", { x: ax, hold: 40000 });
+    const now = new Date();
+    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic });
+    console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
+    if (!r.lines.length) return r;
+    await new Promise(res => setTimeout(res, 1500)); // 다가가는 시간
+    for (const ln of r.lines) {
+      const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
+      const ttl = 2600 + Math.min(60, ln.text.length) * 70;
+      showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who: prof.ko }, ttl });
+      sendMascot(id, "emote", { mood: ln.emotion, hold: ttl + 3000 });
+      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); } catch {} }, 700);
+      await new Promise(res => setTimeout(res, ttl + 400));
+    }
+    closeBubble();
+    return r;
+  } catch (e) { console.log("duo error:", e.message); return null; }
+  finally { duoBusy = false; lastChatAt = Date.now(); }
+}
+function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사도 둘
+  const ids = [...instances.keys()].filter(id => instances.get(id).rect && charOf(id)); let best = null;
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+    const heroOf = (sk) => sk.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase();
+    const a = charOf(ids[i]), b = charOf(ids[j]); if (heroOf(a.skin) === heroOf(b.skin)) continue; // 같은 사도(스킨만 다른) 둘은 제외
+    const d = Math.abs(instances.get(ids[i]).rect.x - instances.get(ids[j]).rect.x); if (!best || d < best.d) best = { a: ids[i], b: ids[j], d };
+  }
+  return best;
+}
+ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o); });
 ipcMain.on("chat:send", (_e, text) => { if (chatFor && typeof text === "string" && text.trim()) chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:close", () => closeChat());
 ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
@@ -428,6 +466,7 @@ setInterval(async () => {
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   const st = await Ai.status(ai); if (!st.resolved) return;
+  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b); return; } } // 둘 이상이면 절반은 둘이 잡담
   const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
   lastChatAt = Date.now();
   openChat(id, { quiet: true });
@@ -618,6 +657,7 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
+if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
 if (argHas("--chat-test")) setTimeout(async () => {
   const id = settings.characters[0].id; openChat(id);
