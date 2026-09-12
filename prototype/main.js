@@ -694,6 +694,17 @@ if (argHas("--hit-test")) setTimeout(() => {
   setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
 }, 6000);
 
+if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말투 확인: 스킨마다 같은 질문 → 답 로그
+  const skins = (argVal("--persona-test", "") || "Mini_Crepe").split(","); const q = argVal("--persona-q", "") || "안녕! 오늘 뭐 하고 있었어?";
+  for (const skin of skins) {
+    const p = talkData ? Talk.profileFor(talkData, skin) : null; if (!p) { console.log("PERSONA", skin, "프로필 없음"); continue; }
+    const hero = skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase(); if (talkStyle && talkStyle[hero]) p.styleInfo = talkStyle[hero];
+    try { const r = await Ai.chat(settings.global.ai, p, [{ role: "user", text: q }], () => {}, {}); console.log(`PERSONA ${skin} [${p.style}/${p.addr}] → ${r.text.replace(/\n/g, " ")} {${r.raw}}`); }
+    catch (e) { console.log(`PERSONA ${skin} ERROR ${e.message}`); }
+    await new Promise(r => setTimeout(r, +argVal("--persona-gap", "7000") || 7000));
+  }
+  console.log("PERSONA done");
+}, 5000);
 if (argHas("--screen-test")) setTimeout(async () => { const id = settings.characters[0].id; try { const img = await captureScreenFor(id); fs.writeFileSync(path.join(__dirname, "out", "screen-cap.jpg"), Buffer.from(img.data, "base64")); console.log("SCREENTEST captured", img.data.length, "b64 chars display", img.display); } catch (e) { console.log("SCREENTEST capture error", e.message); } await screenTalk(id, argVal("--screen-msg", "") || ""); setTimeout(() => console.log("SCREENTEST history", JSON.stringify(Ai.loadHistory(app.getPath("userData"), id).slice(-2))), 1500); }, 7000);
 if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined, screen: argHas("--duo-screen") }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
