@@ -322,7 +322,7 @@
     // 모션에 맞는 대사. force=true(메뉴/클릭에서 직접 시킨 경우)면 확률·쿨다운 무시
     // 감정 소리(joy/pleasure/anger/sorrow/surprise/sorry = 0.6~2초 웃음·으아악)는 짧은 리액션이라 대사(line/greeting/spawn, 2~5초 문장)보다 훨씬 자주 내도 안 시끄럽다.
     // 웃는 포즈(Happy/Smile/Laugh)에 웃음소리가 거의 안 나던 원인 = 대사와 같은 30%/15초 게이트를 쓴 것
-    const EMOTE_CATS = new Set(["joy", "pleasure", "anger", "sorrow", "surprise", "sorry", "eat"]);
+    const EMOTE_CATS = new Set(["joy", "pleasure", "anger", "sorrow", "surprise", "sorry", "eat", "shout", "hit", "basicattack", "powerattack"]); // 전투 외침·피격·공격 소리도 짧은 리액션
     let lastEmoteAt = -1e9;
     function motionVoice(anim, force = false) {
       if (!S.sound.motionVoice && !force) return null;
@@ -741,7 +741,12 @@
         // 이동 강제
         const B0 = S.behavior.hopChance; S.behavior.hopChance = 100; m.state = "idle"; m.timer = 0; await sleep(700); say(`${skin} move: state=${m.state} slot=${active === mini ? "minimi" : active.family} anim=${m.anim} (expect hop + Move on ingame)`); S.behavior.hopChance = B0; await sleep(2500);
       }
-      patchSettings({ mode: "sd", skin: "Mini_Erpin" }); await sleep(2000); say(`back to sd: src=${sd.src} anim=${m.anim} (expect standing/game)`);
+      // 전투 대사: 인게임 형태에서 클릭 → Victory/Attack 리액션 + victory/basicattack 보이스
+      patchSettings({ mode: "ingame", skin: "Mini_Erpin", sound: { muted: false, master: 0.5, voice: 0.01 } }); await sleep(2500);
+      { const cats = Object.keys(voiceSet.cats).filter(c => voiceSet.cats[c].length); say(`erpin voice cats: ${cats.join(" ")} (expect victory/basicattack/spskill/ultimate/hit/die 포함)`); }
+      for (const a of ["Victory", "Attack1_1", "Skill1_1", "Ultimate1_1", "Groggy", "Die", "Spawn"]) { const f = motionVoice(a, true); say(`ingame motion ${a} → ${f}`); await sleep(150); }
+      { const cx0 = m.x, cy0 = H - m.y - m.h / 2; fire("mousemove", cx0, cy0); fire("mousedown", cx0, cy0); await sleep(30); fire("mouseup", cx0, cy0); await sleep(80); say(`ingame click → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Victory/Attack + victory/basicattack voice)`); }
+      patchSettings({ mode: "sd", skin: "Mini_Erpin", sound: { muted: true } }); await sleep(2000); say(`back to sd: src=${sd.src} anim=${m.anim} (expect standing/game)`);
       say("done");
     }
     async function moodTest() {
