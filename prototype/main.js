@@ -428,7 +428,7 @@ setInterval(async () => {
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   const st = await Ai.status(ai); if (!st.resolved) return;
-  const id = settings.characters[0].id;
+  const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
   lastChatAt = Date.now();
   openChat(id, { quiet: true });
   setTimeout(() => chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." }), 900);
@@ -683,7 +683,9 @@ function startMascot() {
   createMascotWindow(); createHitWindow();
   for (const c of settings.characters) createInstance(c.id);
   initNews();
-  try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(settings.characters[0].id); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
+  // 단축키: 커서에 가장 가까운 캐릭터에게 말 걸기 (여러 명일 때). 이미 열려 있고 포커스면 닫기
+  const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = geo.x + r.x + r.w / 2, cy = geo.y + r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
+  try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
 }
 app.whenReady().then(() => {
   geo = geometry();
