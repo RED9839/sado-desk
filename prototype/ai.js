@@ -48,15 +48,15 @@ const STYLE_DESC = {
   polite: "해요체(~어요/~네요/~예요)로 상냥하게",
   formal: "합니다체(~습니다/~입니다)로 격식 있게",
   casual: "반말(~야/~어/~지)로 친구처럼",
-  royal: "고풍스러운 하대(~노라/~이니라/~하거라)로 위엄 있게",
-  haso: "극존칭 옛말(~사옵니다/~이옵니다/~하시옵소서)로 공손하게",
-  vivi: "귀족 아가씨 말투(~사와요/~이사와요)로 우아하게",
+  royal: "고풍스러운 하대(~노라/~이니라/~하거라/~느냐)로 위엄 있게. 평범한 반말 어미(~야/~어)는 쓰지 않는다",
+  haso: "극존칭 옛말(~사옵니다/~이옵니다/~하시옵소서)로 공손하게. 모든 문장을 '~옵니다/~옵니까/~옵소서'로 끝낸다",
+  vivi: "귀족 아가씨 말투(~사와요/~이사와요)로 우아하게. 모든 문장을 '~사와요' 계열로 끝낸다",
   noun: "명사형 종결(~함/~임/~음)로 짧고 건조하게",
   hao: "하오체(~소/~오/~하시오)로 점잖게",
-  robot: "기계적인 보고체(~임./~음./~요망.)로. 감정 표현은 '분석 결과' 식으로",
-  jubee: "말끝에 '~다비'를 붙이는 꿀벌 말투로",
-  ayla: "졸린 듯 말끝을 '~그마~'로 늘이는 말투로",
-  momo: "닌자 말투(~입니닷/~습니닷)로 씩씩하게",
+  robot: "기계적인 보고체 — 모든 문장을 '~임./~음./~됨./~요망.'으로 끝낸다(~습니다 금지). 감정은 '분석 결과' 식으로",
+  jubee: "꿀벌 말투 — 모든 문장 끝을 반드시 '~다비'로 끝낸다(있다비, 먹었다비, 좋다비, 뭐다비?). 예외 없음",
+  ayla: "졸린 듯 느긋한 말투 — 모든 문장 끝을 '~그마~'로 끝낸다(좋그마~, 자고 싶그마~, 뭐그마~?). 예외 없음",
+  momo: "닌자 말투 — 모든 문장 끝을 '~입니닷/~습니닷/~닷'으로 끝낸다. 씩씩하게",
   crepe: "해요체로 어리고 순수하게. 사물에도 '님'을 붙이고(유튜브님, 먼지님) 청소 비유를 자주 쓰며 '하핫', '헤헤' 웃음",
 };
 const STYLE_KO = { polite: "해요체", formal: "합니다체", casual: "반말", royal: "하대(~노라/~거라)", haso: "극존칭 옛말", vivi: "~사와요", noun: "명사형(~함/~임)", hao: "하오체", robot: "보고체", jubee: "~다비", ayla: "~그마", momo: "~입니닷", crepe: "해요체" };
@@ -143,7 +143,7 @@ async function chatOllama(cfg, system, messages, onToken, signal) {
   for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
   return out;
 }
-async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false) {
+async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false, attempt = 0) {
   const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(m.image ? [{ inline_data: { mime_type: m.image.mime || "image/png", data: m.image.data } }] : []), { text: m.text }] }));
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse`;
   // Flash는 기본으로 '생각' 토큰을 쓰고 그게 maxOutputTokens에 포함돼 답이 잘림 → 생각 끄기(안 받는 모델이면 빼고 재시도) + 여유 있는 상한
@@ -152,9 +152,17 @@ async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCf
   if (!r.ok) {
     const body = await r.text();
     if (r.status === 404 && /no longer available|not found/i.test(body) && cfg.model !== "gemini-flash-latest") return chatGemini({ ...cfg, model: "gemini-flash-latest" }, key, system, messages, onToken, signal, noThinkCfg); // 은퇴한 모델 → 최신 Flash 별칭으로
-    if (r.status === 400 && !noThinkCfg && /thinking/i.test(body)) return chatGemini(cfg, key, system, messages, onToken, signal, true);
-    let msg = body; try { msg = JSON.parse(body).error?.message || body; } catch {}
-    throw new Error(`Gemini ${r.status}: ${msg.slice(0, 300)}`);
+    if (r.status === 400 && !noThinkCfg) return chatGemini(cfg, key, system, messages, onToken, signal, true, attempt); // 모델이 thinkingConfig를 안 받으면(lite 등 "invalid argument") 빼고 재시도
+    if (r.status === 429 && attempt >= 2 && !/lite/.test(cfg.model)) { // 무료 등급 일일 한도가 바닥난 듯 → 한도가 따로인 Flash-Lite로
+      onToken(""); return chatGemini({ ...cfg, model: "gemini-flash-lite-latest" }, key, system, messages, onToken, signal, noThinkCfg, 0);
+    }
+    if ((r.status === 429 || r.status === 503) && attempt < 2) { // 무료 등급 분당 한도 / 일시 과부하 → 잠깐 뒤 재시도
+      const ra = +(r.headers.get("retry-after") || 0); const wait = Math.min(20000, ra > 0 ? ra * 1000 : (r.status === 429 ? 8000 : 2500) * (attempt + 1));
+      await new Promise(res => setTimeout(res, wait)); if (signal && signal.aborted) throw new Error("취소됨");
+      return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt + 1);
+    }
+    let msg = body; try { const e = JSON.parse(body).error; msg = (e?.message || body) + (e?.details ? " " + JSON.stringify(e.details).slice(0, 600) : ""); } catch {}
+    throw new Error(`Gemini ${r.status}: ${msg.slice(0, 900)}`);
   }
   let out = "";
   for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const t = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } }
