@@ -18,3 +18,7 @@ node_modules/
 run.log
 __pycache__/
 Thumbs.db
+
+# 지금은 안 쓰는 일회성 도구(로컬에만 둔다)
+prototype/tools/inspect-anims.mjs
+prototype/tools/extract-ingame.py
