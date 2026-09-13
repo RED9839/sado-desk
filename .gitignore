@@ -22,3 +22,8 @@ Thumbs.db
 # 지금은 안 쓰는 일회성 도구(로컬에만 둔다)
 prototype/tools/inspect-anims.mjs
 prototype/tools/extract-ingame.py
+
+# 테마극장 대본 수집 도구(로컬 전용)
+prototype/tools/theater-ocr.py
+prototype/tools/theater-names.py
+prototype/tools/theater-digest.py
