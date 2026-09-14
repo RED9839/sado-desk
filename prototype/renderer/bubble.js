@@ -7,8 +7,21 @@
   function render({ items, text, ttl }) {
     const say = text || Talk.announce(items, null);
     el("head").textContent = say.head; el("body").textContent = say.body; el("tail").textContent = say.tail; el("who").textContent = say.who ? `— ${say.who}` : "";
-    el("items").innerHTML = (items || []).slice(0, 4).map(i => `<div class="item" data-url="${i.url}" data-id="${i.id}">${i.thumb ? `<img src="${i.thumb}" alt="">` : ""}<div class="t"><div class="ttl"><span class="lab ${i.source}">${i.label}</span>${i.title}</div><div class="dt">${fmtDate(i.date)}${i.writer ? " · " + i.writer : ""}</div></div></div>`).join("")
-      + ((items || []).length > 4 ? `<div class="tail">…외 ${items.length - 4}개는 우클릭 메뉴 → 새 소식</div>` : "");
+    // 제목·작성자·URL은 외부(유튜브·라운지)에서 온 값이고 라운지 닉네임은 사용자가 정하는 값이다.
+    // 문자열로 HTML을 조립하면 그대로 태그가 되므로(news.js 의 unesc 가 &lt; 를 < 로 되돌린다) DOM으로 만든다.
+    const box = el("items"); box.textContent = "";
+    for (const i of (items || []).slice(0, 4)) {
+      const d = document.createElement("div"); d.className = "item";
+      d.dataset.url = String(i.url || ""); d.dataset.id = String(i.id || "");
+      if (i.thumb && /^https?:\/\//i.test(i.thumb)) { const img = document.createElement("img"); img.src = i.thumb; img.alt = ""; d.appendChild(img); }
+      const t = document.createElement("div"); t.className = "t";
+      const ttl = document.createElement("div"); ttl.className = "ttl";
+      const lab = document.createElement("span"); lab.className = "lab " + (i.source === "youtube" ? "youtube" : "lounge"); lab.textContent = i.label || "";
+      ttl.appendChild(lab); ttl.appendChild(document.createTextNode(i.title || ""));
+      const dt = document.createElement("div"); dt.className = "dt"; dt.textContent = fmtDate(i.date) + (i.writer ? " · " + i.writer : "");
+      t.appendChild(ttl); t.appendChild(dt); d.appendChild(t); box.appendChild(d);
+    }
+    if ((items || []).length > 4) { const more = document.createElement("div"); more.className = "tail"; more.textContent = `…외 ${items.length - 4}개는 우클릭 메뉴 → 새 소식`; box.appendChild(more); }
     ttlMs = remain = ttl || 30000;
     el("bar").style.animation = "none"; void el("bar").offsetWidth; el("bar").style.animation = `shrink ${ttlMs}ms linear forwards`;
     requestAnimationFrame(() => host.bubbleResize(Math.ceil(document.getElementById("bubble").getBoundingClientRect().height) + 22));
