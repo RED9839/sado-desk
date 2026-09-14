@@ -1,12 +1,23 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const fs = require("node:fs");
+const path = require("node:path");
+// 렌더러가 읽을 수 있는 곳: 앱 폴더(스파인 런타임·data/)와 에셋 폴더(사용자가 추출한 스켈레톤·보이스)뿐.
+// 창 하나라도 주입을 당하면 임의 파일 읽기로 이어지므로 preload 단계에서 막는다.
+const ROOTS = (() => {
+  try { return (ipcRenderer.sendSync("roots:get") || []).map(r => path.resolve(r)); } catch { return []; }
+})();
+const allowed = (p) => {
+  const r = path.resolve(String(p));
+  return ROOTS.some(root => r === root || r.startsWith(root + path.sep));
+};
+const guard = (p) => { if (!allowed(p)) throw new Error("허용되지 않은 경로: " + p); return String(p); };
 // 이 창이 담당하는 캐릭터 id (메뉴 창). 마스코트 창(캐릭터 전부)·설정 창은 없음 → id를 명시해서 호출
 const INSTANCE = (process.argv.find(a => a.startsWith("--instance=")) || "").slice("--instance=".length) || null;
 contextBridge.exposeInMainWorld("host", {
   instance: INSTANCE,
   // 파일
-  readBytes: (p) => new Uint8Array(fs.readFileSync(p)),
-  readText: (p) => fs.readFileSync(p, "utf8"),
+  readBytes: (p) => new Uint8Array(fs.readFileSync(guard(p))),
+  readText: (p) => fs.readFileSync(guard(p), "utf8"),
   // 마스코트 창
   hitRect: (r, id) => ipcRenderer.send("hit-rect", r, id === undefined ? INSTANCE : id),
   openMenu: (x, y, id) => ipcRenderer.send("menu:open", { x, y }, id === undefined ? INSTANCE : id),

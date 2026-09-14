@@ -610,6 +610,8 @@ function openSetup() {
   setupWin.on("closed", () => { setupWin = null; });
 }
 const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
+// preload 가 파일 읽기를 허용할 폴더(앱 폴더·에셋 폴더·userData). 동기여야 preload 초기화 때 쓸 수 있다
+ipcMain.on("roots:get", (e) => { e.returnValue = [__dirname, ASSET_ROOT, path.join(app.getPath("userData"), "assets"), DATA_ROOT].filter(Boolean); });
 ipcMain.handle("assets:status", () => ({ root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT), userDataRoot: toSlash(path.join(app.getPath("userData"), "assets")), running: !!extractProc, python: pythonExe().exe, standing: Object.keys(STANDING.game).length, ingame: Object.keys(STANDING.ingame).length, voice: fs.existsSync(path.join(ASSET_ROOT, "voice", "index.json")), packaged: app.isPackaged }));
 ipcMain.handle("assets:pick-folder", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "에셋 폴더 선택 (minimi/ 폴더가 들어 있는 곳)" }); return r.canceled ? null : r.filePaths[0]; });
 ipcMain.handle("assets:pick-mumu", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "뮤뮤 앱플레이어 설치 폴더 (MuMuManager.exe·adb.exe가 있는 nx_main)" }); return r.canceled ? null : r.filePaths[0]; });
