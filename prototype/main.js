@@ -59,7 +59,9 @@ const GLOBAL_DEFAULTS = {
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 function deepMerge(base, patch) {
   const out = { ...base };
-  for (const [k, v] of Object.entries(patch || {})) out[k] = isObj(v) && isObj(base[k]) ? deepMerge(base[k], v) : v;
+  // 값이 undefined 인 키는 건너뛴다. 없으면 {display: undefined} 같은 패치가 기본값을 지워
+  // 첫 실행(설정 파일 없음)에서 settings.global.display 가 사라지고 geometry() 가 죽는다
+  for (const [k, v] of Object.entries(patch || {})) { if (v === undefined) continue; out[k] = isObj(v) && isObj(base[k]) ? deepMerge(base[k], v) : v; }
   return out;
 }
 function loadSettings() {
@@ -69,7 +71,9 @@ function loadSettings() {
   else { // v1(단일 캐릭터) → v2 이관
     const c = { id: "c1", skin: raw.skin, mode: raw.mode, scale: raw.scale, opacity: raw.opacity, behavior: raw.behavior };
     for (const k of Object.keys(c)) if (c[k] === undefined) delete c[k];
-    s = { version: 2, global: { sound: raw.sound, display: raw.display }, characters: [c] };
+    const g = { sound: raw.sound, display: raw.display };
+    for (const k of Object.keys(g)) if (g[k] === undefined) delete g[k];
+    s = { version: 2, global: g, characters: [c] };
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
   s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
@@ -138,8 +142,9 @@ function applyAutoStart() {
 // ---- 창 기하 ----
 function geometry() {
   const all = screen.getAllDisplays(), prim = screen.getPrimaryDisplay();
-  const use = settings.global.display.multiMonitor ? all : [prim];
-  const rect = (d) => settings.global.display.overTaskbar ? d.bounds : d.workArea;
+  const disp = (settings.global && settings.global.display) || GLOBAL_DEFAULTS.display;   // 설정이 깨져 있어도 창은 떠야 한다
+  const use = disp.multiMonitor ? all : [prim];
+  const rect = (d) => disp.overTaskbar ? d.bounds : d.workArea;
   const x0 = Math.min(...use.map(d => rect(d).x)), y0 = Math.min(...use.map(d => rect(d).y));
   const x1 = Math.max(...use.map(d => rect(d).x + rect(d).width)), y1 = Math.max(...use.map(d => rect(d).y + rect(d).height));
   const displays = use.map(d => ({ id: d.id, primary: d.id === prim.id, x: rect(d).x - x0, w: rect(d).width, top: rect(d).y - y0, floor: d.workArea.y + d.workArea.height - y0, bottom: rect(d).y + rect(d).height - y0, scale: d.scaleFactor }));
