@@ -71,6 +71,7 @@
       case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;
       case "chat": host.chatOpen(); host.menuClose(); break;
+      case "selftalk": host.selfTalk(); host.menuClose(); break;
       case "duo": host.chatDuo(); host.menuClose(); break;
       case "screen": host.chatScreen(); host.menuClose(); break;
       case "duo-screen": host.chatDuoScreen(); host.menuClose(); break;

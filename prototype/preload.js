@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld("host", {
   bubbleResize: (h) => ipcRenderer.send("bubble:resize", h),
   // AI 대화
   chatOpen: (id) => ipcRenderer.send("chat:open", id === undefined ? INSTANCE : id),
+  selfTalk: (id) => ipcRenderer.send("selftalk:say", id === undefined ? INSTANCE : id),
   chatDuo: (id) => ipcRenderer.send("chat:duo", id === undefined ? INSTANCE : id),
   chatSend: (text, withScreen) => ipcRenderer.send("chat:send", text, !!withScreen),
   chatScreen: (id) => ipcRenderer.send("chat:screen", id === undefined ? INSTANCE : id),

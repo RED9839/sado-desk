@@ -354,6 +354,7 @@ let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DAT
 let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
 let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch {} // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
 let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch {} // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
+let selfTalk = {}; try { selfTalk = (JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "self-talk.json"), "utf8")).heroes) || {}; console.log(`혼잣말 대본: ${Object.keys(selfTalk).length}명 ${Object.values(selfTalk).reduce((a, l) => a + l.length, 0)}줄`); } catch (e) { console.warn("self-talk.json 없음 — 혼잣말은 대본 대신 AI 로 돈다", e.message); }
 const koOfHero = (k) => (relations && relations[k] && relations[k].ko) || k;
 function chatProfile(id) {
   const ch = charOf(id); if (!ch) return null;
@@ -445,6 +446,34 @@ async function screenTalk(id, userText) {
   let image; try { image = await captureScreenFor(id); } catch (e) { chatSend("chat:done", { error: e.message }); return; }
   await chatTurn(id, userText || "", { image, say: !userText, extra: "사용자의 화면 스크린샷을 첨부했다. 지금 사용자가 무엇을 하고 있는지 알아보고, 네 성격대로 한두 문장으로 반응하라(감상·놀림·응원·질문 등)." });
 }
+// ---- 혼잣말 (대본) ----
+// data/self-talk.json 1,738줄. LLM 을 부르지 않는다 — AI 를 켜지 않은 사람도 사도가 중얼거린다.
+// 줄마다 {t: 문장, m: 감정, a: 동작 접두어} 라 말풍선과 모션을 그대로 태울 수 있다.
+const selfTalkSaid = new Map(); // 사도키 → 최근에 말한 줄 (되풀이 방지)
+function pickSelfTalk(key) {
+  const all = selfTalk[key] || [];
+  if (!all.length) return null;
+  const said = selfTalkSaid.get(key) || [];
+  const fresh = all.filter(x => !said.includes(x.t));
+  const pool = fresh.length ? fresh : all;          // 다 돌았으면 처음부터
+  const line = pool[Math.floor(Math.random() * pool.length)];
+  const keep = Math.max(3, Math.floor(all.length / 2)); // 절반은 다시 나오지 않게
+  selfTalkSaid.set(key, [...(fresh.length ? said : []), line.t].slice(-keep));
+  return line;
+}
+// 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
+function saySelfTalk(id, opts = {}) {
+  const prof = chatProfile(id); if (!prof) return false;
+  const line = pickSelfTalk(prof.key); if (!line) return false;
+  const ttl = Math.round((Math.max(2, +((settings.global.ai || {}).bubbleSec) || 4) * 1000) + Math.min(80, line.t.length) * 100);
+  const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
+  showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
+  sendMascot(id, "emote", { mood: line.m, act: line.a, role: "speak", pose: ttl, hold: ttl + 3000 });
+  if (!opts.quiet) console.log(`혼잣말[${id}] ${prof.ko}: ${line.t} [${line.m || "기본"}/${line.a}]`);
+  return true;
+}
+ipcMain.on("selftalk:say", (e, id) => { const me = id || instanceOf(e.sender); if (me) saySelfTalk(me); });
+
 // ---- 사도 둘이 잡담 (ai.duo): 서로 다가가 마주 보고, 대본을 말풍선으로 번갈아 ----
 let duoBusy = false;
 async function duoTalk(idA, idB, opts = {}) {
@@ -526,20 +555,31 @@ ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pul
   pullProc.on("exit", (code) => { pullProc = null; resolve({ ok: code === 0, error: code === 0 ? "" : last }); });
 }));
 ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.com/download", gemini: "https://aistudio.google.com/apikey", anthropic: "https://console.anthropic.com/settings/keys", groq: "https://console.groq.com/keys" }[which]; if (u) shell.openExternal(u); });
-// 먼저 말 걸기: 대화가 없던 시간이 proactiveMin을 넘으면 가끔 (분마다 확인, 확률로 흩뿌림)
+// 먼저 말 걸기. 혼잣말은 대본(self-talk.json)이라 AI 없이 돌고, 화면 보기와 둘이 잡담만 AI 가 필요하다
 let proactiveBusy = false; // Ai.status()를 기다리는 동안 다음 타이머가 겹쳐 들어오면 사도가 둘 연달아 말을 건다
 setInterval(async () => {
-  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || duoBusy || proactiveBusy || !mascotStarted) return;
+  const ai = settings.global.ai || {}; if (chatBusy || duoBusy || proactiveBusy || !mascotStarted) return;
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
   proactiveBusy = true;
   try {
-  const st = await Ai.status(ai); if (!st.resolved) return;
-  const withScreen = screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0);
-  if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { screen: withScreen, quiet: true }); return; } } // 둘 이상이면 절반은 둘이 잡담 (자동은 실패해도 조용히)
-  const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이 말을 건다
+  const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이
+  // 화면을 보고 말 거는 것 — AI 필요. 설정에서 켠 만큼만, 제공자가 실제로 잡힐 때만
+  if (ai.proactive && screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0)) {
+    const st = await Ai.status(ai);
+    if (st.resolved) { lastChatAt = Date.now(); screenTalk(id, ""); return; }
+  }
+  // 둘 이상이면 절반은 둘이 잡담 — 아직 AI (다음 판에서 대본으로 바꾼다)
+  if (ai.proactive && ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) {
+    const st = await Ai.status(ai);
+    if (st.resolved) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { quiet: true }); return; } }
+  }
+  // 혼잣말 — 대본. AI 를 켜지 않았어도 여기까지 온다
+  if (saySelfTalk(id)) { lastChatAt = Date.now(); return; }
+  // 대본이 없는 사도만 AI 로 물러선다
+  if (!ai.proactive) return;
+  const st2 = await Ai.status(ai); if (!st2.resolved) return;
   lastChatAt = Date.now();
-  if (withScreen) { screenTalk(id, ""); return; }
   openChat(id, { quiet: true });
   setTimeout(async () => {
     await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 한두 문장(60자 안팎)으로 짧게 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것. 문장은 두 개까지." });
@@ -751,6 +791,15 @@ if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말�
   console.log("PERSONA done");
 }, 5000);
 if (argHas("--screen-test")) setTimeout(async () => { const id = settings.characters[0].id; try { const img = await captureScreenFor(id); fs.writeFileSync(path.join(__dirname, "out", "screen-cap.jpg"), Buffer.from(img.data, "base64")); console.log("SCREENTEST captured", img.data.length, "b64 chars display", img.display); } catch (e) { console.log("SCREENTEST capture error", e.message); } await screenTalk(id, argVal("--screen-msg", "") || ""); setTimeout(() => console.log("SCREENTEST history", JSON.stringify(Ai.loadHistory(app.getPath("userData"), id).slice(-2))), 1500); }, 7000);
+// 혼잣말 대본 시험: 사도 하나가 여덟 번 중얼거린다 (되풀이·모션·말풍선 확인)
+if (argHas("--selftalk-test")) setTimeout(async () => {
+  const id = settings.characters[0].id, prof = chatProfile(id);
+  console.log(`SELFTALKTEST hero=${prof && prof.ko}(${prof && prof.key}) 대본 ${((selfTalk[prof && prof.key]) || []).length}줄`);
+  for (let i = 0; i < 8; i++) { const ok = saySelfTalk(id); console.log(`SELFTALKTEST ${i + 1}/8 ${ok ? "말함" : "대본 없음"}`); await new Promise(r => setTimeout(r, 2500)); }
+  const said = selfTalkSaid.get(prof.key) || [];
+  console.log(`SELFTALKTEST 서로 다른 줄 ${new Set(said).size}/${said.length} (8번에 겹침 없어야 정상)`);
+  app.quit();
+}, 6000);
 if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined, screen: argHas("--duo-screen") }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
 if (argHas("--chat-test")) setTimeout(async () => {
