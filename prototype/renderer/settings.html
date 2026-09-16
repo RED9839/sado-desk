@@ -234,6 +234,7 @@
       <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
+      <div class="row"><label>모델을 메모리에 두는 시간<span class="hint">답한 뒤 이 시간 동안 모델이 그래픽카드 메모리(VRAM)에 남아 있습니다. 7.8b 모델이 <b>약 5GB</b>를 차지해요. <b>게임을 하신다면 '답할 때만'</b>으로 두세요 — 답이 끝나면 바로 비우고, 대신 부를 때마다 1.7초쯤 더 걸립니다.</span></label><select data-s="ai.ollama.keepAlive"><option value="5m">5분 (기본 · 빠름)</option><option value="30m">30분</option><option value="0">답할 때만 (게임할 때)</option><option value="-1">계속 (가장 빠름)</option></select></div>
     </div>
     <div class="card"><h3>Google Gemini (무료 등급)</h3>
       <div class="hint"><a href="#" data-ai-url="gemini">Google AI Studio</a>에서 무료 API 키를 만들 수 있어요 (Flash 계열 무료 등급: 분당 10~15회, 하루 250~1000회 정도). 키는 이 PC에 암호화 저장됩니다.</div>

@@ -22,7 +22,7 @@ const EMOTIONS = { "행복": "happy", "기쁨": "happy", "즐거움": "happy", "
   "공상": "", "생각": "", "고민": "", "무심": "" };
 const DEFAULTS = {
   provider: "auto",
-  ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
+  ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b", keepAlive: "5m" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
   gemini: { model: "gemini-flash-latest" }, // 별칭 — 구글이 최신 Flash로 연결(2.5-flash는 신규 사용자에게 막힘)
   anthropic: { model: "claude-opus-5" },
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
@@ -124,7 +124,8 @@ function buildSystem(prof, opts = {}) {
       ? "- 화면 스크린샷이 첨부되었다: 사용자가 지금 무엇을 하는지(게임·영상·코딩·문서·쇼핑·채팅 등)를 알아보고 캐릭터답게 반응한다. 화면에 보이는 이름·번호·주소·메시지 본문 같은 개인정보나 비밀은 절대 읽어 말하지 말고, 활동을 큰 틀에서만 언급한다. 바탕화면에 서 있는 SD 캐릭터(너 자신·다른 사도)나 말풍선은 무시한다."
       : "- 사용자의 화면은 보이지 않는다. 무엇을 보고 있는지·무슨 작업을 하는지 아는 척하지 말고, 화면·모니터 이야기를 먼저 꺼내지 않는다. 네가 바탕화면 위에 서 있다는 것만 안다.",
     "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나. 태그를 빼먹지 말 것.",
-    "답 형식 예시:\n간식 좀 남은 거 없어? 배고파~!\n[감정:냠냠]",
+    // 여기 반말 한 줄을 고정해 두었더니 하대·명사형·~다비 쓰는 사도까지 반말로 끌려갔다. 그 사도가 할 법한 문장을 쓴다
+    `답 형식 예시(끝맺음을 그대로 따라 한다):\n${(p.sampleLines || []).slice(0, 2).join("\n") || "간식 좀 남은 거 없어? 배고파~!"}\n[감정:${(p.sampleLines || []).length ? "미소" : "냠냠"}]`,
     opts.extra || "",
   ].filter(Boolean).join("\n");
 }
@@ -201,7 +202,7 @@ async function chatOllama(cfg, system, messages, onToken, signal) {
   const hasImg = messages.some(m => m.image);
   if (hasImg && !cfg.visionModel) throw new Error("Ollama에 화면을 볼 수 있는 모델이 없어요 — 설정 → AI 대화 → Ollama '화면 보기 모델'에 qwen2.5vl 같은 비전 모델을 넣고 내려받아 주세요");
   const msgs = [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.text, ...(m.image ? { images: [m.image.data] } : {}) }))];
-  const r = await fetch(`${cfg.url}/api/chat`, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ model: hasImg ? cfg.visionModel : cfg.model, messages: msgs, stream: true, options: { temperature: 0.9, num_predict: 300 } }) });
+  const r = await fetch(`${cfg.url}/api/chat`, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ model: hasImg ? cfg.visionModel : cfg.model, messages: msgs, stream: true, keep_alive: cfg.keepAlive || "5m", options: { temperature: cfg.temperature != null ? +cfg.temperature : 0.9, num_predict: cfg.numPredict != null ? +cfg.numPredict : 300 } }) });
   if (!r.ok) throw new Error(`Ollama ${r.status}: ${(await r.text()).slice(0, 200)}`);
   let out = "";
   for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
