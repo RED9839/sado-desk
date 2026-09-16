@@ -71,20 +71,34 @@
   }
   const SD = { idleActs: [], idleQuiet: ["Idle_1"], idleLoop: new Set(["Idle_1"]), move: null, jump: [], spawn: [], react: [], land: null, drag: null, hold: "Idle_1", moveSpeed: 90, hopHeight: 22, moods: {} };
   // ---- 인게임 SD(전투·마이홈) 애니: Idle / Move / Spawn / Victory / Groggy / Attack / Skill / Ultimate ... 414/416 세트에 Move 있음 ----
+  // 인게임 SD 는 전투 모션뿐이다. 417세트를 전수 조사해서(tools/_ig-survey.mjs) 실제로 있는 것만 쓴다.
+  //   Idle 416 · Die 416 · Spawn 416 · Groggy 415 · Move 414 · Victory 413 · Attack1_1 410 · Skill1_1 409
+  //   Ultimate1_1 391 · Attack2_1 330 · Experience_1/2 142 · EasterEgg_Victory 47 · EasterEgg_Idle 19 · Aside1_1 6
+  // 딴 모습(_Change·_DreamForm·_SebastianForm…)과 작업용 찌꺼기(Test_DUMMY/…·z…·잔상·Groggry)는 고르지 않는다.
+  const IG_SKIP = /(\/|^z|^\d|^test$|^잔상$|^Groggry$|_rejected$|dummy|MirrorImage|AlterEgo_|FakeDie|_SebastianForm$|_DreamForm$|_ChangeForm$|_Change$|^OW\d_|^AS\d_|백업)/i;
   function ingamePools(data) {
     const hasA = (n) => !!data.findAnimation(n);
-    const dur = (n) => data.findAnimation(n)?.duration ?? 99;
-    const shortish = (n) => hasA(n) && dur(n) <= 4;
+    const ok = (n) => hasA(n) && !IG_SKIP.test(n);
+    const keep = (...names) => names.filter(ok);
     return {
-      idleActs: ["Idle", "Idle", "Idle", "Victory", "EasterEgg_Idle", "Attack1_1"].filter(shortish).concat(["Idle"]),
+      // 대기 중 스스로 하는 것. Idle 을 여러 번 넣어 가끔만 큰 동작이 나오게 한다
+      idleActs: ["Idle", "Idle", "Idle", "Idle", ...keep("Victory", "EasterEgg_Idle", "Experience_1", "Experience_2", "Aside1_1", "Attack1_1")].concat(["Idle"]),
       idleQuiet: ["Idle"], idleLoop: new Set(["Idle", "EasterEgg_Idle"]),
-      move: hasA("Move") ? "Move" : null, jump: [], spawn: hasA("Spawn") ? ["Spawn"] : [],
-      react: ["Victory", "Attack1_1", "Attack2_1", "Skill1_1", "EasterEgg_Victory"].filter(shortish),
-      land: ["Groggy", "Hit", "Die"].find(hasA) || null, drag: ["Groggy", "Idle"].find(hasA) || null,
+      move: ok("Move") ? "Move" : null, jump: [], spawn: keep("Spawn"),
+      // 클릭했을 때. 승리·궁극기가 가장 볼만하다 (길면 ONESHOT_CAP 초에서 잘린다)
+      // 허수아비(scarecrow*)처럼 공격 모션이 아예 없는 세트가 둘 있어 빈 풀이 되지 않게 받쳐 둔다
+      react: keep("Victory", "EasterEgg_Victory", "Ultimate1_1", "Skill1_1", "Attack1_1", "Attack2_1").concat(
+        keep("Victory", "Attack1_1").length ? [] : keep("Buff", "Hit_1", "Hit", "Spawn")),
+      land: keep("Groggy", "Hit", "Die")[0] || null, drag: keep("Groggy", "Bind", "Idle")[0] || null,
       hold: "Idle", moveSpeed: 120, hopHeight: 18,
-      // 인게임 SD는 전투 모션뿐이라: 행복/미소=승리, 분노=공격/스킬, 슬픔·삐짐·놀람=그로기/피격
-      moods: { happy: ["Victory", "EasterEgg_Victory"].filter(hasA), smile: ["Victory"].filter(hasA), anger: ["Attack1_1", "Attack2_1", "Skill1_1"].filter(hasA), sad: ["Groggy"].filter(hasA), surprise: ["Groggy", "Hit"].filter(hasA), eat: ["Victory"].filter(hasA), sulky: ["Groggy"].filter(hasA) },
-      speak: ["Attack1_1", "Victory"].filter(hasA), listen: [],
+      // 전투 모션밖에 없으니: 행복·미소 = 승리, 분노 = 공격·궁극기, 슬픔·삐짐·놀람 = 그로기·피격
+      moods: {
+        happy: keep("EasterEgg_Victory", "Victory", "Experience_2"), smile: keep("Victory", "Experience_1"),
+        anger: keep("Ultimate1_1", "Attack1_1", "Attack2_1", "Skill1_1"), sad: keep("Groggy", "Die"),
+        surprise: keep("Hit", "Groggy", "Bind"), eat: keep("Experience_1", "Victory"), sulky: keep("Groggy", "Bind"),
+      },
+      speak: keep("Aside1_1", "Victory", "Attack1_1"), listen: keep("EasterEgg_Idle", "Idle"),
+      all: data.animations.map(a => a.name).filter(n => !IG_SKIP.test(n)),
     };
   }
   // SD 배율: 스탠딩·인게임 스켈레톤은 같은 단위(에르핀 Head 본 y=429 동일)라 바운딩 박스로 맞추지 않고 단위→픽셀 고정 배율을 쓴다.
@@ -552,7 +566,18 @@
     // ---- 애니 제어 (현재 형태에 있는 애니만) ----
     const has = (name) => !!active.data.findAnimation(name);
     const firstOf = (...names) => names.find(has) || null;
-    function play(name, loop) { if (!has(name)) name = firstOf(active.A.hold, "Idle_1", "Idle1_1"); if (!name) return null; m.anim = name; return state().setAnimation(0, name, loop); }
+    // 한 번짜리 모션은 이보다 길게 붙들지 않는다. 인게임 Victory 는 중앙값 9.8초·최장 23.4초여서
+    // 예전에는 "4초 이하"로 아예 걸러 버렸고, 그 탓에 사도 413명 중 258명은 승리 모션을 볼 수 없었다.
+    // animationEnd 를 줄이면 그 지점에서 complete 가 떠 평소대로 대기 동작으로 섞여 들어간다(defaultMix).
+    const ONESHOT_CAP = 6;
+    function play(name, loop) {
+      if (!has(name)) name = firstOf(active.A.hold, "Idle_1", "Idle1_1");
+      if (!name) return null;
+      m.anim = name;
+      const e = state().setAnimation(0, name, loop);
+      if (!loop && e && e.animationEnd > ONESHOT_CAP) e.animationEnd = ONESHOT_CAP;
+      return e;
+    }
     function playOnce(name, nextState) { m.state = nextState; m.rot = 0; play(name, false); }
     // 꿀밤은 게임처럼 2단: Smash_End_1(맞는 순간, dutchrubend1 = "아얏" 소리) → 끝나면 Smash_End_2(머리 감싸는 포즈, dutchrubend2 = 대사 "머리 때리지 마!")
     //   스킨 보이스 묶음엔 dutchrubend2_skinN만 있고 맞는 소리는 base에만 있어서 1단은 base에서 찾는다
