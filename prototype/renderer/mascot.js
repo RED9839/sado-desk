@@ -358,6 +358,10 @@
       const reps = Math.max(1, Math.ceil(extra.length / own.length)); // 전용이 절반은 되게 되풀이해 넣는다
       return playFrom([...extra, ...Array.from({ length: reps }, () => own).flat()]);
     }
+    // 클릭: 아무 말이나 — 전용 대사(쓰다듬기·등장·간지럼)는 넣지 않는다.
+    // 크레페처럼 감정 보이스가 하나도 없는 사도(8~16명)는 말을 잃으므로 그때만 쓰다듬기 대사로 받친다.
+    // cheek(볼 당기기 "당기지 마!")는 넣지 않는다 — 클릭했을 뿐인데 아파하는 소리가 난다
+    function sayOnClick() { return playVoice("greeting", "line", "joy", "pleasure") || playVoiceOwn("pat"); }
     function playFrom(pool) {
       if (!pool.length) return null;
       const f = pick(pool); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f;
@@ -379,7 +383,9 @@
         if (emote) { if (Math.random() * 100 >= (S.sound.emoteVoiceChance ?? 85)) return null; if (now - lastEmoteAt < 2.5) return null; }
         else { if (Math.random() * 100 >= S.sound.motionVoiceChance) return null; if (now - lastMotionVoiceAt < S.sound.motionVoiceCooldown) return null; }
       }
-      const f = playVoice(...cats); if (f) { if (emote) lastEmoteAt = now; else lastMotionVoiceAt = now; } return f;
+      // 매핑표(motion-voice.js)는 "순서대로 첫 매치, 앞 카테고리가 없으면 뒤로 폴백"이 원칙이다 — 섞으면 안 된다.
+      // 섞고 있었던 탓에 Victory 모션에 전투 승리 대사(2개) 대신 웃음소리(pleasure·joy 10개)가 더 자주 나왔다.
+      const f = playVoiceOwn(...cats); if (f) { if (emote) lastEmoteAt = now; else lastMotionVoiceAt = now; } return f;
     }
 
     // ---- 캐릭터 런타임 상태 ----
@@ -518,7 +524,7 @@
       const cand = active === mini ? ["Idle3_7", "Act1_1", "Success", "Idle2_4"] : ["Talk_1", "Point_1", "Hi_1", "Happy_1", "Blank_1", "Proud_1", ...(A.react || [])];
       const a = cand.find(has) || A.hold;
       m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x); playOnce(a, "react");
-      if (arg && arg.sound !== false && S.sound.clickVoice !== false) playVoice("greeting", "line", "spawn", "joy", "pleasure", "pat")  // touch 대신 pat — touch 묶음엔 볼 당기기 대사("당기지 마!")가 섞여 있다;
+      if (arg && arg.sound !== false && S.sound.clickVoice !== false) sayOnClick();
     }
 
     function setSkin(name, greet) {
@@ -726,7 +732,7 @@
             if (Math.abs(m.vy) < 250) {
               m.vx = m.vy = 0; m.rot = 0; if (isSD()) useSlot(slotForRest()); applyFacing(); playOnce(firstOf(active.A.land || "", "Angry_1", "Idle_1", "Idle1_1"), "land");
               if (S.sound.landSfx) playSfx("jump02");
-              if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoice("surprise", "sorry", "anger", "ticklestart"); }
+              if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoice("surprise", "hit", "sorry", "anger"); } // ticklestart(간지럼 웃음)는 여기 쓸 것이 아니다
             } else { // 튕김: 세게 떨어질 때만, 세기에 비례해 작게 (작은 튕김은 무음)
               const impact = Math.abs(m.vy); m.vy *= -0.45; m.vx *= 0.75;
               if (S.sound.landSfx && impact > 900) playSfx("jump02", Math.min(0.7, impact / 4000));
@@ -882,7 +888,7 @@
         if (active === sd) { const soft = reacts.filter(n => /^(Happy|Smile|Laugh|Shy|Proud|Excited|Taunt)_/.test(n)); if (soft.length) reacts = soft; } // 몸 톡은 놀람(으아악)도 빼고 웃음·수줍음만
         const ra = reacts.length ? pick(reacts) : active.A.hold;
         playOnce(ra, "react");
-        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) playVoice("joy", "pleasure", "line", "pat"); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 소리), 매핑 없는 모션(Idle2_4 등)은 웃음·잡담, 그것도 없는 크레페는 쓰다듬기 대사(볼 당기기는 볼을 끌었을 때만)
+        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) sayOnClick(); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 소리), 매핑 없는 모션(Idle2_4 등)은 웃음·잡담, 그것도 없는 크레페는 쓰다듬기 대사(볼 당기기는 볼을 끌었을 때만)
       }
       m.over = hit(e.clientX, e.clientY);
     }
