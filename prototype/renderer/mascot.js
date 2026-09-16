@@ -290,11 +290,11 @@
   // 움직임이라 30 이면 손에 뚝뚝 걸린다. 기본은 "손댈 때만 60" — 설정(display.fps)으로 30·60 고정도 된다
   function frameMs() {
     const f = firstMascot(); const want = f ? f.S.display.fps : "auto";
-    // 60 은 "매 프레임" — rAF 가 모니터 주사율(100Hz 면 10ms) 단위라 16.7ms 문턱을 두면 둘째 프레임만
-    // 통과해 50 이 된다. 주사율대로 그리는 것이 정직하다. 30 은 그 절반쯤으로 묶인다
-    if (want === 60 || want === "60") return 0;
+    // 60 도 60 에 묶는다. 예전엔 "매 프레임"으로 두어 144Hz 모니터에서 144 로 그렸는데, 남는 시간을 이월하는
+    // 누산기가 있어 이제 어느 주사율에서도 평균 60 이 된다(60Hz 에선 매 프레임 그대로 통과)
+    if (want === 60 || want === "60") return 1000 / 60;
     if (want === 30 || want === "30") return 1000 / 30;
-    for (const mas of mascots.values()) if (mas.hands) return 0;
+    for (const mas of mascots.values()) if (mas.hands) return 1000 / 60;
     return 1000 / 30;
   }
   let acc = 0, probeN = 0, probeT0 = 0, paused = false;

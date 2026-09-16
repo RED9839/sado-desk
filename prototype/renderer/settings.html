@@ -60,7 +60,7 @@
   .row > select,.row > input[type=text],.row > input[type=password]{flex:1 1 220px;min-width:0;max-width:460px;width:auto!important}
   .row > label:not(.toggle) + select,.row > label:not(.toggle) + input[type=text],.row > label:not(.toggle) + input[type=password]{flex:0 1 320px}
   a{color:var(--accent)}
-  /* 캐릭터 그리드 */
+  /* 사도 그리드 */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:calc(100vh - 330px);overflow:auto;padding:2px}
   .tile{background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:6px 4px 4px;text-align:center;cursor:pointer;position:relative}
   .tile:hover{border-color:#55556a}
@@ -79,7 +79,7 @@
   .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:12px}
   .kv .k{color:var(--muted)}
   code{background:#18181d;padding:1px 6px;border-radius:4px;font-size:11px;user-select:text;color:#d6d6e0}
-  /* 캐릭터(인스턴스) 선택 바 */
+  /* 사도(인스턴스) 선택 바 */
   #charbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 24px 0;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px}
   #char-chips{display:contents}
   #charbar .lbl{color:var(--muted);font-size:12px;margin-right:4px}
@@ -95,7 +95,7 @@
 <nav>
   <div class="brand"><img src="tray.png" alt=""><span>사도 데스크</span></div>
   <button data-tab="guide">조작법</button>
-  <button data-tab="character" class="on">캐릭터</button>
+  <button data-tab="character" class="on">사도</button>
   <button data-tab="behavior">행동</button>
   <button data-tab="sound">사운드</button>
   <button data-tab="display">화면</button>
@@ -105,7 +105,7 @@
   <div class="ver" id="nav-ver"></div>
 </nav>
 <div id="content">
-  <div id="charbar"><span class="lbl">설정할 캐릭터</span><span id="char-chips"></span><span class="chip add" id="char-add" title="같은 설정으로 하나 더 부르기">＋ 하나 더 부르기</span><span class="chip rm" id="char-remove" title="선택한 캐릭터를 화면에서 보냄">이 캐릭터 보내기</span><span class="hint" id="charbar-note">캐릭터·행동·크기·불투명도는 선택한 캐릭터에만 적용되고, 사운드·화면 동작은 전체 공통입니다.</span></div>
+  <div id="charbar"><span class="lbl">설정할 사도</span><span id="char-chips"></span><span class="chip add" id="char-add" title="같은 설정으로 하나 더 부르기">＋ 하나 더 부르기</span><span class="chip rm" id="char-remove" title="선택한 사도를 화면에서 보냄">이 사도 보내기</span><span class="hint" id="charbar-note">사도·행동·크기·불투명도는 선택한 사도에만 적용되고, 사운드·화면 동작은 전체 공통입니다.</span></div>
 <main>
   <section id="tab-guide">
     <h2>조작법</h2>
@@ -121,7 +121,7 @@
       <div class="hint">머리·볼·몸의 경계는 사도마다 다릅니다. 반응이 어긋나면 조금 위나 아래를 잡아 보세요.</div>
     </div>
     <div class="card"><h3>우클릭 메뉴</h3>
-      <div class="hint">사도를 <b>우클릭</b>하면 거의 모든 것이 여기 있습니다 — 행동 시키기, 캐릭터 바꾸기(418명), 형태, 표정, 혼잣말 시키기, 옆 사도와 잡담 시키기, 말 걸기, 새 소식, 하나 더 부르기.</div>
+      <div class="hint">사도를 <b>우클릭</b>하면 거의 모든 것이 여기 있습니다 — 행동 시키기, 사도 바꾸기(418명), 형태, 표정, 혼잣말 시키기, 옆 사도와 잡담 시키기, 말 걸기, 새 소식, 하나 더 부르기.</div>
     </div>
     <div class="card"><h3>둘 이상 부르면</h3>
       <div class="hint">서로 다른 사도가 둘 이상 서 있으면 가끔 둘이 만나서 잡담합니다. 게임에서 함께 나온 적 있는 짝은 그 둘 사이에만 있는 이야기를 합니다(444쌍). 같은 사도 둘은 거울 보듯 두 마디만 합니다. 설정 창 위쪽 <b>＋ 하나 더 부르기</b>로 늘립니다.</div>
@@ -131,7 +131,7 @@
     </div>
   </section>
   <section id="tab-character" class="on">
-    <h2>캐릭터</h2>
+    <h2>사도</h2>
     <div class="card"><h3>형태</h3>
       <div class="opts">
         <label class="opt"><input type="radio" name="mode" value="minimi" data-s="mode"><span><b>미니미</b><small>게임 로비 하단에서 폴짝폴짝 뛰는 스틱 SD. 418 스킨 전부 지원.</small></span></label>
@@ -150,7 +150,7 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.hop">폴짝폴짝 이동</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.jump">큰 점프</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="behavior.idleActs">대기 중 잔동작 (고개 갸웃, 찌그러지기, 뒤집기 등)</label></div>
-      <div class="row"><label>모션 사이 쉬는 시간<span class="hint">한 동작이 끝난 뒤 대기 자세로 이만큼 쉬고 다음 동작 (대사 중이면 끝날 때까지 더 기다림)</span></label><input type="range" min="0" max="20" step="0.5" data-s="behavior.actGap"><span class="val" data-fmt="s"></span></div>
+      <div class="row"><label>동작 사이 쉬는 시간<span class="hint">한 동작이 끝난 뒤 대기 자세로 이만큼 쉬고 다음 동작 (대사 중이면 끝날 때까지 더 기다림)</span></label><input type="range" min="0" max="20" step="0.5" data-s="behavior.actGap"><span class="val" data-fmt="s"></span></div>
     </div>
     <div class="card"><h3>빈도와 속도</h3>
       <div class="row"><label>이동 확률<span class="hint">대기가 끝난 뒤 이동을 고를 확률</span></label><input type="range" min="0" max="90" data-s="behavior.hopChance"><span class="val" data-fmt="%"></span></div>
@@ -165,7 +165,7 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="talk.selfTalk">혼잣말<span class="hint">한동안 조용하면 사도가 혼자 한마디 합니다 (우클릭 메뉴 → 혼잣말 시키기)</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="talk.duo">사도끼리 잡담<span class="hint">둘 이상 불러 두면 가끔 서로 다가가 몇 마디 나눕니다. 같은 사도를 둘 불러도 됩니다</span></label></div>
       <div class="row"><label>말하는 간격<span class="hint">이만큼 조용하면 말합니다</span></label><input type="range" min="1" max="60" step="1" data-s="talk.minMin"><span class="val" data-fmt="min"></span></div>
-      <div class="row"><label>말풍선<span class="hint">한 마디가 떠 있는 시간. 여기에 글자당 0.1초가 더해집니다</span></label><input type="range" min="2" max="12" step="1" data-s="talk.bubbleSec"><span class="val" data-fmt="s0"></span></div>
+      <div class="row"><label>말풍선 표시 시간<span class="hint">한 마디가 떠 있는 시간. 여기에 글자당 0.1초가 더해집니다</span></label><input type="range" min="2" max="12" step="1" data-s="talk.bubbleSec"><span class="val" data-fmt="s0"></span></div>
     </div>
     <div class="card"><h3>지금 시키기</h3>
       <div class="row"><select id="anim-select"></select><button class="btn" id="anim-play">▶ 재생</button><button class="btn" id="respawn">다시 등장</button></div>
@@ -185,19 +185,19 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.landVoice">던져서 떨어지면 아파하는 대사 (놀람 · 간지럽히기 · 미안 · 분노)</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.landSfx">착지·튕김 효과음</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.spawnVoice">등장할 때 대사 (등장 · 인사)</label></div>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.greetOnSkin">캐릭터를 바꾸면 인사</label></div>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.motionVoice">모션에 맞는 대사<span class="hint">기쁨 동작 → 기쁨 대사, 분노 → 분노, 슬픔 → 슬픔, 놀람·그로기 → 놀람, 먹기 → 먹기, 멍·잡담 → 대기 대사 …</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.greetOnSkin">사도를 바꾸면 인사</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="sound.motionVoice">동작에 맞는 대사<span class="hint">기쁨 동작 → 기쁨 대사, 분노 → 분노, 슬픔 → 슬픔, 놀람·그로기 → 놀람, 먹기 → 먹기, 멍·잡담 → 대기 대사 …</span></label></div>
       <div class="row"><label>감정 소리 확률<span class="hint">웃음·놀람·화남 같은 짧은 소리 (기쁨 동작 → 웃음). 최소 간격 2.5초</span></label><input type="range" min="0" max="100" step="5" data-s="sound.emoteVoiceChance"><span class="val" data-fmt="%"></span></div>
-      <div class="row"><label>모션 대사 확률<span class="hint">잡담·인사 같은 문장 대사</span></label><input type="range" min="0" max="100" step="5" data-s="sound.motionVoiceChance"><span class="val" data-fmt="%"></span></div>
-      <div class="row"><label>모션 대사 최소 간격</label><input type="range" min="0" max="60" step="1" data-s="sound.motionVoiceCooldown"><span class="val" data-fmt="s"></span></div>
-      <div class="hint" style="padding-top:6px">현재 캐릭터 보이스: <span id="voice-summary">-</span></div>
+      <div class="row"><label>동작 대사 확률<span class="hint">잡담·인사 같은 문장 대사</span></label><input type="range" min="0" max="100" step="5" data-s="sound.motionVoiceChance"><span class="val" data-fmt="%"></span></div>
+      <div class="row"><label>동작 대사 최소 간격</label><input type="range" min="0" max="60" step="1" data-s="sound.motionVoiceCooldown"><span class="val" data-fmt="s"></span></div>
+      <div class="hint" style="padding-top:6px">현재 사도 보이스: <span id="voice-summary">-</span></div>
       <div class="hint" id="name-note" style="padding-top:4px"></div>
     </div>
   </section>
 
   <section id="tab-display">
     <h2>화면</h2>
-    <div class="card"><h3>선택한 캐릭터</h3>
+    <div class="card"><h3>선택한 사도</h3>
       <div class="row"><label>크기</label><input type="range" min="20" max="150" step="5" data-s="scale" data-scale="100"><span class="val" data-fmt="%"></span></div>
       <div class="row"><label>불투명도</label><input type="range" min="20" max="100" step="5" data-s="opacity" data-scale="100"><span class="val" data-fmt="%"></span></div>
     </div>
@@ -205,19 +205,19 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.multiMonitor">모든 모니터로 이동<span class="hint">켜면 옆 모니터로 넘어가고(가끔 원정), 모니터마다 작업표시줄 높이에 맞춰 바닥이 바뀜</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.overTaskbar">작업표시줄 위로 그림 침범<span class="hint">발은 작업표시줄 위에 두고, 발 아래로 내려오는 무기·꼬리는 작업표시줄 위에 그려짐. 끄면 잘림</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.autoStart">윈도우 시작 시 자동 실행<span class="hint">설치판(사도 데스크.exe)에서만 동작. 개발 실행(run.cmd)에서는 무시</span></label></div>
-      <div class="row"><label>그리는 속도<span class="hint">대기·걷기·말하기 동작은 게임 원본이 30fps 라 60 으로 그려도 똑같습니다. 차이가 나는 건 끌기·던지기처럼 손으로 움직이는 순간뿐이라, <b>자동</b>은 그때만 주사율대로 올립니다. 30 고정은 노트북에서 가장 오래 갑니다</span></label><select data-s="display.fps"><option value="auto">자동 (손댈 때만 올림 · 기본)</option><option value="30">30 고정 (절전)</option><option value="60">매 프레임 (모니터 주사율대로)</option></select></div>
+      <div class="row"><label>프레임<span class="hint">대기·걷기·말하기 동작은 게임 원본이 30프레임이라 60으로 그려도 똑같습니다. 차이가 나는 건 끌기·던지기처럼 손으로 움직이는 순간뿐이라, <b>자동</b>은 그때만 60으로 올립니다. 30 고정은 노트북에서 가장 오래 갑니다</span></label><select data-s="display.fps"><option value="auto">자동 (손댈 때만 60 · 기본)</option><option value="30">30 프레임 (절전)</option><option value="60">60 프레임</option></select></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.hideFullscreen">전체화면 앱 위에서는 숨기기<span class="hint">앞에 있는 창이 모니터를 통째로 덮으면(전체화면 게임·영상) 사도가 잠시 사라지고, 벗어나면 돌아옵니다. 최대화 창은 전체화면으로 치지 않습니다. 모니터가 여럿이면 어느 한 화면이 전체화면이어도 전부 숨습니다</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.debug">디버그 표시 (상태 정보 · 판정 박스 · 바닥선 · 모니터 영역)</label></div>
     </div>
     <div class="card"><h3>동작 방식</h3>
-      <div class="hint">캐릭터는 각 모니터의 작업표시줄 위 바닥에서 지냅니다. 캐릭터 위가 아닌 곳은 클릭이 아래 창으로 통과하고, 캐릭터를 클릭해도 다른 창의 포커스를 빼앗지 않습니다. 스스로 최상위를 잡는 일부 게임(예: 메이플스토리) 위에서는 가려질 수 있습니다.</div>
+      <div class="hint">사도는 각 모니터의 작업표시줄 위 바닥에서 지냅니다. 사도 위가 아닌 곳은 클릭이 아래 창으로 통과하고, 사도를 클릭해도 다른 창의 포커스를 빼앗지 않습니다. 스스로 최상위를 잡는 일부 게임(예: 메이플스토리) 위에서는 가려질 수 있습니다.</div>
     </div>
   </section>
 
   <section id="tab-news">
     <h2>알림</h2>
     <div class="card"><h3>새 소식이 올라오면 크레페가 알려줘요</h3>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.enabled">알림 켜기<span class="hint">공식 유튜브·네이버 게임 라운지를 주기적으로 확인해 새 글/영상이 있으면 캐릭터 위에 말풍선으로 알려줍니다 (크레페 말투). 처음 켤 때 있는 글은 알리지 않습니다</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.enabled">알림 켜기<span class="hint">공식 유튜브·네이버 게임 라운지를 주기적으로 확인해 새 글/영상이 있으면 사도 위에 말풍선으로 알려줍니다 (크레페 말투). 처음 켤 때 있는 글은 알리지 않습니다</span></label></div>
       <div class="row"><label>확인 주기</label><input type="range" min="2" max="60" step="1" data-s="news.intervalMin"><span class="val" data-fmt="min"></span></div>
       <div class="row"><label>말풍선 표시 시간</label><input type="range" min="8" max="120" step="2" data-s="news.ttlSec"><span class="val" data-fmt="s0"></span></div>
     </div>
@@ -231,9 +231,9 @@
       <div class="row"><label class="toggle"><input type="checkbox" data-s="news.coupon">라운지 · 🧾 쿠폰 게시판</label></div>
     </div>
     <div class="card"><h3>알릴 때</h3>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.sound">캐릭터가 말하는 모션 + 대사</label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.sound">사도가 말하는 동작 + 대사</label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="news.toast">윈도우 알림(토스트)도 함께 표시</label></div>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.talkCrepe">말투를 크레페로 고정<span class="hint">끄면 첫 번째 캐릭터의 말투로 알려줍니다 (나무위키 대사표에서 사도별 어미·호칭·감탄사·실제 대사를 학습: 마요 "~함", 비비 "~사와요", 실비아 "~옵니다", 다야 "~거라", 쥬비 "~다비", 마에스트로 "확인 요망" …)</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="news.talkCrepe">말투를 크레페로 고정<span class="hint">끄면 첫 번째 사도의 말투로 알려줍니다 (나무위키 대사표에서 사도별 어미·호칭·감탄사·실제 대사를 학습: 마요 "~함", 비비 "~사와요", 실비아 "~옵니다", 다야 "~거라", 쥬비 "~다비", 마에스트로 "확인 요망" …)</span></label></div>
       <div class="row"><button class="btn" id="news-check">지금 확인</button><button class="btn" id="news-test">최근 소식 말풍선 미리보기</button><button class="btn" id="news-read">모두 읽음</button><span class="hint" id="news-status"></span></div>
     </div>
     <div class="card"><h3>최근 소식</h3><div id="news-list" class="hint">-</div></div>
@@ -250,7 +250,7 @@
       </ul>
     </div>
     <div class="card"><h3>사도가 자기 말투로 대답해요</h3>
-      <div class="hint">캐릭터 우클릭 → <b>말 걸기</b> 또는 <code>Ctrl+Shift+Space</code>. 나무위키 대사표로 만든 말투 프로필(호칭·어미·감탄사·대표 대사)을 AI에 넘겨 그 사도처럼 답하고, 답의 감정에 맞춰 표정·소리를 냅니다. 대화 내용은 이 PC와 선택한 AI 제공자에만 전송됩니다.</div>
+      <div class="hint">사도 우클릭 → <b>말 걸기</b> 또는 <code>Ctrl+Shift+Space</code>. 나무위키 대사표로 만든 말투 프로필(호칭·어미·감탄사·대표 대사)을 AI에 넘겨 그 사도처럼 답하고, 답의 감정에 맞춰 표정·소리를 냅니다. 대화 내용은 이 PC와 선택한 AI 제공자에만 전송됩니다.</div>
       <div class="row" style="margin-top:8px"><label>제공자</label>
         <select data-s="ai.provider">
           <option value="auto">자동 (Gemini → Anthropic → Ollama → OpenAI 호환 순으로 쓸 수 있는 것)</option>
@@ -289,10 +289,10 @@
       <div class="hint" style="margin-bottom:6px">혼잣말과 사도끼리 잡담은 대본이라 AI 가 필요 없습니다 — <b>행동</b> 탭에 있습니다.</div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.proactive">AI 로도 가끔 먼저 말 걸기<span class="hint">대본에 없는 말을 하게 합니다. 화면 보기도 이 설정을 따릅니다. <b>요금이 듭니다</b></span></label></div>
       <div class="row"><label>AI 로 먼저 말 걸기 간격<span class="hint">대본보다 훨씬 드물게</span></label><input type="range" min="10" max="180" step="5" data-s="ai.proactiveMin"><span class="val" data-fmt="min"></span></div>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">캐릭터별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.memory">대화 기억<span class="hint">사도별 최근 대화를 저장해 이어서 말합니다 (대화창의 '기록 지우기'로 삭제)</span></label></div>
     </div>
     <div class="card"><h3>화면 보기</h3>
-      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.screen">사도가 내 화면을 볼 수 있게<span class="hint"><b>켜면 스크린샷이 선택한 AI 제공자에게 전송됩니다.</b> 캐릭터가 서 있는 모니터를 1280px로 줄여 보내고, PC에 저장하지 않습니다. 메뉴 '내 화면 보고 한마디', 대화창의 📷, 먼저 말 걸기 일부에서 씁니다. 개인정보를 읽지 말라고 지시하지만 AI가 화면의 글을 볼 수 있다는 점은 감안해 주세요.</span></label></div>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="ai.screen">사도가 내 화면을 볼 수 있게<span class="hint"><b>켜면 스크린샷이 선택한 AI 제공자에게 전송됩니다.</b> 사도가 서 있는 모니터를 1280px로 줄여 보내고, PC에 저장하지 않습니다. 메뉴 '내 화면 보고 한마디', 대화창의 📷, 먼저 말 걸기 일부에서 씁니다. 개인정보를 읽지 말라고 지시하지만 AI가 화면의 글을 볼 수 있다는 점은 감안해 주세요.</span></label></div>
       <div class="row"><label>먼저 말 걸 때 화면을 보는 비율<span class="hint">먼저 말을 걸거나 둘이 잡담할 때 이 비율만큼 화면을 함께 봅니다</span></label><input type="range" min="0" max="100" step="10" data-s="ai.screenProactive"><span class="val" data-fmt="%"></span></div>
       <div class="row"><label>Ollama 화면 보기 모델<span class="hint">Ollama는 이미지를 볼 수 있는 모델이 따로 필요합니다 (qwen2.5vl:7b · llava …). Gemini·Claude는 기본 모델이 화면을 봅니다</span></label><input type="text" data-s="ai.ollama.visionModel"></div>
     </div>
@@ -308,13 +308,13 @@
     <div class="card"><div class="kv" id="about-kv"></div></div>
     <div class="card"><h3>파일</h3>
       <div class="row"><button class="btn" data-open="settings">설정 파일 위치 열기</button><button class="btn" data-open="assets">에셋 폴더 열기</button><button class="btn" id="assets-setup">에셋 다시 가져오기…</button></div>
-      <div class="hint">캐릭터·보이스 에셋은 이 앱에 들어 있지 않고, 사용자 PC의 뮤뮤 앱플레이어에 설치된 트릭컬 리바이브에서 직접 추출해 씁니다 (개인 사용 목적). 추출 결과물을 다른 사람에게 배포하지 마세요.</div>
+      <div class="hint">사도·보이스 에셋은 이 앱에 들어 있지 않고, 사용자 PC의 뮤뮤 앱플레이어에 설치된 트릭컬 리바이브에서 직접 추출해 씁니다 (개인 사용 목적). 추출 결과물을 다른 사람에게 배포하지 마세요.</div>
     </div>
     <div class="card"><h3>초기화</h3>
-      <div class="row"><label>모든 설정을 기본값으로 되돌립니다 (캐릭터 → 크레페, 크기 50%, 목소리·효과음 50%)</label><button class="btn danger" id="reset">초기화…</button></div>
+      <div class="row"><label>모든 설정을 기본값으로 되돌립니다 (사도 → 크레페, 크기 50%, 목소리·효과음 50%)</label><button class="btn danger" id="reset">초기화…</button></div>
     </div>
     <div class="card"><h3>크레딧</h3>
-      <div class="hint">엔진: Electron + spine-ts 4.1 (Esoteric Software). 캐릭터·보이스 데이터는 트릭컬 리바이브(에피드게임즈) 클라이언트에서 추출한 것으로 개인 사용 프로토타입 용도이며 재배포하지 않습니다.</div>
+      <div class="hint">엔진: Electron + spine-ts 4.1 (Esoteric Software). 사도·보이스 데이터는 트릭컬 리바이브(에피드게임즈) 클라이언트에서 추출한 것으로 개인 사용 프로토타입 용도이며 재배포하지 않습니다.</div>
     </div>
   </section>
 </main>
