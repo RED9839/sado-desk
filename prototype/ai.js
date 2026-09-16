@@ -51,14 +51,14 @@ const STYLE_DESC = {
   formal: "합니다체(~습니다/~입니다)로 격식 있게",
   casual: "반말(~야/~어/~지)로 친구처럼",
   royal: "고풍스러운 하대(~노라/~이니라/~하거라/~느냐)로 위엄 있게. 평범한 반말 어미(~야/~어)는 쓰지 않는다",
-  haso: "극존칭 옛말(~사옵니다/~이옵니다/~하시옵소서)로 공손하게. 모든 문장을 '~옵니다/~옵니까/~옵소서'로 끝낸다",
-  vivi: "귀족 아가씨 말투(~사와요/~이사와요)로 우아하게. 모든 문장을 '~사와요' 계열로 끝낸다",
+  haso: "극존칭 옛말로 공손하게 — 문장을 '~사옵니다/~이옵니다/~하시옵소서'로 맺는다. 다만 실제로는 평범한 존댓말·반말도 섞여 나온다(아래 말버릇 비율을 따른다)",
+  vivi: "귀족 아가씨 말투로 우아하게. 해요체를 기본으로 하되 힘주어 말할 때 '~사와요/~이사와요'가 튀어나온다(아래 말버릇 비율을 따른다)",
   noun: "명사형 종결(~함/~임/~음)로 짧고 건조하게",
   hao: "하오체(~소/~오/~하시오)로 점잖게",
   robot: "기계적인 보고체 — 모든 문장을 '~임./~음./~됨./~요망.'으로 끝낸다(~습니다 금지). 감정은 '분석 결과' 식으로",
-  jubee: "꿀벌 말투 — 모든 문장 끝을 반드시 '~다비'로 끝낸다(있다비, 먹었다비, 좋다비, 뭐다비?). 예외 없음",
-  ayla: "졸린 듯 느긋한 말투 — 모든 문장 끝을 '~그마~'로 끝낸다(좋그마~, 자고 싶그마~, 뭐그마~?). 예외 없음",
-  momo: "닌자 말투 — 모든 문장 끝을 '~입니닷/~습니닷/~닷'으로 끝낸다. 씩씩하게",
+  jubee: "꿀벌 말투 — 반말을 쓰되 문장 끝을 '~다비'로 맺는다(있다비, 좋다비, 뭐다비?). 매 문장은 아니고 아래 말버릇 비율만큼",
+  ayla: "졸린 듯 느긋한 반말 — 문장 끝을 '~그마~'로 맺는다(좋그마~, 자고 싶그마~, 뭐그마~?). 매 문장은 아니고 아래 말버릇 비율만큼",
+  momo: "씩씩한 닌자 말투 — 합니다체를 쓰되 끝을 '~입니닷/~습니닷/~닷'으로 야무지게 맺는다(아래 말버릇 비율만큼, 나머지는 평범한 ~입니다)",
   crepe: "해요체로 어리고 순수하게. 사물에도 '님'을 붙이고(유튜브님, 먼지님) 청소 비유를 자주 쓰며 '하핫', '헤헤' 웃음",
 };
 const STYLE_KO = { polite: "해요체", formal: "합니다체", casual: "반말", royal: "하대(~노라/~거라)", haso: "극존칭 옛말", vivi: "~사와요", noun: "명사형(~함/~임)", hao: "하오체", robot: "보고체", jubee: "~다비", ayla: "~그마", momo: "~입니닷", crepe: "해요체" };
@@ -75,6 +75,14 @@ function buildSystem(prof, opts = {}) {
   const direct = si && si.nTouchSent >= 5 ? si.endingsTouch : (si && si.endingsLobby);
   const mixTop = direct && Object.keys(direct).length ? Object.keys(direct).reduce((a, b) => direct[a] >= direct[b] ? a : b) : null;
   const mix = direct && mixTop ? (mixTop === p.style || !["polite", "formal", "casual"].includes(p.style) ? `실제 게임 대사에서 교주에게 쓰는 어미 비율: ${fmtMix(direct)}. 이 비율대로 섞어 말한다.` : `기본 말투는 위와 같지만 실제 대사에선 ${fmtMix(direct)} 정도로 섞인다 — 감탄·혼잣말은 편하게, 교주에게 직접 말할 땐 기본 말투로.`) : "";
+  // 말버릇 어미(~닷·~그마·~다비·~사와요·하오체…)는 실제로 100%가 아니라 평범한 어미와 섞여 나온다.
+  // 음성 STT 말뭉치는 표기 말버릇을 듣지 못하므로(모모의 '~닷'은 0%로 잡혔다) 글자 말뭉치(테마극장 화면 대사) 비율을 함께 쓴다.
+  const tic = si && si.tic ? si.tic : null;
+  const ticRatio = tic ? (tic.ratio != null ? tic.ratio : Math.max(tic.text || 0, tic.voice || 0)) : 0;
+  const ticHow = ticRatio >= 0.85 ? "거의 매 문장" : ticRatio >= 0.5 ? "문장 절반쯤" : ticRatio >= 0.3 ? "서너 문장에 한 번꼴로" : ticRatio >= 0.15 ? "대여섯 문장에 한 번쯤" : "가끔, 힘주어 말할 때만";
+  const ticTxt = tic && ticRatio >= 0.08
+    ? `말버릇 어미 "${tic.label || STYLE_KO[tic.form] || tic.form}": 같은 자리에 쓸 수 있는 보통 어미와 견주면 ${Math.round(ticRatio * 100)}% 꼴로 나온다 — ${ticHow} 쓰고 나머지는 보통 어미로 말한다.${ticRatio >= 0.85 ? "" : " 매 문장 반복하면 어색하다."}`
+    : "";
   const catch_ = si && si.catch && si.catch.length ? si.catch.slice(0, 8).join(", ") : "";
   // 관계(tools/build-relations.py: 스토리 대본에서 다른 사도를 부르는 말) · 테마극장(나무위키: 출연작·줄거리)
   const rel = p.rel || null, koOf = p.koOf || ((k) => k);
@@ -87,16 +95,21 @@ function buildSystem(prof, opts = {}) {
     `사용자를 부를 때는 "${p.addr || "교주"}"라고 부른다.${p.me ? ` 자신을 가리킬 때는 "${p.me}"라고 한다.` : ""}`,
     `말투: ${style}. 게임 속 성격과 세계관(엘리아스 대륙, 교단, 사도들)을 유지하되, 게임 지식이 확실치 않으면 아는 척하지 말고 자연스럽게 넘어간다.`,
     bible,
-    mix,
+    (ticTxt || (p.bible && p.bible.voice)) ? "" : mix, // 말버릇 어미(~다비 등) 비율이나 v2 말투 설계가 있으면 STT 실측 어미 비율은 뺀다(표본이 작은 사도는 이 줄이 되레 말투를 흐린다 — 크레페 43문장 50/50) — 둘이 다른 숫자를 말해 모순이 생긴다(STT는 표기 말버릇을 잘 못 듣는다)
+    ticTxt,
     interj ? `자주 쓰는 감탄사: ${interj}` : "",
     catch_ ? `자주 입에 올리는 사람·물건·소재(다른 사도보다 유난히): ${catch_}` : "",
     callsTxt ? `다른 사도를 부르는 말(원작 대사 기준): ${callsTxt}` : "",
     withTxt ? `원작 스토리에서 자주 얽히는 사도: ${withTxt}` : "",
     theaters ? `네가 주연으로 나온 테마극장(원작 이벤트 스토리):\n${theaters}` : "",
     lines ? `실제 대사 표본(말투 참고용, 그대로 반복하지 말 것):\n${lines}` : "",
+    (p.sampleLines || []).length ? `말투 예시 — 이 사도라면 이렇게 말한다(게임 대사가 아니라 참고용으로 지은 문장이다. 어미·호칭·자칭·말버릇만 참고하고 내용을 그대로 쓰지는 말 것):\n${p.sampleLines.slice(0, 3).map(l => `- ${l}`).join("\n")}` : "",
     "규칙:",
     "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
     "- AI나 언어모델이라는 말은 하지 않는다. 캐릭터로서 답한다. 모르는 것은 캐릭터답게 모른다고 한다.",
+    "- 자기가 사는 곳을 게임이라 부르지 않는다. '게임 속', '캐릭터', '설정상', '플레이어' 같은 말은 쓰지 않는다 — 여기는 그냥 사는 세상이다. 모르는 사람은 '그런 이름은 처음 듣는다'처럼 캐릭터답게 넘긴다.",
+    "- 무난한 답 금지: 매 답에 이 사도다운 요소가 하나는 드러나야 한다 — 말버릇·관심사·'상황별 반응'에 적힌 태도 중 하나. 같은 질문이라도 다른 사도와 다르게 답해야 한다. 단, 매 답마다 같은 소재만 되풀이하지는 말 것.",
+    "- '확정 설정'과 '하지 않는 것'에 어긋나는 말은 하지 않는다. 설정에 없는 사실을 지어내지 않는다.",
     "- 사용자의 화면·현재 시각·상황이 주어지면 그걸 자연스럽게 언급할 수 있다.",
     "- 화면 스크린샷이 첨부되면: 사용자가 지금 무엇을 하는지(게임·영상·코딩·문서·쇼핑·채팅 등)를 알아보고 캐릭터답게 반응한다. 화면에 보이는 이름·번호·주소·메시지 본문 같은 개인정보나 비밀은 절대 읽어 말하지 말고, 활동을 큰 틀에서만 언급한다. 바탕화면에 서 있는 SD 캐릭터(너 자신·다른 사도)나 말풍선은 무시한다.",
     "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나. 태그를 빼먹지 말 것.",
@@ -104,12 +117,23 @@ function buildSystem(prof, opts = {}) {
     opts.extra || "",
   ].filter(Boolean).join("\n");
 }
+// 말풍선에 들어가면 안 되는 것 정리 — 프롬프트로 금지해도 작은 모델은 이모지·마크다운·머리말을 흘린다
+function stripNoise(s) {
+  return (s || "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u27BF\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "") // 이모지
+    .replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)[*_]{1,2}(\S[^*_]*?)[*_]{1,2}(?=\s|$)/g, "$1$2") // 굵게·기울임
+    .replace(/^\s*#{1,6}\s*/gm, "").replace(/^\s*[-–—*]\s+/gm, "") // 제목·목록 기호
+    .replace(/^\s*(대답|답변|응답|예시|출력|다음)\s*[^\n:：]{0,6}[:：]\s*$/gm, "") // "대답 예시:" 같은 머리말 줄
+    .replace(/^\s*-{3,}\s*$/gm, "")
+    .replace(/[ \t]{2,}/g, " ").replace(/\n{2,}/g, "\n").trim();
+}
 function parseEmotion(text) {
   const t = (text || "").trim();
   // 정식은 [감정:분노]. 모델이 가끔 [분노:기본]·[감정 분노]·[분노]처럼 비틀어 쓰므로 대괄호 태그는 전부 떼고, 안의 낱말 중 감정 사전에 있는 첫 것을 고른다
   const m = /\[\s*감정\s*[:：]\s*([^\]]+)\]\s*$/.exec(t) || /\[\s*감정\s*[:：]\s*([^\]]+)\]/.exec(t) // 끝에 없으면 중간 어디든
     || /\[\s*([^\]]{1,24})\]\s*$/.exec(t);
-  const clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
+  let clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
+  clean = stripNoise(clean);
   const words = m ? m[1].split(/[\s:：,/|]+/).map(w => w.trim()).filter(Boolean) : [];
   const key = words.find(w => EMOTIONS[w] !== undefined) || (m ? m[1].trim() : "");
   if (key && EMOTIONS[key] !== undefined) return { text: clean, emotion: EMOTIONS[key], raw: key };
@@ -186,8 +210,15 @@ async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCf
   }
   let out = "", finish = "";
   for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const c = j.candidates?.[0]; const t = (c?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } if (c?.finishReason) { finish = c.finishReason; if (finish !== "STOP") console.log("[ai] gemini candidate", JSON.stringify({ finish, ratings: c.safetyRatings, pf: j.promptFeedback, usage: j.usageMetadata }).slice(0, 600)); } if (j.promptFeedback?.blockReason) finish = "PROMPT_" + j.promptFeedback.blockReason; }
-  if (finish && !/^(STOP|MAX_TOKENS)$/.test(finish)) { // 필터에 걸려 중간에 끊긴 답은 말풍선에 반쪽만 뜨니 실패로 처리해 상위에서 알리게
-    if (out.trim().length < 12) { if (!relaxed && finish === "SAFETY") return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt, true); throw new Error(`Gemini 필터로 답이 차단됨 (${finish})`); }
+  if (finish && !/^(STOP|MAX_TOKENS)$/.test(finish)) { // 필터에 걸려 중간에 끊긴 답은 말풍선에 반쪽만 뜬다
+    // 길이가 아니라 '문장이 끝났는가'로 본다 — 34자여도 말끝이 잘렸으면 그대로 내보내면 안 된다
+    const done = /[.!?~…⋯"'」』)\]]\s*$/.test(out.trim()) || /(다|요|죠|까|군|네|야|어|지)\s*$/.test(out.trim());
+    if (!done || out.trim().length < 12) {
+      if (!relaxed && finish === "SAFETY") return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt, true); // 필터를 낮춰 한 번 더
+      const cut = out.replace(/[^.!?~…⋯]*$/, "").trim(); // 재시도도 잘렸으면 마지막 완결 문장까지만
+      if (cut.length >= 8) { console.log("[ai] gemini", finish, "→ 완결 문장까지만", JSON.stringify(cut.slice(-40))); return cut; }
+      throw new Error(`Gemini 필터로 답이 차단됨 (${finish})`);
+    }
     console.log("[ai] gemini finishReason", finish, "→ 잘린 답", JSON.stringify(out.slice(-60)));
   }
   return out;
@@ -281,18 +312,27 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
 function bibleBrief(b, o = {}) {
   if (!b) return "";
   const rel = (b.rel || []).slice(0, o.rel == null ? 6 : o.rel);
+  // v2 행동 층(facts·voice·react·topics·never·mood, tools/bible-v2-sample.py) — 있는 사도만. short(둘 잡담)에서는 facts·voice·never 를 짧게
+  const react = b.react && !o.short ? Object.entries(b.react).slice(0, 12).map(([k, v]) => `  - ${k}: ${v}`).join("\n") : "";
   return [
     b.who ? `인물: ${b.who}` : "",
+    b.facts && b.facts.length ? `확정 설정(틀리지 말 것): ${b.facts.slice(0, o.short ? 4 : 12).join(" / ")}` : "",
     b.traits && b.traits.length ? `성격·특징: ${b.traits.slice(0, o.traits || 6).join(" / ")}` : "",
     rel.length ? `다른 사도와의 관계: ${rel.join(" · ")}` : "",
     !o.short && b.story ? `원작 행적: ${b.story}` : "",
+    !o.short && b.theater && b.theater.length ? `테마극장에서 보인 모습:\n${b.theater.slice(0, o.theater == null ? 2 : o.theater).map(t => `  - ${t}`).join("\n")}` : "",
+    b.voice && b.voice.length ? `말투 설계: ${b.voice.slice(0, o.short ? 3 : 8).join(" / ")}` : "",
     b.quirk ? `말버릇·버릇: ${b.quirk}` : "",
+    react ? `상황별 반응(이 사도라면):\n${react}` : "",
+    !o.short && b.topics && b.topics.length ? `먼저 꺼낼 만한 화제: ${b.topics.slice(0, 8).join(", ")}` : "",
+    b.never && b.never.length ? `하지 않는 것(설정 오류 방지): ${b.never.slice(0, o.short ? 3 : 8).join(" / ")}` : "",
+    !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
 function personaBrief(p) {
   const si = p.styleInfo || null;
   const lines = [...(p.lines || []).slice(0, 4), ...((si && si.samples) || []).slice(0, 6)].map(l => `  - ${l}`).join("\n");
-  const bible = p.bible ? bibleBrief({ who: p.bible.who, traits: p.bible.traits, quirk: p.bible.quirk }, { short: true, traits: 4 }).split("\n").map(l => `  ${l}`).join("\n") : "";
+  const bible = p.bible ? bibleBrief({ who: p.bible.who, facts: p.bible.facts, traits: p.bible.traits, quirk: p.bible.quirk, voice: p.bible.voice, never: p.bible.never }, { short: true, traits: 4 }).split("\n").map(l => `  ${l}`).join("\n") : "";
   return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, bible, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
 }
 // A의 인물 사전에서 B(이름)에 대한 관계 서술 — "B: 설명" 형식 항목 중 이름이 앞에 오는 것
