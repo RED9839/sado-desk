@@ -97,9 +97,10 @@ function buildSystem(prof, opts = {}) {
   const theaters = (p.theaters || []).slice(0, 3).map(t => `- ${t.title}${t.cast && t.cast.length ? ` (함께: ${t.cast.filter(c => c !== p.ko).slice(0, 4).join(", ")})` : ""}${t.synopsis ? `: ${t.synopsis.slice(0, 90)}` : ""}`).join("\n");
   const bible = bibleBrief(p.bible, { rel: 8 });
   return [
-    `너는 모바일 게임 <트릭컬 리바이브>의 사도 "${p.ko}"${p.skin ? ` (지금 입은 옷: ${p.skin})` : ""}이다. 지금은 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있고, 사용자는 게임의 플레이어(교주)다.`,
+    // 여기서 '게임'이라는 말을 쓰면 모델이 그대로 받아 "저는 게임 속 캐릭터예요" 라고 답한다(실측 87%). 사는 세상 안에서만 말한다
+    `너는 "${p.ko}"${p.skin ? ` (지금 입은 옷: ${p.skin})` : ""}다. 엘리아스 대륙의 사도이고, 지금은 어찌 된 일인지 사용자의 PC 바탕화면 한쪽에 손바닥만 한 모습으로 서 있다. 사용자는 교단의 교주이고, 네가 늘 곁에서 지내는 사람이다.`,
     `사용자를 부를 때는 "${p.addr || "교주"}"라고 부른다.${p.me ? ` 자신을 가리킬 때는 "${p.me}"라고 한다.` : ""}`,
-    `말투: ${style}. 게임 속 성격과 세계관(엘리아스 대륙, 교단, 사도들)을 유지하되, 게임 지식이 확실치 않으면 아는 척하지 말고 자연스럽게 넘어간다.`,
+    `말투: ${style}. 네가 사는 세상(엘리아스 대륙, 교단, 사도들)의 일은 아는 대로 말하되, 확실치 않으면 아는 척하지 말고 자연스럽게 넘어간다.`,
     bible,
     (ticTxt || (p.bible && p.bible.voice)) ? "" : mix, // 말버릇 어미(~다비 등) 비율이나 v2 말투 설계가 있으면 STT 실측 어미 비율은 뺀다(표본이 작은 사도는 이 줄이 되레 말투를 흐린다 — 크레페 43문장 50/50) — 둘이 다른 숫자를 말해 모순이 생긴다(STT는 표기 말버릇을 잘 못 듣는다)
     ticTxt,
@@ -112,8 +113,10 @@ function buildSystem(prof, opts = {}) {
     (p.sampleLines || []).length ? `말투 예시 — 이 사도라면 이렇게 말한다(게임 대사가 아니라 참고용으로 지은 문장이다. 어미·호칭·자칭·말버릇만 참고하고 내용을 그대로 쓰지는 말 것):\n${p.sampleLines.slice(0, 3).map(l => `- ${l}`).join("\n")}` : "",
     "규칙:",
     "- 답은 한국어로 1~3문장, 100자 안팎. 말풍선 하나에 들어가야 한다 — 길면 읽히지 않는다. 목록·마크다운·이모지 금지.",
-    "- AI나 언어모델이라는 말은 하지 않는다. 캐릭터로서 답한다. 모르는 것은 캐릭터답게 모른다고 한다.",
-    "- 자기가 사는 곳을 게임이라 부르지 않는다. '게임 속', '캐릭터', '설정상', '플레이어' 같은 말은 쓰지 않는다 — 여기는 그냥 사는 세상이다. 모르는 사람은 '그런 이름은 처음 듣는다'처럼 캐릭터답게 넘긴다.",
+    "- 'AI냐', '프로그램이냐', '게임 캐릭터냐' 하고 물어도 그 낱말을 따라 쓰지 않는다. 무슨 소리인지 모르겠다는 듯 되묻거나 네 이야기로 말을 돌린다 — 'AI', '인공지능', '언어모델', '게임', '캐릭터', '설정', '플레이어' 는 네 입에서 나오지 않는 말이다.",
+    "- '과금', '가챠', '뽑기', '결제', '레벨업', '스킬 강화' 같은 말도 처음 듣는 낱말이다. 물으면 되묻거나 딴 이야기를 한다.",
+    "- 코드 짜기·번역·계산·요약 같은 일은 하지 않는다. 프로그램 코드는 한 글자도 쓰지 않는다 — 파이썬, 함수, def, print 같은 것을 적으면 안 된다. 못 알아듣겠다는 듯 되묻고 네 이야기로 넘긴다.",
+    "- 모르는 것은 캐릭터답게 모른다고 한다. '그런 이름은 처음 듣는다' 처럼.",
     "- 무난한 답 금지: 매 답에 이 사도다운 요소가 하나는 드러나야 한다 — 말버릇·관심사·'상황별 반응'에 적힌 태도 중 하나. 같은 질문이라도 다른 사도와 다르게 답해야 한다. 단, 매 답마다 같은 소재만 되풀이하지는 말 것.",
     "- '확정 설정'과 '하지 않는 것'에 어긋나는 말은 하지 않는다. 설정에 없는 사실을 지어내지 않는다.",
     "- 주어진 현재 시각·상황은 자연스럽게 언급할 수 있다.",
@@ -128,6 +131,8 @@ function buildSystem(prof, opts = {}) {
 // 말풍선에 들어가면 안 되는 것 정리 — 프롬프트로 금지해도 작은 모델은 이모지·마크다운·머리말을 흘린다
 function stripNoise(s) {
   return (s || "")
+    .replace(/```[\s\S]*?```/g, "")  // 코드 블록 — 프롬프트로 막아도 30명 전원이 썼다(실측)
+    .replace(/```[\s\S]*$/, "").replace(/^\s*(python|js|javascript|json|bash)\s*$/gim, "")  // 닫히지 않은 블록·언어 꼬리표
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u27BF\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, "") // 이모지
     .replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)[*_]{1,2}(\S[^*_]*?)[*_]{1,2}(?=\s|$)/g, "$1$2") // 굵게·기울임
     .replace(/^\s*#{1,6}\s*/gm, "").replace(/^\s*[-–—*]\s+/gm, "") // 제목·목록 기호
@@ -144,11 +149,14 @@ function parseEmotion(text) {
   const TAG_ANY = /[\[{(]\s*[*_]*\s*감정\s*[:：]\s*([^\]})]+?)[*_]*\s*[\]})][*_]*/;
   const m = TAG_END.exec(t) || TAG_ANY.exec(t) // 끝에 없으면 중간 어디든
     || /\[\s*([^\]]{1,24})\]\s*$/.exec(t);
-  let clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
+  // 끝에 (미소) 처럼 괄호로 쓰기도 한다 — 감정 사전에 있는 낱말일 때만 태그로 본다((꿀밤을 때린다) 같은 지문은 남긴다)
+  const pm = m ? null : /[(（]\s*([^)）]{1,12})\s*[)）]\s*$/.exec(t);
+  const m2 = pm && EMOTIONS[pm[1].trim()] !== undefined ? pm : m;
+  let clean = (m2 ? t.slice(0, m2.index) + t.slice(m2.index + m2[0].length) : t).replace(/\n{2,}/g, "\n").trim();
   clean = stripNoise(clean);
   // 태그 안에 마크다운이 섞여 오기도 한다: [*감정:미소*] → 별표·밑줄·백틱을 떼고 낱말을 본다
-  const words = m ? m[1].split(/[\s:：,/|]+/).map(w => w.replace(/[*_`~"'“”]/g, "").trim()).filter(Boolean) : [];
-  const key = words.find(w => EMOTIONS[w] !== undefined) || (m ? m[1].trim() : "");
+  const words = m2 ? m2[1].split(/[\s:：,/|]+/).map(w => w.replace(/[*_`~"'“”]/g, "").trim()).filter(Boolean) : [];
+  const key = words.find(w => EMOTIONS[w] !== undefined) || (m2 ? m2[1].trim() : "");
   if (key && EMOTIONS[key] !== undefined) return { text: clean, emotion: EMOTIONS[key], raw: key };
   // 태그를 빼먹은 모델(작은 로컬 모델·Gemini가 가끔) → 본문에서 대충 추정
   const guess = /(화나|화났|짜증|사과해|용서|건방|무례|감히|버릇|혼내|때린다)/.test(clean) ? "anger"
@@ -394,6 +402,8 @@ function buildDuoSystem(a, b, opts = {}) {
     `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${la}가 먼저 시작한다.`,
     `- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 "${la}" / "${lb}" 그대로)`,
     "- 원작에서 둘의 관계(친구·라이벌·동료·가족 등)를 안다면 반영하고, 모르면 첫 만남처럼 자연스럽게. 서로의 말투·성격이 뚜렷이 드러나게.",
+    "- 둘은 서로에게 말한다. 교주(사용자)를 부르거나 교주에게 말을 걸지 않는다 — 교주 이야기가 나와도 서로 주고받는 말이어야 한다.",
+    "- 감정은 반드시 [감정:x] 형식으로만 쓴다. (미소) 처럼 괄호로 적지 않는다.",
     "- 마크다운·이모지·설명·따옴표 금지. 대사만.",
     opts.extra || "",
   ].filter(Boolean).join("\n");
@@ -426,7 +436,7 @@ async function duo(ai, profA, profB, opts = {}) {
   else if (provider === "gemini") text = await chatGemini(cfg.gemini, decKey(cfg.keys.gemini), system, messages, noop, opts.signal);
   else if (provider === "anthropic") text = await chatAnthropic(cfg.anthropic, decKey(cfg.keys.anthropic), system, messages, noop, opts.signal);
   else text = await chatOpenAI(cfg.openai, decKey(cfg.keys.openai), system, messages, noop, opts.signal);
-  const lines = parseDuo(text, profA, profB);
+  const lines = parseDuo(text, profA, profB).slice(0, opts.n || 4); // '정확히 N줄'을 자주 넘긴다 — 넘치는 줄은 버린다
   return { lines, raw: text, provider, model: cfg[provider]?.model || "" };
 }
 module.exports = { bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
