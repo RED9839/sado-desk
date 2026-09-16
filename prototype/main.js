@@ -6,6 +6,12 @@ const Ai = require("./ai.js");
 const path = require("node:path");
 const fs = require("node:fs");
 
+// 터미널에서 띄운 뒤 그 터미널이 닫히면 stdout 이 끊긴다. 그때 console.log 하나가
+// 잡히지 않은 예외가 되어 본체를 통째로 죽였다 (EPIPE). 로그는 죽을 이유가 못 된다.
+for (const s of [process.stdout, process.stderr]) {
+  try { s.on("error", (e) => { if (!e || e.code !== "EPIPE") throw e; }); } catch {}
+}
+
 // 앱이 배포하는 데이터(한글 이름표·말투 프로필) = data/ (asar 안). 게임 에셋(스켈레톤·텍스처·보이스)은 배포하지 않고
 // 사용자가 자기 PC의 뮤뮤(트릭컬)에서 추출해 userData/assets 에 둔다 (tools/extract-all.py, 설정 창의 '에셋 가져오기').
 const DATA_ROOT = path.join(__dirname, "data").split(path.sep).join("/");
