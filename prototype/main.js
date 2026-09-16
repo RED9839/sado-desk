@@ -396,14 +396,22 @@ async function chatTurn(id, userText, opts = {}) {
   if (chatBusy || duoBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
   chatBusy = true; lastChatAt = Date.now();
   const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
-  const hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
-  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })), ...(userText || opts.image ? [{ role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }] : [])];
+  let hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
+  // 먼저 말 걸 때는 참고할 기록을 최근 두 마디로 줄인다. 제 지난 답이 길게 쌓여 있으면 모델이 그 길이를
+  // 따라가 회차마다 답이 길어졌다(실측 1회 77자 → 3회 141자, 120자 초과 4건 → 100건)
+  if (!userText && !opts.image) hist = hist.slice(-2);
+  // 사용자가 보낸 말이 없으면(먼저 말 걸기) 침묵을 알리는 한 줄을 붙인다. 안 붙이면 기록 끝이 assistant 라
+  // normalizeMessages 가 "(계속)" 을 붙이고, 모델은 먼저 말을 거는 대신 자기 혼잣말에 이어 대답한다
+  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })),
+    (userText || opts.image)
+      ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
+      : { role: "user", text: "(사용자가 조용히 있다)" }];
   chatAbort = new AbortController();
   sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
   try {
     const now = new Date();
     const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
-    const r = await Ai.chat(ai, prof, msgs.length ? msgs : [{ role: "user", text: "(사용자가 조용히 있다)" }], (d) => chatSend("chat:token", { delta: d }), { extra, signal: chatAbort.signal });
+    const r = await Ai.chat(ai, prof, msgs, (d) => chatSend("chat:token", { delta: d }), { extra, signal: chatAbort.signal });
     const saved = [...hist, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
     if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
     if (opts.say) chatSend("chat:say", { text: r.text }); else chatSend("chat:done", { text: r.text, emotion: r.emotion });
@@ -519,10 +527,13 @@ ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pul
 }));
 ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.com/download", gemini: "https://aistudio.google.com/apikey", anthropic: "https://console.anthropic.com/settings/keys", groq: "https://console.groq.com/keys" }[which]; if (u) shell.openExternal(u); });
 // 먼저 말 걸기: 대화가 없던 시간이 proactiveMin을 넘으면 가끔 (분마다 확인, 확률로 흩뿌림)
+let proactiveBusy = false; // Ai.status()를 기다리는 동안 다음 타이머가 겹쳐 들어오면 사도가 둘 연달아 말을 건다
 setInterval(async () => {
-  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || duoBusy || !mascotStarted) return;
+  const ai = settings.global.ai; if (!ai || !ai.proactive || chatBusy || duoBusy || proactiveBusy || !mascotStarted) return;
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (ai.proactiveMin || 40) || Math.random() > 0.25) return;
+  proactiveBusy = true;
+  try {
   const st = await Ai.status(ai); if (!st.resolved) return;
   const withScreen = screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0);
   if (ai.duo !== false && instances.size >= 2 && Math.random() < 0.5) { const pr = duoPair(); if (pr) { duoTalk(pr.a, pr.b, { screen: withScreen, quiet: true }); return; } } // 둘 이상이면 절반은 둘이 잡담 (자동은 실패해도 조용히)
@@ -531,11 +542,12 @@ setInterval(async () => {
   if (withScreen) { screenTalk(id, ""); return; }
   openChat(id, { quiet: true });
   setTimeout(async () => {
-    await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 짧게(한두 문장) 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." });
+    await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 한두 문장(60자 안팎)으로 짧게 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." });
     const sec = +settings.global.ai.chatAutoCloseSec; if (!(sec > 0)) return;
     const opened = lastChatAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
     setTimeout(() => { if (chatWin && !chatWin.isDestroyed() && !chatWin.isFocused() && !chatBusy && lastChatAt === opened) closeChat(); }, sec * 1000);
   }, 900);
+  } finally { proactiveBusy = false; }
 }, 60000);
 app._startedAt = Date.now();
 function initNews() {

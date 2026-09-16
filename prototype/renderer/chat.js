@@ -37,6 +37,11 @@
     else if (cur) { cur.classList.remove("typing"); cur.textContent = text; }
     cur = null; setBusy(false); resize();
   });
-  host.on("chat:say", ({ text }) => { add("bot", text); cur = null; setBusy(false); });
+  // 먼저 말 걸기. 스트리밍으로 이미 말풍선이 하나 만들어져 있으므로 새로 붙이지 않고 그것을 마무리한다
+  // (새로 붙이면 감정 태그가 붙은 날것 말풍선이 하나 남아 혼잣말을 두 번 한 것처럼 보였다)
+  host.on("chat:say", ({ text }) => {
+    if (cur) { cur.classList.remove("typing"); cur.textContent = text; } else add("bot", text);
+    cur = null; setBusy(false); resize();
+  });
   host.on("chat:status", ({ text }) => { el("status").textContent = text || ""; });
 })();

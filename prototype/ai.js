@@ -14,7 +14,12 @@ const path = require("node:path");
 
 // 태그 표준 8종 + 작은 모델이 멋대로 쓰는 유사어(기대·평화·즐거움·당황·짜증…)도 받아 준다
 const EMOTIONS = { "행복": "happy", "기쁨": "happy", "즐거움": "happy", "기대": "happy", "설렘": "happy", "신남": "happy", "웃음": "happy", "미소": "smile", "만족": "smile", "자랑": "smile", "뿌듯": "smile", "평화": "smile", "여유": "smile",
-  "분노": "anger", "화남": "anger", "짜증": "anger", "불만": "anger", "슬픔": "sad", "우울": "sad", "서운": "sad", "걱정": "sad", "미안": "sad", "놀람": "surprise", "당황": "surprise", "경악": "surprise", "궁금": "surprise", "냠냠": "eat", "배고픔": "eat", "먹기": "eat", "삐짐": "sulky", "심심": "sulky", "지루": "sulky", "졸림": "sulky", "기본": "", "평온": "", "무표정": "", "차분": "" };
+  "분노": "anger", "화남": "anger", "짜증": "anger", "불만": "anger", "슬픔": "sad", "우울": "sad", "서운": "sad", "걱정": "sad", "미안": "sad", "놀람": "surprise", "당황": "surprise", "경악": "surprise", "궁금": "surprise", "냠냠": "eat", "배고픔": "eat", "먹기": "eat", "삐짐": "sulky", "심심": "sulky", "지루": "sulky", "졸림": "sulky", "기본": "", "평온": "", "무표정": "", "차분": "",
+  // 모델이 8개 밖에서 지어내 쓰던 낱말들(실측 414건 중 16건) — 표정을 못 고르느니 가까운 쪽으로 받는다
+  "희망": "happy", "흥분": "happy", "화끈": "happy", "감동": "happy", "재미": "happy",
+  "결의": "smile", "느긋함": "smile", "뿌듯함": "smile", "자신감": "smile",
+  "호기심": "surprise", "의문": "surprise", "피로": "sulky", "귀찮": "sulky",
+  "공상": "", "생각": "", "고민": "", "무심": "" };
 const DEFAULTS = {
   provider: "auto",
   ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
@@ -65,6 +70,7 @@ const STYLE_KO = { polite: "해요체", formal: "합니다체", casual: "반말"
 function buildSystem(prof, opts = {}) {
   const p = prof || { ko: "크레페", style: "crepe", addr: "교주님", lines: [] };
   const style = STYLE_DESC[p.style] || STYLE_DESC.polite;
+  const seeing = !!opts.image; // 이번 턴에 화면 스크린샷이 붙었는가 — 안 붙었으면 화면 이야기를 아예 꺼내지 않게 한다
   const si = p.styleInfo || null; // tools/analyze-scripts.py 가 게임 보이스 STT 대본(스토리·테마극장·로비 3만여 문장)에서 뽑은 실측치
   const wiki = (p.lines || []).slice(0, si ? 6 : 10);
   const samples = si ? (si.samples || []).filter(l => !wiki.includes(l)).slice(0, 14) : [];
@@ -105,13 +111,15 @@ function buildSystem(prof, opts = {}) {
     lines ? `실제 대사 표본(말투 참고용, 그대로 반복하지 말 것):\n${lines}` : "",
     (p.sampleLines || []).length ? `말투 예시 — 이 사도라면 이렇게 말한다(게임 대사가 아니라 참고용으로 지은 문장이다. 어미·호칭·자칭·말버릇만 참고하고 내용을 그대로 쓰지는 말 것):\n${p.sampleLines.slice(0, 3).map(l => `- ${l}`).join("\n")}` : "",
     "규칙:",
-    "- 답은 한국어로 1~3문장, 말풍선에 들어갈 만큼 짧게. 목록·마크다운·이모지 금지.",
+    "- 답은 한국어로 1~3문장, 100자 안팎. 말풍선 하나에 들어가야 한다 — 길면 읽히지 않는다. 목록·마크다운·이모지 금지.",
     "- AI나 언어모델이라는 말은 하지 않는다. 캐릭터로서 답한다. 모르는 것은 캐릭터답게 모른다고 한다.",
     "- 자기가 사는 곳을 게임이라 부르지 않는다. '게임 속', '캐릭터', '설정상', '플레이어' 같은 말은 쓰지 않는다 — 여기는 그냥 사는 세상이다. 모르는 사람은 '그런 이름은 처음 듣는다'처럼 캐릭터답게 넘긴다.",
     "- 무난한 답 금지: 매 답에 이 사도다운 요소가 하나는 드러나야 한다 — 말버릇·관심사·'상황별 반응'에 적힌 태도 중 하나. 같은 질문이라도 다른 사도와 다르게 답해야 한다. 단, 매 답마다 같은 소재만 되풀이하지는 말 것.",
     "- '확정 설정'과 '하지 않는 것'에 어긋나는 말은 하지 않는다. 설정에 없는 사실을 지어내지 않는다.",
-    "- 사용자의 화면·현재 시각·상황이 주어지면 그걸 자연스럽게 언급할 수 있다.",
-    "- 화면 스크린샷이 첨부되면: 사용자가 지금 무엇을 하는지(게임·영상·코딩·문서·쇼핑·채팅 등)를 알아보고 캐릭터답게 반응한다. 화면에 보이는 이름·번호·주소·메시지 본문 같은 개인정보나 비밀은 절대 읽어 말하지 말고, 활동을 큰 틀에서만 언급한다. 바탕화면에 서 있는 SD 캐릭터(너 자신·다른 사도)나 말풍선은 무시한다.",
+    "- 주어진 현재 시각·상황은 자연스럽게 언급할 수 있다.",
+    seeing
+      ? "- 화면 스크린샷이 첨부되었다: 사용자가 지금 무엇을 하는지(게임·영상·코딩·문서·쇼핑·채팅 등)를 알아보고 캐릭터답게 반응한다. 화면에 보이는 이름·번호·주소·메시지 본문 같은 개인정보나 비밀은 절대 읽어 말하지 말고, 활동을 큰 틀에서만 언급한다. 바탕화면에 서 있는 SD 캐릭터(너 자신·다른 사도)나 말풍선은 무시한다."
+      : "- 사용자의 화면은 보이지 않는다. 무엇을 보고 있는지·무슨 작업을 하는지 아는 척하지 말고, 화면·모니터 이야기를 먼저 꺼내지 않는다. 네가 바탕화면 위에 서 있다는 것만 안다.",
     "- 마지막 줄에 반드시 감정 태그 하나를 붙인다: [감정:행복] [감정:미소] [감정:분노] [감정:슬픔] [감정:놀람] [감정:냠냠] [감정:삐짐] [감정:기본] 중 하나. 태그를 빼먹지 말 것.",
     "답 형식 예시:\n간식 좀 남은 거 없어? 배고파~!\n[감정:냠냠]",
     opts.extra || "",
@@ -125,16 +133,21 @@ function stripNoise(s) {
     .replace(/^\s*#{1,6}\s*/gm, "").replace(/^\s*[-–—*]\s+/gm, "") // 제목·목록 기호
     .replace(/^\s*(대답|답변|응답|예시|출력|다음)\s*[^\n:：]{0,6}[:：]\s*$/gm, "") // "대답 예시:" 같은 머리말 줄
     .replace(/^\s*-{3,}\s*$/gm, "")
+    .replace(/(^|\s)[*_`]{1,3}(?=\s|$)/g, "$1") // 짝을 잃고 남은 별표·밑줄 (…드세요! **)
     .replace(/[ \t]{2,}/g, " ").replace(/\n{2,}/g, "\n").trim();
 }
 function parseEmotion(text) {
   const t = (text || "").trim();
   // 정식은 [감정:분노]. 모델이 가끔 [분노:기본]·[감정 분노]·[분노]처럼 비틀어 쓰므로 대괄호 태그는 전부 떼고, 안의 낱말 중 감정 사전에 있는 첫 것을 고른다
-  const m = /\[\s*감정\s*[:：]\s*([^\]]+)\]\s*$/.exec(t) || /\[\s*감정\s*[:：]\s*([^\]]+)\]/.exec(t) // 끝에 없으면 중간 어디든
+  // 괄호는 [] {} () 다 오고, 안팎에 마크다운이 붙기도 한다: [*감정:기본]*, {감정:행복}, **[감정:미소]**
+  const TAG_END = /[\[{(]\s*[*_]*\s*감정\s*[:：]\s*([^\]})]+?)[*_]*\s*[\]})][*_]*\s*$/;
+  const TAG_ANY = /[\[{(]\s*[*_]*\s*감정\s*[:：]\s*([^\]})]+?)[*_]*\s*[\]})][*_]*/;
+  const m = TAG_END.exec(t) || TAG_ANY.exec(t) // 끝에 없으면 중간 어디든
     || /\[\s*([^\]]{1,24})\]\s*$/.exec(t);
   let clean = (m ? t.slice(0, m.index) + t.slice(m.index + m[0].length) : t).replace(/\n{2,}/g, "\n").trim();
   clean = stripNoise(clean);
-  const words = m ? m[1].split(/[\s:：,/|]+/).map(w => w.trim()).filter(Boolean) : [];
+  // 태그 안에 마크다운이 섞여 오기도 한다: [*감정:미소*] → 별표·밑줄·백틱을 떼고 낱말을 본다
+  const words = m ? m[1].split(/[\s:：,/|]+/).map(w => w.replace(/[*_`~"'“”]/g, "").trim()).filter(Boolean) : [];
   const key = words.find(w => EMOTIONS[w] !== undefined) || (m ? m[1].trim() : "");
   if (key && EMOTIONS[key] !== undefined) return { text: clean, emotion: EMOTIONS[key], raw: key };
   // 태그를 빼먹은 모델(작은 로컬 모델·Gemini가 가끔) → 본문에서 대충 추정
@@ -295,7 +308,7 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
   const provider = opts.provider || s.resolved;
   if (!provider) throw new Error("no-provider");
   messages = normalizeMessages(messages);
-  const system = buildSystem(prof, { extra: opts.extra });
+  const system = buildSystem(prof, { extra: opts.extra, image: messages.some(m => m.image) });
   const signal = opts.signal;
   let text;
   if (provider === "ollama") { if (!s.ollama.running) throw new Error("Ollama가 실행 중이 아니에요"); text = await chatOllama(cfg.ollama, system, messages, onToken, signal); }
