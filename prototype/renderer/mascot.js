@@ -116,6 +116,13 @@
   // ================= 창 공유 상태 =================
   let cfg = null, ctx, renderer;
   let W = 0, H = 0;
+  // WebGL 컨텍스트 상실(GPU 드라이버 갱신·절전 복귀·GPU 프로세스 재시작). spine 의 ManagedWebGLRenderingContext 가 lost 를 preventDefault 하고
+  // restored 에 텍스처·셰이더·배처를 다시 올려 주지만, 그 사이 render() 는 매 프레임 던져 초당 30번 에러를 찍고, 복구 뒤엔
+  // pma:false 아틀라스가 프리멀티플라이 없이 올라와 가장자리에 흰 테가 돌아온다(GLTexture.restore 는 pixelStorei 를 모른다).
+  let glLost = false, glFrames = 0;
+  const pmaFix = new Set();    // 업로드 때 UNPACK_PREMULTIPLY_ALPHA 가 필요했던 텍스처 — 복구 뒤 같은 플래그로 다시 올린다
+  let miniTextures = [];       // 미니미 아틀라스 텍스처(창이 사는 동안 유지) — pmaFix 추적용으로 붙들어 둔다
+  const disposeTex = (t) => { pmaFix.delete(t); try { t.dispose(); } catch {} };
   // ---- 모니터 기하 (창 기준, 월드 y는 위로 증가) ----
   // geoD: [{x0,x1, floor(월드y), top(월드y)}] — floor = 작업표시줄 위, top = 모니터 상단. 창이 작업표시줄까지 덮으면 floor 아래 영역은 작업표시줄 위에 그려진다.
   let geoD = [];
@@ -164,9 +171,10 @@
         ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, page.pma ? 0 : 1);
         const tex = new spine.GLTexture(ctx, img); textures.push(tex);
         ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+        if (!page.pma) pmaFix.add(tex);
         page.setTexture(tex);
       }
-    } catch (e) { for (const t of textures) try { t.dispose(); } catch {} throw e; } // 페이지가 여럿인 아틀라스에서 둘째 그림이 없으면 첫째 GL 텍스처가 아무도 모르게 남는다
+    } catch (e) { for (const t of textures) disposeTex(t); throw e; } // 페이지가 여럿인 아틀라스에서 둘째 그림이 없으면 첫째 GL 텍스처가 아무도 모르게 남는다
     return { atlas, textures };
   }
   // ---- SD(스탠딩) 에셋 찾기: 사이트 HD 우선, 없으면 게임 추출본, 스킨 전용 없으면 기본 ----
@@ -217,9 +225,19 @@
     setGeo(cfg.geo);
     ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true, premultipliedAlpha: true, antialias: true });
     renderer = new spine.SceneRenderer(canvas, ctx, true);
+    // spine 이 생성자에서 먼저 등록했으니 같은 이벤트에서 우리 것은 그 뒤에 돈다 — 복구 순서(spine 재업로드 → PMA 재업로드)가 여기에 걸려 있다
+    canvas.addEventListener("webglcontextlost", () => { glLost = true; for (const mas of mascots.values()) mas.hideHit(); }, false); // 안 보이는 사도가 클릭을 먹지 않게
+    canvas.addEventListener("webglcontextrestored", () => {
+      const gl = ctx.gl;
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+      for (const t of pmaFix) try { t.update(false); } catch (e) { console.warn("PMA 재업로드 실패", e); } // update(useMipMaps) — 우리는 밉맵을 안 쓴다
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+      glLost = false; last = performance.now(); acc = 0; // 잃어버린 동안 쌓인 시간을 한 번에 넘기지 않게
+    }, false);
 
     const root = `${cfg.assetRoot}/minimi`;
-    const { atlas } = await loadAtlas(`${root}/minimi.atlas`, root);
+    const { atlas, textures } = await loadAtlas(`${root}/minimi.atlas`, root);
+    miniTextures = textures;
     miniData = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(host.readBytes(`${root}/minimi.skel`));
 
     KO.load(cfg.dataRoot || cfg.assetRoot);
@@ -230,9 +248,20 @@
     console.log(`MASCOT ready chars=${[...mascots.keys()].join(",")} window=${W}x${H}`);
     host.loaded(buildCatalog());
     requestAnimationFrame(loop);
-    if (cfg.selftest) firstMascot()?.selftest();
+    if (cfg.selftest) { glTest(); firstMascot()?.selftest(); }
     if (cfg.moodTest) firstMascot()?.moodTest();
     if (cfg.ingameTest) firstMascot()?.ingameTest();
+  }
+
+  // 개발용(셀프테스트): WEBGL_lose_context 로 상실→복구를 강제해 위 경로를 실제로 밟는다. 실제 상실은 드라이버 갱신 때나 오니 손으로는 못 본다
+  async function glTest() {
+    const say = (s) => console.log("GLTEST " + s);
+    const ext = ctx.gl.getExtension("WEBGL_lose_context"); if (!ext) { say("WEBGL_lose_context 없음"); return; }
+    await sleep(3000); ext.loseContext(); await sleep(200);
+    say(`lost glLost=${glLost} isContextLost=${ctx.gl.isContextLost()} (expect true/true)`);
+    const n0 = glFrames; await sleep(2000); say(`while lost frames=${glFrames - n0} (expect 0)`);
+    ext.restoreContext(); await sleep(1000);
+    say(`restored glLost=${glLost} isContextLost=${ctx.gl.isContextLost()} frames=${glFrames - n0} pmaFix=${pmaFix.size} miniTex=${miniTextures.length} (expect false/false, frames>0)`);
   }
 
   function buildCatalog() {
@@ -242,7 +271,10 @@
       if (sk.name === "default") continue;
       let region = null;
       for (const e of sk.getAttachments()) { if (e.slotIndex === slotIndex && e.attachment && e.attachment.region) { region = e.attachment.region; break; } }
-      skins.push({ name: sk.name, voices: countVoices(voiceSetFor(sk.name)), sd: sdAvailable(sk.name), region: region ? { page: region.page.name, x: region.x, y: region.y, width: region.width, height: region.height, degrees: region.degrees } : null });
+      // 보이스 수는 여기서만 센다 — 설정창이 index.json 을 따로 합쳐 세던 때는 스킨 묶음이 카테고리를 통째로 갈아치워 HUD 와 숫자가 달랐다(에르핀 스킨1)
+      const vs = voiceSetFor(sk.name);
+      const pv = ["greeting", "pat", "joy", "line"].map(c => vs.cats[c]).concat(Object.values(vs.cats)).find(l => l && l.length);
+      skins.push({ name: sk.name, voices: countVoices(vs), voiceCats: Object.fromEntries(Object.entries(vs.cats).filter(([c, l]) => l.length && c !== "cheek" && c !== "pat").map(([c, l]) => [c, l.length])), previewVoice: pv ? pv[0] : null, sd: sdAvailable(sk.name), region: region ? { page: region.page.name, x: region.x, y: region.y, width: region.width, height: region.height, degrees: region.degrees } : null });
     }
     const f = firstMascot();
     return { animations: miniData.animations.map(a => ({ name: a.name, duration: +a.duration.toFixed(2) })), sdAnimations: f ? f.sdAnimations() : [], skins };
@@ -270,7 +302,7 @@
   function loop(now) {
     const raw = now - last; last = now;
     acc += raw;
-    if (acc < frameMs() - 2 || paused) { requestAnimationFrame(loop); return; } // paused: 전체화면 뒤에 숨어 있을 때 메인이 알려 준다(document.hidden 은 backgroundThrottling:false 라 늘 false)
+    if (acc < frameMs() - 2 || paused || glLost) { requestAnimationFrame(loop); return; } // paused: 전체화면 뒤에 숨어 있을 때 메인이 알려 준다(document.hidden 은 backgroundThrottling:false 라 늘 false). glLost: 컨텍스트가 돌아올 때까지 그리지 않는다(예약은 유지)
     if (cfg && cfg.fpsProbe) { probeN++; if (!probeT0) probeT0 = now; if (now - probeT0 >= 3000) { const f = firstMascot(); console.log(`FPSPROBE ${(probeN / ((now - probeT0) / 1000)).toFixed(1)} fps  setting=${f ? f.S.display.fps : "?"} hands=${[...mascots.values()].some(x => x.hands)}`); probeN = 0; probeT0 = now; } }
     // 30 으로 묶었을 땐 고정 스텝(정확히 1/30초)으로 넘긴다. 이월분을 dt 에도 넣고 다음 프레임에도 더하면 두 번 세어져
     // 100Hz·144Hz 모니터에서 시간이 4~10% 빨리 흘렀다. 매 프레임 모드는 실제 경과 시간을 쓴다
@@ -279,7 +311,7 @@
     acc = fm ? Math.min(acc - fm, fm) : 0;
     try {
       for (const mas of mascots.values()) mas.update(dt);
-      render();
+      render(); glFrames++;
       for (const mas of mascots.values()) mas.pushHitRect(dt);
     } catch (e) { console.error("frame", e && e.stack || e); }
     requestAnimationFrame(loop);
@@ -317,6 +349,13 @@
     const sdI = { kind: "sd", skeleton: null, state: null, data: null, pma: true, A: SD, feet: 0, w: 100, h: 150, k: 1, key: null, textures: [] }; // 하이브리드용 인게임 슬롯
     let active = mini;
     const HANDS = new Set(["drag", "thrown", "touch", "pat", "tickle", "smash1"]);
+    // 상태 우선순위 — 높은 쪽이 진행 중이면 낮은 요청은 미루거나 버린다. 손이 닿아 있는 것이 항상 가장 높다(smash1 도 손: 꿀밤 2단 대사가 소식에 잘렸다).
+    //   boot 도 최고: 등장(spawn)이 곧 상태를 잡으니 그 전에 끼어들면 SD 로드 뒤 덮어써져 헛일이다.
+    //   land·spawn(7)은 짧은 한 번짜리라 소식은 기다리고 표정(AI 대답)은 자른다. react·pose(5) = 클릭 반응·AI 대답 표정: 소식·기분 변경은 끝날 때까지 기다린다.
+    //   emote·meet 는 예전처럼 손만 아니면 끼어든다 — 잡담 대본은 표정을 잇달아 바꾸고(pose→pose), 다가가기가 착지·반응에 막혀 met 를 보내면 상대가 헛기다린다.
+    const PRIO = { drag: 9, thrown: 9, touch: 9, pat: 9, tickle: 9, smash1: 9, boot: 9, land: 7, spawn: 7, react: 5, pose: 5, jump: 5, hop: 3, idle: 1, mood: 1 };
+    const REQ = { emote: 8, meet: 8, announce: 5, moodChange: 4 };
+    const canInterrupt = (req) => (PRIO[m.state] ?? 1) < REQ[req];
     const self = { id, get S() { return S; }, get active() { return active; }, get hands() { return mouse.down || HANDS.has(m.state); } };
 
     // 상태에 맞는 슬롯으로 전환 (이동 = 미니미/스탠딩 Move, 그 외 = 스탠딩). 위치·방향 유지, 발 기준 정렬
@@ -345,7 +384,8 @@
       else if (prev.scale !== S.scale) applyScale();
       applyOpacity();
       hud.style.display = S.display.debug ? "block" : "none";
-      if (prev && prev.mood !== S.mood && (m.state === "idle" || m.state === "mood" || m.state === "pose" || m.state === "react" || m.state === "hop")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
+      // 기분 변경: 대기·이동 중이면 바로, 반응·표정(AI 대답 pose) 중이면 끝난 뒤 — restThenDecide 가 moodOn() 을 보고 decideIdle 로 넘긴다. 대답 중 표정이 잘려 딴 얼굴이 됐었다
+      if (prev && prev.mood !== S.mood && canInterrupt("moodChange")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); if (m.faceAfter) { m.faceAfter = 0; m.pendingEmote = null; met(); } } decideIdle(); } // 만나러 가던 길이면 상대가 8초 상한까지 기다리지 않게 못 간다고 알린다
     }
     const moodOn = () => !!S.mood && isSD() && active.A.moods && (active.A.moods[S.mood] || []).some(has);
     // 불투명도: 창 하나에 여러 명이라 캔버스 대신 스켈레톤 색 알파로 (PMA 렌더러에서 슬롯 색에 곱해짐)
@@ -454,7 +494,8 @@
       await activateMode(true);
     }
     // activating++ 로 진행 중인 activateMode 를 무효화한다 — 캐릭터를 지우는 도중 SD 로드가 끝나면 내려놓은 슬롯에 다시 채워 넣고(텍스처 누수) spawn() 이 죽은 미니미 스켈레톤을 건드렸다
-    function dispose() { disposed = true; activating++; unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); }
+    function dispose() { disposed = true; activating++; clearTimeout(announceTimer); unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); hideHit(); }
+    function hideHit() { lastHit = null; host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); } // lastHit 을 비워야 다음 pushHitRect 가 같은 자리라도 다시 보낸다
     function onGeo() { if (m.state !== "boot") { m.x = clampX(m.x); if (m.state !== "thrown" && m.state !== "drag") m.y = floorAt(m.x); } }
 
     async function loadSlot(slot, r) {
@@ -463,7 +504,7 @@
       slot.want = key; // 스킨을 빠르게 두 번 바꾸면 먼저 시작한(느린) 로드가 나중에 끝나 새 스킨 위에 옛 스킨을 덮어썼다 (이미 든 것으로 돌아오는 요청도 진행 중인 로드를 무효화해야 한다)
       if (slot.key === key && slot.skeleton) return true;
       const { atlas, textures } = await loadAtlas(`${r.dir}/${r.stem}.atlas`, r.dir);
-      if (slot.want !== key || disposed) { for (const t of textures) try { t.dispose(); } catch {} return false; }
+      if (slot.want !== key || disposed) { for (const t of textures) disposeTex(t); return false; }
       const data = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(host.readBytes(`${r.dir}/${r.stem}.skel`));
       unloadSlot(slot);
       makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
@@ -473,7 +514,7 @@
     }
     function unloadSlot(slot) {
       if (active === slot) active = (slot !== sd && sd.skeleton) ? sd : mini; // 그리는 중인 슬롯을 내리면 안전한 쪽으로
-      for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; if (slot === sd) grab.kind = null;
+      for (const t of slot.textures || []) disposeTex(t); slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; if (slot === sd) grab.kind = null;
     }
     let activating = 0, disposed = false;
     async function activateMode(first) {
@@ -522,16 +563,18 @@
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
     const holding = () => performance.now() < holdUntil;
     // 다른 사도 쪽으로 다가가서(창 기준 x) 그쪽을 본다 — 둘이 잡담할 때. 도착하면 holdUntil 동안 제자리
+    // 도착했거나 갈 수 없으면(손에 잡혀 있음) 메인에 met 를 보낸다 — 오지 않을 사람을 상대가 기다리지 않게. preload 가 아직 없을 수 있어 있는지 보고 부른다
+    const met = () => { if (host.met) host.met(id); };
     function meet(arg) {
       if (!arg || typeof arg.x !== "number") return;
-      if (HANDS.has(m.state)) return;
+      if (!canInterrupt("meet")) { met(); return; }
       holdUntil = Math.max(holdUntil, performance.now() + (arg.hold || 30000));
       // 메인이 자리(to)를 정해 주면 거기로(둘이 동시에 움직여도 겹치지 않게 중간점 기준), 아니면 상대 옆(폭 절반씩 + 여유)
       const gap = ((m.w || 120) + (arg.w || m.w || 120)) / 2 + 48;
       const target = clampX(typeof arg.to === "number" ? arg.to : (arg.x < m.x ? arg.x + gap : arg.x - gap));
-      if (Math.abs(target - m.x) < 12) { facing = arg.x < m.x ? -1 : 1; applyFacing(); return; }
+      if (Math.abs(target - m.x) < 12) { facing = arg.x < m.x ? -1 : 1; applyFacing(); met(); return; }
       if (isSD()) useSlot(slotForMove());
-      m.state = "hop"; m.hopT = 0; m.targetX = target; facing = m.targetX < m.x ? -1 : 1; applyFacing();
+      m.state = "hop"; m.hopT = 0; m.targetX = target; facing = m.targetX < m.x ? -1 : 1; applyFacing(); m.pendingEmote = null; // 끊긴 지난 만남의 표정이 이번 도착에 튀어나오지 않게
       play(active.A.move && has(active.A.move) ? active.A.move : active.A.hold, true);
       m.faceAfter = arg.x < m.x ? -1 : 1; // 도착하면 상대를 본다 (restThenDecide 뒤)
     }
@@ -540,8 +583,8 @@
     //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(듣는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
     function emote(arg) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
-      if (HANDS.has(m.state)) return;
-      if (m.state === "hop" && m.faceAfter) { m.pendingEmote = arg; return; } // 다가가는 중(meet) — 표정을 지금 바꾸면 이동이 끊겨 상대 옆에 못 간다. 도착하면 그때 한다
+      if (!canInterrupt("emote")) return;
+      if (m.state === "hop" && m.faceAfter) { m.pendingEmote = arg; return; } // 다가가는 중(meet) — 표정을 지금 바꾸면 이동이 끊겨 상대 옆에 못 간다. 도착하면 그때 한다(우선순위가 아니라 순서 문제라 표에 없다)
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
@@ -564,9 +607,11 @@
       if (mood && S.sound.clickVoice !== false && role !== "listen") motionVoice(a, true);
     }
     function logState(tag) { console.log(`STATE[${tag}] ${m.state} anim=${m.anim} timer=${(m.timer || 0).toFixed(1)} facing=${facing}`); }
-    function announce(arg) {
+    // 소식은 급하지 않다: 꿀밤 1단·AI 대답 표정·착지 도중이면 자르지 않고 1.5초 뒤에 다시 본다(3번까지, 그래도 막혀 있으면 말풍선만으로 끝). hold 는 첫 호출에서만 늘린다
+    let announceTimer = 0;
+    function announce(arg, tries = 0) {
       if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
-      if (HANDS.has(m.state)) return; // smash1 이 빠져 있어 꿀밤 1단 도중 소식이 오면 2단(대사)이 잘렸다
+      if (!canInterrupt("announce")) { clearTimeout(announceTimer); if (tries < 3 && !disposed) announceTimer = setTimeout(() => announce({ ...arg, hold: 0 }, tries + 1), 1500); return; }
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const cand = active === mini ? ["Idle3_7", "Act1_1", "Success", "Idle2_4"] : ["Talk_1", "Point_1", "Hi_1", "Happy_1", "Blank_1", "Proud_1", ...(A.react || [])];
@@ -769,6 +814,7 @@
             const fa = m.faceAfter, pe = m.pendingEmote; m.faceAfter = 0; m.pendingEmote = null;
             m.x = m.targetX; restThenDecide();
             if (fa && m.state !== "hop") { facing = fa; applyFacing(); }
+            if (fa) met(); // 다가가기(meet)였다 — 도착을 메인에 알린다
             if (pe) emote(pe); // 오는 동안 미뤄 둔 표정
           }
           break;
@@ -1116,7 +1162,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();

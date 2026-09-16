@@ -96,11 +96,10 @@
     else g.drawImage(img, region.x, region.y, sw, sh, -dw / 2, -dh / 2, dw, dh);
     g.restore();
   }
-  const voiceCountOf = (skinName) => {
-    const mm = skinName.replace(/^Mini_/, "").match(/^(.*?)(Skin\d+)?$/);
-    const h = voiceIndex[mm[1].toLowerCase()] || {}; const cats = { ...(h.base || {}), ...(h[mm[2] ? mm[2].toLowerCase() : "base"] || {}) };
-    return Object.values(cats).reduce((n, l) => n + l.length, 0);
-  };
+  // 보이스 수·카테고리·미리듣기 파일은 마스코트 창이 카탈로그에 세어 준 것을 쓴다(voiceSetFor 하나가 진실). 여기서 index.json 을 다시 합치던 때는
+  // 스킨 묶음이 카테고리를 통째로 갈아치워(줄기 단위 대체가 아니라) HUD 와 타일 숫자가 달랐다
+  const skinInfo = (name) => catalog.skins.find(s => s.name === name) || {};
+  const voiceCountOf = (skinName) => skinInfo(skinName).voices || 0;
   const grid = document.getElementById("skin-grid"), search = document.getElementById("skin-search"), voicedOnly = document.getElementById("skin-voiced"), sdOnly = document.getElementById("skin-sd");
   const tiles = new Map();
   function buildGrid() {
@@ -141,9 +140,7 @@
 
   // ---- 사운드 탭 ----
   function renderVoiceSummary() {
-    const mm = S.skin.replace(/^Mini_/, "").match(/^(.*?)(Skin\d+)?$/);
-    const h = voiceIndex[mm[1].toLowerCase()] || {}; const cats = { ...(h.base || {}), ...(h[mm[2] ? mm[2].toLowerCase() : "base"] || {}) };
-    const parts = Object.entries(cats).map(([k, v]) => `${KO.voiceCat(k)} ${v.length}`);
+    const parts = Object.entries(skinInfo(S.skin).voiceCats || {}).map(([k, n]) => `${KO.voiceCat(k)} ${n}`);
     document.getElementById("voice-summary").textContent = parts.length ? `${KO.skinName(S.skin)} — ${parts.join(", ")}` : `${KO.skinName(S.skin)} — 없음`;
   }
   let previewAudio = null;
@@ -151,9 +148,8 @@
     const s = S.sound; if (s.muted) return;
     let src, vol;
     if (b.dataset.preview === "voice") {
-      const mm = S.skin.replace(/^Mini_/, "").match(/^(.*?)(Skin\d+)?$/); const h = voiceIndex[mm[1].toLowerCase()] || {}; const cats = { ...(h.base || {}), ...(h[mm[2] ? mm[2].toLowerCase() : "base"] || {}) };
-      const list = cats.touch || cats.greeting || Object.values(cats)[0]; if (!list) return;
-      src = `file:///${catalog.assetRoot}/voice/${list[Math.floor(Math.random() * list.length)]}`; vol = s.master * s.voice;
+      const f = skinInfo(S.skin).previewVoice; if (!f) return;
+      src = `file:///${catalog.assetRoot}/voice/${f}`; vol = s.master * s.voice;
     } else { src = `file:///${catalog.assetRoot}/sfx/jump02.wav`; vol = s.master * s.sfx; }
     if (previewAudio) previewAudio.pause();
     previewAudio = new Audio(src); previewAudio.volume = Math.max(0, Math.min(1, vol)); previewAudio.play().catch(() => {});
