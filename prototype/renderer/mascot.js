@@ -354,10 +354,13 @@
     const m = { state: "boot", x: 300, y: 0, vx: 0, vy: 0, rot: 0, timer: 0, targetX: 0, anim: "", over: false, get w() { return active.w; }, get h() { return active.h; } };
     const mouse = { down: false, dragging: false, sx: 0, sy: 0, gx: 0, gy: 0, offX: 0, offY: 0, hist: [], zone: "body" };
     let tickleT = 0; // 간지럽히기 중 웃음 간격
-    // 몸 제스처 셋: **톡**(안 움직이고 뗌) = 가벼운 반응 / **옆으로 문지르기**(가로 RUB_DX 이상) = 간지럽히기 / **위아래로 끌기**(세로 LIFT_DY 이상) = 들어올리기
+    // 문지르기 판정: 18px 한 번 스쳐도 간지럽히기가 시작돼 '톡 친 것'과 구별이 안 됐다.
+    // 좌우로 방향이 한 번 이상 바뀌고(왕복) 누적 이동이 충분할 때만 간지럽히기로 본다
+    const rub = { last: 0, dir: 0, travel: 0, turns: 0 };
+    // 몸 제스처 셋: **톡**(안 움직이고 뗌) = 가벼운 반응 / **왕복으로 문지르기**(좌우로 방향 바꿔 가며 RUB_TRAVEL 이상) = 간지럽히기 / **위아래로 끌기**(세로 LIFT_DY 이상) = 들어올리기
     //   누른 채 가만히 있으면 아무것도 안 함(0.5초 홀드→간지럽히기는 톡 반응과 번갈아 튀어 뺐다). 간지럽히는 동안은 Tickle_Idle_1 루프 하나만
     //   (방향 바뀔 때 Tickle_Idle_2로 갈아타면 사도마다 1초 넘는 딴 동작이라 "터치↔간지럽히기"가 반복돼 보였다). 문지르기 중 가로는 LIFT_DX까지 자유
-    const LIFT_DY = 45, LIFT_DX = 260, RUB_DX = 18, TAP_PX = 12; // px  (TAP_PX 미만은 '톡 친 것' — 볼 당기기 대사를 내지 않는다)
+    const LIFT_DY = 45, LIFT_DX = 260, RUB_TRAVEL = 40, TAP_PX = 12; // px  (TAP_PX 미만 = 톡 친 것 · RUB_TRAVEL = 왕복 문지르기로 볼 누적 이동)
 
     function makeChar(slot, data) {
       slot.data = data; slot.skeleton = new spine.Skeleton(data);
@@ -483,7 +486,7 @@
       const cand = active === mini ? ["Idle3_7", "Act1_1", "Success", "Idle2_4"] : ["Talk_1", "Point_1", "Hi_1", "Happy_1", "Blank_1", "Proud_1", ...(A.react || [])];
       const a = cand.find(has) || A.hold;
       m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x); playOnce(a, "react");
-      if (arg && arg.sound !== false && S.sound.clickVoice !== false) playVoice("greeting", "line", "spawn", "joy", "pleasure", "touch");
+      if (arg && arg.sound !== false && S.sound.clickVoice !== false) playVoice("greeting", "line", "spawn", "joy", "pleasure", "pat")  // touch 대신 pat — touch 묶음엔 볼 당기기 대사("당기지 마!")가 섞여 있다;
     }
 
     function setSkin(name, greet) {
@@ -780,7 +783,12 @@
         }
         if (m.state === "pat" || (m.state === "touch" && mouse.zone === "cheek")) { grabMove(e.clientX, wy); return; } // 잡고 있는 동안은 루프 애니 + 조작 본만
         const ddx = Math.abs(e.clientX - mouse.sx), ddy = Math.abs(wy - (H - mouse.sy));
-        if (m.state === "touch" && mouse.zone === "body" && ddy <= LIFT_DY) { if (ddx >= RUB_DX && active.A.tickleIdle) startTickle(); return; } // 몸에서 옆으로 문지르면 간지럽히기 (위아래로 끌면 아래로 내려가 들어올리기)
+        if (m.state === "touch" && mouse.zone === "body" && ddy <= LIFT_DY) {   // 몸을 왕복으로 문지르면 간지럽히기 (위아래로 끌면 들어올리기)
+          const d = e.clientX - rub.last; rub.last = e.clientX;
+          if (Math.abs(d) >= 3) { const s = Math.sign(d); if (rub.dir && s !== rub.dir) rub.turns++; rub.dir = s; rub.travel += Math.abs(d); }
+          if (rub.turns >= 1 && rub.travel >= RUB_TRAVEL && active.A.tickleIdle) startTickle();
+          return;
+        }
         if (m.state === "tickle" && ddy <= LIFT_DY && ddx <= LIFT_DX) return; // 간지럽히는 중: 문질러도 루프 유지. 위아래로 끌면 들어올리기
         if (!mouse.dragging && moved > 6) { if (cfg.selftest) console.log(`DRAGSTART state=${m.state} zone=${mouse.zone} moved=${moved.toFixed(0)} dx=${(e.clientX - mouse.sx).toFixed(0)} dy=${(wy - (H - mouse.sy)).toFixed(0)} anim=${m.anim}`); mouse.dragging = true; m.state = "drag"; m.vx = m.vy = 0; mouse.offX = e.clientX - m.x; mouse.offY = wy - m.y; if (isSD()) useSlot(slotForRest()); play(active.A.drag || active.A.hold, true); } // 들어올리기 시작: 지금 자리에서 커서를 따라가기 시작(문지르기 판정 거리만큼 튀지 않게)
         if (mouse.dragging) {
@@ -804,6 +812,7 @@
         useSlot(slotForRest());
         if (active.A.touchIdle) {
           m.state = "touch"; m.vx = m.vy = 0; m.rot = 0; m.y = floorAt(m.x);
+          rub.last = e.clientX; rub.dir = 0; rub.travel = 0; rub.turns = 0;
           // 얼굴: 누른 순간 Touch_Idle(볼 잡힌 찡그림) + 볼 본 구동. 머리: 놓아야(꿀밤) 끌어야(쓰다듬기) 정해지니 대기 애니 그대로. 몸: 바로 간지럽히기
           if (mouse.zone === "cheek") { play(active.A.touchIdle, true); grabStart("cheek", e.clientX, H - e.clientY); }
           // 몸: 아직 모름(톡/문지르기/들기) → 대기 애니 그대로
@@ -830,7 +839,7 @@
         if (active === sd) { const soft = reacts.filter(n => /^(Happy|Smile|Laugh|Shy|Proud|Excited|Taunt)_/.test(n)); if (soft.length) reacts = soft; } // 몸 톡은 놀람(으아악)도 빼고 웃음·수줍음만
         const ra = reacts.length ? pick(reacts) : active.A.hold;
         playOnce(ra, "react");
-        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) playVoice("joy", "pleasure", "line", "touch"); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 소리), 매핑 없는 모션(Idle2_4 등)은 웃음·잡담, 그것도 없는 크레페만 터치 대사
+        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) playVoice("joy", "pleasure", "line", "pat"); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 소리), 매핑 없는 모션(Idle2_4 등)은 웃음·잡담, 그것도 없는 크레페는 쓰다듬기 대사(볼 당기기는 볼을 끌었을 때만)
       }
       m.over = hit(e.clientX, e.clientY);
     }
