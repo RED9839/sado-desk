@@ -542,7 +542,7 @@ setInterval(async () => {
   if (withScreen) { screenTalk(id, ""); return; }
   openChat(id, { quiet: true });
   setTimeout(async () => {
-    await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 한두 문장(60자 안팎)으로 짧게 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것." });
+    await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 한두 문장(60자 안팎)으로 짧게 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것. 문장은 두 개까지." });
     const sec = +settings.global.ai.chatAutoCloseSec; if (!(sec > 0)) return;
     const opened = lastChatAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
     setTimeout(() => { if (chatWin && !chatWin.isDestroyed() && !chatWin.isFocused() && !chatBusy && lastChatAt === opened) closeChat(); }, sec * 1000);
