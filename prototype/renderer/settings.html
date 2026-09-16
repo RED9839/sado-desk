@@ -18,6 +18,11 @@
   section{display:none;max-width:760px}section.on{display:block}
   h2{margin:0 0 14px;font-size:17px;font-weight:700}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .card.warn{background:#2c2620;border-color:#5a4a2e;border-left:3px solid #d8a33a}
+  .card.warn h3{color:#e7bf6a}
+  .card.warn .hint{color:#cfc4ae}
+  .card.warn ul{margin:6px 0 0;padding-left:18px}
+  .card.warn li{margin:3px 0;color:#cfc4ae;font-size:12px;line-height:1.6}
   .card h3{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.02em;text-transform:none}
   .card > .hint{color:var(--muted);font-size:12px;line-height:1.6}
   .card > .hint b{color:var(--text)}
@@ -203,6 +208,14 @@
 
   <section id="tab-ai">
     <h2>AI 대화</h2>
+    <div class="card warn"><h3>⚠ 켜기 전에 읽어 주세요</h3>
+      <ul>
+        <li><b>사도가 하는 말은 AI가 지어낸 것입니다.</b> 원작 설정과 다를 수 있고, 공식 대사가 아닙니다. 이 앱은 팬이 만든 비공식 프로그램으로 에피드게임즈와 관계가 없습니다.</li>
+        <li><b>이야기 내용을 말할 수 있습니다.</b> 사도가 자기가 나온 테마극장이나 메인 스토리에서 겪은 일을 먼저 꺼낼 수 있어요 — 아직 안 본 이야기라면 결말을 듣게 될 수 있습니다.</li>
+        <li><b>Ollama가 아닌 제공자를 쓰면 대화 내용이 그 회사 서버로 전송됩니다.</b> 개인정보·비밀번호는 적지 마세요. 대화를 PC 밖으로 내보내고 싶지 않으면 Ollama(로컬)를 쓰세요.</li>
+        <li><b>API 키는 사용자 본인의 것이고 요금도 본인 부담입니다.</b> 키는 이 PC에 암호화해 저장하며 앱이 다른 곳으로 보내지 않습니다. 앱에 키가 들어 있지 않아요.</li>
+      </ul>
+    </div>
     <div class="card"><h3>사도가 자기 말투로 대답해요</h3>
       <div class="hint">캐릭터 우클릭 → <b>말 걸기</b> 또는 <code>Ctrl+Shift+Space</code>. 나무위키 대사표로 만든 말투 프로필(호칭·어미·감탄사·대표 대사)을 AI에 넘겨 그 사도처럼 답하고, 답의 감정에 맞춰 표정·소리를 냅니다. 대화 내용은 이 PC와 선택한 AI 제공자에만 전송됩니다.</div>
       <div class="row" style="margin-top:8px"><label>제공자</label>
