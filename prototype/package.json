@@ -34,6 +34,7 @@
       "preload.js",
       "news.js",
       "ai.js",
+      "fullscreen-watch.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
       "data/**/*",
