@@ -4,8 +4,10 @@
  * 그 뒤로는 10MB 안팎에 CPU 는 거의 쓰지 않는다. PowerShell 이 없거나 실패하면 이 기능만 조용히 꺼진다. */
 const { spawn } = require("node:child_process");
 
+// __PARENT__ 는 띄울 때 우리 pid 로 바꿔 넣는다. 앱이 강제 종료되어 stop() 이 못 돌아도 감시가 혼자 남지 않게
 const PS = String.raw`
 $ErrorActionPreference = "SilentlyContinue"
+$parent = __PARENT__
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
 public class FG {
@@ -19,7 +21,10 @@ public class FG {
 "@
 $sb = New-Object System.Text.StringBuilder 128
 $last = ""
+$tick = 0
 while ($true) {
+  $tick++
+  if ($tick % 5 -eq 0) { if (-not (Get-Process -Id $parent -ErrorAction SilentlyContinue)) { exit } }
   $h = [FG]::GetForegroundWindow()
   $r = New-Object FG+RECT
   [void][FG]::GetWindowRect($h, [ref]$r)
@@ -61,7 +66,7 @@ function createFullscreenWatcher({ screen, ownPid, onChange, log = () => {} }) {
   function start() {
     if (stopped) return;
     try {
-      proc = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      proc = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS.replace("__PARENT__", String(ownPid))], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     } catch (e) { log("fullscreen watch spawn fail", e.message); return; }
     let buf = "";
     proc.stdout.on("data", (d) => {
