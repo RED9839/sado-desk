@@ -24,6 +24,7 @@
     // 미니미는 그림이 하나라 '표정' 대신 몸짓으로: 행복=만세/폴짝, 미소=갸웃, 분노=공격/늘어나기, 슬픔=풀썩/납작, 놀람=뒤집기, 냠냠=동작, 삐짐=찌그러지기
     moods: { happy: ["Success", "Jump1", "Jump2", "Idle2_2"], smile: ["Act6_1", "Idle1_2", "Idle3_5"], anger: ["Attack1_1", "Attack1_2", "Act5_1"], sad: ["Fail", "Idle2_5", "Idle2_3"], surprise: ["Idle3_7", "Jump3", "Idle2_4"], eat: ["Act2_1", "Act3_1", "Act1_1"], sulky: ["Idle2_3", "Idle2_5", "Act5_1"] },
     speak: ["Act1_1", "Act6_1", "Idle3_5", "Idle3_6", "Act4_1"], listen: ["Idle1_2", "Act6_1", "Idle3_6"],
+    all: ["Idle1_1","Idle1_2","Idle2_1","Idle2_2","Idle2_3","Idle2_4","Idle2_5","Idle3_5","Idle3_6","Idle3_7","Act1_1","Act2_1","Act3_1","Act4_1","Act5_1","Act6_1","Jump1","Jump2","Jump3","Success","Fail","Attack1_1","Attack1_2"],
   };
   // ---- SD(스탠딩) 애니 — 캐릭터마다 구성이 달라서(에르핀 Angry 16개, 앨리스는 Move 없음) 로드 시 접두어로 자동 분류 ----
   function sdPools(data) {
@@ -48,6 +49,7 @@
       smash: ["Smash_End_1", "Smash_End"].filter(n => data.findAnimation(n)),
       hold: idles[0] || all[0]?.n, moveSpeed: 90, hopHeight: 22,
       moods: moodPools(all),
+      all: all.map(a => a.n),
     };
   }
   // 표정 고정(스토리 표정 8종: 기본·미소·분노·슬픔·행복·냠냠·삐짐·놀람) — 애니를 한 번 재생하고 마지막 프레임에서 멈춰 '스탠딩'처럼 둔다.
@@ -446,7 +448,9 @@
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
       const SPEAK = A.speak || ["Talk_1", "Talk_2", "Point_1", "Blank_1", "Happy_1", "Proud_1", "Taunt_1"], LISTEN = A.listen || ["Blank_1", "Blank_2", "Nodding_1", "Think_1", "Thinking_1", "Curious_1", "Question_1"]; // 형태별 (미니미/인게임은 자기 목록)
       const role = arg && arg.role;
-      let a = pool.length ? pick(pool) : null;
+      // 대본이 동작을 지정하면(act: 'Sleepy' 같은 접두어) 그것부터. 스킨마다 있는 애니가 달라 없으면 감정 풀로 떨어진다
+      const want = arg && arg.act ? (A.all || []).filter(n => n.toLowerCase().startsWith(String(arg.act).toLowerCase())).filter(has) : [];
+      let a = want.length ? pick(want) : (pool.length ? pick(pool) : null);
       if (!a) { const cands = (role === "listen" ? LISTEN : role === "speak" ? SPEAK : []).filter(has); a = cands.length ? pick(cands) : (mood ? (A.react || []).find(has) : null); }
       m.rot = 0; m.vx = m.vy = 0; m.y = floorAt(m.x);
       if (!a) return;

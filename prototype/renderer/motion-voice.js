@@ -8,6 +8,10 @@
  */
 (function (root) {
   const MOTION_VOICE = [
+    // 혼잣말 재료를 늘리며 더한 것 — 고민하는 동작엔 hmm, 끄덕/도리질엔 yes/no
+    [/^(Thinking|Think|Question|Curious|Doubt|Hesitate)/i, ["hmm", "line", "affinity"]],
+    [/^(Nodding|Yes|Agree|Ok)/i, ["yes", "line"]],
+    [/^(No_|No$|Nope|Deny|Shake)/i, ["no", "line"]],
     // ---- 인게임 SD (전투 애니는 이름이 고정: Attack1_1 / Skill1_1 / Ultimate1_1 / Victory / Groggy / Die / Spawn). 스탠딩 규칙보다 먼저 ----
     [/^(Victory|EasterEgg_Victory)/i, ["victory", "pleasure", "joy"]],
     [/^(OW\d_)?Attack\d/i, ["basicattack", "shout", "anger"]],
@@ -42,7 +46,7 @@
     // 등장·인사
     [/^(Spawn|Enter|Hi$|Hi_|Greeting|Hug|Call)/i, ["spawn", "greeting"]],
     // 잡담(대사) — 멍·말하기·생각·질문·놀리기·기타 동작
-    [/^(Blank|Nodding|Taunt|Talk|Speak|Whisper|Think|Thinking|Question|Curious|Serious|Point|Check|Note|Read|Write|Work|Camera|Phone|Mic|Loudspeaker|Recorder|Recoder|Clock|Mirror|Money|Count|Sit|Sitting|Squat|Stand|Rest|Yoga|Pray|Quiet|Ignore|Yare|Bbang|Gao|Try|Clean|Act|Idle_3|Idle3|Dumb|Robot|Drill|Scouter|Rummage|Glasses|Mask|Scroll|Track|Aside|Jackson|Parrot|Domo|Kirat|Kisya|Baldo|Urcharyu|Sijeo|Dehet|Taik|Oioi|Beni|Rock|Go|Drive|Drift|Dash|Jump|Move|Walk|Promise|Succession|Concent|Open|Closed|Help|Disgust|Lying|Down|Yes)/i, ["line", "greeting"]],
+    [/^(Blank|Nodding|Taunt|Talk|Speak|Whisper|Think|Thinking|Question|Curious|Serious|Point|Check|Note|Read|Write|Work|Camera|Phone|Mic|Loudspeaker|Recorder|Recoder|Clock|Mirror|Money|Count|Sit|Sitting|Squat|Stand|Rest|Yoga|Pray|Quiet|Ignore|Yare|Bbang|Gao|Try|Clean|Act|Idle_3|Idle3|Dumb|Robot|Drill|Scouter|Rummage|Glasses|Mask|Scroll|Track|Aside|Jackson|Parrot|Domo|Kirat|Kisya|Baldo|Urcharyu|Sijeo|Dehet|Taik|Oioi|Beni|Rock|Go|Drive|Drift|Dash|Jump|Move|Walk|Promise|Succession|Concent|Open|Closed|Help|Disgust|Lying|Down|Yes)/i, ["line", "affinity", "callplayer", "hmm", "greeting"]],
   ];
   function voiceCatsFor(anim) { for (const [re, cats] of MOTION_VOICE) if (re.test(anim)) return cats; return null; }
   const api = { MOTION_VOICE, voiceCatsFor };
