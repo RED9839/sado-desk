@@ -498,6 +498,7 @@ try {
   console.log(`잡담 대본: ${Object.keys(duoTalkData).length}명 · 짝 전용 ${Object.keys(duoPairData).length}쌍`);
 } catch (e) { console.warn("duo-talk.json 없음 — 잡담은 대본 대신 AI 로 돈다", e.message); }
 const duoSaid = new Map(); // "사도키:묶음" → 최근에 쓴 줄
+const pairUsed = new Set();  // 최근에 전용 대사를 쓴 짝 — 연달아 같은 네 줄이 나오지 않게
 function pickDuo(key, kind) {
   const all = (duoTalkData[key] || {})[kind] || [];
   if (!all.length) return null;
@@ -515,7 +516,12 @@ async function duoScript(idA, idB, opts = {}) {
   const same = profA.key === profB.key;
   // 관계가 있는 짝은 전용 대사가 있다 — 서로 이름을 부르고 앞말을 받는다.
   // 열쇠는 사도 키를 사전순으로 맞춰 두어 만나는 차례와 무관하게 찾힌다.
-  const pair = same ? null : duoPairData[[profA.key, profB.key].sort().join("|")];
+  // 짝 전용은 네 줄 한 세트가 전부다. 그것만 쓰면 같은 둘을 띄워 둔 사람은 평생 같은 대화를 본다 —
+  // 공들여 쓴 짝일수록 빨리 질리는 거꾸로 된 일이 된다. 한 번 쓴 짝은 다음 차례를 두루 통하는 말에 넘긴다
+  const pairKey = same ? null : [profA.key, profB.key].sort().join("|");
+  const pair = pairKey && !pairUsed.has(pairKey) ? duoPairData[pairKey] : null;
+  if (pair) { pairUsed.add(pairKey); if (pairUsed.size > 64) pairUsed.delete(pairUsed.values().next().value); }
+  else if (pairKey) pairUsed.delete(pairKey);        // 두루 통하는 말로 한 판 했으니 다음엔 전용이 다시 나온다
   const script = pair
     ? pair.lines.map(l => ((l.who === "a" ? pair.a : pair.b) === profA.key ? [idA, profA, l] : [idB, profB, l]))
     : same
