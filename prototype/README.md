@@ -6,7 +6,7 @@ Electron + 공식 spine-ts 4.1 런타임으로 트릭컬 **미니미** Spine 데
 ```
 run.cmd            # 또는 npm start
 npm run pyruntime   # 설치판용 임베디드 Python 준비 (pyruntime/, 최초 1회)
-npm run dist        # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe (electron-builder NSIS, 에셋 미포함 ≈ 300MB). dist:dir = 무설치 폴더
+npm run dist        # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe (electron-builder NSIS, 에셋 미포함 ≈ 117MB). dist:dir = 무설치 폴더
 run.cmd --setup-test # 에셋 없는 상태에서 가져오기 창 → 추출(미니미·효과음) → 마스코트 시작까지 자동 검증
 run.cmd --selftest # 합성 마우스 이벤트로 클릭/드래그/던지기/메뉴 상태 전이 자동 검증 (run.log 또는 콘솔에 SELFTEST 줄)
 run.cmd --log-pos  # 1초마다 상태/좌표 로그

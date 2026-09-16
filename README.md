@@ -34,7 +34,7 @@
 cd prototype
 npm install
 run.cmd                 # 개발 실행 (assets/ 가 있으면 그것을, 없으면 %APPDATA% 의 추출본을 사용)
-npm run pyruntime       # 설치판용 임베디드 Python(UnityPy·Pillow·ffmpeg) 준비 → pyruntime/ (약 150MB)
+npm run pyruntime       # 설치판용 임베디드 Python(UnityPy·Pillow·opusenc) 준비 → pyruntime/ (약 66MB)
 npm run dist            # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe
 ```
 

@@ -7,7 +7,7 @@
 사용: python tools/extract-all.py --out <assets 폴더> [--steps minimi,sfx,standing,ingame,voice] [--adb <adb.exe> --serial 127.0.0.1:5555] [--mumu <뮤뮤 폴더>] [--json]
       python tools/extract-all.py --list-devices --json   # 붙을 수 있는 기기 목록
   --json  진행 상황을 한 줄 JSON으로 출력(앱 UI가 읽음): {"step":..,"msg":..,"done":n,"total":n,"level":"info|warn|error|ok"}
-필요 패키지: UnityPy(texture2ddecoder 포함), Pillow, imageio-ffmpeg(보이스 opus 변환)
+필요 패키지: UnityPy(texture2ddecoder 포함), Pillow / 보이스 opus 변환은 opusenc.exe (pyruntime 옆)
 """
 import argparse, json, os, re, shutil, subprocess, sys, tempfile, time, glob, io as _io, zipfile, urllib.request
 from concurrent.futures import ProcessPoolExecutor
@@ -435,8 +435,27 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
     for b in bad[:10]: log(kind, "실패 " + b, "warn")
     log(kind, f"{label} 완료 — {okn}세트" + (f", 실패 {len(bad)}" if bad else ""), "ok")
 
+def find_encoder():
+    """wav → opus 변환기를 고른다. pyruntime 옆에 둔 opusenc.exe(0.5MB)가 1순위,
+    없으면 PATH, 그래도 없으면 예전처럼 imageio-ffmpeg(87MB)로 물러선다."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for p in (os.path.join(here, os.pardir, "pyruntime", "opusenc.exe"), os.path.join(here, "opusenc.exe")):
+        if os.path.exists(p): return ("opusenc", os.path.abspath(p))
+    p = shutil.which("opusenc")
+    if p: return ("opusenc", p)
+    try:
+        import imageio_ffmpeg
+        return ("ffmpeg", imageio_ffmpeg.get_ffmpeg_exe())
+    except ImportError:
+        raise RuntimeError("보이스를 변환할 opusenc.exe 를 찾지 못했어요. pyruntime 폴더 옆에 있어야 합니다.")
+
+def _enc_cmd(enc, dst):
+    kind, exe = enc
+    if kind == "opusenc": return [exe, "--quiet", "--bitrate", "40", "--vbr", "-", dst]
+    return [exe, "-loglevel", "error", "-y", "-i", "pipe:0", "-c:a", "libopus", "-b:a", "40k", "-vbr", "on", dst]
+
 def _voice_job(args):
-    src, dst, ffmpeg = args
+    src, dst, enc = args
     if os.path.exists(dst) and not FORCE: return "skip"
     try:
         import UnityPy
@@ -444,16 +463,15 @@ def _voice_job(args):
             if o.type.name != "AudioClip": continue
             for _name, wav in o.read().samples.items():
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
-                p = subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-i", "pipe:0", "-c:a", "libopus", "-b:a", "40k", "-vbr", "on", dst], input=wav, capture_output=True)
-                return "ok" if p.returncode == 0 else "ffmpeg"
+                p = subprocess.run(_enc_cmd(enc, dst), input=wav, capture_output=True)
+                return "ok" if p.returncode == 0 else "enc"
         return "noclip"
     except Exception as e:
         return "err:" + str(e)[:80]
 
 KEY_RE = re.compile(r"^([a-z]+?)(\d[\d_-]*)?(?:_(skin\d+))?$")
 def step_voice(adb_exe, dev, out, tmp):
-    import imageio_ffmpeg
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    enc = find_encoder()
     heroes = [h for h in adb_ls(adb_exe, dev, f"{BASE}/audio/kor/voice/hero") if re.match(r"^[a-z0-9_]+$", h)]
     cat_re = re.compile(r"^voice_([a-z0-9]+)_(" + "|".join(VOICE_CATS) + r")(\d[\d_-]*)?(_skin\d+)?$")
     # 이미 변환된 사도(index.json 기준 파일이 있음)는 다시 받지 않음 → 재추출 때는 새 사도만
@@ -488,7 +506,7 @@ def step_voice(adb_exe, dev, out, tmp):
             m = cat_re.match(f)
             if not m or "_selective_" in f: continue
             if m.group(1) != h and not h.startswith(m.group(1)): continue  # 변형 폴더가 기본 대사를 공유하는 경우(kommyswim ← voice_kommy_*)만
-            jobs.append((os.path.join(hdir, f), os.path.join(vout, h, re.match(r"^voice_[a-z0-9]+_(.+)$", f).group(1) + ".ogg"), ffmpeg))
+            jobs.append((os.path.join(hdir, f), os.path.join(vout, h, re.match(r"^voice_[a-z0-9]+_(.+)$", f).group(1) + ".ogg"), enc))
     log("voice", f"보이스 {len(jobs)}개 opus 변환 중…", total=len(jobs), done=0)
     stats = {}
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 4) - 1)) as ex:
@@ -554,7 +572,7 @@ def main():
     try:
         import UnityPy  # noqa
     except ImportError:
-        log("setup", "UnityPy가 없어요. pip install UnityPy Pillow imageio-ffmpeg", "error"); sys.exit(2)
+        log("setup", "UnityPy가 없어요. pip install UnityPy Pillow", "error"); sys.exit(2)
     try:
         adb_exe, dev = None, None
         if a.serial and re.fullmatch(r"\d{2,5}", a.serial): a.serial = "127.0.0.1:" + a.serial  # 포트만 준 경우
