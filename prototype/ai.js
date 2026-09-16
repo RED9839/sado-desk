@@ -28,8 +28,6 @@ const DEFAULTS = {
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
-  duo: true, // 소환된 사도가 둘 이상이면 가끔 둘이 잡담
-  bubbleSec: 4, // 잡담 말풍선 기본 표시 시간(초) + 글자당 0.1초 (40자 ≈ 8초)
   screen: false, // 화면 보기(스크린샷을 AI에 보냄) — 명시적 동의가 필요해 기본 꺼짐
   screenProactive: 30, // 먼저 말 걸 때 화면을 함께 보는 비율(%)
   chatAutoCloseSec: 30, // 사도가 먼저 말을 건 대화창: 이 시간 동안 아무 입력 없으면 스스로 닫힘 (0 = 안 닫음)
@@ -331,12 +329,11 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
   return { ...parseEmotion(text), provider, model };
 }
 
-// 사도 둘의 짧은 대화(3~5줄). 한 번의 호출로 대본을 받아 줄마다 {who, text, emotion}. 작은 모델도 따르기 쉽게 JSON 대신 "이름: 대사 [감정:x]" 줄 형식
 // 인물 사전(data/bible.json — 나무위키 사도 문서 요약: 누구인지·성격·관계·행적·말버릇)을 프롬프트 몇 줄로
 function bibleBrief(b, o = {}) {
   if (!b) return "";
   const rel = (b.rel || []).slice(0, o.rel == null ? 6 : o.rel);
-  // v2 행동 층(facts·voice·react·topics·never·mood, tools/bible-v2-sample.py) — 있는 사도만. short(둘 잡담)에서는 facts·voice·never 를 짧게
+  // v2 행동 층(facts·voice·react·topics·never·mood, tools/bible-v2-sample.py) — 있는 사도만. short 에서는 facts·voice·never 를 짧게
   const react = b.react && !o.short ? Object.entries(b.react).slice(0, 12).map(([k, v]) => `  - ${k}: ${v}`).join("\n") : "";
   return [
     b.who ? `인물: ${b.who}` : "",
@@ -353,93 +350,4 @@ function bibleBrief(b, o = {}) {
     !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
-function personaBrief(p) {
-  const si = p.styleInfo || null;
-  const lines = [...(p.lines || []).slice(0, 4), ...((si && si.samples) || []).slice(0, 6)].map(l => `  - ${l}`).join("\n");
-  const bible = p.bible ? bibleBrief({ who: p.bible.who, facts: p.bible.facts, traits: p.bible.traits, quirk: p.bible.quirk, voice: p.bible.voice, never: p.bible.never }, { short: true, traits: 4 }).split("\n").map(l => `  ${l}`).join("\n") : "";
-  return [`■ ${p.ko}${p.skin ? ` (옷: ${p.skin})` : ""}: 말투 ${STYLE_DESC[p.style] || STYLE_DESC.polite}.${p.me ? ` 자칭 "${p.me}".` : ""}${si && si.catch && si.catch.length ? ` 자주 입에 올리는 것: ${si.catch.slice(0, 6).join(", ")}.` : ""}`, bible, lines ? `  대사 표본:\n${lines}` : ""].filter(Boolean).join("\n");
-}
-// A의 인물 사전에서 B(이름)에 대한 관계 서술 — "B: 설명" 형식 항목 중 이름이 앞에 오는 것
-function bibleRelTo(a, bKo) {
-  if (!a.bible || !a.bible.rel || !bKo) return "";
-  const base = bKo.replace(/\(.*\)$/, "");
-  const hit = a.bible.rel.find(r => { const head = r.split(":")[0]; return head.includes(base) || (head.includes("·") && head.split("·").some(h => h.trim().includes(base))); });
-  return hit ? hit.replace(/^[^:]*:\s*/, "") : "";
-}
-// 같은 사도 둘(스킨만 다르거나 완전히 같은)이면 이름을 구분해 준다: "벨라(존재감 넘치는 구미호)" / "벨라(기본)" — 그래도 같으면 "벨라 A"/"벨라 B"
-function duoLabels(a, b) {
-  if (a.ko !== b.ko) return [a.ko, b.ko];
-  let la = a.skin ? `${a.ko}(${a.skin})` : `${a.ko}(기본)`, lb = b.skin ? `${b.ko}(${b.skin})` : `${b.ko}(기본)`;
-  if (la === lb) { la = `${a.ko} A`; lb = `${b.ko} B`; }
-  return [la, lb];
-}
-// 두 사도의 관계: A가 B를 부르는 말(스토리 대본 실측), 함께 나온 에피소드 수, 둘이 같이 주연인 테마극장
-function relationBrief(a, b, la, lb) {
-  const ra = a.rel || {}, rb = b.rel || {}, ka = a.key, kb = b.key;
-  const out = [];
-  const fm = (f) => `"${f.form.replace(" (반말 호격)", "(이름+아/야, 반말)")}"`;
-  const callA = ka && kb && ra.calls && ra.calls[kb] ? ra.calls[kb].slice(0, 2).map(fm).join("/") : "";
-  const callB = ka && kb && rb.calls && rb.calls[ka] ? rb.calls[ka].slice(0, 2).map(fm).join("/") : "";
-  if (callA) out.push(`${la}은(는) ${lb}을(를) ${callA}이라고 부른다.`);
-  if (callB) out.push(`${lb}은(는) ${la}을(를) ${callB}이라고 부른다.`);
-  if (a.ko !== b.ko) { // 인물 사전(나무위키 요약)에 적힌 서로에 대한 관계
-    const ba = bibleRelTo(a, b.ko), bb = bibleRelTo(b, a.ko);
-    if (ba) out.push(`${la}에게 ${lb}은(는): ${ba}.`);
-    if (bb) out.push(`${lb}에게 ${la}은(는): ${bb}.`);
-  }
-  const n = ka && kb && ra.with ? ra.with[kb] : 0;
-  const shared = (a.theaters || []).filter(t => (t.castKeys || []).includes(kb)).slice(0, 2);
-  if (shared.length) out.push(`둘이 함께 주연으로 나온 이야기: ${shared.map(t => `'${t.title}'${t.synopsis ? "(" + t.synopsis.slice(0, 70) + "…)" : ""}`).join(", ")}`);
-  else if (n) out.push(`원작 스토리에서 같은 장면에 ${n}번 이상 함께 나왔다(서로 아는 사이).`);
-  if (!out.length) return a.ko === b.ko ? "" : "원작에서 둘이 직접 얽힌 기록은 없다 — 서로 이름은 알지만 첫 대화처럼. 각자의 인물 소개(성격·관계)를 바탕으로 자연스럽게 반응한다.";
-  return "둘의 관계(원작 기준): " + out.join(" ");
-}
-function buildDuoSystem(a, b, opts = {}) {
-  const [la, lb] = duoLabels(a, b); const same = a.ko === b.ko;
-  return [
-    `너는 모바일 게임 <트릭컬 리바이브>의 두 사도가 나누는 짧은 대화를 쓰는 작가다. 두 사도는 지금 게임 밖, 사용자의 PC 바탕화면에 작은 SD 캐릭터로 서 있다가 마주쳤다. 사용자(교주)는 근처에서 보고 있을 수도 있다.`,
-    same ? `특이 상황: 둘은 같은 사도 ${a.ko}가 둘이다(교주가 둘 소환함${a.skin !== b.skin ? ", 입은 옷만 다름" : ""}). 서로를 보고 놀라거나, 누가 진짜인지 다투거나, 죽이 맞아 장난치는 식으로 — 같은 성격이 둘이라 생기는 재미를 살려라. 이름은 아래 표기 그대로 구분해 쓴다.` : "",
-    personaBrief(a).replace(`■ ${a.ko}`, `■ ${la}`), personaBrief(b).replace(`■ ${b.ko}`, `■ ${lb}`),
-    relationBrief(a, b, la, lb),
-    "규칙:",
-    `- 정확히 ${opts.n || 4}줄. 한 줄 = 한 사람의 한 마디(1~2문장, 40자 안팎). 두 사람이 번갈아 말하되 ${la}가 먼저 시작한다.`,
-    `- 각 줄은 반드시 이 형식: 이름: 대사 [감정:행복|미소|분노|슬픔|놀람|냠냠|삐짐|기본]  (이름은 "${la}" / "${lb}" 그대로)`,
-    "- 원작에서 둘의 관계(친구·라이벌·동료·가족 등)를 안다면 반영하고, 모르면 첫 만남처럼 자연스럽게. 서로의 말투·성격이 뚜렷이 드러나게.",
-    "- 둘은 서로에게 말한다. 교주(사용자)를 부르거나 교주에게 말을 걸지 않는다 — 교주 이야기가 나와도 서로 주고받는 말이어야 한다.",
-    "- 감정은 반드시 [감정:x] 형식으로만 쓴다. (미소) 처럼 괄호로 적지 않는다.",
-    "- 마크다운·이모지·설명·따옴표 금지. 대사만.",
-    opts.extra || "",
-  ].filter(Boolean).join("\n");
-}
-function parseDuo(text, a, b) {
-  const out = []; const [la, lb] = duoLabels(a, b); const same = a.ko === b.ko;
-  const norm = (s) => s.replace(/[\s"'“”()（）·]/g, "");
-  let turn = "a"; // 같은 사도 둘인데 라벨 없이 이름만 쓴 경우 → 번갈아 배정
-  for (const raw of (text || "").split(/\r?\n/)) {
-    const line = raw.replace(/^[-*\d.)\s]+/, "").trim(); if (!line) continue;
-    const m = /^(.{1,30}?)\s*[:：]\s*(.+)$/.exec(line); if (!m) continue;
-    const name = norm(m[1]);
-    let who = name === norm(la) ? "a" : name === norm(lb) ? "b" : null;
-    if (!who && !same) who = name === a.ko || a.ko.startsWith(name) || name.startsWith(a.ko) ? "a" : name === b.ko || b.ko.startsWith(name) || name.startsWith(b.ko) ? "b" : null;
-    if (!who && same && (name.startsWith(a.ko) || a.ko.startsWith(name))) who = turn;
-    if (!who) continue;
-    turn = who === "a" ? "b" : "a";
-    const pe = parseEmotion(m[2].replace(/^["'“]|["'”]$/g, ""));
-    if (pe.text) out.push({ who, text: pe.text, emotion: pe.emotion });
-  }
-  return out;
-}
-async function duo(ai, profA, profB, opts = {}) {
-  const cfg = merge(ai); const s = await status(cfg); const provider = opts.provider || s.resolved;
-  if (!provider) throw new Error("no-provider");
-  const system = buildDuoSystem(profA, profB, opts);
-  const messages = [{ role: "user", text: `대화를 써라.${opts.topic ? " 화제: " + opts.topic : ""}${opts.image ? " 첨부한 스크린샷은 사용자(교주)의 PC 화면이다. 교주가 지금 뭘 하는지 두 사람이 구경하며 떠드는 내용으로. 개인정보·메시지 본문은 읽지 말고 활동만 큰 틀에서. 화면 속 SD 캐릭터·말풍선은 무시." : ""}`, ...(opts.image ? { image: opts.image } : {}) }];
-  const noop = () => {}; let text;
-  if (provider === "ollama") text = await chatOllama(cfg.ollama, system, messages, noop, opts.signal);
-  else if (provider === "gemini") text = await chatGemini(cfg.gemini, decKey(cfg.keys.gemini), system, messages, noop, opts.signal);
-  else if (provider === "anthropic") text = await chatAnthropic(cfg.anthropic, decKey(cfg.keys.anthropic), system, messages, noop, opts.signal);
-  else text = await chatOpenAI(cfg.openai, decKey(cfg.keys.openai), system, messages, noop, opts.signal);
-  const lines = parseDuo(text, profA, profB).slice(0, opts.n || 4); // '정확히 N줄'을 자주 넘긴다 — 넘치는 줄은 버린다
-  return { lines, raw: text, provider, model: cfg[provider]?.model || "" };
-}
-module.exports = { bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, duo, buildSystem, buildDuoSystem, parseDuo, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+module.exports = { bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };

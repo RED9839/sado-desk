@@ -20,7 +20,6 @@ contextBridge.exposeInMainWorld("host", {
   readText: (p) => fs.readFileSync(guard(p), "utf8"),
   // 마스코트 창
   hitRect: (r, id) => ipcRenderer.send("hit-rect", r, id === undefined ? INSTANCE : id),
-  met: (id) => ipcRenderer.send("mascot:met", id === undefined ? INSTANCE : id), // meet 지점에 닿았다(또는 바빠서 안 간다) — 잡담이 이걸 기다린다
   openMenu: (x, y, id) => ipcRenderer.send("menu:open", { x, y }, id === undefined ? INSTANCE : id),
   sdAnims: (id, list) => ipcRenderer.send("sd-anims", id, list),
   menuClose: () => ipcRenderer.send("menu:close"),
@@ -61,10 +60,8 @@ contextBridge.exposeInMainWorld("host", {
   // AI 대화
   chatOpen: (id) => ipcRenderer.send("chat:open", id === undefined ? INSTANCE : id),
   selfTalk: (id) => ipcRenderer.send("selftalk:say", id === undefined ? INSTANCE : id),
-  chatDuo: (id) => ipcRenderer.send("chat:duo", id === undefined ? INSTANCE : id),
   chatSend: (text, withScreen) => ipcRenderer.send("chat:send", text, !!withScreen),
   chatScreen: (id) => ipcRenderer.send("chat:screen", id === undefined ? INSTANCE : id),
-  chatDuoScreen: (id) => ipcRenderer.send("chat:duo-screen", id === undefined ? INSTANCE : id),
   chatClose: () => ipcRenderer.send("chat:close"),
   chatClear: () => ipcRenderer.send("chat:clear"),
   chatResize: (h) => ipcRenderer.send("chat:resize", h),

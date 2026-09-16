@@ -49,8 +49,6 @@
     for (const row of menuEl.querySelectorAll("[data-vol]")) { const k = row.dataset.vol, v = Math.round(S.sound[k] * 100); row.querySelector("input").value = v; row.querySelector(".val").textContent = v + "%"; row.classList.toggle("off", S.sound.muted); }
     document.getElementById("debug-state").textContent = S.display.debug ? "켜짐" : "꺼짐";
     document.getElementById("remove-item").style.display = (S.count || 1) > 1 ? "" : "none";
-    document.getElementById("duo-item").style.display = (S.count || 1) > 1 ? "" : "none";
-    document.getElementById("duo-screen-item").style.display = (S.count || 1) > 1 && S.ai && S.ai.screen ? "" : "none";
     document.getElementById("screen-state").textContent = S.ai && S.ai.screen ? "" : "꺼짐";
     renderSkins(); loadNews().then(resize); resize();
   }
@@ -75,9 +73,7 @@
       case "settings": host.openSettings(); host.menuClose(); break;
       case "chat": host.chatOpen(); host.menuClose(); break;
       case "selftalk": host.selfTalk(); host.menuClose(); break;
-      case "duo": host.chatDuo(); host.menuClose(); break;
       case "screen": host.chatScreen(); host.menuClose(); break;
-      case "duo-screen": host.chatDuoScreen(); host.menuClose(); break;
       case "add": host.addCharacter(); host.menuClose(); break;
       case "news-check": { t.textContent = "확인 중…"; host.newsCheck().then(r => { t.textContent = r.added.length ? `새 소식 ${r.added.length}개!` : (r.errors && r.errors.length ? "확인 실패: " + r.errors[0] : "새 소식 없음"); loadNews().then(resize); }); break; }
       case "news-show": host.newsShow(); host.menuClose(); break;
