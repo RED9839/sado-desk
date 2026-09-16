@@ -249,15 +249,25 @@
   // 다음 프레임 예약이 맨 끝에 있어서, 여기서 예외가 하나 나면 예약이 영영 안 걸린다.
   // 그러면 사도 전원이 그 자리에 얼어붙는데 히트 창은 마지막 자리에 남아 클릭을 계속 가로챈다.
   // 한 프레임이 튀는 것과 창이 죽는 것은 다른 일이다.
-  // 스파인 대기 동작 원본이 대개 30fps 라 60 으로 그려도 더 부드러워지지 않는다.
-  // 하루 종일 켜 두는 앱이라 이 절반이 그대로 전력과 발열이다.
-  const FRAME_MS = 1000 / 30;
-  let acc = 0;
+  // 스파인 대기 동작 원본이 대개 30fps 라 60 으로 그려도 더 부드러워지지 않는다. 하루 종일 켜 두는
+  // 앱이라 그 절반이 그대로 전력과 발열이다. 다만 끌기·던지기는 애니가 아니라 여기서 계산하는
+  // 움직임이라 30 이면 손에 뚝뚝 걸린다. 기본은 "손댈 때만 60" — 설정(display.fps)으로 30·60 고정도 된다
+  function frameMs() {
+    const f = firstMascot(); const want = f ? f.S.display.fps : "auto";
+    // 60 은 "매 프레임" — rAF 가 모니터 주사율(100Hz 면 10ms) 단위라 16.7ms 문턱을 두면 둘째 프레임만
+    // 통과해 50 이 된다. 주사율대로 그리는 것이 정직하다. 30 은 그 절반쯤으로 묶인다
+    if (want === 60 || want === "60") return 0;
+    if (want === 30 || want === "30") return 1000 / 30;
+    for (const mas of mascots.values()) if (mas.hands) return 0;
+    return 1000 / 30;
+  }
+  let acc = 0, probeN = 0, probeT0 = 0;
   function loop(now) {
     const raw = now - last; last = now;
     acc += raw;
-    if (acc < FRAME_MS || document.hidden) { requestAnimationFrame(loop); return; }
-    const dt = Math.min(0.05, acc / 1000); acc = 0;
+    if (acc < frameMs() - 2 || document.hidden) { requestAnimationFrame(loop); return; }
+    if (cfg && cfg.fpsProbe) { probeN++; if (!probeT0) probeT0 = now; if (now - probeT0 >= 3000) { const f = firstMascot(); console.log(`FPSPROBE ${(probeN / ((now - probeT0) / 1000)).toFixed(1)} fps  setting=${f ? f.S.display.fps : "?"} hands=${[...mascots.values()].some(x => x.hands)}`); probeN = 0; probeT0 = now; } }
+    const dt = Math.min(0.05, acc / 1000); const fm = frameMs(); acc = fm ? Math.min(acc - fm, fm) : 0; // 남는 시간을 이월해 30 에 맞춘다(무한 이월은 막는다)
     try {
       for (const mas of mascots.values()) mas.update(dt);
       render();
@@ -297,7 +307,8 @@
     const sd = { kind: "sd", skeleton: null, state: null, data: null, pma: true, A: SD, feet: 0, w: 100, h: 150, k: 1, key: null, textures: [] };
     const sdI = { kind: "sd", skeleton: null, state: null, data: null, pma: true, A: SD, feet: 0, w: 100, h: 150, k: 1, key: null, textures: [] }; // 하이브리드용 인게임 슬롯
     let active = mini;
-    const self = { id, get S() { return S; }, get active() { return active; } };
+    const HANDS = new Set(["drag", "thrown", "touch", "pat", "tickle", "smash1"]);
+    const self = { id, get S() { return S; }, get active() { return active; }, get hands() { return mouse.down || HANDS.has(m.state); } };
 
     // 상태에 맞는 슬롯으로 전환 (이동 = 미니미/스탠딩 Move, 그 외 = 스탠딩). 위치·방향 유지, 발 기준 정렬
     function useSlot(slot) {

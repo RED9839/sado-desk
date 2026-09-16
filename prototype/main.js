@@ -56,7 +56,7 @@ const GLOBAL_DEFAULTS = {
     clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
     motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
-  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false },
+  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto" }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json · 잡담 duo-talk.json). AI 와 무관하고 돈이 들지 않아
@@ -220,7 +220,7 @@ function updateHitTarget(x, y) {
   for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
   placeHit(best);
 }
-function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test") }; }
+function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test"), fpsProbe: argHas("--fps-probe") }; }
 function createMascotWindow() {
   if (mascotWin && !mascotWin.isDestroyed()) return;
   if (!geo) geo = geometry();
