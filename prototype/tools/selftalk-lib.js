@@ -50,7 +50,10 @@ function allowedStyles(h, st) {
   const set = new Set([SAMEOF(st)]);
   const L = REF[h] || [], c = {}; let n = 0;
   for (const x of L) { const g = classify(x.split(/[.!?~…⋯]/).filter(Boolean).pop() || x); if (g) { const s = SAMEOF(g); c[s] = (c[s] || 0) + 1; n++; } }
-  for (const [s, v] of Object.entries(c)) if (v / n >= 0.15) set.add(s);
+  // 문턱 15% 는 인물 사전이 명시한 말투까지 막았다 — 버터는 자료에 "코미에겐 반말" 이라고
+  // 이름까지 찍혀 있는데 실제 대사의 반말이 12.9% 라 반말을 못 썼다. 10% 로 내린다.
+  // 그 사도 자신의 대사 열 줄에 한 줄꼴이면 그 말투를 실제로 쓰는 것이다.
+  for (const [s, v] of Object.entries(c)) if (v / n >= 0.10) set.add(s);
   return (_allowed[h] = set);
 }
 
