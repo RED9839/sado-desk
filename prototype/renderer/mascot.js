@@ -320,9 +320,15 @@
       const a = new Audio(src); a.volume = v; a.play().catch(() => {});
       if (cat === "voice") currentVoice = a;
     }
+    // 앞 카테고리에 파일이 하나라도 있으면 거기서 멈추던 것을, 후보를 다 합쳐 고르게 바꿨다.
+    // 벨라는 greeting 이 1개뿐이라 클릭할 때마다 같은 인사만 나왔다(joy 5·pleasure 5·line 3 을 두고도).
+    // 앞에 적은 카테고리일수록 자주 나오게 가중치를 준다 — 순서의 뜻은 살린다
     function playVoice(...cats) {
-      for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(list); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
-      return null;
+      const pool = [];
+      cats.forEach((c, n) => { const l = voiceSet.cats[c]; if (!l || !l.length) return;
+        const w = Math.max(1, cats.length - n); for (let k = 0; k < w; k++) pool.push(...l); });
+      if (!pool.length) return null;
+      const f = pick(pool); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f;
     }
     const playSfx = (name, gain = 1) => playSound("sfx", name, clips.sfx[name], gain);
     const voicePlaying = () => !!(currentVoice && !currentVoice.ended && !currentVoice.paused && currentVoice.currentTime < (currentVoice.duration || 99));
@@ -351,7 +357,7 @@
     // 몸 제스처 셋: **톡**(안 움직이고 뗌) = 가벼운 반응 / **옆으로 문지르기**(가로 RUB_DX 이상) = 간지럽히기 / **위아래로 끌기**(세로 LIFT_DY 이상) = 들어올리기
     //   누른 채 가만히 있으면 아무것도 안 함(0.5초 홀드→간지럽히기는 톡 반응과 번갈아 튀어 뺐다). 간지럽히는 동안은 Tickle_Idle_1 루프 하나만
     //   (방향 바뀔 때 Tickle_Idle_2로 갈아타면 사도마다 1초 넘는 딴 동작이라 "터치↔간지럽히기"가 반복돼 보였다). 문지르기 중 가로는 LIFT_DX까지 자유
-    const LIFT_DY = 45, LIFT_DX = 260, RUB_DX = 18; // px
+    const LIFT_DY = 45, LIFT_DX = 260, RUB_DX = 18, TAP_PX = 12; // px  (TAP_PX 미만은 '톡 친 것' — 볼 당기기 대사를 내지 않는다)
 
     function makeChar(slot, data) {
       slot.data = data; slot.skeleton = new spine.Skeleton(data);
@@ -816,7 +822,7 @@
         playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoice("tickleduring", "ticklestart", "joy");
       } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
         smashHit();
-      } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd) { // 볼 당기기 끝 → touch1_x ("당기지 마!")
+      } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd && Math.hypot(grab.dx, grab.dy) >= TAP_PX) { // 볼을 끌었을 때만 → touch1_x ("당기지 마!")
         playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoice("cheek", "touch");
       } else {                                 // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
         if (isSD()) useSlot(slotForRest());
