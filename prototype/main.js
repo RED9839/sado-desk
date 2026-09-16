@@ -864,6 +864,19 @@ if (argHas("--selftalk-test")) setTimeout(async () => {
   console.log(`SELFTALKTEST 서로 다른 줄 ${new Set(said).size}/${said.length} (8번에 겹침 없어야 정상)`);
   app.quit();
 }, 6000);
+// 잡담 대본 시험: 대본만으로 한 판 (다른 사도끼리 / 같은 사도 둘 다)
+if (argHas("--duoscript-test")) setTimeout(async () => {
+  const say = (s) => console.log("DUOSCRIPT " + s);
+  const ids = [...instances.keys()];
+  say(`대본 ${Object.keys(duoTalkData).length}명 · 떠 있는 사도 ${ids.length}명 ${ids.map(i => (chatProfile(i) || {}).key).join(",")}`);
+  if (ids.length < 2) { say("사도가 둘 이상이어야 한다"); return app.quit(); }
+  const r1 = await duoScript(ids[0], ids[1]);
+  say(`한 판: ${r1 ? r1.lines + "줄, 같은 사도=" + r1.same : "대본 없음(null)"}`);
+  await new Promise(r => setTimeout(r, 1200));
+  const r2 = await duoScript(ids[0], ids[1]);
+  say(`두 판째: ${r2 ? r2.lines + "줄" : "대본 없음"} (앞 판과 겹치지 않아야 정상)`);
+  app.quit();
+}, 6000);
 if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined, screen: argHas("--duo-screen") }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
 if (argHas("--chat-test")) setTimeout(async () => {

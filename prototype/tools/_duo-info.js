@@ -3,7 +3,7 @@ const fs = require("fs");
 const B = require("./selftalk-lib.js");
 const bible = JSON.parse(fs.readFileSync(__dirname + "/../data/bible.json", "utf8"));
 const { matches } = require("./style-match.js");
-const miss = JSON.parse(fs.readFileSync(process.env.TEMP + "/duo-miss.json", "utf8"));
+const miss = JSON.parse(fs.readFileSync(__dirname + "/../out/duo-mine/_miss.json", "utf8"));
 const from = +process.argv[2] || 0, n = +process.argv[3] || 6;
 for (const h of miss.slice(from, from + n)) {
   const p = B.profile(h), b = bible[h] || {}, x = B.XTRA[h] || {};
