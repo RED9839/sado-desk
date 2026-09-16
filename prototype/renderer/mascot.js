@@ -337,10 +337,28 @@
     // 앞 카테고리에 파일이 하나라도 있으면 거기서 멈추던 것을, 후보를 다 합쳐 고르게 바꿨다.
     // 벨라는 greeting 이 1개뿐이라 클릭할 때마다 같은 인사만 나왔다(joy 5·pleasure 5·line 3 을 두고도).
     // 앞에 적은 카테고리일수록 자주 나오게 가중치를 준다 — 순서의 뜻은 살린다
+    // 클릭처럼 '아무 말이나' 하는 자리: 여러 묶음을 앞쪽에 무게를 두고 섞어 같은 말이 되풀이되지 않게 한다
     function playVoice(...cats) {
       const pool = [];
       cats.forEach((c, n) => { const l = voiceSet.cats[c]; if (!l || !l.length) return;
         const w = Math.max(1, cats.length - n); for (let k = 0; k < w; k++) pool.push(...l); });
+      return playFrom(pool);
+    }
+    // 뜻이 정해진 자리(쓰다듬기·볼 당기기·간지럽히기·등장): 전용 대사만 쓴다.
+    // 섞어 버리면 전용이 묻힌다 — 쓰다듬기 전용 대사는 셋인데 pleasure·joy 열 개와 같이 담겨 41% 밖에 안 나왔다.
+    // 게임 파일은 쓰다듬기·볼 당기기 3개, 등장 2개, 간지럽히기 1개가 표준이다.
+    // 전용이 둘 이상이면 그것만, 하나뿐이면 같은 말만 되풀이되니 뒤 묶음을 보탠다.
+    const OWN_MIN = 2;
+    function playVoiceOwn(...cats) {
+      const lists = cats.map(c => voiceSet.cats[c]).filter(l => l && l.length);
+      if (!lists.length) return null;
+      const own = lists[0];
+      if (own.length >= OWN_MIN) return playFrom(own);              // 전용 대사가 넉넉하면 그것만
+      const extra = lists.slice(1).flat();                          // 모자라면 뒤 묶음을 보태되,
+      const reps = Math.max(1, Math.ceil(extra.length / own.length)); // 전용이 절반은 되게 되풀이해 넣는다
+      return playFrom([...extra, ...Array.from({ length: reps }, () => own).flat()]);
+    }
+    function playFrom(pool) {
       if (!pool.length) return null;
       const f = pick(pool); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f;
     }
@@ -627,7 +645,7 @@
       const sp = active.A.spawn.filter(has);
       if (sp.length) { m.y = floorAt(m.x); playOnce(pick(sp), "spawn"); }
       else { m.y = topAt(m.x) - m.h - 10; m.state = "thrown"; play(active.A.hold, true); } // 등장 애니 없음(SD) → 위에서 떨어져 착지
-      if (S.sound.spawnVoice) playVoice("spawn", "greeting");
+      if (S.sound.spawnVoice) playVoiceOwn("spawn", "greeting");
     }
     function decideIdle() {
       const B = S.behavior;
@@ -691,7 +709,7 @@
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
           m.y = floorAt(m.x); m.rot = 0;
-          if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoice("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
+          if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoiceOwn("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
           m.x = mouse.gx; m.y = mouse.gy;
@@ -790,7 +808,7 @@
     }
     // 조작 본이 셋업 자리에서 얼마나 벗어났나(월드 px) — 셀프테스트·HUD용
     function grabOffsetPx(kind) { const b = sd.skeleton && ctrlBone(sd, kind); if (!b) return null; const p = b.parent; const x0 = p.worldX + b.data.x * p.a + b.data.y * p.b, y0 = p.worldY + b.data.x * p.c + b.data.y * p.d; return Math.hypot(b.worldX - x0, b.worldY - y0); }
-    function startTickle() { m.state = "tickle"; tickleT = 0; play(active.A.tickleIdle, true); if (S.sound.clickVoice) playVoice("ticklestart", "tickleduring"); }
+    function startTickle() { m.state = "tickle"; tickleT = 0; play(active.A.tickleIdle, true); if (S.sound.clickVoice) playVoiceOwn("ticklestart", "tickleduring"); }
     function hover(px, py) {
       if (mouse.down) return;
       const inside = px >= 0 && py >= 0 && px < W && py < H;
@@ -851,13 +869,13 @@
         if (Math.abs(m.vx) < 30 && Math.abs(m.vy) < 30) { m.vx = 0; m.vy = 0; }
         if (Math.abs(m.vx) > 30) { facing = m.vx > 0 ? 1 : -1; applyFacing(); }
       } else if (m.state === "pat") {          // 쓰다듬기 끝 → touch2_x ("그래 그래 더 쓰다듬으라고")
-        playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoice("pat", "pleasure", "joy");
+        playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoiceOwn("pat", "pleasure", "joy");
       } else if (m.state === "tickle") {       // 간지럽히기 끝 → Tickle_End. 웃음은 좀 간지럽혔을 때만(톡 치고 뗀 건 시작 웃음 하나로)
-        playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoice("tickleduring", "ticklestart", "joy");
+        playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoiceOwn("tickleduring", "ticklestart", "joy");
       } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
         smashHit();
       } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd && Math.hypot(grab.dx, grab.dy) >= TAP_PX) { // 볼을 끌었을 때만 → touch1_x ("당기지 마!")
-        playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoice("cheek", "touch");
+        playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoiceOwn("cheek", "touch");
       } else {                                 // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
         if (isSD()) useSlot(slotForRest());
         let reacts = active.A.react.filter(has);
