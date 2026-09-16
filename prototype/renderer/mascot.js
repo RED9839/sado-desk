@@ -246,11 +246,16 @@
 
   // ---- 프레임: 캐릭터 전부 갱신 → 한 번에 그리기 ----
   let last = performance.now();
+  // 다음 프레임 예약이 맨 끝에 있어서, 여기서 예외가 하나 나면 예약이 영영 안 걸린다.
+  // 그러면 사도 전원이 그 자리에 얼어붙는데 히트 창은 마지막 자리에 남아 클릭을 계속 가로챈다.
+  // 한 프레임이 튀는 것과 창이 죽는 것은 다른 일이다.
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    for (const mas of mascots.values()) mas.update(dt);
-    render();
-    for (const mas of mascots.values()) mas.pushHitRect(dt);
+    try {
+      for (const mas of mascots.values()) mas.update(dt);
+      render();
+      for (const mas of mascots.values()) mas.pushHitRect(dt);
+    } catch (e) { console.error("frame", e && e.stack || e); }
     requestAnimationFrame(loop);
   }
   const bOff = new spine.Vector2(), bSize = new spine.Vector2();
@@ -588,7 +593,8 @@
     }
 
     // ---- 애니 제어 (현재 형태에 있는 애니만) ----
-    const has = (name) => !!active.data.findAnimation(name);
+    // spine 의 findAnimation 은 빈 이름에 null 을 주지 않고 예외를 던진다. land·hold 는 null 이 될 수 있다
+    const has = (name) => !!name && !!active.data.findAnimation(name);
     const firstOf = (...names) => names.find(has) || null;
     // 한 번짜리 모션은 이보다 길게 붙들지 않는다. 인게임 Victory 는 중앙값 9.8초·최장 23.4초여서
     // 예전에는 "4초 이하"로 아예 걸러 버렸고, 그 탓에 사도 413명 중 258명은 승리 모션을 볼 수 없었다.
