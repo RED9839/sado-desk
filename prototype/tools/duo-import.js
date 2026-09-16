@@ -58,12 +58,7 @@ function put(h, rows) {
 }
 
 const KIND = { "먼저": "open", "받아": "reply", "자기": "self" };
-const text = fs.readFileSync(rest[0], "utf8").replace(/
-?/g, "
-"); // 윈도 줄바꿈이 섞여도 되게
-
-?/g, "
-"); // 윈도 줄바꿈이 섞여도 되게
+const text = fs.readFileSync(rest[0], "utf8").replace(/\r\n?/g, "\n"); // 윈도 줄바꿈이 섞여도 되게
 for (const part of text.split(/^\s*#{2,4}\s*/m)) {
   const mk = /^([A-Za-z0-9_]+)/.exec(part.trim()); if (!mk) continue;
   const rows = { open: [], reply: [], self: [] };
