@@ -176,10 +176,12 @@ function reasons(line, p, seen, corpus) {
 const PARTICLE = "님|씨|이|가|은|는|을|를|와|과|도|랑|이랑|에게|한테|의|야|아|께|만|랑은|보다";
 function otherName(t, p) {
   const mine = String(p.ko || "").replace(/\(.*\)$/, "").trim();
+  // 수량 단위 앞에 수·관형사가 오면 사도 이름이 아니다 ("곰 한 마리", "세 마리")
+  const t2 = t.replace(/(한|두|세|네|다섯|여섯|일곱|여덟|아홉|열|몇|\d+)\s*마리/g, " ");
   for (const ko of KO_NAMES) {
     if (ko === mine || ko.length < 2) continue;
     const re = new RegExp(`(^|[^가-힣])${ko}(${PARTICLE})?($|[^가-힣])`);
-    if (re.test(t)) return ko;
+    if (re.test(t2)) return ko;
   }
   return null;
 }

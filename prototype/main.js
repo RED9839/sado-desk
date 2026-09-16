@@ -483,9 +483,12 @@ ipcMain.on("selftalk:say", (e, id) => { const me = id || instanceOf(e.sender); i
 // data/duo-talk.json — 사도마다 open(먼저 건네는 말)·reply(받는 말)·self(자기 자신을 만났을 때).
 // 한 판 = open(A) → reply(B) → open(B) → reply(A). 줄마다 스스로 완결돼 있어 아무 짝이나 붙는다.
 // 같은 사도를 둘 부를 수 있으므로 그때는 self 를 쓴다.
-let duoTalkData = {};
-try { duoTalkData = (JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "duo-talk.json"), "utf8")).heroes) || {}; console.log(`잡담 대본: ${Object.keys(duoTalkData).length}명`); }
-catch (e) { console.warn("duo-talk.json 없음 — 잡담은 대본 대신 AI 로 돈다", e.message); }
+let duoTalkData = {}, duoPairData = {};
+try {
+  const d = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "duo-talk.json"), "utf8"));
+  duoTalkData = d.heroes || {}; duoPairData = d.pairs || {};
+  console.log(`잡담 대본: ${Object.keys(duoTalkData).length}명 · 짝 전용 ${Object.keys(duoPairData).length}쌍`);
+} catch (e) { console.warn("duo-talk.json 없음 — 잡담은 대본 대신 AI 로 돈다", e.message); }
 const duoSaid = new Map(); // "사도키:묶음" → 최근에 쓴 줄
 function pickDuo(key, kind) {
   const all = (duoTalkData[key] || {})[kind] || [];
@@ -502,7 +505,12 @@ async function duoScript(idA, idB, opts = {}) {
   const profA = chatProfile(idA), profB = chatProfile(idB);
   if (!profA || !profB) return null;
   const same = profA.key === profB.key;
-  const script = same
+  // 관계가 있는 짝은 전용 대사가 있다 — 서로 이름을 부르고 앞말을 받는다.
+  // 열쇠는 사도 키를 사전순으로 맞춰 두어 만나는 차례와 무관하게 찾힌다.
+  const pair = same ? null : duoPairData[[profA.key, profB.key].sort().join("|")];
+  const script = pair
+    ? pair.lines.map(l => ((l.who === "a" ? pair.a : pair.b) === profA.key ? [idA, profA, l] : [idB, profB, l]))
+    : same
     ? [[idA, profA, pickDuo(profA.key, "self")], [idB, profB, pickDuo(profB.key, "self")]]
     : [[idA, profA, pickDuo(profA.key, "open")], [idB, profB, pickDuo(profB.key, "reply")],
        [idB, profB, pickDuo(profB.key, "open")], [idA, profA, pickDuo(profA.key, "reply")]];
@@ -528,7 +536,7 @@ async function duoScript(idA, idB, opts = {}) {
       await new Promise(r => setTimeout(r, ttl + 400));
     }
     closeBubble();
-    return { lines: script.length, same };
+    return { lines: script.length, same, pair: !!pair };
   } finally { duoBusy = false; lastChatAt = Date.now(); }
 }
 

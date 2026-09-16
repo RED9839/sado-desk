@@ -34,7 +34,8 @@ if (!fs.existsSync(OUT)) { console.log(`${file} 없음 — 건너뜀`); continue
 const db = JSON.parse(fs.readFileSync(OUT, "utf8"));
 // 혼잣말은 사도마다 줄 배열, 잡담은 {open, reply, self} 꾸러미
 const groups = kind === "self" ? Object.values(db.heroes)
-  : Object.values(db.heroes).flatMap(h => [h.open || [], h.reply || [], h.self || []]);
+  : [...Object.values(db.heroes).flatMap(h => [h.open || [], h.reply || [], h.self || []]),
+     ...Object.values(db.pairs || {}).map(p => p.lines || [])];   // 짝 전용 대사도 함께
 let n = 0, byAct = {};
 for (const lines of groups) for (const l of lines) {
   // 감정이 뚜렷하면(화남·슬픔·놀람) 그것이 먼저다. 낱말 규칙을 먼저 보면 꿀·꽃꿀이 화제인 사도가 전부 Eat 으로 쏠린다
