@@ -81,7 +81,7 @@ function loadCorpus() {
     if (!fs.existsSync(d)) continue;
     for (const f of fs.readdirSync(d)) {
       if (!f.endsWith(".txt")) continue;
-      const t = fs.readFileSync(path.join(d, f), "utf8").replace(/[\s\W_]+/g, "");
+      const t = fs.readFileSync(path.join(d, f), "utf8").replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, "");
       for (let i = 0; i + 18 <= t.length; i++) set.add(t.slice(i, i + 18));
     }
   }
@@ -126,7 +126,7 @@ function wrongName(t, p) {
 }
 function reasons(line, p, seen, corpus) {
   const t = line.t, out = [];
-  if (t.length < 12) out.push("너무 짧음");
+  if (t.length < 10) out.push("너무 짧음");   // 실제 대사도 5% 는 10자 언저리다
   if (t.length > 70) out.push("너무 김");
   if (MD.test(t) || EMOTICON.test(t)) out.push("이모지·이모티콘·마크다운");
   if (BAN.test(t)) out.push("메타 낱말");
@@ -147,10 +147,11 @@ function reasons(line, p, seen, corpus) {
   for (const x of sents) { const w = brokenWhy(x); if (w) { out.push(w); break; } }
   const nm = wrongName(t, p); if (nm) out.push(nm);
   const ad = wrongAddr(t, p); if (ad) out.push(ad);
-  const n = t.replace(/[\s\W_]+/g, "");
+  const n = t.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, "");
   for (let i = 0; i + 18 <= n.length; i++) if (corpus.has(n.slice(i, i + 18))) { out.push("위키 원문과 겹침"); break; }
-  const rn = (REF[p.key] || []).map(x => x.replace(/[\s\W_]+/g, ""));
-  for (let i = 0; i + 10 <= n.length; i++) { const g = n.slice(i, i + 10); if (rn.some(r => r.includes(g))) { out.push("실제 대사를 베낌"); break; } }
+  const rn = (REF[p.key] || []).map(x => x.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, ""));
+  if (n.length < 10) { if (rn.some(r => r.includes(n))) out.push("실제 대사를 베낌"); }   // 짧은 줄은 샹글이 한 번도 안 돌아 빠져나갔다
+  else for (let i = 0; i + 10 <= n.length; i++) { const g = n.slice(i, i + 10); if (rn.some(r => r.includes(g))) { out.push("실제 대사를 베낌"); break; } }
   const W = wordSet(t), head = t.split(/\s+/).slice(0, 2).join(" ");
   for (const s of seen) {
     const S = wordSet(s), inter = [...W].filter(x => S.has(x)).length;
@@ -159,4 +160,41 @@ function reasons(line, p, seen, corpus) {
   }
   return out;
 }
-module.exports = { XTRA, META, MOODS, TAG2MOOD, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
+/* 만들 때 줄 잣대. 세 도구(batch·gaps·prompt)가 같은 것을 쓴다.
+ * 비율은 실제 대사 5,090줄에서 잰 값 — 이걸 요구하지 않으면 전부 23자짜리 평서문으로 수렴한다.
+ *   길이 25%가 14자 이하 · 15%가 30자 이상 / 물음표 32% · 느낌표 40% · 말줄임표 21% */
+function RULES(n, opt) {
+  const o = opt || {};
+  const R = r => Math.max(1, Math.round(n * r));
+  const mi = o.mine ? "'이미 쓴 줄'과 소재가 겹치면 안 됩니다. " : "같은 소재를 되풀이하지 마세요. 줄마다 다른 이야기여야 합니다.";
+  const who = o.one ? `이 사도는 "${o.one}"입니다. ` : "";
+  return [
+    "■ 규칙",
+    "  1. 길이를 일부러 흩뜨립니다. 전부 비슷한 길이면 사람이 쓴 말로 보이지 않습니다.",
+    `     ${n}줄 중 짧은 줄(10~14자) ${R(0.25)}줄 이상, 긴 줄(30~50자·두 문장) ${R(0.18)}줄 이상을 꼭 섞습니다.`,
+    "     나머지는 15~29자. 어떤 줄도 60자를 넘지 않습니다.",
+    "  2. 혼잣말이 평서문만 있는 것은 아닙니다. 아래 실제 대사를 보면 이 사도들은",
+    `     - 셋에 하나꼴로 스스로에게 묻습니다. ${R(0.30)}줄쯤은 물음표로 끝내세요. 답을 바라는 물음이 아니라 혼자 갸웃하는 것입니다.`,
+    `     - 다섯에 둘꼴로 느낌표를 씁니다. ${R(0.40)}줄쯤.`,
+    `     - 다섯에 하나꼴로 말끝을 흐립니다(…). ${R(0.20)}줄쯤.`,
+    "     - 감탄사·숨소리를 섞습니다. 실제 대사에서 그 사도가 실제로 쓰는 것만 골라 쓰세요.",
+    "  3. 문장마다 그 사도의 어미를 씁니다. 한 줄도 예외 없습니다.",
+    "  4. 한국어 어법에 맞아야 합니다. 어미를 억지로 붙여 없는 말을 만들지 마세요(감사사와요 ×, 감사하사와요 ○).",
+    `  5. ${who}사도 이름을 정확히 씁니다. 다른 사도 이름도 틀리면 안 됩니다.`,
+    "  6. 화면에 무엇이 보이는지는 모릅니다. 바탕화면·창·커서 같은 '자리'는 말해도 되지만 내용은 모릅니다.",
+    "  7. 이모지·이모티콘·마크다운·따옴표·번호·화자 이름 금지.",
+    "  8. 게임·AI·과금 같은 바깥 이야기는 하지 않습니다.",
+    `  9. ${mi}`,
+    "     특히 다른 사도도 똑같이 할 법한 말은 쓰지 마세요. '혼자라 쓸쓸하다', '빈 자리가 허전하다' 같은",
+    "     말은 누구나 할 수 있어서 그 사도의 말이 아닙니다. 소개·성향·음식 취향·화제에서 그 사도만의 것을 집으세요.",
+    "  10. 줄 끝에 감정을 하나 붙입니다: [행복] [미소] [분노] [슬픔] [놀람] [냠냠] [삐짐] [기본]",
+    "",
+    "■ 다 쓰고 스스로 볼 것 (하나라도 아니면 고쳐 쓰세요)",
+    "  - 가장 짧은 줄이 15자 아래인가? 가장 긴 줄이 30자 위인가?",
+    "  - 물음표·느낌표·말줄임표가 저마다 들어갔는가?",
+    "  - 모든 줄이 '무엇을 했어요' 한 가지 꼴로 끝나지는 않는가?",
+    "  - 그 사도가 아니면 할 수 없는 말인가?",
+  ].join("\n");
+}
+
+module.exports = { RULES, XTRA, META, MOODS, TAG2MOOD, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
