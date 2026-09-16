@@ -137,7 +137,8 @@ function reasons(line, p, seen, corpus) {
   const sents = t.split(/(?<=[.!?~])\s+/).map(x => x.trim()).filter(Boolean);
   // 감탄사·의성어("어?" "우와!" "찰칵!" "흐음.")는 문장으로 세지 않는다 — 띄어쓰기 없는 세 글자 이하.
   // 이걸 문장으로 세면 "우와! 정말요? 저는 몰랐어요!" 가 세 문장이 되고, 감탄사에 말투 판정까지 붙는다.
-  const isInterj = (x) => !/\s/.test(x) && x.replace(/[^가-힣]/g, "").length <= 3;
+  // 감탄사·웃음: 띄어쓰기가 없고 네 글자 이하이거나, "아하하하하" 처럼 같은 소리를 되풀이한 것
+  const isInterj = (x) => { const k = x.replace(/[^가-힣]/g, ""); return !/\s/.test(x) && (k.length <= 4 || (k.length <= 6 && new Set(k).size <= 3)); };
   const said = sents.filter(x => !isInterj(x));
   const body = said.length ? said : sents;   // 감탄사뿐인 줄이면 그것이라도 본다
   if (body.length > 2) out.push("두 문장 초과");
