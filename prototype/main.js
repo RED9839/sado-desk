@@ -64,9 +64,10 @@ const GLOBAL_DEFAULTS = {
   display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
-  // 대본으로 하는 말 (혼잣말 self-talk.json · 잡담 duo-talk.json). AI 와 무관하고 돈이 들지 않아
+  // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아
   // 간격을 짧게 둔다 — AI 로 먼저 말 걸던 시절의 40분과 달리 8분.
-  talk: { selfTalk: true, duo: true, minMin: 8, bubbleSec: 4 },
+  // 사도끼리 잡담(duo-talk.json 대본 + AI)은 뺐다 — 각자 딴소리로 들리고 대본 518KB 만큼 무거워졌다. 옛 파일의 talk.duo 는 읽어도 아무도 안 본다
+  talk: { selfTalk: true, minMin: 8, bubbleSec: 4 },
   // 새 소식 알림: 공식 유튜브 + 라운지 게시판(공지사항·업데이트·개발자 노트 기본). 크레페 말투 말풍선
   news: { enabled: true, youtube: true, notice: true, update: true, devnote: true, event: false, pv: false, coupon: false, intervalMin: 10, ttlSec: 40, sound: true, toast: false, talkCrepe: false },
 };
@@ -89,7 +90,7 @@ function deepMerge(base, patch) {
 // 저장되고 아무도 읽지 않던 다섯 판(v0.12.8~v0.13.2)은 "모르는 키" 경고 한 줄만 있었어도 첫날에 잡혔다.
 // 수치는 범위로 잘라 넣는다(거부하면 손으로 고친 파일이 통째로 기본값이 된다) · 열거형·문자열은 틀리면 버린다.
 // 설정 창(settings.html data-s)의 슬라이더 범위보다 넉넉하게 — 파일을 손으로 고치는 사람이 있다
-const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말·잡담). 렌더러(settings.js)와 같은 목록이어야 한다
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말). 렌더러(settings.js)와 같은 목록이어야 한다
 const CHAR_KEYS = new Set(Object.keys(CHAR_DEFAULTS));
 const RANGES = { // "점.경로": [최소, 최대]
   scale: [0.1, 3], opacity: [0.05, 1],
@@ -99,7 +100,7 @@ const RANGES = { // "점.경로": [최소, 최대]
   "sound.motionVoiceChance": [0, 100], "sound.emoteVoiceChance": [0, 100], "sound.motionVoiceCooldown": [0, 600],
   "talk.minMin": [1, 240], "talk.bubbleSec": [1, 60],
   "news.intervalMin": [1, 1440], "news.ttlSec": [3, 300],
-  "ai.proactiveMin": [1, 600], "ai.screenProactive": [0, 100], "ai.chatAutoCloseSec": [0, 3600], "ai.maxTurns": [1, 100], "ai.bubbleSec": [1, 60],
+  "ai.proactiveMin": [1, 600], "ai.screenProactive": [0, 100], "ai.chatAutoCloseSec": [0, 3600], "ai.maxTurns": [1, 100],
   "ai.ollama.temperature": [0, 2], "ai.ollama.numPredict": [16, 4096], // ai.js chatOllama 의 options — 기본값엔 없고 파일로만 넣는 값
 };
 const ENUMS = {
@@ -164,9 +165,8 @@ function loadSettings() {
     const g = { sound: raw.sound, display: raw.display };
     for (const k of Object.keys(g)) if (g[k] === undefined) delete g[k];
     s = { version: 2, global: g, characters: [c] };
-    // 설정 파일이 아예 없는 첫 실행이면 둘을 세운다. 사도끼리 잡담 3,708줄은 둘 이상일 때만 도는데
-    // 기본이 하나라 "하나 더 부르기"를 우연히 찾은 사람만 볼 수 있었다. 둘째는 네르 — 짝 전용 대사가
-    // 47쌍으로 가장 많아, 첫째를 누구로 바꿔도 그 둘 사이의 이야기가 잡힐 가능성이 가장 높다
+    // 설정 파일이 아예 없는 첫 실행이면 둘을 세운다. 기본이 하나면 여럿 부를 수 있다는 것을
+    // "하나 더 부르기"를 우연히 찾은 사람만 알았다. 둘째는 네르 — 잡담은 뺐지만 둘째는 그대로 둔다)
     if (firstRun) s.characters.push({ id: "c2", skin: "Mini_Ner" });
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
@@ -373,7 +373,6 @@ function destroyInstance(id) {
   if (!instances.has(id)) return;
   instances.delete(id); sdAnimsOf.delete(id);
   if (hitFor === id) { hitDown = false; placeHit(null); }
-  metPoke(); // 잡담이 이 사도가 오길 기다리고 있었다면 더 기다리지 않게
 }
 function addCharacter(from) {
   const src = charOf(from) || settings.characters[0];
@@ -531,7 +530,7 @@ function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
 const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
 // 한 턴 실행: history + user → 답변 스트리밍 → 기록 저장 → 표정/보이스
 async function chatTurn(id, userText, opts = {}) {
-  if (chatBusy || duoBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
+  if (chatBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
   chatBusy = true; lastChatAt = Date.now();
   const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
   let hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
@@ -544,7 +543,7 @@ async function chatTurn(id, userText, opts = {}) {
     (userText || opts.image)
       ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
       : { role: "user", text: "(사용자가 조용히 있다)" }];
-  // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말·잡담이 전부 막혔다. 90초면 끊는다
+  // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말이 전부 막혔다. 90초면 끊는다
   const ctl = chatAbort = new AbortController(); let timedOut = false, partial = "";
   const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 90_000);
   sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
@@ -617,160 +616,8 @@ function saySelfTalk(id, opts = {}) {
   return true;
 }
 ipcMain.on("selftalk:say", (e, id) => { const me = id || instanceOf(e.sender); if (me) saySelfTalk(me); });
-
-// ---- 사도끼리 잡담 (대본) ----
-// data/duo-talk.json — 사도마다 open(먼저 건네는 말)·reply(받는 말)·self(자기 자신을 만났을 때).
-// 한 판 = open(A) → reply(B) → open(B) → reply(A). 줄마다 스스로 완결돼 있어 아무 짝이나 붙는다.
-// 같은 사도를 둘 부를 수 있으므로 그때는 self 를 쓴다.
-let duoTalkData = {}, duoPairData = {};
-try {
-  const d = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "duo-talk.json"), "utf8"));
-  duoTalkData = d.heroes || {}; duoPairData = d.pairs || {};
-  console.log(`잡담 대본: ${Object.keys(duoTalkData).length}명 · 짝 전용 ${Object.keys(duoPairData).length}쌍`);
-} catch (e) { console.warn("duo-talk.json 없음 — 잡담은 대본 대신 AI 로 돈다", e.message); }
-const duoSaid = new Map(); // "사도키:묶음" → 최근에 쓴 줄
-const pairUsed = new Set();  // 최근에 전용 대사를 쓴 짝 — 연달아 같은 네 줄이 나오지 않게
-function pickDuo(key, kind) {
-  const all = (duoTalkData[key] || {})[kind] || [];
-  if (!all.length) return null;
-  const k = key + ":" + kind, said = duoSaid.get(k) || [];
-  const fresh = all.filter(x => !said.includes(x.t));
-  const pool = fresh.length ? fresh : all;
-  const line = pool[Math.floor(Math.random() * pool.length)];
-  duoSaid.set(k, [...(fresh.length ? said : []), line.t].slice(-Math.max(2, Math.floor(all.length / 2))));
-  return line;
-}
-// 대본으로 한 판. 대본이 없으면 null 을 돌려주니 부르는 쪽이 AI 로 물러설 수 있다
-// 걸어가 만나는 데 드는 시간. 1.5초 고정이었더니 모니터 양끝에 선 둘은 아직 걷는 중에 말풍선이 떴다.
-// 렌더러(mascot.js hop)의 속도 = moveSpeed × scale × 2 × hopSpeed/100 px/s — moveSpeed 는 형태별 90~120 이라 가장 느린 90 으로 잡는다.
-// 둘이 마주 걸어오니 각자 거리의 절반만 간다. 최대 8초
-const meetWait = (ax, bx, gap, ...ids) => {
-  const spd = Math.min(...ids.map(id => 90 * ((charOf(id) || {}).scale || 0.5) * 2 * ((((charOf(id) || {}).behavior || {}).hopSpeed || 100) / 100)));
-  return Math.min(8000, 800 + Math.max(0, Math.abs(ax - bx) - gap) / 2 / Math.max(30, spd) * 1000);
-};
-// 거리로 어림한 시간은 어림일 뿐이다 — 걷다가 벽에 막히거나 들려 있으면 늦고, 이미 옆에 있으면 쓸데없이 기다렸다.
-// 이제 렌더러가 meet 지점에 닿았을 때(또는 바빠서 안 오기로 했을 때) host.met(id) 로 알리고 여기는 그걸 기다린다.
-// meetWait 는 알림이 안 올 때의 상한(옛 렌더러·죽은 렌더러)으로만 남는다. 지난 판의 met 이 다음 판을 채우면 안 되니 meet 를 보내기 전에 지운다
-const metMarks = new Set(); let metWaiters = [];
-const metPoke = () => { metWaiters = metWaiters.filter(w => !w()); }; // 각 대기자는 끝났으면 true
-ipcMain.on("mascot:met", (_e, id) => { if (typeof id !== "string") return; metMarks.add(id); if (argHas("--duoscript-test")) console.log("MET", id, Date.now() % 100000); metPoke(); });
-function waitMet(ids, maxMs) {
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = () => { if (!done) { done = true; clearTimeout(t); resolve(); } return true; };
-    const t = setTimeout(finish, maxMs);
-    const check = () => done || (ids.every(id => metMarks.has(id) || !instances.has(id)) ? finish() : false); // 그 사이 보내진 사도는 오지 않는다
-    metWaiters.push(check); metPoke(); // 이미 둘 다 보고했으면 바로 끝난다
-  });
-}
-async function duoScript(idA, idB, opts = {}) {
-  if (duoBusy || chatBusy) return { busy: true }; // 잡담 중에 또 시키면(메뉴 연타·타이머와 겹침) 둘이 동시에 걷고 말풍선이 뒤섞였다. 값이 있으니 부르는 쪽이 AI 로 물러서지도 않는다
-  const profA = chatProfile(idA), profB = chatProfile(idB);
-  if (!profA || !profB) return null;
-  const same = profA.key === profB.key;
-  // 관계가 있는 짝은 전용 대사가 있다 — 서로 이름을 부르고 앞말을 받는다.
-  // 열쇠는 사도 키를 사전순으로 맞춰 두어 만나는 차례와 무관하게 찾힌다.
-  // 짝 전용은 네 줄 한 세트가 전부다. 그것만 쓰면 같은 둘을 띄워 둔 사람은 평생 같은 대화를 본다 —
-  // 공들여 쓴 짝일수록 빨리 질리는 거꾸로 된 일이 된다. 한 번 쓴 짝은 다음 차례를 두루 통하는 말에 넘긴다
-  const pairKey = same ? null : [profA.key, profB.key].sort().join("|");
-  const pair = pairKey && !pairUsed.has(pairKey) ? duoPairData[pairKey] : null;
-  if (pair) { pairUsed.add(pairKey); if (pairUsed.size > 64) pairUsed.delete(pairUsed.values().next().value); }
-  else if (pairKey) pairUsed.delete(pairKey);        // 두루 통하는 말로 한 판 했으니 다음엔 전용이 다시 나온다
-  const script = pair
-    ? pair.lines.map(l => ((l.who === "a" ? pair.a : pair.b) === profA.key ? [idA, profA, l] : [idB, profB, l]))
-    : same
-    ? [[idA, profA, pickDuo(profA.key, "self")], [idB, profB, pickDuo(profB.key, "self")]]
-    : [[idA, profA, pickDuo(profA.key, "open")], [idB, profB, pickDuo(profB.key, "reply")],
-       [idB, profB, pickDuo(profB.key, "open")], [idA, profA, pickDuo(profA.key, "reply")]];
-  if (script.some(x => !x[2])) return null;            // 한 줄이라도 비면 대본으로는 못 한다
-  const A = instances.get(idA), B = instances.get(idB);
-  if (!A || !B || !A.rect || !B.rect) return null;
-  duoBusy = true; lastChatAt = Date.now();
-  try {
-    const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
-    const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
-    metMarks.delete(idA); metMarks.delete(idB);
-    sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
-    sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
-    await waitMet([idA, idB], Math.min(8000, meetWait(ax, bx, gap, idA, idB) + 2000)); // 둘이 닿았다고 알릴 때까지 (어림 시간 + 2초가 상한)
-    for (const [id, prof, line] of script) {
-      const other = id === idA ? idB : idA;
-      const who = same ? `${prof.ko} · ${id === idA ? "왼쪽" : "오른쪽"}` : prof.ko;
-      const ttl = bubbleMs(line.t);
-      showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
-      sendMascot(id, "emote", { mood: line.m, act: line.a, role: "speak", pose: ttl, hold: ttl + 3000 });
-      const listen = line.m === "anger" ? "surprise" : line.m === "happy" ? "smile" : line.m === "sad" ? "sad" : "";
-      setTimeout(() => sendMascot(other, "emote", { mood: listen, role: "listen", pose: Math.max(1500, ttl - 900), hold: ttl + 3000 }), 700);
-      if (!opts.quiet) console.log(`잡담[${id}] ${prof.ko}: ${line.t}`);
-      await new Promise(r => setTimeout(r, ttl + 400));
-    }
-    closeBubble();
-    return { lines: script.length, same, pair: !!pair };
-  } finally { duoBusy = false; lastChatAt = Date.now(); }
-}
-
-// ---- 사도 둘이 잡담 (ai.duo): 서로 다가가 마주 보고, 대본을 말풍선으로 번갈아 ----
-let duoBusy = false;
-async function duoTalk(idA, idB, opts = {}) {
-  if (duoBusy || chatBusy) { if (!opts.quiet) showBubble(idA, { items: [], text: { head: "", body: "지금 다른 대화가 진행 중이에요. 끝나면 다시 시켜 주세요.", tail: "", who: "사도 데스크" }, ttl: 4000 }); return null; }
-  duoBusy = true; lastChatAt = Date.now();
-  try {
-    const A = instances.get(idA), B = instances.get(idB); if (!A || !B || !A.rect || !B.rect) return null;
-    const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
-    const profA = chatProfile(idA), profB = chatProfile(idB);
-    if (!profA || !profB) return null;
-    // 둘이 동시에 걸어가므로 자리를 중간점 기준으로 미리 정한다 (서로 상대의 '지금' 위치를 향하면 엇갈려 겹침)
-    const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
-    metMarks.delete(idA); metMarks.delete(idB);
-    sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
-    sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
-    const now = new Date(), metAt = Date.now();
-    let image = null; if (opts.screen && screenAllowed()) { try { image = await captureScreenFor(idA); } catch (e) { console.log("duo capture:", e.message); } }
-    // 제공자가 멎으면 duoBusy 가 영영 남아 대화·혼잣말·잡담이 전부 막혔고 풀 방법이 없었다. 90초면 끊는다
-    const duoSig = AbortSignal.timeout(90_000);
-    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image, signal: duoSig });
-    console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
-    if (!r.lines.length) { showBubble(idA, { items: [], text: { head: "", body: "(대화 대본을 만들지 못했어요 — 한 번 더 시켜 주세요)", tail: "", who: "사도 데스크" }, ttl: 6000 }); return r; }
-    await waitMet([idA, idB], Math.max(300, Math.min(8000, meetWait(ax, bx, gap, idA, idB) + 2000) - (Date.now() - metAt))); // 둘이 닿았다고 알릴 때까지. 상한은 어림 시간 + 2초에서 AI 를 기다린 만큼을 뺀 것 — 그동안은 이미 걸었다
-    for (const ln of r.lines) {
-      const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
-      const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
-      const other = ln.who === "a" ? idB : idA;
-      const ttl = Math.round((Math.max(2, +settings.global.ai.bubbleSec || 4) * 1000) + Math.min(80, ln.text.length) * 100);
-      showBubble(id, { items: [], text: { head: "", body: ln.text, tail: "", who }, ttl });
-      sendMascot(id, "emote", { mood: ln.emotion, role: "speak", pose: ttl, hold: ttl + 3000 });
-      // 듣는 쪽: 화난 말엔 놀라고, 기쁜 말엔 웃고, 그 외엔 듣는 포즈
-      const listen = ln.emotion === "anger" ? "surprise" : ln.emotion === "happy" ? "smile" : ln.emotion === "sad" ? "sad" : "";
-      setTimeout(() => sendMascot(other, "emote", { mood: listen, role: "listen", pose: Math.max(1500, ttl - 900), hold: ttl + 3000 }), 700);
-      if (argHas("--duo-test") && !app.isPackaged) setTimeout(async () => { try { const img = await bubbleWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", `duo-${r.lines.indexOf(ln)}.png`), img.toPNG()); const A2 = instances.get(idA).rect, B2 = instances.get(idB).rect; console.log("DUOTEST shot", r.lines.indexOf(ln), "ttl", ttl, "bubble", JSON.stringify(bubbleWin.getBounds()), "A.x", Math.round(A2.x + A2.w / 2), "B.x", Math.round(B2.x + B2.w / 2)); sendMascot(idA, "logstate", "A"); sendMascot(idB, "logstate", "B"); setTimeout(() => { sendMascot(idA, "logstate", "A+3s"); sendMascot(idB, "logstate", "B+3s"); }, 3000); } catch {} }, 700);
-      await new Promise(res => setTimeout(res, ttl + 400));
-    }
-    closeBubble();
-    return r;
-  } catch (e) {
-    console.log("duo error:", e.message);
-    // 사용자가 메뉴로 시켰는데 조용히 실패하면 "안 되는구나"밖에 모름 → 이유를 말풍선으로
-    const why = e.message === "no-provider" ? "AI 제공자가 없어요. 설정 → AI 대화에서 Ollama나 API 키를 넣어 주세요."
-      : (duoSig.aborted || e.name === "TimeoutError" || e.name === "AbortError") ? "AI 가 한참 답을 하지 않아 그만두었어요." // Anthropic SDK 는 name 을 안 세우고 Gemini 재시도 취소는 "취소됨" Error 라 signal 로 본다
-      : /429|quota|한도/i.test(e.message) ? "AI 무료 한도를 잠깐 넘었어요. 몇 분 뒤 다시 시켜 주세요."
-      : /503|high demand/i.test(e.message) ? "AI 서버가 잠시 붐벼요. 잠시 뒤 다시 시켜 주세요."
-      : `AI 오류: ${String(e.message || e).slice(0, 120)}`;
-    if (!opts.quiet) showBubble(idA, { items: [], text: { head: "", body: why, tail: "", who: "사도 데스크" }, ttl: 8000 });
-    return null;
-  }
-  finally { duoBusy = false; lastChatAt = Date.now(); }
-}
-function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사도 둘
-  const ids = [...instances.keys()].filter(id => instances.get(id).rect && charOf(id)); let best = null;
-  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
-    const d = Math.abs(instances.get(ids[i]).rect.x - instances.get(ids[j]).rect.x); if (!best || d < best.d) best = { a: ids[i], b: ids[j], d };
-  }
-  return best;
-}
-ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoScript(me, o).then(r => { if (!r) duoTalk(me, o); }).catch(e => console.log("duo script:", e.message)); });   // 대본이 없는 짝만 AI 로 (바쁠 때의 {busy} 도 값이라 AI 로 안 넘어간다)
 ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
-ipcMain.on("chat:duo-screen", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o, { screen: true }); });
 ipcMain.on("chat:close", () => closeChat());
 ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
@@ -797,11 +644,11 @@ ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pul
   pullProc.on("exit", (code) => { pullProc = null; resolve({ ok: code === 0, error: code === 0 ? "" : last }); });
 }));
 ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.com/download", gemini: "https://aistudio.google.com/apikey", anthropic: "https://console.anthropic.com/settings/keys", groq: "https://console.groq.com/keys" }[which]; if (u) shell.openExternal(u); });
-// 먼저 말 걸기. 혼잣말·잡담은 대본이라 AI 없이 돌고(talk.minMin 마다), 화면 보기만 AI 가 필요하다
+// 먼저 말 걸기. 혼잣말은 대본이라 AI 없이 돌고(talk.minMin 마다), 화면 보기만 AI 가 필요하다
 let proactiveBusy = false; // Ai.status()를 기다리는 동안 다음 타이머가 겹쳐 들어오면 사도가 둘 연달아 말을 건다
 setInterval(async () => {
   const ai = settings.global.ai || {}, T = settings.global.talk || {};
-  if (chatBusy || duoBusy || proactiveBusy || !mascotStarted || fsHidden) return;
+  if (chatBusy || proactiveBusy || !mascotStarted || fsHidden) return;
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (T.minMin || 8) || Math.random() > 0.25) return;
   proactiveBusy = true;
@@ -813,14 +660,6 @@ setInterval(async () => {
   if (aiTurn && screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0)) {
     const st = await Ai.status(ai);
     if (st.resolved) { lastChatAt = Date.now(); screenTalk(id, ""); return; }
-  }
-  // 둘 이상이면 절반은 둘이 잡담 — 대본이 먼저, 대본이 없는 짝만 AI
-  if (T.duo !== false && instances.size >= 2 && Math.random() < 0.5) {
-    const pr = duoPair();
-    if (pr) {
-      if (await duoScript(pr.a, pr.b, { quiet: true })) return;
-      if (aiTurn && ai.duo !== false) { const st = await Ai.status(ai); if (st.resolved) { duoTalk(pr.a, pr.b, { quiet: true }); return; } }
-    }
   }
   // 혼잣말 — 대본. AI 를 켜지 않았어도 여기까지 온다
   if (T.selfTalk !== false && saySelfTalk(id)) { lastChatAt = Date.now(); return; }
@@ -1106,20 +945,6 @@ if (argHas("--selftalk-test")) setTimeout(async () => {
   console.log(`SELFTALKTEST 서로 다른 줄 ${new Set(said).size}/${said.length} (8번에 겹침 없어야 정상)`);
   app.quit();
 }, 6000);
-// 잡담 대본 시험: 대본만으로 한 판 (다른 사도끼리 / 같은 사도 둘 다)
-if (argHas("--duoscript-test")) setTimeout(async () => {
-  const say = (s) => console.log("DUOSCRIPT " + s);
-  const ids = [...instances.keys()];
-  say(`대본 ${Object.keys(duoTalkData).length}명 · 떠 있는 사도 ${ids.length}명 ${ids.map(i => (chatProfile(i) || {}).key).join(",")}`);
-  if (ids.length < 2) { say("사도가 둘 이상이어야 한다"); return app.quit(); }
-  const r1 = await duoScript(ids[0], ids[1]);
-  say(`한 판: ${r1 ? r1.lines + "줄, 같은 사도=" + r1.same : "대본 없음(null)"}`);
-  await new Promise(r => setTimeout(r, 1200));
-  const r2 = await duoScript(ids[0], ids[1]);
-  say(`두 판째: ${r2 ? r2.lines + "줄" : "대본 없음"} (앞 판과 겹치지 않아야 정상)`);
-  app.quit();
-}, 6000);
-if (argHas("--duo-test")) setTimeout(async () => { const pr = duoPair(); console.log("DUOTEST pair", JSON.stringify(pr)); if (!pr) return; const r = await duoTalk(pr.a, pr.b, { topic: argVal("--duo-topic", "") || undefined, screen: argHas("--duo-screen") }); console.log("DUOTEST result", JSON.stringify(r && { provider: r.provider, model: r.model, lines: r.lines }, null, 0)); }, 7000);
 if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
 if (argHas("--chat-test")) setTimeout(async () => {
   const id = settings.characters[0].id; openChat(id);

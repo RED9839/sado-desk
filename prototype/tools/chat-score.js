@@ -60,32 +60,5 @@ for (const [tag, rs] of Object.entries(byTag)) {
 }
 out.push("", "### 메타 발언 예", ...metaEx.map(x => "  " + x));
 if (codeEx.length) out.push("", "### 코드 덩어리", ...codeEx.map(x => "  " + x));
-// ===== 잡담 =====
-const duo = d.duo.filter(p => p.lines);
-let lineOk = 0, alt = 0, emoOkD = 0, emoTot = 0, selfTalk = 0;
-const perKind = {};
-for (const p of duo) {
-  (perKind[p.kind] = perKind[p.kind] || { n: 0, lines: 0, four: 0 });
-  perKind[p.kind].n++; perKind[p.kind].lines += p.lines.length;
-  if (p.lines.length === 4) { perKind[p.kind].four++; lineOk++; }
-  let ok = true; for (let i = 1; i < p.lines.length; i++) if (p.lines[i].who === p.lines[i - 1].who) ok = false;
-  if (ok) alt++;
-  for (const l of p.lines) { emoTot++; if (l.emotion) emoOkD++; }
-  if (p.lines.some(l => l.text.includes(p.a) && l.who === "a") && p.a !== p.b) selfTalk++;
-}
-out.push("", `## 사도끼리 잡담 — ${duo.length}쌍 · ${emoTot}줄`, "",
-  "| 항목 | 값 |", "|---|---|",
-  `| 정확히 4줄 | ${pctl(lineOk, duo.length)} |`,
-  `| 번갈아 말함 | ${pctl(alt, duo.length)} |`,
-  `| 줄마다 감정 붙음 | ${pctl(emoOkD, emoTot)} |`, "");
-for (const [k, v] of Object.entries(perKind)) out.push(`  ${k.padEnd(10)} ${v.n}쌍 · 평균 ${(v.lines / v.n).toFixed(1)}줄 · 4줄 정확 ${v.four}`);
-// 서로 다른 목소리인가 — 짝 안에서 두 사람 어휘 겹침
-const words = s => new Set(String(s).replace(/[^가-힣a-zA-Z ]/g, " ").split(/\s+/).filter(w => w.length > 1));
-let ov = 0, ovn = 0;
-for (const p of duo) { if (p.a === p.b) continue;
-  const A = words(p.lines.filter(l => l.who === "a").map(l => l.text).join(" ")), B = words(p.lines.filter(l => l.who === "b").map(l => l.text).join(" "));
-  if (!A.size || !B.size) continue; const inter = [...A].filter(w => B.has(w)).length;
-  ov += inter / Math.min(A.size, B.size); ovn++; }
-out.push("", `  짝 안에서 두 사도 어휘 겹침 평균 ${Math.round(ov * 100 / Math.max(1, ovn))}%`);
 fs.writeFileSync(path.join(root, "out", "_chatscore" + TAG + ".md"), out.join("\n") + "\n");
 console.log(out.join("\n"));

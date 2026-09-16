@@ -1,6 +1,6 @@
-/* AI 대화 완성도 실측 — 두 갈래.
-   (가) 여러 턴 대화: 인사 → 개인 질문 → 관계 질문 → 장난 → 앞말 되묻기(기억) → 함정 4개
-   (나) 사도끼리 잡담: 관계가 있는 짝 · 없는 짝 · 같은 사도 둘
+/* AI 대화 완성도 실측.
+   여러 턴 대화: 인사 → 개인 질문 → 관계 질문 → 장난 → 앞말 되묻기(기억) → 함정 4개
+   (사도끼리 잡담 갈래는 기능을 뺄 때 함께 뺐다 — ai.duo 가 없다)
    쓰는 법: node tools/chat-test.js [사도수] [provider]     예) node tools/chat-test.js 24 ollama  */
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
@@ -46,8 +46,8 @@ const QS = [
 
 (async () => {
   const heroes = pick(N);
-  const log = { chat: [], duo: [] };
-  // ===== (가) 여러 턴 대화 =====
+  const log = { chat: [] };
+  // ===== 여러 턴 대화 =====
   for (const h of heroes) {
     const p = prof(h); let hist = [];
     for (const { q, tag } of QS) {
@@ -59,26 +59,6 @@ const QS = [
     }
     if (heroes.indexOf(h) % 6 === 5) console.log(`대화 ${heroes.indexOf(h) + 1}/${heroes.length}`);
   }
-  // ===== (나) 사도끼리 잡담 =====
-  const withOf = k => Object.keys((rel[k] || {}).with || {});
-  const pairs = [];
-  for (const h of heroes.slice(0, Math.ceil(N / 2))) {          // 관계 있는 짝
-    const w = withOf(h).filter(x => ALL.includes(x) && x !== h);
-    if (w.length) pairs.push([h, w[0], "관계 있음"]);
-  }
-  for (let i = 0; i + 1 < heroes.length; i += 4) {               // 관계 없는 짝
-    const a = heroes[i], b = heroes[heroes.length - 1 - i];
-    if (a !== b && !withOf(a).includes(b)) pairs.push([a, b, "관계 없음"]);
-  }
-  pairs.push([heroes[0], heroes[0], "같은 사도 둘"]);
-  for (const [a, b, kind] of pairs) {
-    const pa = prof(a), pb = prof(b);
-    if (a === b) { pa.skin = "Mini_" + keyOf(a); pb.skin = "Mini_" + keyOf(b) + "Skin1"; }
-    let r; try { r = await ai.duo(AICFG, pa, pb, { n: 4, provider: PROV, extra: "지금은 21시 10분." }); }
-    catch (e) { log.duo.push({ a: pa.ko, b: pb.ko, kind, err: e.message }); continue; }
-    log.duo.push({ a: pa.ko, b: pb.ko, ka: a, kb: b, kind, lines: r.lines, raw: r.raw });
-    if (pairs.indexOf([a, b, kind]) % 5 === 4) console.log("잡담 …");
-  }
   fs.writeFileSync(path.join(root, "out", "_chattest.json"), JSON.stringify(log, null, 1));
-  console.log(`대화 ${log.chat.length}건 · 잡담 ${log.duo.length}쌍 → out/_chattest.json`);
+  console.log(`대화 ${log.chat.length}건 → out/_chattest.json`);
 })();

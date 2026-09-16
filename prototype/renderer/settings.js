@@ -4,7 +4,7 @@
   // FULL = {version, global:{sound,display}, characters:[...]} (메인 원본). S = 선택한 캐릭터 뷰 {skin,mode,scale,opacity,behavior,sound,display}
   let FULL = await host.getSettings();
   let cur = FULL.characters[0].id;
-  const GLOBAL_KEYS = new Set(["sound", "display", "news", "ai", "talk"]);   // talk = 대본으로 하는 말(혼잣말·잡담)
+  const GLOBAL_KEYS = new Set(["sound", "display", "news", "ai", "talk"]);   // talk = 대본으로 하는 말(혼잣말)
   const charOf = (id) => FULL.characters.find(c => c.id === id);
   const view = () => { const c = charOf(cur) || FULL.characters[0]; cur = c.id; return { ...c, sound: FULL.global.sound, display: FULL.global.display, news: FULL.global.news || {}, ai: FULL.global.ai || {}, talk: FULL.global.talk || {} }; };
   let S = view();

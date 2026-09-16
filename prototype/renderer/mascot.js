@@ -206,7 +206,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { if (cfg && cfg.selftest) return; /* 셀프테스트 중엔 진짜 마우스가 캐릭터 위에 있으면 합성 입력과 섞여 드래그로 튐 */ const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "meet") mas.meet(arg); else if (cmd === "logstate") mas.logState(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "logstate") mas.logState(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -353,9 +353,9 @@
     // 상태 우선순위 — 높은 쪽이 진행 중이면 낮은 요청은 미루거나 버린다. 손이 닿아 있는 것이 항상 가장 높다(smash1 도 손: 꿀밤 2단 대사가 소식에 잘렸다).
     //   boot 도 최고: 등장(spawn)이 곧 상태를 잡으니 그 전에 끼어들면 SD 로드 뒤 덮어써져 헛일이다.
     //   land·spawn(7)은 짧은 한 번짜리라 소식은 기다리고 표정(AI 대답)은 자른다. react·pose(5) = 클릭 반응·AI 대답 표정: 소식·기분 변경은 끝날 때까지 기다린다.
-    //   emote·meet 는 예전처럼 손만 아니면 끼어든다 — 잡담 대본은 표정을 잇달아 바꾸고(pose→pose), 다가가기가 착지·반응에 막혀 met 를 보내면 상대가 헛기다린다.
+    //   emote 는 예전처럼 손만 아니면 끼어든다 — 혼잣말은 표정을 잇달아 바꾼다(pose→pose).
     const PRIO = { drag: 9, thrown: 9, touch: 9, pat: 9, tickle: 9, smash1: 9, boot: 9, land: 7, spawn: 7, react: 5, pose: 5, jump: 5, hop: 3, idle: 1, mood: 1 };
-    const REQ = { emote: 8, meet: 8, announce: 5, moodChange: 4 };
+    const REQ = { emote: 8, announce: 5, moodChange: 4 };
     const canInterrupt = (req) => (PRIO[m.state] ?? 1) < REQ[req];
     const self = { id, get S() { return S; }, get active() { return active; }, get hands() { return mouse.down || HANDS.has(m.state); } };
 
@@ -386,7 +386,7 @@
       applyOpacity();
       hud.style.display = S.display.debug ? "block" : "none";
       // 기분 변경: 대기·이동 중이면 바로, 반응·표정(AI 대답 pose) 중이면 끝난 뒤 — restThenDecide 가 moodOn() 을 보고 decideIdle 로 넘긴다. 대답 중 표정이 잘려 딴 얼굴이 됐었다
-      if (prev && prev.mood !== S.mood && canInterrupt("moodChange")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); if (m.faceAfter) { m.faceAfter = 0; m.pendingEmote = null; met(); } } decideIdle(); } // 만나러 가던 길이면 상대가 8초 상한까지 기다리지 않게 못 간다고 알린다
+      if (prev && prev.mood !== S.mood && canInterrupt("moodChange")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
     }
     const moodOn = () => !!S.mood && isSD() && active.A.moods && (active.A.moods[S.mood] || []).some(has);
     // 불투명도: 창 하나에 여러 명이라 캔버스 대신 스켈레톤 색 알파로 (PMA 렌더러에서 슬롯 색에 곱해짐)
@@ -563,29 +563,12 @@
     // 새 소식 알림: 말풍선은 메인이 띄우고, 여기선 "말하는" 모션 + 인사/잡담 대사. 잡고 있거나 공중이면 건드리지 않음
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
     const holding = () => performance.now() < holdUntil;
-    // 다른 사도 쪽으로 다가가서(창 기준 x) 그쪽을 본다 — 둘이 잡담할 때. 도착하면 holdUntil 동안 제자리
-    // 도착했거나 갈 수 없으면(손에 잡혀 있음) 메인에 met 를 보낸다 — 오지 않을 사람을 상대가 기다리지 않게. preload 가 아직 없을 수 있어 있는지 보고 부른다
-    const met = () => { if (host.met) host.met(id); };
-    function meet(arg) {
-      if (!arg || typeof arg.x !== "number") return;
-      if (!canInterrupt("meet")) { met(); return; }
-      holdUntil = Math.max(holdUntil, performance.now() + (arg.hold || 30000));
-      // 메인이 자리(to)를 정해 주면 거기로(둘이 동시에 움직여도 겹치지 않게 중간점 기준), 아니면 상대 옆(폭 절반씩 + 여유)
-      const gap = ((m.w || 120) + (arg.w || m.w || 120)) / 2 + 48;
-      const target = clampX(typeof arg.to === "number" ? arg.to : (arg.x < m.x ? arg.x + gap : arg.x - gap));
-      if (Math.abs(target - m.x) < 12) { facing = arg.x < m.x ? -1 : 1; applyFacing(); met(); return; }
-      if (isSD()) useSlot(slotForMove());
-      m.state = "hop"; m.hopT = 0; m.targetX = target; facing = m.targetX < m.x ? -1 : 1; applyFacing(); m.pendingEmote = null; // 끊긴 지난 만남의 표정이 이번 도착에 튀어나오지 않게
-      play(active.A.move && has(active.A.move) ? active.A.move : active.A.hold, true);
-      m.faceAfter = arg.x < m.x ? -1 : 1; // 도착하면 상대를 본다 (restThenDecide 뒤)
-    }
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
-    // AI 대답/잡담의 감정 → 표정 애니를 한 번 재생하고 마지막 프레임에서 멈춰(pose) 말풍선이 떠 있는 동안 그 표정을 유지.
-    //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(듣는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
+    // AI 대답/혼잣말의 감정 → 표정 애니를 한 번 재생하고 마지막 프레임에서 멈춰(pose) 말풍선이 떠 있는 동안 그 표정을 유지.
+    //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(화면을 살피는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
     function emote(arg) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
       if (!canInterrupt("emote")) return;
-      if (m.state === "hop" && m.faceAfter) { m.pendingEmote = arg; return; } // 다가가는 중(meet) — 표정을 지금 바꾸면 이동이 끊겨 상대 옆에 못 간다. 도착하면 그때 한다(우선순위가 아니라 순서 문제라 표에 없다)
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
@@ -766,7 +749,7 @@
       if (B.hop && r < B.hopChance && !holding()) {
         if (isSD()) useSlot(slotForMove());
         const A = active.A;
-        m.state = "hop"; m.hopT = 0; m.faceAfter = 0; m.pendingEmote = null; // meet 가 남긴 것이 다음 산책에 새어 들면 도착해서 엉뚱한 쪽을 보며 표정을 짓는다
+        m.state = "hop"; m.hopT = 0;
         const cur = dispAt(m.x), others = geoD.filter(d => d !== cur);
         if (others.length && Math.random() < 0.2) { const d = pick(others); m.targetX = clampX(d.x0 + m.w / 2 + WALL_MARGIN + Math.random() * Math.max(1, d.x1 - d.x0 - m.w - WALL_MARGIN * 2)); } // 다른 모니터로 원정
         else m.targetX = clampX(m.x + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * Math.max(0, B.hopRange - 80)));
@@ -810,14 +793,7 @@
             const hh = gentle ? 7 : active.A.hopHeight;
             m.y = floorY + Math.abs(Math.sin(ph * Math.PI)) * hh * scale() * 2; m.rot = Math.sin(ph * Math.PI * 2) * (gentle ? 2 : 4) * -dir;
           }
-          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) {
-            // restThenDecide 가 다시 hop 을 고를 수 있다(moodOn → decideIdle). 그때 상대 쪽으로 돌려놓으면 가는 방향과 반대를 보며 걷는다
-            const fa = m.faceAfter, pe = m.pendingEmote; m.faceAfter = 0; m.pendingEmote = null;
-            m.x = m.targetX; restThenDecide();
-            if (fa && m.state !== "hop") { facing = fa; applyFacing(); }
-            if (fa) met(); // 다가가기(meet)였다 — 도착을 메인에 알린다
-            if (pe) emote(pe); // 오는 동안 미뤄 둔 표정
-          }
+          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; restThenDecide(); }
           break;
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
@@ -1163,7 +1139,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, meet, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();
