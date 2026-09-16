@@ -261,13 +261,18 @@
     for (const mas of mascots.values()) if (mas.hands) return 0;
     return 1000 / 30;
   }
-  let acc = 0, probeN = 0, probeT0 = 0;
+  let acc = 0, probeN = 0, probeT0 = 0, paused = false;
+  host.on("pause", (p) => { paused = !!p; if (!paused) last = performance.now(); }); // 돌아올 때 dt 가 한꺼번에 튀지 않게
   function loop(now) {
     const raw = now - last; last = now;
     acc += raw;
-    if (acc < frameMs() - 2 || document.hidden) { requestAnimationFrame(loop); return; }
+    if (acc < frameMs() - 2 || paused) { requestAnimationFrame(loop); return; } // paused: 전체화면 뒤에 숨어 있을 때 메인이 알려 준다(document.hidden 은 backgroundThrottling:false 라 늘 false)
     if (cfg && cfg.fpsProbe) { probeN++; if (!probeT0) probeT0 = now; if (now - probeT0 >= 3000) { const f = firstMascot(); console.log(`FPSPROBE ${(probeN / ((now - probeT0) / 1000)).toFixed(1)} fps  setting=${f ? f.S.display.fps : "?"} hands=${[...mascots.values()].some(x => x.hands)}`); probeN = 0; probeT0 = now; } }
-    const dt = Math.min(0.05, acc / 1000); const fm = frameMs(); acc = fm ? Math.min(acc - fm, fm) : 0; // 남는 시간을 이월해 30 에 맞춘다(무한 이월은 막는다)
+    // 30 으로 묶었을 땐 고정 스텝(정확히 1/30초)으로 넘긴다. 이월분을 dt 에도 넣고 다음 프레임에도 더하면 두 번 세어져
+    // 100Hz·144Hz 모니터에서 시간이 4~10% 빨리 흘렀다. 매 프레임 모드는 실제 경과 시간을 쓴다
+    const fm = frameMs();
+    const dt = fm ? fm / 1000 : Math.min(0.05, acc / 1000);
+    acc = fm ? Math.min(acc - fm, fm) : 0;
     try {
       for (const mas of mascots.values()) mas.update(dt);
       render();
