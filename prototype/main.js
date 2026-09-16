@@ -84,6 +84,68 @@ function deepMerge(base, patch) {
   }
   return out;
 }
+// ---- 설정 패치 검사 ----
+// 렌더러 패치는 예전엔 id·version·characters·ai.keys 만 떼고 그대로 파일에 갔다. talk 이 GLOBAL_KEYS 에 없어 캐릭터 밑으로
+// 저장되고 아무도 읽지 않던 다섯 판(v0.12.8~v0.13.2)은 "모르는 키" 경고 한 줄만 있었어도 첫날에 잡혔다.
+// 수치는 범위로 잘라 넣는다(거부하면 손으로 고친 파일이 통째로 기본값이 된다) · 열거형·문자열은 틀리면 버린다.
+// 설정 창(settings.html data-s)의 슬라이더 범위보다 넉넉하게 — 파일을 손으로 고치는 사람이 있다
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말·잡담). 렌더러(settings.js)와 같은 목록이어야 한다
+const CHAR_KEYS = new Set(Object.keys(CHAR_DEFAULTS));
+const RANGES = { // "점.경로": [최소, 최대]
+  scale: [0.1, 3], opacity: [0.05, 1],
+  "behavior.hopChance": [0, 100], "behavior.jumpChance": [0, 100], "behavior.hopSpeed": [10, 300], "behavior.hopRange": [50, 2000],
+  "behavior.idleMin": [0.5, 60], "behavior.idleMax": [1, 120], "behavior.actGap": [0, 60],
+  "sound.master": [0, 1], "sound.voice": [0, 1], "sound.sfx": [0, 1],
+  "sound.motionVoiceChance": [0, 100], "sound.emoteVoiceChance": [0, 100], "sound.motionVoiceCooldown": [0, 600],
+  "talk.minMin": [1, 240], "talk.bubbleSec": [1, 60],
+  "news.intervalMin": [1, 1440], "news.ttlSec": [3, 300],
+  "ai.proactiveMin": [1, 600], "ai.screenProactive": [0, 100], "ai.chatAutoCloseSec": [0, 3600], "ai.maxTurns": [1, 100], "ai.bubbleSec": [1, 60],
+  "ai.ollama.temperature": [0, 2], "ai.ollama.numPredict": [16, 4096], // ai.js chatOllama 의 options — 기본값엔 없고 파일로만 넣는 값
+};
+const ENUMS = {
+  mode: ["minimi", "sd", "ingame"], mood: ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"],
+  "display.fps": ["auto", "30", "60"], // 숫자 30·60 도 받아 문자열로 (렌더러 select 는 문자열, 손으로 고친 파일은 숫자)
+  "ai.provider": ["auto", "ollama", "gemini", "anthropic", "openai"], // ai.js chat() 이 아는 것
+};
+const STRINGS = { skin: [/^[A-Za-z0-9_]+$/, 64], "assets.root": [/^[\s\S]*$/, 1024] };
+// 값 하나. undefined 를 돌려주면 버린다(deepMerge 가 undefined 를 건너뛴다). fixed 에 고친 내역이 쌓인다
+function checkValue(key, v, fixed) {
+  // 손으로 고친 파일의 "0.7" 같은 숫자 문자열은 받아 준다 (ai.js 가 + 로 받던 값이다)
+  if (RANGES[key]) { if (typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) v = +v; if (typeof v !== "number" || !Number.isFinite(v)) return undefined; const c = Math.min(RANGES[key][1], Math.max(RANGES[key][0], v)); if (c !== v) fixed.push(`${key} ${v}→${c}`); return c; }
+  if (ENUMS[key]) { const s = String(v); return ENUMS[key].includes(s) ? s : undefined; }
+  if (STRINGS[key]) return typeof v === "string" && v.length <= STRINGS[key][1] && STRINGS[key][0].test(v) ? v : undefined;
+  return v;
+}
+function sanitizeTree(obj, prefix, fixed) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix + k, leaf = RANGES[key] || ENUMS[key] || STRINGS[key];
+    const r = leaf ? checkValue(key, v, fixed) : isObj(v) ? sanitizeTree(v, key + ".", fixed) : v; // {scale:{}} 같은 것은 leaf 검사에서 걸러진다
+    if (r !== undefined) out[k] = r;
+  }
+  return out;
+}
+// forChar: 캐릭터 키(skin·mode·scale…)도 받는가(설정 창 패치는 둘이 섞여 온다). "only" 면 캐릭터 키만(파일의 characters[]).
+// 대상 캐릭터가 없는 패치에 캐릭터 키가 왔다면 그것도 잘못된 것이라 경고한다
+function sanitizePatch(patch, { forChar = true, fixed = null } = {}) {
+  const out = {}, log = fixed || [];
+  for (const [k, v] of Object.entries(patch || {})) {
+    const known = forChar === "only" ? CHAR_KEYS.has(k) : GLOBAL_KEYS.has(k) || (forChar && CHAR_KEYS.has(k));
+    if (!known) { if (fixed) fixed.push(`모르는 키 ${k} 버림`); else console.warn("settings: 모르는 키", k); continue; }
+    const leaf = RANGES[k] || ENUMS[k] || STRINGS[k];
+    const r = leaf ? checkValue(k, v, log) : isObj(v) ? sanitizeTree(v, k + ".", log) : v;
+    if (r !== undefined) out[k] = r;
+  }
+  return out;
+}
+// 파일에서 읽은 설정 전체에 같은 검사 — 손으로 고친 파일·옛 판 파일이 범위 밖 값을 들고 있어도 여기서 한 번에 바로잡는다
+function clampSettings(s) {
+  const fixed = [];
+  s.global = sanitizePatch(s.global, { forChar: false, fixed });
+  s.characters = s.characters.map(({ id, ...c }) => ({ id, ...sanitizePatch(c, { forChar: "only", fixed }) }));
+  if (fixed.length) { console.log(`settings: 읽으면서 고침 — ${fixed.join(", ")}`); process.nextTick(saveSettings); } // 고친 값을 파일에도 남긴다. nextTick — 지금은 settings·saveTimer 가 아직 선언 전이다
+  return s;
+}
 let firstRun = false; // 설정 파일이 아예 없을 때만 참. 깨진 파일도 "없음"으로 치면 사도가 둘로 늘어 첫 실행처럼 보인다
 function loadSettings() {
   let raw = {};
@@ -112,7 +174,7 @@ function loadSettings() {
   // talk 이 GLOBAL_KEYS 에 없던 판(v0.12.8~v0.13.2)에서는 말하기 설정이 캐릭터 밑으로 저장되고 아무도 읽지 않았다. 끌어올린다
   for (const c of s.characters) { if (c.talk && typeof c.talk === "object") s.global.talk = deepMerge(s.global.talk, c.talk); delete c.talk; }
   for (const c of s.characters) if (["standing", "hybrid"].includes(c.mode)) c.mode = "sd"; // 옛 모드 이름 → sd ("ingame"은 v0.9.12부터 정식 형태라 그대로)
-  return s;
+  return clampSettings(s);
 }
 let settings = loadSettings();
 let saveTimer = null;
@@ -135,8 +197,7 @@ const charOf = (id) => settings.characters.find(c => c.id === id);
 // 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
 const viewsAll = () => settings.characters.map(c => viewFor(c.id));
 const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, ai: { screen: !!(settings.global.ai && settings.global.ai.screen) }, count: settings.characters.length, unread: news ? news.unread : 0 }; };
-const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말·잡담). 렌더러(settings.js)와 같은 목록이어야 한다
-// patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각
+// patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각 (GLOBAL_KEYS 는 설정 검사 쪽에)
 function updateSettings(patch, id, sourceId) {
   const prevDisp = JSON.stringify(settings.global.display);
   const g = {}, c = {};
@@ -242,12 +303,18 @@ function placeHit(id) {
   if (!hitShown) { hitWin.showInactive(); hitWin.setAlwaysOnTop(true, "screen-saver"); hitShown = true; }
   hitFor = id;
 }
+// 보조 창(설정·가져오기·메뉴·말풍선·대화)의 화면 좌표 표. 커서 폴링이 16ms 마다 창마다 isDestroyed/isVisible/getBounds 를
+// 물었다 — 전부 네이티브 호출이라 하루 종일 초당 수백 번. 창 자리는 옮기고·키우고·보이고·숨길 때만 바뀌니 그때 받아 두고 폴링은 표만 읽는다
+const auxBounds = new Map(); // BrowserWindow → Rect(보임) | null(숨김)
+function trackBounds(w) {
+  const upd = () => { if (w.isDestroyed()) { auxBounds.delete(w); return; } auxBounds.set(w, w.isVisible() ? w.getBounds() : null); };
+  for (const ev of ["move", "resize", "show", "hide"]) w.on(ev, upd);
+  w.on("closed", () => auxBounds.delete(w));
+  upd();
+}
 // 커서 위치(창 기준)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
 function cursorOverOurWindow(sx, sy) {
-  for (const w of [settingsWin, setupWin, menuWin, bubbleWin, chatWin]) {
-    if (!w || w.isDestroyed() || !w.isVisible()) continue;
-    const b = w.getBounds(); if (sx >= b.x && sx < b.x + b.width && sy >= b.y && sy < b.y + b.height) return true;
-  }
+  for (const b of auxBounds.values()) if (b && sx >= b.x && sx < b.x + b.width && sy >= b.y && sy < b.y + b.height) return true;
   return false;
 }
 function updateHitTarget(x, y) {
@@ -306,6 +373,7 @@ function destroyInstance(id) {
   if (!instances.has(id)) return;
   instances.delete(id); sdAnimsOf.delete(id);
   if (hitFor === id) { hitDown = false; placeHit(null); }
+  metPoke(); // 잡담이 이 사도가 오길 기다리고 있었다면 더 기다리지 않게
 }
 function addCharacter(from) {
   const src = charOf(from) || settings.characters[0];
@@ -342,7 +410,7 @@ function openSettings(tab, forId) {
     const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
     setTimeout(shoot, 5000);
   }
-  const w = settingsWin;
+  const w = settingsWin; trackBounds(w);
   w.on("closed", () => { if (settingsWin === w) settingsWin = null; });
   if (argHas("--devtools")) settingsWin.webContents.openDevTools({ mode: "detach" });
 }
@@ -394,7 +462,7 @@ function showBubble(id, payload) {
     bubbleWin.setAlwaysOnTop(true, "screen-saver");
     bubbleWin.loadFile(path.join(__dirname, "renderer", "bubble.html"));
     bubbleWin.webContents.on("console-message", (ev) => console.log(`[bubble:${ev.level}] ${ev.message}`));
-    const w = bubbleWin;
+    const w = bubbleWin; trackBounds(w);
     w.on("closed", () => { if (bubbleWin !== w) return; bubbleWin = null; bubbleFor = null; bubbleBounds = null; bubbleAnchor = null; });
     w.webContents.on("render-process-gone", (_e, d) => { console.log("bubble renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 말풍선이 새 창을 만든다
     w.webContents.once("did-finish-load", () => { if (w.isDestroyed()) return; w.webContents.send("show", payload); bubblePlace(id); w.showInactive(); });
@@ -453,7 +521,7 @@ function openChat(id, opt = {}) {
   chatWin.setAlwaysOnTop(true, "screen-saver");
   chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
   chatWin.webContents.on("console-message", (ev) => console.log(`[chat:${ev.level}] ${ev.message}`));
-  const w = chatWin;
+  const w = chatWin; trackBounds(w);
   // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
   w.on("closed", () => { if (chatWin !== w) return; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
   w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
@@ -580,6 +648,21 @@ const meetWait = (ax, bx, gap, ...ids) => {
   const spd = Math.min(...ids.map(id => 90 * ((charOf(id) || {}).scale || 0.5) * 2 * ((((charOf(id) || {}).behavior || {}).hopSpeed || 100) / 100)));
   return Math.min(8000, 800 + Math.max(0, Math.abs(ax - bx) - gap) / 2 / Math.max(30, spd) * 1000);
 };
+// 거리로 어림한 시간은 어림일 뿐이다 — 걷다가 벽에 막히거나 들려 있으면 늦고, 이미 옆에 있으면 쓸데없이 기다렸다.
+// 이제 렌더러가 meet 지점에 닿았을 때(또는 바빠서 안 오기로 했을 때) host.met(id) 로 알리고 여기는 그걸 기다린다.
+// meetWait 는 알림이 안 올 때의 상한(옛 렌더러·죽은 렌더러)으로만 남는다. 지난 판의 met 이 다음 판을 채우면 안 되니 meet 를 보내기 전에 지운다
+const metMarks = new Set(); let metWaiters = [];
+const metPoke = () => { metWaiters = metWaiters.filter(w => !w()); }; // 각 대기자는 끝났으면 true
+ipcMain.on("mascot:met", (_e, id) => { if (typeof id !== "string") return; metMarks.add(id); if (argHas("--duoscript-test")) console.log("MET", id, Date.now() % 100000); metPoke(); });
+function waitMet(ids, maxMs) {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => { if (!done) { done = true; clearTimeout(t); resolve(); } return true; };
+    const t = setTimeout(finish, maxMs);
+    const check = () => done || (ids.every(id => metMarks.has(id) || !instances.has(id)) ? finish() : false); // 그 사이 보내진 사도는 오지 않는다
+    metWaiters.push(check); metPoke(); // 이미 둘 다 보고했으면 바로 끝난다
+  });
+}
 async function duoScript(idA, idB, opts = {}) {
   if (duoBusy || chatBusy) return { busy: true }; // 잡담 중에 또 시키면(메뉴 연타·타이머와 겹침) 둘이 동시에 걷고 말풍선이 뒤섞였다. 값이 있으니 부르는 쪽이 AI 로 물러서지도 않는다
   const profA = chatProfile(idA), profB = chatProfile(idB);
@@ -606,9 +689,10 @@ async function duoScript(idA, idB, opts = {}) {
   try {
     const ax = A.rect.x + A.rect.w / 2, bx = B.rect.x + B.rect.w / 2;
     const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
+    metMarks.delete(idA); metMarks.delete(idB);
     sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
     sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
-    await new Promise(r => setTimeout(r, meetWait(ax, bx, gap, idA, idB))); // 다가가는 시간
+    await waitMet([idA, idB], Math.min(8000, meetWait(ax, bx, gap, idA, idB) + 2000)); // 둘이 닿았다고 알릴 때까지 (어림 시간 + 2초가 상한)
     for (const [id, prof, line] of script) {
       const other = id === idA ? idB : idA;
       const who = same ? `${prof.ko} · ${id === idA ? "왼쪽" : "오른쪽"}` : prof.ko;
@@ -637,6 +721,7 @@ async function duoTalk(idA, idB, opts = {}) {
     if (!profA || !profB) return null;
     // 둘이 동시에 걸어가므로 자리를 중간점 기준으로 미리 정한다 (서로 상대의 '지금' 위치를 향하면 엇갈려 겹침)
     const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
+    metMarks.delete(idA); metMarks.delete(idB);
     sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
     sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
     const now = new Date(), metAt = Date.now();
@@ -646,7 +731,7 @@ async function duoTalk(idA, idB, opts = {}) {
     const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image, signal: duoSig });
     console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
     if (!r.lines.length) { showBubble(idA, { items: [], text: { head: "", body: "(대화 대본을 만들지 못했어요 — 한 번 더 시켜 주세요)", tail: "", who: "사도 데스크" }, ttl: 6000 }); return r; }
-    await new Promise(res => setTimeout(res, Math.max(300, meetWait(ax, bx, gap, idA, idB) - (Date.now() - metAt)))); // 다가가는 시간 — AI 를 기다린 만큼은 이미 걸었다
+    await waitMet([idA, idB], Math.max(300, Math.min(8000, meetWait(ax, bx, gap, idA, idB) + 2000) - (Date.now() - metAt))); // 둘이 닿았다고 알릴 때까지. 상한은 어림 시간 + 2초에서 AI 를 기다린 만큼을 뺀 것 — 그동안은 이미 걸었다
     for (const ln of r.lines) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
       const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
@@ -781,7 +866,7 @@ function openMenu(id, sx, sy) {
   menuWin.setAlwaysOnTop(true, "screen-saver");
   menuWin.loadFile(path.join(__dirname, "renderer", "menu.html"));
   { const w = menuWin; w.once("ready-to-show", () => { if (menuWin === w && !w.isDestroyed()) { w.show(); w.focus(); } }); }
-  const w = menuWin;
+  const w = menuWin; trackBounds(w);
   w.on("blur", () => { if (!w.isDestroyed()) w.close(); });
   w.on("closed", () => { if (menuWin !== w) return; menuWin = null; menuFor = null; });
   w.webContents.on("render-process-gone", (_e, d) => { console.log("menu renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 우클릭이 새 창을 만든다
@@ -789,14 +874,16 @@ function openMenu(id, sx, sy) {
 }
 
 // ---- 커서 폴링 (모든 마스코트 창에) ----
-let lastCursor = null;
+let lastCursor = null, still = 0; // still: 커서가 같은 자리에 머문 틱 수
 setInterval(() => {
   if (!geo || !mascotWin || mascotWin.isDestroyed()) return;
   if (fsHidden) { if (hitFor !== null) placeHit(null); return; } // 전체화면 뒤에 숨어 있을 때 히트 창이 다시 뜨면 안 된다
   const p = screen.getCursorScreenPoint();
   const x = p.x - geo.x, y = p.y - geo.y;
-  updateHitTarget(x, y);
-  if (lastCursor && lastCursor.x === x && lastCursor.y === y) return;
+  // 커서가 가만히 있으면 대상 판정을 4틱(≈64ms)에 한 번만 하고 렌더러에도 알리지 않는다(같은 값이다).
+  // 아예 건너뛰면 안 된다 — 서 있는 커서 밑으로 사도가 걸어 들어올 수 있고, hit-rect 는 hitFor 인 사도만 따라간다
+  if (lastCursor && lastCursor.x === x && lastCursor.y === y) { if (++still % 4 === 0) updateHitTarget(x, y); return; }
+  still = 0; updateHitTarget(x, y);
   lastCursor = { x, y };
   mascotWin.webContents.send("cursor", lastCursor);
 }, 16);
@@ -826,7 +913,8 @@ ipcMain.on("settings:set", (e, patch, id) => {
   if (!isObj(patch)) return;
   const p = { ...patch }; delete p.id; delete p.version; delete p.characters;
   if (isObj(p.ai) && "keys" in p.ai) { p.ai = { ...p.ai }; delete p.ai.keys; }
-  updateSettings(p, id || instanceOf(e.sender), e.sender.id);
+  const target = id || instanceOf(e.sender);
+  updateSettings(sanitizePatch(p, { forChar: !!target }), target, e.sender.id); // 모르는 키·범위 밖 수치·엉뚱한 열거값은 여기서 걸러진다
 });
 ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
 ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
@@ -857,7 +945,7 @@ function openSetup() {
   // 첫 실행(에셋 없음)엔 이 창이 사용자가 보는 첫 화면이라 다른 창 뒤로 숨지 않게 앞으로 끌어온다. ready-to-show가 안 오는 경우 대비 1.5초 뒤 강제 표시
   const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
   setupWin.once("ready-to-show", reveal); setTimeout(reveal, 1500);
-  const w = setupWin;
+  const w = setupWin; trackBounds(w);
   w.on("closed", () => { if (setupWin === w) setupWin = null; });
 }
 const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
