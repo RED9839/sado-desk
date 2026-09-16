@@ -3,6 +3,7 @@
 // 설정: settings.json 하나. global(사운드·화면) + characters[](스킨·형태·크기·불투명도·행동). 렌더러엔 자기 캐릭터와 global을 합친 "뷰"를 준다.
 const { app, BrowserWindow, screen, ipcMain, Menu, Tray, nativeImage, shell, globalShortcut, desktopCapturer } = require("electron");
 const Ai = require("./ai.js");
+const { createFullscreenWatcher } = require("./fullscreen-watch.js");
 const path = require("node:path");
 const fs = require("node:fs");
 
@@ -28,6 +29,7 @@ function resolveAssetRoot() {
 { const i = process.argv.indexOf("--userdata"); if (i >= 0 && process.argv[i + 1]) app.setPath("userData", process.argv[i + 1]); }
 // 앱 이름 변경(trickcal-crepe-mascot-proto → sado-desk): 예전 userData의 설정·소식 상태를 새 폴더로 한 번 옮긴다
 (() => { try {
+  if (process.argv.includes("--userdata")) return; // 시험용 폴더에 옛 설정을 끌어오면 첫 실행을 시험할 수 없다
   const oldDir = path.join(app.getPath("appData"), "trickcal-crepe-mascot-proto"), newDir = app.getPath("userData");
   if (fs.existsSync(oldDir)) { fs.mkdirSync(newDir, { recursive: true }); for (const f of ["settings.json", "news-state.json"]) { const src = path.join(oldDir, f), dst = path.join(newDir, f); if (fs.existsSync(src) && !fs.existsSync(dst)) { fs.copyFileSync(src, dst); console.log(`migrated ${f} ← ${oldDir}`); } } }
 } catch (e) { console.warn("userData migrate", e.message); } })();
@@ -56,7 +58,7 @@ const GLOBAL_DEFAULTS = {
     clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
     motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
-  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto" }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json · 잡담 duo-talk.json). AI 와 무관하고 돈이 들지 않아
@@ -83,6 +85,10 @@ function loadSettings() {
     const g = { sound: raw.sound, display: raw.display };
     for (const k of Object.keys(g)) if (g[k] === undefined) delete g[k];
     s = { version: 2, global: g, characters: [c] };
+    // 설정 파일이 아예 없는 첫 실행이면 둘을 세운다. 사도끼리 잡담 3,708줄은 둘 이상일 때만 도는데
+    // 기본이 하나라 "하나 더 부르기"를 우연히 찾은 사람만 볼 수 있었다. 둘째는 네르 — 짝 전용 대사가
+    // 47쌍으로 가장 많아, 첫째를 누구로 바꿔도 그 둘 사이의 이야기가 잡힐 가능성이 가장 높다
+    if (!Object.keys(raw).length) s.characters.push({ id: "c2", skin: "Mini_Ner" });
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
   s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
@@ -110,7 +116,7 @@ function updateSettings(patch, id, sourceId) {
   if (Object.keys(g).length) settings.global = deepMerge(settings.global, g);
   if (Object.keys(c).length && id) { const ch = charOf(id); if (ch) Object.assign(ch, deepMerge(ch, c)); }
   saveSettings();
-  if (JSON.stringify(settings.global.display) !== prevDisp) { applyGeometry(); applyAutoStart(); }
+  if (JSON.stringify(settings.global.display) !== prevDisp) { applyGeometry(); applyAutoStart(); applyFullscreenHide(); }
   if (g.news && news) news.start(); // 주기·게시판 변경 → 감시 재시작
   broadcast(sourceId);
 }
@@ -331,6 +337,7 @@ function bubblePlace(id) {
   if (!bubbleBounds || b.x !== bubbleBounds.x || b.y !== bubbleBounds.y || b.height !== bubbleBounds.height) { bubbleWin.setBounds(b); bubbleBounds = b; }
 }
 function showBubble(id, payload) {
+  if (fsHidden) return; // 전체화면 뒤에 숨어 있는 동안 말풍선만 게임 위로 올라오면 안 된다
   bubbleFor = id; bubbleBounds = null; // 위치는 지금 캐릭터 자리 기준으로 한 번만 잡고 고정 (따라다니면 읽기 힘듦)
   if (!bubbleWin || bubbleWin.isDestroyed()) {
     bubbleWin = new BrowserWindow({
@@ -639,7 +646,7 @@ ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.c
 let proactiveBusy = false; // Ai.status()를 기다리는 동안 다음 타이머가 겹쳐 들어오면 사도가 둘 연달아 말을 건다
 setInterval(async () => {
   const ai = settings.global.ai || {}, T = settings.global.talk || {};
-  if (chatBusy || duoBusy || proactiveBusy || !mascotStarted) return;
+  if (chatBusy || duoBusy || proactiveBusy || !mascotStarted || fsHidden) return;
   const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
   if (gapMin < (T.minMin || 8) || Math.random() > 0.25) return;
   proactiveBusy = true;
@@ -712,6 +719,7 @@ function openMenu(id, sx, sy) {
 let lastCursor = null;
 setInterval(() => {
   if (!geo || !mascotWin || mascotWin.isDestroyed()) return;
+  if (fsHidden) { if (hitFor !== null) placeHit(null); return; } // 전체화면 뒤에 숨어 있을 때 히트 창이 다시 뜨면 안 된다
   const p = screen.getCursorScreenPoint();
   const x = p.x - geo.x, y = p.y - geo.y;
   updateHitTarget(x, y);
@@ -721,7 +729,22 @@ setInterval(() => {
 }, 16);
 
 // ---- IPC ----
-ipcMain.on("loaded", (e, info) => { catalog = info; lastCursor = null; buildTray(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("catalog", catalogPayload()); });
+ipcMain.on("loaded", (e, info) => { catalog = info; lastCursor = null; buildTray(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("catalog", catalogPayload()); showGuideOnce(); });
+// 처음 뜬 사도가 조작법을 한 번 알려 준다. 쓰다듬기·볼 당기기·간지럽히기·들기·우클릭 메뉴는 전부
+// 우연히 발견해야 하는 손짓이었고, 들어온 제보 대부분이 "이 손짓이 뭘 하는지 모르겠다"였다.
+// 판정은 여러 번 고쳤지만 설명은 한 번도 붙이지 않았다. 설정 → 조작법에 같은 내용이 남아 있다
+function showGuideOnce() {
+  if ((settings.global.display || {}).guideShown) return;
+  setTimeout(() => {
+    if (fsHidden) { setTimeout(showGuideOnce, 30000); return; }   // 전체화면 뒤라면 나올 수 있을 때 다시
+    const id = settings.characters[0] && settings.characters[0].id; if (!id || !instances.get(id)) return;
+    updateSettings({ display: { guideShown: true } });
+    showBubble(id, { items: [], ttl: 30000, text: {
+      head: "처음이시죠? 이렇게 놀아 주세요",
+      body: "머리를 문지르면 쓰다듬기 · 볼을 끌면 볼 당기기 · 몸을 좌우로 문지르면 간지럽히기 · 위로 끌면 들어 올리기",
+      tail: "우클릭하면 메뉴가 열립니다. 설정 → 조작법에 다시 있어요.", who: "" } });
+  }, 4000);
+}
 ipcMain.on("quit", () => app.quit());
 ipcMain.handle("settings:get", (e, id) => id ? viewFor(id) : settings);
 ipcMain.on("settings:set", (e, patch, id) => updateSettings(patch, id || instanceOf(e.sender), e.sender.id));
@@ -1009,9 +1032,32 @@ function startMascot() {
   createMascotWindow(); createHitWindow();
   for (const c of settings.characters) createInstance(c.id);
   initNews();
+  startFullscreenWatch();
   // 단축키: 커서에 가장 가까운 캐릭터에게 말 걸기 (여러 명일 때). 이미 열려 있고 포커스면 닫기
   const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = geo.x + r.x + r.w / 2, cy = geo.y + r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
   try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
+}
+// ---- 전체화면 위에서는 숨는다 ----
+// 마스코트 창은 최상위(screen-saver) 라 전체화면 유튜브·게임 위에도 그대로 뜬다. 대상 사용자가 게이머인데
+// 게임 중에 방해받는다 — "재밌다"가 아니라 "꺼야겟다"로 가는 종류다. 앞 창이 모니터를 통째로 덮으면
+// 사도·히트 창·말풍선을 내리고, 벗어나면 되돌린다. 숨은 동안엔 먼저 말도 걸지 않는다
+let fsWatch = null, fsNow = false, fsHidden = false;
+const hideFsOn = () => (settings.global.display || {}).hideFullscreen !== false;
+function startFullscreenWatch() {
+  if (fsWatch) return;
+  fsWatch = createFullscreenWatcher({ screen, ownPid: process.pid, log: (...a) => console.log(...a), onChange: (fs, info) => {
+    fsNow = fs; if (fs) console.log("전체화면 감지:", info.cls, "pid", info.pid);
+    applyFullscreenHide();
+  } });
+  fsWatch.start();
+}
+function applyFullscreenHide() {
+  const want = fsNow && hideFsOn();
+  if (want === fsHidden) return;
+  fsHidden = want;
+  const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
+  if (want) { for (const w of wins) w.hide(); }
+  else { for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
 }
 // 창은 전부 loadFile 로 우리 파일만 띄운다. 그래도 렌더러에서 한 줄이 새 나가면(원격 제목이 그대로 태그가 되는 식)
 // preload 를 그대로 물려받은 채 남의 페이지로 넘어갈 수 있다. 나갈 길을 아예 막고 바깥 주소는 기본 브라우저로 보낸다.
@@ -1037,4 +1083,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (extractProc) { try { extractProc.kill(); } catch {} } if (news) news.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { if (extractProc) { try { extractProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
