@@ -767,13 +767,21 @@ ipcMain.handle("assets:scan", () => new Promise((resolve) => {
     const p = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } });
     p.stdout.on("data", (d) => out += d.toString("utf8")); p.stderr.on("data", (d) => err += d.toString("utf8"));
     p.on("error", (e) => resolve({ ok: false, error: "python 실행 실패: " + e.message, devices: [] }));
-    p.on("exit", () => { try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
+    // 방화벽이 포트를 버리면 adb connect 가 후보마다 6초씩 물린다. 그동안 창은 "찾는 중…"에
+    // 멈춘 채 다시 찾기 단추까지 잠긴다. 이게 가져오기 창을 열자마자 저절로 도는 첫 화면이다
+    const timer = setTimeout(() => {
+      try { spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true }); } catch { try { p.kill(); } catch {} }
+      resolve({ ok: false, error: "기기 찾기가 60초를 넘겼어요. 앱플레이어를 켠 뒤 다시 찾아 주세요.", devices: [] });
+    }, 60000);
+    p.on("exit", () => { clearTimeout(timer); try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
   } catch (e) { resolve({ ok: false, error: e.message, devices: [] }); }
 }));
 ipcMain.handle("assets:extract", (_e, opt) => startExtract(opt));
 function startExtract(opt) {
   if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
-  const out = path.join(app.getPath("userData"), "assets"); fs.mkdirSync(out, { recursive: true });
+  const out = path.join(app.getPath("userData"), "assets");
+  try { fs.mkdirSync(out, { recursive: true }); }
+  catch (e) { return { ok: false, error: `에셋 폴더를 만들 수 없어요 (${out}): ${e.message}` }; }
   const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
   const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
   if (opt.mumu) args.push("--mumu", opt.mumu);
@@ -790,11 +798,17 @@ function startExtract(opt) {
   const flog = (t) => { try { fs.appendFileSync(logFile, t + "\n"); } catch {} };
   extractProc.stdout.on("data", (d) => { buf += d.toString("utf8"); let i; while ((i = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue; flog(line); let o; try { o = JSON.parse(line); } catch { o = { step: "log", msg: line, level: "info" }; } if (o.level === "error" || o.level === "warn") console.log("extract:", o.step, o.msg); setupSend("extract:progress", o); } });
   extractProc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) { flog("[stderr] " + t); console.log("extract stderr:", t.slice(0, 300)); setupSend("extract:progress", { step: "stderr", msg: t.slice(0, 400), level: "warn" }); } });
-  extractProc.on("error", (e) => { setupSend("extract:progress", { step: "error", msg: `python을 실행할 수 없어요 (${e.message}). Python 3.10+ 와 'pip install UnityPy Pillow imageio-ffmpeg' 가 필요해요.`, level: "error" }); extractProc = null; setupSend("extract:done", { ok: false }); });
+  extractProc.on("error", (e) => { setupSend("extract:progress", { step: "error", msg: `python을 실행할 수 없어요 (${e.message}). Python 3.10+ 와 'pip install UnityPy Pillow' 가 필요해요.`, level: "error" }); extractProc = null; setupSend("extract:done", { ok: false }); });
   extractProc.on("exit", (code) => {
     extractProc = null; flog(`[exit ${code}]`);
-    if (code === 0) { updateSettings({ assets: { root: "" } }); rescanAssets(); if (hasAssets(ASSET_ROOT)) startMascot(); if (tray) buildTray(); }
-    setupSend("extract:done", { ok: code === 0, code, root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT) });
+    // 보이스에서 걸려도 미니미는 이미 받아 놓은 경우가 흔하다. 예전에는 code 0 일 때만 다시 훑어서
+    // 에셋이 멀쩡히 있는데도 "에셋 없음"이 남고 사도가 안 떴다. 종료 코드와 무관하게 훑고 나서 판정한다
+    if (code === 0) updateSettings({ assets: { root: "" } });
+    rescanAssets();
+    const got = hasAssets(ASSET_ROOT);
+    if (got) { startMascot(); if (tray) buildTray(); }
+    const cancelled = extractCancelled; extractCancelled = false;
+    setupSend("extract:done", { ok: code === 0, cancelled, partial: code !== 0 && got, code, root: ASSET_ROOT, hasAssets: got });
     if (argHas("--setup-test")) console.log("SETUPTEST exit", code, "hasAssets", hasAssets(ASSET_ROOT), "root", ASSET_ROOT, "mascotStarted", mascotStarted);
   });
   return { ok: true };
@@ -810,7 +824,16 @@ ipcMain.handle("assets:enable-ld-adb", (_e, idx) => new Promise((resolve) => { /
     p.on("exit", (code) => resolve({ ok: code === 0, out }));
   } catch (e) { resolve({ ok: false, error: e.message }); }
 }));
-ipcMain.on("assets:cancel", () => { if (extractProc) { try { extractProc.kill(); } catch {} } });
+let extractCancelled = false;
+// kill() 은 python 하나만 죽인다. 그 밑에서 돌던 adb 와 변환 일꾼들은 살아남아 임시 폴더에 계속
+// 쓰고, extract-all.py 의 finally(임시 폴더 지우기)도 돌지 않는다. 보이스 원본만 1.6GB다
+ipcMain.on("assets:cancel", () => {
+  if (!extractProc) return;
+  extractCancelled = true;
+  const pid = extractProc.pid;
+  try { spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }); }
+  catch { try { extractProc.kill(); } catch {} }
+});
 ipcMain.on("assets:open-setup", () => openSetup());
 ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
 ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });

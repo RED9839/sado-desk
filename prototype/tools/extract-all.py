@@ -433,7 +433,13 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
             else: bad.append(f"{name}: {err}")
             if i % 10 == 0 or i == len(jobs): log(kind, f"{label} 디코드 {i}/{len(jobs)}", done=i, total=len(jobs))
     for b in bad[:10]: log(kind, "실패 " + b, "warn")
-    log(kind, f"{label} 완료 — {okn}세트" + (f", 실패 {len(bad)}" if bad else ""), "ok")
+    # 복사는 됐는데 디코드가 전부 실패하는 일이 있다 — 게임이 업데이트되어 UnityPy 가 못 읽는 경우가 그렇다.
+    # 여기서 "완료"라고 말하면 앱은 "완료! 캐릭터가 나타납니다"를 띄우고 화면에는 아무것도 없다.
+    if jobs and okn == 0:
+        FAILED = True
+        log(kind, f"{label}: {len(jobs)}세트가 전부 디코드에 실패했어요 — 게임이 업데이트되어 파일 구성이 바뀌었을 수 있습니다. 추출 기록을 첨부해 제보해 주세요", "error"); return
+    lv = "warn" if bad and len(bad) * 10 >= len(jobs) * 3 else "ok"   # 3할 넘게 실패하면 성공이라 하지 않는다
+    log(kind, f"{label} 완료 — {okn}세트" + (f", 실패 {len(bad)}" if bad else ""), lv)
 
 def find_encoder():
     """wav → opus 변환기를 고른다. pyruntime 옆에 둔 opusenc.exe(0.5MB)가 1순위,
@@ -455,15 +461,18 @@ def _enc_cmd(enc, dst):
     return [exe, "-loglevel", "error", "-y", "-i", "pipe:0", "-c:a", "libopus", "-b:a", "40k", "-vbr", "on", dst]
 
 def _voice_job(args):
-    src, dst, enc = args
-    if os.path.exists(dst) and not FORCE: return "skip"
+    # FORCE 를 전역으로 읽으면 안 된다 — 윈도우의 ProcessPoolExecutor 는 워커가 이 모듈을 새로
+    # import 하고 main() 은 __main__ 가드에 막혀 돌지 않으므로 워커의 FORCE 는 늘 False 였다.
+    # 그래서 --force 가 1.6GB 를 다시 받아 놓고 전부 건너뛰었다.
+    src, dst, enc, force = args
+    if os.path.exists(dst) and not force: return "skip"
     try:
         import UnityPy
         for o in UnityPy.load(src).objects:
             if o.type.name != "AudioClip": continue
             for _name, wav in o.read().samples.items():
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
-                p = subprocess.run(_enc_cmd(enc, dst), input=wav, capture_output=True)
+                p = subprocess.run(_enc_cmd(enc, dst), input=wav, capture_output=True, timeout=120)
                 return "ok" if p.returncode == 0 else "enc"
         return "noclip"
     except Exception as e:
@@ -506,7 +515,7 @@ def step_voice(adb_exe, dev, out, tmp):
             m = cat_re.match(f)
             if not m or "_selective_" in f: continue
             if m.group(1) != h and not h.startswith(m.group(1)): continue  # 변형 폴더가 기본 대사를 공유하는 경우(kommyswim ← voice_kommy_*)만
-            jobs.append((os.path.join(hdir, f), os.path.join(vout, h, re.match(r"^voice_[a-z0-9]+_(.+)$", f).group(1) + ".ogg"), enc))
+            jobs.append((os.path.join(hdir, f), os.path.join(vout, h, re.match(r"^voice_[a-z0-9]+_(.+)$", f).group(1) + ".ogg"), enc, FORCE))
     log("voice", f"보이스 {len(jobs)}개 opus 변환 중…", total=len(jobs), done=0)
     stats = {}
     with ProcessPoolExecutor(max_workers=max(1, (os.cpu_count() or 4) - 1)) as ex:
@@ -517,7 +526,11 @@ def step_voice(adb_exe, dev, out, tmp):
     if todo and not stats:
         global FAILED; FAILED = True
         log("voice", f"보이스: {len(todo)}명 중 하나도 복사되지 않았어요 — 위 adb 오류를 확인해 주세요", "error"); return
-    log("voice", f"보이스 완료 — {stats}", "ok")
+    if jobs and not stats.get("ok"):
+        FAILED = True
+        log("voice", f"보이스: {len(jobs)}개가 하나도 변환되지 않았어요 ({stats}) — opusenc 를 실행하지 못했을 수 있습니다", "error"); return
+    lv = "warn" if stats.get("ok", 0) * 10 < sum(stats.values()) * 7 else "ok"
+    log("voice", f"보이스 완료 — {stats}", lv)
 
 def build_voice_index(vdir):
     index = {}
@@ -628,6 +641,22 @@ def main():
         log("adb", str(e), "error"); sys.exit(3)
     tmpbase = pick_tmp_base()
     log("adb", f"임시 폴더: {tmpbase}")
+    # 중단하거나 앱이 죽으면 아래 finally 가 돌지 않아 임시 폴더가 그대로 남는다. 보이스 원본만
+    # 1.6GB 이므로 몇 번 반복하면 수 GB 가 쌓인다. 한 시간 넘게 손대지 않은 것은 우리 것만 지운다
+    for d in glob.glob(os.path.join(tmpbase, "sadodesk-*")):
+        try:
+            if os.path.isdir(d) and time.time() - os.path.getmtime(d) > 3600:
+                shutil.rmtree(d, ignore_errors=True); log("adb", f"남아 있던 임시 폴더를 지웠어요: {os.path.basename(d)}")
+        except OSError:
+            pass
+    # 시작 전에 디스크 여유를 본다 — 차면 adb 가 영문 오류만 뱉어 사용자가 원인을 알 수 없다
+    need = 3_000_000_000 if "voice" in steps else 800_000_000
+    try:
+        free = shutil.disk_usage(tmpbase).free
+        if free < need:
+            log("adb", f"디스크 여유가 모자라요 — {tmpbase} 에 {need/1e9:.1f}GB 가 필요한데 {free/1e9:.1f}GB 남았습니다", "error"); sys.exit(8)
+    except OSError:
+        pass
     tmp = tempfile.mkdtemp(prefix="sadodesk-", dir=tmpbase)
     try:
         if "minimi" in steps: step_minimi(adb_exe, dev, out, tmp)

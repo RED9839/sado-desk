@@ -1,0 +1,7 @@
+# pyruntime 에 넣을 것. 버전을 고정한다.
+# extract-all.py 는 UnityPy 1.x 의 속성 이름에 직접 기댄다 — o.read().m_Script, d.image,
+# o.read().samples. UnityPy 2.x 는 이것들을 바꿨으므로, 핀이 없으면 어느 날 pyruntime 을
+# 다시 만들었을 때 조용히 다른 API 가 들어와 추출이 통째로 실패한다.
+UnityPy==1.25.2
+Pillow==12.3.0
+texture2ddecoder==1.0.6
