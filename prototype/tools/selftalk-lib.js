@@ -164,6 +164,20 @@ function reasons(line, p, seen, corpus) {
 /* 만들 때 줄 잣대. 세 도구(batch·gaps·prompt)가 같은 것을 쓴다.
  * 비율은 실제 대사 5,090줄에서 잰 값 — 이걸 요구하지 않으면 전부 23자짜리 평서문으로 수렴한다.
  *   길이 25%가 14자 이하 · 15%가 30자 이상 / 물음표 32% · 느낌표 40% · 말줄임표 21% */
+// 잡담용: 다른 사도 이름이 들어갔는지. 짝이 누구일지 모르므로 이름을 쓰면 안 된다.
+// "잡아야" 안의 "아야"처럼 낱말 속에 묻힌 것은 이름이 아니다 — 앞은 한글이 아니어야 하고
+// 뒤는 조사·호칭이거나 한글이 아니어야 한다.
+const PARTICLE = "님|씨|이|가|은|는|을|를|와|과|도|랑|이랑|에게|한테|의|야|아|께|만|랑은|보다";
+function otherName(t, p) {
+  const mine = String(p.ko || "").replace(/\(.*\)$/, "").trim();
+  for (const ko of KO_NAMES) {
+    if (ko === mine || ko.length < 2) continue;
+    const re = new RegExp(`(^|[^가-힣])${ko}(${PARTICLE})?($|[^가-힣])`);
+    if (re.test(t)) return ko;
+  }
+  return null;
+}
+
 function RULES(n, opt) {
   const o = opt || {};
   const R = r => Math.max(1, Math.round(n * r));
@@ -199,4 +213,4 @@ function RULES(n, opt) {
   ].join("\n");
 }
 
-module.exports = { RULES, XTRA, META, MOODS, TAG2MOOD, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
+module.exports = { RULES, otherName, XTRA, META, MOODS, TAG2MOOD, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
