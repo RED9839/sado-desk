@@ -431,7 +431,7 @@
     function openMenu(px, py) { host.openMenu(px, py, id); if (m.state === "hop") restThenDecide(); }
     const menuOpen = false; // (호환) 메뉴 창이 열려 있어도 마스코트 창 입력과는 무관
     // 설정창/메뉴에서 "듣기": 카테고리별 미리듣기
-    function preview(cat) { if (cat === "voice") playVoice("touch", "greeting"); else playSfx("jump02"); }
+    function preview(cat) { if (cat === "voice") playVoice("greeting", "pat", "line"); else playSfx("jump02"); }
     function playCmd(name) { playOnce(name, "react"); motionVoice(name, true); }
     // 새 소식 알림: 말풍선은 메인이 띄우고, 여기선 "말하는" 모션 + 인사/잡담 대사. 잡고 있거나 공중이면 건드리지 않음
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
@@ -493,7 +493,7 @@
       const skin = miniData.findSkin(name);
       if (skin) { mini.skeleton.setSkin(skin); mini.skeleton.setSlotsToSetupPose(); miniRawH = 0; }
       selectVoiceSet(name);
-      if (greet) playVoice("greeting", "spawn", "touch");
+      if (greet) playVoice("greeting", "spawn", "pat");   // touch 는 볼 당기기 대사를 품고 있어 인사로 쓰지 않는다
     }
     // 크기: 미니미는 scale 그대로, SD는 단위 고정 배율(SD_UNIT×scale). 발 위치(바운딩 바닥)와 w/h도 여기서.
     function applyScale() {
