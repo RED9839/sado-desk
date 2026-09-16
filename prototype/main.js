@@ -37,6 +37,9 @@ const CHAR_DEFAULTS = {
   skin: "Mini_Crepe",
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
+  // 교감 대사 친밀 단계: 게임은 볼 당기기(touch1_x)·쓰다듬기(touch2_x) 대사가 친밀도 <10 / ≥10 / ≥20 로 3단계다.
+  // 1~3 = 그 단계 대사만, 0 = 셋을 번갈아. 메뉴에서 고른다(renderer/menu.js), 쓰는 곳은 mascot.js byStage()
+  affinity: 3,
   scale: 0.5, opacity: 1,
   behavior: {
     hop: true, jump: true, idleActs: true,

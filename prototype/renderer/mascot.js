@@ -45,7 +45,7 @@
       //  꿀밤 = Smash_End + dutchrubend(1=맞는 소리, 2=대사 "머리 때리지 마!")                     간지럽히기 = Tickle_Idle → Tickle_End + ticklestart/tickleduring(웃음)
       touchIdle: data.findAnimation("Touch_Idle") ? "Touch_Idle" : null, touchEnd: data.findAnimation("Touch_End") ? "Touch_End" : null,
       patIdle: data.findAnimation("Pat_Idle") ? "Pat_Idle" : null, patEnd: data.findAnimation("Pat_End") ? "Pat_End" : null,
-      tickleIdle: ["Tickle_Idle_1", "Tickle_Idle"].find(n => data.findAnimation(n)) || null, tickleEnd: data.findAnimation("Tickle_End") ? "Tickle_End" : null,
+      tickleIdle: ["Tickle_Idle_1", "Tickle_Idle"].find(n => data.findAnimation(n)) || null, tickleIdle2: data.findAnimation("Tickle_Idle_2") ? "Tickle_Idle_2" : null, tickleEnd: data.findAnimation("Tickle_End") ? "Tickle_End" : null,
       smash: ["Smash_End_1", "Smash_End"].filter(n => data.findAnimation(n)),
       hold: idles[0] || all[0]?.n, moveSpeed: 90, hopHeight: 22,
       moods: moodPools(all),
@@ -179,7 +179,7 @@
   host.on("settings", (views) => sync(views));
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
-  host.on("hit-mouse", (ev) => { const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
+  host.on("hit-mouse", (ev) => { if (cfg && cfg.selftest) return; /* 셀프테스트 중엔 진짜 마우스가 캐릭터 위에 있으면 합성 입력과 섞여 드래그로 튐 */ const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
   host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "meet") mas.meet(arg); else if (cmd === "logstate") mas.logState(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
@@ -320,8 +320,11 @@
       const a = new Audio(src); a.volume = v; a.play().catch(() => {});
       if (cat === "voice") currentVoice = a;
     }
+    // 교감 대사(볼 당기기 touch1_x · 쓰다듬기 touch2_x)는 게임처럼 친밀 단계 하나만: touch1 = 1단계(<10), touch1_1 = 2단계(≥10), touch1_2 = 3단계(≥20). S.affinity 0이면 섞기, 그 단계 파일이 없으면(크레페는 1개뿐) 전부
+    const STAGE_RE = [null, /touch[12](_skin\d+)?\.ogg$/, /touch[12]_1(_skin\d+)?\.ogg$/, /touch[12]_2(_skin\d+)?\.ogg$/];
+    function byStage(c, list) { const st = S.affinity | 0; if ((c !== "cheek" && c !== "pat") || !STAGE_RE[st]) return list; const l = list.filter(f => STAGE_RE[st].test(f)); return l.length ? l : list; }
     function playVoice(...cats) {
-      for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(list); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
+      for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(byStage(c, list)); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
       return null;
     }
     const playSfx = (name, gain = 1) => playSound("sfx", name, clips.sfx[name], gain);
@@ -347,7 +350,11 @@
     // ---- 캐릭터 런타임 상태 ----
     const m = { state: "boot", x: 300, y: 0, vx: 0, vy: 0, rot: 0, timer: 0, targetX: 0, anim: "", over: false, get w() { return active.w; }, get h() { return active.h; } };
     const mouse = { down: false, dragging: false, sx: 0, sy: 0, gx: 0, gy: 0, offX: 0, offY: 0, hist: [], zone: "body" };
-    let tickleT = 0, holdT = 0; // 간지럽히기 중 웃음 간격 / 몸 누르고 가만히 있는 시간(→ 간지럽히기)
+    let tickleT = 0; // 간지럽히기 중 웃음 간격
+    // 몸 제스처 셋: **톡**(안 움직이고 뗌) = 가벼운 반응 / **옆으로 문지르기**(가로 RUB_DX 이상) = 간지럽히기 / **위아래로 끌기**(세로 LIFT_DY 이상) = 들어올리기
+    //   누른 채 가만히 있으면 아무것도 안 함(0.5초 홀드→간지럽히기는 톡 반응과 번갈아 튀어 뺐다). 간지럽히는 동안은 Tickle_Idle_1 루프 하나만
+    //   (방향 바뀔 때 Tickle_Idle_2로 갈아타면 사도마다 1초 넘는 딴 동작이라 "터치↔간지럽히기"가 반복돼 보였다). 문지르기 중 가로는 LIFT_DX까지 자유
+    const LIFT_DY = 45, LIFT_DX = 260, RUB_DX = 18; // px
 
     function makeChar(slot, data) {
       slot.data = data; slot.skeleton = new spine.Skeleton(data);
@@ -375,14 +382,14 @@
       const { atlas, textures } = await loadAtlas(`${r.dir}/${r.stem}.atlas`, r.dir);
       const data = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(host.readBytes(`${r.dir}/${r.stem}.skel`));
       unloadSlot(slot);
-      makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
+      makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
       const skin = data.findSkin("Normal") || data.skins.find(s => s.name !== "default"); if (skin) slot.skeleton.setSkin(skin);
       slot.skeleton.setSlotsToSetupPose();
       return true;
     }
     function unloadSlot(slot) {
       if (active === slot) active = (slot !== sd && sd.skeleton) ? sd : mini; // 그리는 중인 슬롯을 내리면 안전한 쪽으로
-      for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined;
+      for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; if (slot === sd) grab.kind = null;
     }
     let activating = 0;
     async function activateMode(first) {
@@ -653,7 +660,6 @@
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
           m.y = floorAt(m.x); m.rot = 0;
-          if (m.state === "touch" && mouse.zone === "body" && active.A.tickleIdle) { holdT += dt; if (holdT > 0.5) startTickle(); } // 몸을 누른 채 가만히 → 간지럽히기
           if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoice("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
@@ -682,12 +688,14 @@
       }
       const sk = active.skeleton;
       sk.x = m.x; sk.y = m.y - active.feet;
+      const gb = grabBone(); if (gb) { gb.x = gb.data.x; gb.y = gb.data.y; }
       state().update(dt); state().apply(sk);
+      if (gb) grabApply(gb, dt); // 볼 당기기/쓰다듬기: 조작 본을 커서 쪽으로 (애니 값 위에 오프셋)
       hideExtraSlots();
       const rb = sk.getRootBone(); rb.rotation = rb.data.rotation + m.rot * Math.sign(sk.scaleX);
       sk.updateWorldTransform();
     }
-    const hudLine = () => `[${id}] 형태=${S.mode}/${active === mini ? "minimi" : active.family} 상태=${m.state} 애니=${KO.anim(m.anim)} (${m.anim})\nx=${m.x.toFixed(0)} y=${m.y.toFixed(0)} vx=${m.vx.toFixed(0)} vy=${m.vy.toFixed(0)} 회전=${m.rot.toFixed(1)}\n마우스 위=${m.over} 캐릭터=${KO.skinName(S.skin)} 크기=${scale()} 보이스=${voiceCount()}`;
+    const hudLine = () => `[${id}] 형태=${S.mode}/${active === mini ? "minimi" : active.family} 상태=${m.state} 애니=${KO.anim(m.anim)} (${m.anim})\nx=${m.x.toFixed(0)} y=${m.y.toFixed(0)} vx=${m.vx.toFixed(0)} vy=${m.vy.toFixed(0)} 회전=${m.rot.toFixed(1)}\n마우스 위=${m.over} 영역=${mouse.zone} 조작본=${grab.kind ? `${grab.kind} ${grab.dx.toFixed(0)},${grab.dy.toFixed(0)}px→${(grabOffsetPx(grab.kind) ?? 0).toFixed(0)}px` : "-"} 캐릭터=${KO.skinName(S.skin)} 크기=${scale()} 보이스=${voiceCount()}`;
     const bo = new spine.Vector2(), bs = new spine.Vector2();
     let lastHit = null, hitT = 0;
     function pushHitRect(dt) {
@@ -708,23 +716,49 @@
     function eyeBones(slot) { if (slot.eyeBonesCached === undefined) { const sk = slot.skeleton; slot.eyeBonesCached = sk ? sk.bones.filter(b => /eye/i.test(b.data.name) && !/brow|lash|light|shadow|ac/i.test(b.data.name)) : []; } return slot.eyeBonesCached; }
     // 머리/얼굴 기하(픽셀, 월드): neckY = Head 본(목), eyeY = 눈 높이, u = 눈-목 거리(얼굴 반높이 정도). 바운딩 상단은 모자·뿔·머리장식 때문에 쓰지 않는다
     // (tools/head-survey.mjs: 137명 중 눈-목 거리 중앙값 69유닛, 상단-눈 거리는 모자 유무로 3~8배 차이)
+    //   게임의 교감 기준점(Character_Ball_Move = 볼, Character_Pat = 이마·머리선, Character_Tickle = 배)이 있으면 그걸로 보정: 머리 중심 x = Character_Pat.x,
+    //   얼굴 윗선 = Character_Pat 바로 아래(그 위부터 쓰다듬기·꿀밤). 기준점은 점이라 영역 폭·아랫선은 여전히 눈-목 거리로 잡는다(게임의 콜라이더 모양은 스켈레톤에 없음)
     function headGeom() {
       const sk = active.skeleton, k = Math.abs(sk.scaleY) || 1, hb = headBone(active), eyes = eyeBones(active);
+      const ball = ctrlBone(active, "cheek"), pat = ctrlBone(active, "pat");
       sk.getBounds(bo, bs, []);
-      const neckY = hb ? hb.worldY : bo.y + bs.y * 0.55, headX = hb ? hb.worldX : bo.x + bs.x / 2;
+      const neckY = hb ? hb.worldY : (ball ? ball.worldY - 45 * k : bo.y + bs.y * 0.55), headX = pat ? pat.worldX : hb ? hb.worldX : bo.x + bs.x / 2;
       let d = eyes.length ? eyes.reduce((a, b) => a + b.worldY, 0) / eyes.length - neckY : 0;
       if (d < 20 * k) d = 65 * k; // 눈 본이 없거나 Head 본이 눈보다 위(주비·림)면 표준값
       const u = Math.max(d, 60 * k); // 영역 크기 단위: 눈-목이 유난히 짧은 리그(오팔 44유닛)도 얼굴 영역이 너무 작아지지 않게 하한
-      return { neckY, headX, eyeY: neckY + d, u, top: bo.y + bs.y };
+      let browY = neckY + d + 0.6 * u; // 얼굴 윗선(눈썹)
+      if (pat && ball && pat.worldY > ball.worldY) browY = Math.min(browY, pat.worldY - 0.1 * (pat.worldY - ball.worldY)); // 게임 기준점: Character_Pat부터는 머리
+      return { neckY, headX, eyeY: neckY + d, browY, u, top: bo.y + bs.y, anchors: !!(pat && ball) };
     }
     // 누른 위치가 캐릭터의 어디인가: "cheek"(얼굴: 턱~눈썹) / "head"(눈썹 위: 머리카락·모자·장식 전부 → 쓰다듬기·꿀밤) / "body". 스탠딩(SD)에서만
     function zoneAt(px, py) {
       if (!isSD() || active !== sd) return "body";
       const g = headGeom(), wy = H - py, dx = Math.abs(px - g.headX);
       if (wy < g.neckY - 0.2 * g.u || dx > 3.2 * g.u) return "body";      // 목 아래 / 머리 옆(팔·날개)
-      if (wy <= g.eyeY + 0.6 * g.u) return dx <= 2.2 * g.u ? "cheek" : "body"; // 턱~눈썹 = 얼굴
+      if (wy <= g.browY) return dx <= 2.2 * g.u ? "cheek" : "body";        // 턱~눈썹 = 얼굴
       return "head";                                                          // 눈썹 위 = 머리 (모자·뿔 포함)
     }
+    // ---- 교감 조작 본: 게임이 손가락 위치로 끌고 다니는 본 (스탠딩 스켈레톤 444/496세트, 비플레이어블만 없음) ----
+    //   Character_Ball_Move(볼 옆) — Touch_Idle이 제약 `Face_CT ← Character_Ball_Move`(mix 0.5)를 켠다 → 본을 끌면 얼굴(볼)이 절반만큼 따라 늘어난다 = 볼 당기기
+    //   Character_Pat(정수리)     — Pat_Idle이 제약 `Face_CT ← Character_Pat`(mix 0.5)를 켠다 → 쓰다듬는 손을 얼굴이 따라온다
+    //   누른 지점부터의 이동량(창 px)을 본 부모의 로컬 좌표로 바꿔 애니 값 위에 더한다(절대 위치로 옮기면 누른 자리가 본과 멀 때 얼굴이 튄다). 놓으면 짧게 감쇠해 제자리로.
+    const CTRL = { cheek: { re: /^Character_Ball_Move$/, max: 150 }, pat: { re: /^Character_Pat$/, max: 110 } }; // max = 스켈레톤 단위, 고무줄처럼 부드럽게 제한
+    function ctrlBone(slot, kind) { const c = slot.ctrlCache || (slot.ctrlCache = {}); if (c[kind] === undefined) { const sk = slot.skeleton; c[kind] = sk ? sk.bones.find(b => CTRL[kind].re.test(b.data.name)) || null : null; } return c[kind]; }
+    const grab = { kind: null, sx: 0, sy: 0, dx: 0, dy: 0 }; // kind: cheek|pat, s = 누른 위치(창 px, y 위로), d = 끌린 양(px)
+    function grabStart(kind, px, wy) { grab.kind = kind; grab.sx = px; grab.sy = wy; grab.dx = grab.dy = 0; }
+    function grabMove(px, wy) { if (grab.kind) { grab.dx = px - grab.sx; grab.dy = wy - grab.sy; } }
+    // 프레임: 애니 적용 전 본을 셋업값으로 되돌리고(키가 없는 본은 apply가 안 건드려 오프셋이 누적됨), 적용 뒤 오프셋을 더한다
+    function grabBone() { return grab.kind && isSD() && active === sd ? ctrlBone(active, grab.kind) : null; }
+    function grabApply(b, dt) {
+      if (!mouse.down) { const f = Math.exp(-dt / 0.05); grab.dx *= f; grab.dy *= f; if (Math.abs(grab.dx) + Math.abs(grab.dy) < 0.5) { grab.kind = null; return; } }
+      const p = b.parent; if (!p) return; const det = p.a * p.d - p.b * p.c; if (!det) return;
+      let lx = (grab.dx * p.d - grab.dy * p.b) / det, ly = (grab.dy * p.a - grab.dx * p.c) / det; // 부모 월드 행렬(전 프레임) 역변환 → 부모 로컬(스켈레톤 단위)
+      const R = CTRL[grab.kind].max, len = Math.hypot(lx, ly);
+      if (len > 1e-3) { const s = R * (1 - Math.exp(-len / R)) / len; lx *= s; ly *= s; }
+      b.x += lx; b.y += ly;
+    }
+    // 조작 본이 셋업 자리에서 얼마나 벗어났나(월드 px) — 셀프테스트·HUD용
+    function grabOffsetPx(kind) { const b = sd.skeleton && ctrlBone(sd, kind); if (!b) return null; const p = b.parent; const x0 = p.worldX + b.data.x * p.a + b.data.y * p.b, y0 = p.worldY + b.data.x * p.c + b.data.y * p.d; return Math.hypot(b.worldX - x0, b.worldY - y0); }
     function startTickle() { m.state = "tickle"; tickleT = 0; play(active.A.tickleIdle, true); if (S.sound.clickVoice) playVoice("ticklestart", "tickleduring"); }
     function hover(px, py) {
       if (mouse.down) return;
@@ -738,11 +772,14 @@
         const wy = H - e.clientY;
         const moved = Math.hypot(e.clientX - mouse.sx, e.clientY - mouse.sy);
         if (m.state === "touch" && moved > 6) {
-          if (mouse.zone === "head" && active.A.patIdle) { m.state = "pat"; play(active.A.patIdle, true); } // 머리에서 끌기 → 쓰다듬기
-          else if (mouse.zone === "cheek") { /* 얼굴에서 끌기 → 볼을 계속 당기는 중(Touch_Idle 유지), 뗄 때 Touch_End */ }
+          if (mouse.zone === "head" && active.A.patIdle) { m.state = "pat"; play(active.A.patIdle, true); grabStart("pat", mouse.sx, H - mouse.sy); } // 머리에서 끌기 → 쓰다듬기 (Character_Pat 본이 손을 따라감)
+          else if (mouse.zone === "cheek") { /* 얼굴에서 끌기 → 볼을 계속 당기는 중(Touch_Idle 유지 + Character_Ball_Move 본이 커서를 따라감), 뗄 때 Touch_End */ }
         }
-        if (m.state === "pat" || m.state === "tickle" || (m.state === "touch" && mouse.zone === "cheek")) return; // 잡고 있는 동안은 루프 애니만
-        if (!mouse.dragging && moved > 6) { mouse.dragging = true; m.state = "drag"; m.vx = m.vy = 0; if (isSD()) useSlot(slotForRest()); play(active.A.drag || active.A.hold, true); }
+        if (m.state === "pat" || (m.state === "touch" && mouse.zone === "cheek")) { grabMove(e.clientX, wy); return; } // 잡고 있는 동안은 루프 애니 + 조작 본만
+        const ddx = Math.abs(e.clientX - mouse.sx), ddy = Math.abs(wy - (H - mouse.sy));
+        if (m.state === "touch" && mouse.zone === "body" && ddy <= LIFT_DY) { if (ddx >= RUB_DX && active.A.tickleIdle) startTickle(); return; } // 몸에서 옆으로 문지르면 간지럽히기 (위아래로 끌면 아래로 내려가 들어올리기)
+        if (m.state === "tickle" && ddy <= LIFT_DY && ddx <= LIFT_DX) return; // 간지럽히는 중: 문질러도 루프 유지. 위아래로 끌면 들어올리기
+        if (!mouse.dragging && moved > 6) { if (cfg.selftest) console.log(`DRAGSTART state=${m.state} zone=${mouse.zone} moved=${moved.toFixed(0)} dx=${(e.clientX - mouse.sx).toFixed(0)} dy=${(wy - (H - mouse.sy)).toFixed(0)} anim=${m.anim}`); mouse.dragging = true; m.state = "drag"; m.vx = m.vy = 0; mouse.offX = e.clientX - m.x; mouse.offY = wy - m.y; if (isSD()) useSlot(slotForRest()); play(active.A.drag || active.A.hold, true); } // 들어올리기 시작: 지금 자리에서 커서를 따라가기 시작(문지르기 판정 거리만큼 튀지 않게)
         if (mouse.dragging) {
           const nx = e.clientX - mouse.offX, ny = wy - mouse.offY;
           const t = performance.now(); mouse.hist.push({ t, x: nx, y: ny }); while (mouse.hist.length > 6) mouse.hist.shift();
@@ -759,8 +796,16 @@
       mouse.down = true; mouse.dragging = false; mouse.sx = e.clientX; mouse.sy = e.clientY; mouse.hist = [];
       mouse.offX = e.clientX - m.x; mouse.offY = (H - e.clientY) - m.y; mouse.gx = m.x; mouse.gy = m.y;
       if (m.state === "thrown" || m.state === "drag") return; // 공중에 있을 땐 잡기만
-      mouse.zone = zoneAt(e.clientX, e.clientY); holdT = 0;
-      if (isSD()) { useSlot(slotForRest()); if (active.A.touchIdle) { m.state = "touch"; m.vx = m.vy = 0; m.rot = 0; m.y = floorAt(m.x); play(active.A.touchIdle, true); } }
+      mouse.zone = zoneAt(e.clientX, e.clientY);
+      if (isSD()) {
+        useSlot(slotForRest());
+        if (active.A.touchIdle) {
+          m.state = "touch"; m.vx = m.vy = 0; m.rot = 0; m.y = floorAt(m.x);
+          // 얼굴: 누른 순간 Touch_Idle(볼 잡힌 찡그림) + 볼 본 구동. 머리: 놓아야(꿀밤) 끌어야(쓰다듬기) 정해지니 대기 애니 그대로. 몸: 바로 간지럽히기
+          if (mouse.zone === "cheek") { play(active.A.touchIdle, true); grabStart("cheek", e.clientX, H - e.clientY); }
+          // 몸: 아직 모름(톡/문지르기/들기) → 대기 애니 그대로
+        }
+      }
     }
     function onUp(e) {
       if (!mouse.down) return; mouse.down = false;
@@ -770,18 +815,19 @@
         if (Math.abs(m.vx) > 30) { facing = m.vx > 0 ? 1 : -1; applyFacing(); }
       } else if (m.state === "pat") {          // 쓰다듬기 끝 → touch2_x ("그래 그래 더 쓰다듬으라고")
         playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoice("pat", "pleasure", "joy");
-      } else if (m.state === "tickle") {       // 간지럽히기 끝 → 웃음
-        playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoice("tickleduring", "ticklestart", "joy");
+      } else if (m.state === "tickle") {       // 간지럽히기 끝 → Tickle_End. 웃음은 좀 간지럽혔을 때만(톡 치고 뗀 건 시작 웃음 하나로)
+        playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoice("tickleduring", "ticklestart", "joy");
       } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
         smashHit();
-      } else if (m.state === "touch" && active.A.touchEnd) { // 볼 당기기(게임의 기본 터치) 끝 → touch1_x ("당기지 마!")
+      } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd) { // 볼 당기기 끝 → touch1_x ("당기지 마!")
         playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoice("cheek", "touch");
-      } else {                                 // 미니미: 반응 모션 + 그에 맞는 대사
+      } else {                                 // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
         if (isSD()) useSlot(slotForRest());
-        const reacts = active.A.react.filter(has);
+        let reacts = active.A.react.filter(has);
+        if (active === sd) { const soft = reacts.filter(n => /^(Happy|Smile|Laugh|Shy|Proud|Excited|Taunt)_/.test(n)); if (soft.length) reacts = soft; } // 몸 톡은 놀람(으아악)도 빼고 웃음·수줍음만
         const ra = reacts.length ? pick(reacts) : active.A.hold;
         playOnce(ra, "react");
-        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) playVoice("touch"); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 대사), 매핑 없는 모션(Idle2_4 등)만 터치 대사
+        if (S.sound.clickVoice) { if (!motionVoice(ra, true)) playVoice("joy", "pleasure", "line", "touch"); } // 대사는 반응 모션에 맞춰(웃으면 기쁨 소리), 매핑 없는 모션(Idle2_4 등)은 웃음·잡담, 그것도 없는 크레페만 터치 대사
       }
       m.over = hit(e.clientX, e.clientY);
     }
@@ -875,7 +921,7 @@
       { m.state = "react"; onComplete(active, active.state.getCurrent(0) || { loop: false }); say(`after motion → state=${m.state} anim=${m.anim} timer=${m.timer.toFixed(2)} (expect idle loop, timer≈actGap ${S.behavior.actGap})`); }
       S.behavior.hopChance = 0; m.state = "idle"; decideIdle(); say(`hybrid rest slot=${active.family} anim=${m.anim} (expect standing Idle_*)`); S.behavior.hopChance = 45;
       await settle(); cx = m.x; cy = H - m.y - m.h / 2; fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(60);
-      say(`hybrid click slot=${active.family} anim=${m.anim} (expect standing Touch_End)`);
+      say(`hybrid click(몸 톡) slot=${active.family} anim=${m.anim} voice=${lastPlayed?.name} (expect standing 가벼운 반응(Happy/Smile…) + joy — 톡은 간지럽히기·볼 당기기 아님)`);
       patchSettings({ skin: "Mini_Crepe" }); await sleep(2500);
       say(`hybrid crepe(인게임 없음) active=${active.family} sdI=${sdI.skeleton ? "loaded" : "-"} (expect standing only)`);
 
@@ -885,30 +931,45 @@
       patchSettings({ skin: "Mini_ErpinSkin1" }); await sleep(3000);
       say(`sd erpin skin1 active=${active === mini ? "minimi" : active.family} standing=${sd.key?.split("/").slice(-2).join("/")} ingame=${sdI.key?.split("/").slice(-1)[0]} (expect standing Erpin/ErpinSkin1 + ingame erpinskin1)`);
       await settle(); cx = m.x; cy = H - m.y - m.h / 2; fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(60);
-      say(`sd click(볼 당기기) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`);
+      say(`sd click(몸 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Happy/Smile/… + erpin/joy|pleasure — 톡은 간지럽히기·볼 당기기 아님)`);
+      { await sleep(2600); await settle(); const g0 = headGeom(); const ex = g0.headX, ey = H - g0.eyeY; fire("mousedown", ex, ey); say(`press cheek → anim=${m.anim} (expect Touch_Idle)`); await sleep(30); fire("mouseup", ex, ey); await sleep(60);
+        say(`cheek tap(볼 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`); }
       { // 교감: 머리 드래그 = 쓰다듬기, 얼굴 드래그 = 볼 당기기, 몸 드래그 = 들기
         await sleep(2600); await settle(); cx = m.x; const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, []); const hb = headBone(sd);
         const g = headGeom(); const topY = H - g.top, neckY = H - g.neckY, hx = g.headX, eyeSY = H - g.eyeY;
-        say(`zones(erpin): head=${hb?.data.name} eyes=${eyeBones(sd).length} u=${g.u.toFixed(0)}px zone(top+20)=${zoneAt(hx, topY + 20)} zone(eye)=${zoneAt(hx, eyeSY)} zone(neck+10)=${zoneAt(hx, neckY - 10)} zone(body)=${zoneAt(cx, H - m.y - 30)} zone(beside head)=${zoneAt(hx + 4 * g.u, eyeSY)} (expect head / cheek / cheek / body / body)`);
-        const py = topY + 25; fire("mousedown", hx, py); say(`press head → state=${m.state} anim=${m.anim} (expect touch Touch_Idle)`);
+        say(`zones(erpin): head=${hb?.data.name} eyes=${eyeBones(sd).length} anchors=${g.anchors} u=${g.u.toFixed(0)}px browY=${(g.browY - g.neckY).toFixed(0)}px-above-neck patY=${((ctrlBone(sd, "pat")?.worldY ?? 0) - g.neckY).toFixed(0)} zone(top+20)=${zoneAt(hx, topY + 20)} zone(eye)=${zoneAt(hx, eyeSY)} zone(neck+10)=${zoneAt(hx, neckY - 10)} zone(body)=${zoneAt(cx, H - m.y - 30)} zone(beside head)=${zoneAt(hx + 4 * g.u, eyeSY)} (expect head / cheek / cheek / body / body)`);
+        shot("idle-before"); await sleep(120); const py = topY + 25; fire("mousedown", hx, py); say(`press head → state=${m.state} anim=${m.anim} (expect touch, 대기 애니 유지 — 머리는 놓아야 꿀밤/끌어야 쓰다듬기)`);
         fire("mouseup", hx, py); await sleep(30); say(`tap head(꿀밤 1단) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect smash1 Smash_End_1 + erpin/dutchrubend1)`);
         await sleep(1400); say(`꿀밤 2단 → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Smash_End_2 + erpin/dutchrubend2*)`);
         await sleep(3500); await settle(); fire("mousedown", hx, py);
-        for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 6, py); } say(`pat drag → state=${m.state} anim=${m.anim} (expect pat Pat_Idle)`);
+        for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 6, py); } await sleep(40); shot("pat-drag"); await sleep(120); say(`pat drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect pat Pat_Idle, Character_Pat 본이 손을 따라 20~48px 이동)`);
         fire("mouseup", hx + 48, py); await sleep(30); say(`pat release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Pat_End + erpin/touch2*)`);
+        await sleep(400); say(`pat ctrl bone after release: kind=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect null, ≈0 = 제자리로 감쇠)`);
         await sleep(3500); await settle(); sd.skeleton.getBounds(o, z, []); const cy2 = H - (hb ? hb.worldY : o.y + z.y * 0.55) - 12;
         fire("mousedown", hx, cy2); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 8, cy2 + i * 3); }
-        say(`cheek drag → state=${m.state} anim=${m.anim} (expect touch Touch_Idle 유지)`);
-        fire("mouseup", hx + 64, cy2 + 24); await sleep(30); say(`cheek release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`);
+        await sleep(40); shot("cheek-drag"); await sleep(120); { const b = ctrlBone(sd, "cheek"); say(`cheek drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} bone=${b?.data.name} parent=${b?.parent?.data.name} offset=${(grabOffsetPx("cheek") ?? -1).toFixed(0)}px (expect touch Touch_Idle 유지, Character_Ball_Move 본이 커서를 따라 30~70px 이동 → 얼굴이 절반 따라옴)`); }
+        shot("cheek-drag2"); await sleep(120); fire("mouseup", hx + 64, cy2 + 24); await sleep(30); say(`cheek release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`);
+        await sleep(400); say(`cheek ctrl bone after release: kind=${grab.kind} offset=${(grabOffsetPx("cheek") ?? -1).toFixed(0)}px (expect null, ≈0)`);
         await sleep(3000); await settle(); cx = m.x; let by = H - m.y - 30; fire("mousedown", cx, by); await sleep(700);
-        say(`body hold(간지럽히기) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect tickle Tickle_Idle_1 + erpin/ticklestart*)`);
-        fire("mouseup", cx, by); await sleep(30); say(`tickle release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Tickle_End + erpin/tickleduring*)`);
-        await sleep(4500); await settle(); cx = m.x; by = H - m.y - 30; fire("mousedown", cx, by); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", cx + i * 4, by - i * 10); }
-        say(`body drag → state=${m.state} (expect drag)`); fire("mouseup", cx + 32, by - 80); await sleep(1500); await settle();
+        say(`body press+hold 0.7s → state=${m.state} anim=${m.anim} (expect touch, 대기 애니 그대로 — 가만히 누르면 아무것도 안 함)`);
+        fire("mouseup", cx, by); await sleep(30); say(`body tap release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Happy/Smile/… + joy — 간지럽히기 아님)`);
+        await sleep(4500); await settle(); cx = m.x; by = H - m.y - 30; fire("mousedown", cx, by); // 몸 문지르기(좌우 왕복 24px) → 간지럽히기
+        for (const dx of [8, 16, 24, 16, 8, 0, -8, 0, 8, 16]) { await sleep(16); fire("mousemove", cx + dx, by); }
+        say(`body rub(문지르기) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect tickle Tickle_Idle_1 + ticklestart — 루프 하나만)`);
+        await sleep(350); for (const dx of [8, 0, -8]) { await sleep(16); fire("mousemove", cx + dx, by); } await sleep(30);
+        say(`rub more → state=${m.state} anim=${m.anim} (expect still tickle Tickle_Idle_1, no Idle_2 switch)`);
+        fire("mouseup", cx - 8, by); await sleep(30); say(`rub release → state=${m.state} anim=${m.anim} (expect react Tickle_End)`);
+        await sleep(4500); await settle(); cx = m.x; by = H - m.y - 30; const x0 = m.x; fire("mousedown", cx, by); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", cx + i * 12, by - i * 12); }
+        say(`body drag(위로) → state=${m.state} moved=${(m.x - x0).toFixed(0)}px after 96px cursor (expect drag, moved ≈ 96−48 = 48 → 세로 45px 넘은 지점부터 따라옴, 튀지 않음)`);
+        fire("mouseup", cx + 96, by - 96); await sleep(1500); await settle(); cx = m.x; by = H - m.y - 30; fire("mousedown", cx, by); // 가로로 길게 문지르기(±100px) → 들리지 않아야
+        for (const dx of [40, 80, 120, 80, 40, 0, -40, -80, -120, -80, -40, 0]) { await sleep(16); fire("mousemove", cx + dx, by); }
+        say(`body wide rub(가로 ±120px) → state=${m.state} anim=${m.anim} (expect tickle Tickle_Idle_1, not drag)`); fire("mouseup", cx, by); await sleep(1500); await settle();
         { patchSettings({ skin: "Mini_Opal" }); await sleep(2500); await settle(); const g2 = headGeom(); const hx2 = g2.headX, eyeS = H - g2.eyeY, topS = H - g2.top;
           say(`zones(opal, 큰 모자 hatRatio≈8): u=${g2.u.toFixed(0)} topAboveEye=${(g2.top - g2.eyeY).toFixed(0)}px zone(eye)=${zoneAt(hx2, eyeS)} zone(eye+1.5u 머리)=${zoneAt(hx2, eyeS - 1.5 * g2.u)} zone(top-20 모자)=${zoneAt(hx2, topS + 20)} (expect cheek / head / head — 예전 방식이면 얼굴이 모자 중간까지 올라갔음)`); }
         patchSettings({ skin: "Mini_ErpinSkin1" }); await sleep(2500);
         say(`voice split: cheek=${voiceSet.cats.cheek?.length} pat=${voiceSet.cats.pat?.length} touch=${voiceSet.cats.touch?.length} (expect 3/3/6 for erpin skin1 view)`);
+        { const stages = [1, 2, 3, 0].map(st => { patchSettings({ affinity: st }); const seen = new Set(); for (let i = 0; i < 12; i++) { const f = pick(byStage("cheek", voiceSet.cats.cheek)); seen.add(f.replace(/^.*\//, "")); } return `${st}:${[...seen].sort().join("|")}`; });
+          say(`affinity stages: ${stages.join("  ")} (expect 1:touch1_skin1 2:touch1_1_skin1 3:touch1_2_skin1 0:all three)`); patchSettings({ affinity: 3 }); }
       }
       m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); say(`sd move slot=${active === mini ? "minimi" : active.family} state=${m.state} anim=${m.anim} (expect minimi Idle2_1)`); await sleep(400); S.behavior.hopChance = 45;
       patchSettings({ skin: "Mini_Dummy" }); await sleep(800);
