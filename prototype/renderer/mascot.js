@@ -249,8 +249,15 @@
   // 다음 프레임 예약이 맨 끝에 있어서, 여기서 예외가 하나 나면 예약이 영영 안 걸린다.
   // 그러면 사도 전원이 그 자리에 얼어붙는데 히트 창은 마지막 자리에 남아 클릭을 계속 가로챈다.
   // 한 프레임이 튀는 것과 창이 죽는 것은 다른 일이다.
+  // 스파인 대기 동작 원본이 대개 30fps 라 60 으로 그려도 더 부드러워지지 않는다.
+  // 하루 종일 켜 두는 앱이라 이 절반이 그대로 전력과 발열이다.
+  const FRAME_MS = 1000 / 30;
+  let acc = 0;
   function loop(now) {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const raw = now - last; last = now;
+    acc += raw;
+    if (acc < FRAME_MS || document.hidden) { requestAnimationFrame(loop); return; }
+    const dt = Math.min(0.05, acc / 1000); acc = 0;
     try {
       for (const mas of mascots.values()) mas.update(dt);
       render();
@@ -259,6 +266,8 @@
     requestAnimationFrame(loop);
   }
   const bOff = new spine.Vector2(), bSize = new spine.Vector2();
+  // getBounds 는 세 번째 인자 배열을 정점 수만큼 키워 쓴다. 매번 새 []를 주면 그 일을 매번 처음부터 한다
+  const bTmp = [];
   function render() {
     const gl = ctx.gl;
     renderer.resize(spine.ResizeMode.Expand);
@@ -269,7 +278,7 @@
     for (const mas of mascots.values()) {
       const sk = mas.active.skeleton; if (!sk) continue;
       renderer.drawSkeleton(sk, true);
-      if (dbg) { sk.getBounds(bOff, bSize, []); renderer.rect(false, bOff.x, bOff.y, bSize.x, bSize.y, new spine.Color(1, 0, 0, 1)); }
+      if (dbg) { sk.getBounds(bOff, bSize, bTmp); renderer.rect(false, bOff.x, bOff.y, bSize.x, bSize.y, new spine.Color(1, 0, 0, 1)); }
     }
     if (dbg) for (const d of geoD) { renderer.line(d.x0, d.floor, d.x1, d.floor, new spine.Color(0, 1, 0, 1)); renderer.rect(false, d.x0, d.floor, d.x1 - d.x0, d.top - d.floor, new spine.Color(0, 0.6, 1, 0.6)); }
     renderer.end();
@@ -431,14 +440,14 @@
       const { atlas, textures } = await loadAtlas(`${r.dir}/${r.stem}.atlas`, r.dir);
       const data = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(host.readBytes(`${r.dir}/${r.stem}.skel`));
       unloadSlot(slot);
-      makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
+      makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
       const skin = data.findSkin("Normal") || data.skins.find(s => s.name !== "default"); if (skin) slot.skeleton.setSkin(skin);
       slot.skeleton.setSlotsToSetupPose();
       return true;
     }
     function unloadSlot(slot) {
       if (active === slot) active = (slot !== sd && sd.skeleton) ? sd : mini; // 그리는 중인 슬롯을 내리면 안전한 쪽으로
-      for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; if (slot === sd) grab.kind = null;
+      for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; if (slot === sd) grab.kind = null;
     }
     let activating = 0;
     async function activateMode(first) {
@@ -547,7 +556,7 @@
       sk.setToSetupPose(); sk.setSlotsToSetupPose(); hideExtraSlots();
       sk.updateWorldTransform();
       const off = new spine.Vector2(), size = new spine.Vector2();
-      sk.getBounds(off, size, []);
+      sk.getBounds(off, size, bTmp);
       active.feet = active === mini ? off.y : groundY(active, off, size); active.w = size.x; active.h = size.y;
       sk.x = sx; sk.y = sy;
       m.x = clampX(m.x);
@@ -561,7 +570,7 @@
     let miniRawH = 0;
     // (참고용) SD 모드에서 미니미를 스탠딩 크기에 맞추는 배율 — 지금은 기본 미니미 크기로 통일해서 사용하지 않음
     function miniMatchK() {
-      if (!miniRawH) { const sk = mini.skeleton; const sx = sk.scaleX, sy = sk.scaleY; sk.scaleX = 1; sk.scaleY = 1; sk.setToSetupPose(); sk.setSlotsToSetupPose(); hideExtraSlots(mini); sk.updateWorldTransform(); const o = new spine.Vector2(), z = new spine.Vector2(); sk.getBounds(o, z, []); miniRawH = Math.max(1, z.y); sk.scaleX = sx; sk.scaleY = sy; }
+      if (!miniRawH) { const sk = mini.skeleton; const sx = sk.scaleX, sy = sk.scaleY; sk.scaleX = 1; sk.scaleY = 1; sk.setToSetupPose(); sk.setSlotsToSetupPose(); hideExtraSlots(mini); sk.updateWorldTransform(); const o = new spine.Vector2(), z = new spine.Vector2(); sk.getBounds(o, z, bTmp); miniRawH = Math.max(1, z.y); sk.scaleX = sx; sk.scaleY = sy; }
       const body = sd.skeleton ? bodyHeight(sd) : null;
       const boxPx = (sd.h || 0) > 0 ? sd.h : 560 * scale() * SD_UNIT;
       const standingPx = body ? Math.min(boxPx, body * sd.k * 1.65) : boxPx;
@@ -572,7 +581,7 @@
       const sk = slot.skeleton; if (!sk) return null;
       const sx = sk.scaleX, sy = sk.scaleY, x0 = sk.x, y0 = sk.y;
       sk.scaleX = 1; sk.scaleY = 1; sk.x = 0; sk.y = 0; sk.setToSetupPose(); sk.setSlotsToSetupPose(); hideExtraSlots(slot); sk.updateWorldTransform();
-      const o = new spine.Vector2(), z = new spine.Vector2(); sk.getBounds(o, z, []);
+      const o = new spine.Vector2(), z = new spine.Vector2(); sk.getBounds(o, z, bTmp);
       const head = sk.bones.find(b => /^head$/i.test(b.data.name));
       const h = head ? head.worldY - groundY(slot, o, z) : null;
       sk.scaleX = sx; sk.scaleY = sy; sk.x = x0; sk.y = y0;
@@ -586,10 +595,12 @@
       let v = 1; if (hs && hi) { const r = hs / hi; if (r > 0.6 && r < 1.7) v = r; }
       hybridFixCache = { key, v }; return v;
     }
+    // 매 프레임 불린다(애니가 어태치먼트를 되살리므로). 스탠딩 리그는 슬롯이 수백 개라
+    // 그때마다 전부 정규식에 넣으면 초당 수만 번이 된다. 대상은 스켈레톤마다 고정이니 한 번만 고른다
     function hideExtraSlots(slot = active) {
       if (!slot.skeleton) return;
-      if (slot === mini) { for (const s of mini.skeleton.slots) if (HIDE_SLOTS.has(s.data.name)) s.setAttachment(null); }
-      else for (const s of slot.skeleton.slots) if (HIDE_SD_SLOTS.test(s.data.name)) s.setAttachment(null);
+      if (!slot.hideCache) slot.hideCache = slot.skeleton.slots.filter(s => slot === mini ? HIDE_SLOTS.has(s.data.name) : HIDE_SD_SLOTS.test(s.data.name));
+      for (const s of slot.hideCache) s.setAttachment(null);
     }
 
     // ---- 애니 제어 (현재 형태에 있는 애니만) ----
@@ -758,10 +769,11 @@
     }
     const hudLine = () => `[${id}] 형태=${S.mode}/${active === mini ? "minimi" : active.family} 상태=${m.state} 애니=${KO.anim(m.anim)} (${m.anim})\nx=${m.x.toFixed(0)} y=${m.y.toFixed(0)} vx=${m.vx.toFixed(0)} vy=${m.vy.toFixed(0)} 회전=${m.rot.toFixed(1)}\n마우스 위=${m.over} 영역=${mouse.zone} 조작본=${grab.kind ? `${grab.kind} ${grab.dx.toFixed(0)},${grab.dy.toFixed(0)}px→${(grabOffsetPx(grab.kind) ?? 0).toFixed(0)}px` : "-"} 캐릭터=${KO.skinName(S.skin)} 크기=${scale()} 보이스=${voiceCount()}`;
     const bo = new spine.Vector2(), bs = new spine.Vector2();
-    let lastHit = null, hitT = 0;
+    let lastHit = null, hitT = 0, hitBox = null;
     function pushHitRect(dt) {
       hitT += dt; if (hitT < 1 / 30 || !active.skeleton) return; hitT = 0; // 30Hz
-      active.skeleton.getBounds(bo, bs, []);
+      active.skeleton.getBounds(bo, bs, bTmp);
+      hitBox = { x: bo.x, y: H - (bo.y + bs.y), w: bs.x, h: bs.y }; // 창 기준(y 아래로) — hit() 가 돌려 쓴다
       const pad = 10;
       const r = { x: bo.x - pad, y: H - (bo.y + bs.y) - pad, w: bs.x + pad * 2, h: bs.y + pad * 2 }; // 창 기준 px (y 아래로)
       if (lastHit && Math.abs(lastHit.x - r.x) < 1 && Math.abs(lastHit.y - r.y) < 1 && Math.abs(lastHit.w - r.w) < 1 && Math.abs(lastHit.h - r.h) < 1) return;
@@ -769,7 +781,14 @@
     }
 
     // ---- 마우스 (이 캐릭터의 히트 창에서 온 이벤트만) ----
-    function hit(px, py) { if (!active.skeleton) return false; active.skeleton.getBounds(bo, bs, []); const wy = H - py; return px >= bo.x && px <= bo.x + bs.x && wy >= bo.y && wy <= bo.y + bs.y; }
+    // 바깥(메인)이 커서를 16ms 마다 물어 오므로 여기서 getBounds 를 돌리면 초당 60번 넘게
+    // 전신 정점을 다시 계산한다 — 그리는 일과 맞먹는 양이 렌더 루프와 별개로 더 돈다.
+    // pushHitRect 가 30Hz 로 이미 구해 둔 것을 쓴다(최대 33ms 묵은 값이라 손맛에 차이가 없다)
+    function hit(px, py) {
+      if (!active.skeleton) return false;
+      if (!hitBox) { active.skeleton.getBounds(bo, bs, bTmp); hitBox = { x: bo.x, y: H - (bo.y + bs.y), w: bs.x, h: bs.y }; }
+      return px >= hitBox.x && px <= hitBox.x + hitBox.w && py >= hitBox.y && py <= hitBox.y + hitBox.h;
+    }
     // 머리 본(교감 영역·볼 당기기용). 없으면 null → 높이 비율로 판정
     function headBone(slot) { if (slot.headBoneCached === undefined) { const sk = slot.skeleton; slot.headBoneCached = sk ? (sk.bones.find(b => /^(S\d_)?Head$/i.test(b.data.name)) || sk.bones.find(b => /head/i.test(b.data.name) && !/hair|ac|ct|rct/i.test(b.data.name)) || null) : null; } return slot.headBoneCached; }
     // 누른 위치가 캐릭터의 어디인가: "head"(머리 위쪽 → 쓰다듬기) / "cheek"(얼굴 → 볼 당기기) / "body"(들어서 던지기). 스탠딩(SD)에서만
@@ -782,7 +801,7 @@
     function headGeom() {
       const sk = active.skeleton, k = Math.abs(sk.scaleY) || 1, hb = headBone(active), eyes = eyeBones(active);
       const ball = ctrlBone(active, "cheek"), pat = ctrlBone(active, "pat");
-      sk.getBounds(bo, bs, []);
+      sk.getBounds(bo, bs, bTmp);
       const neckY = hb ? hb.worldY : (ball ? ball.worldY - 45 * k : bo.y + bs.y * 0.55), headX = pat ? pat.worldX : hb ? hb.worldX : bo.x + bs.x / 2;
       let d = eyes.length ? eyes.reduce((a, b) => a + b.worldY, 0) / eyes.length - neckY : 0;
       if (d < 20 * k) d = 65 * k; // 눈 본이 없거나 Head 본이 눈보다 위(주비·림)면 표준값
@@ -980,10 +999,10 @@
       S.behavior.hopChance = 0; m.state = "idle"; decideIdle(); say(`sd rest after move slot=${active === mini ? "minimi" : active.family} anim=${m.anim} (expect standing)`); S.behavior.hopChance = 45;
       say(`erpin ingame slot loaded=${!!sdI.skeleton} (expect false — 인게임은 스탠딩 없을 때만)`);
       patchSettings({ skin: "Mini_Vela" }); await sleep(2500);
-      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, []); say(`vela ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px (expect ground 0 = 원점, bottom < 0 = 머리가 지면 아래로) skel.y=${sd.skeleton.y.toFixed(0)} floor=${floorAt(m.x)}`);
+      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); say(`vela ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px (expect ground 0 = 원점, bottom < 0 = 머리가 지면 아래로) skel.y=${sd.skeleton.y.toFixed(0)} floor=${floorAt(m.x)}`);
         m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); await sleep(100); say(`vela minimi move h=${m.h.toFixed(0)} standingBox=${sd.h.toFixed(0)} body=${((bodyHeight(sd) || 0) * sd.k).toFixed(0)} (expect 기본 미니미 크기 ≈ 184)`); S.behavior.hopChance = 45; }
       patchSettings({ skin: "Mini_Daya" }); await sleep(2500);
-      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, []); say(`daya ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px skel.y=${sd.skeleton.y.toFixed(0)} m.y=${m.y.toFixed(0)} (expect ground ≈ bottom ≈ 0: 돌 바닥이 지면)`); }
+      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); say(`daya ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px skel.y=${sd.skeleton.y.toFixed(0)} m.y=${m.y.toFixed(0)} (expect ground ≈ bottom ≈ 0: 돌 바닥이 지면)`); }
       patchSettings({ skin: "Mini_Erpin" }); await sleep(1500);
       { m.state = "react"; onComplete(active, active.state.getCurrent(0) || { loop: false }); say(`after motion → state=${m.state} anim=${m.anim} timer=${m.timer.toFixed(2)} (expect idle loop, timer≈actGap ${S.behavior.actGap})`); }
       S.behavior.hopChance = 0; m.state = "idle"; decideIdle(); say(`hybrid rest slot=${active.family} anim=${m.anim} (expect standing Idle_*)`); S.behavior.hopChance = 45;
@@ -1002,7 +1021,7 @@
       { await sleep(2600); await settle(); const g0 = headGeom(); const ex = g0.headX, ey = H - g0.eyeY; fire("mousedown", ex, ey); say(`press cheek → anim=${m.anim} (expect Touch_Idle)`); await sleep(30); fire("mouseup", ex, ey); await sleep(60);
         say(`cheek tap(볼 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`); }
       { // 교감: 머리 드래그 = 쓰다듬기, 얼굴 드래그 = 볼 당기기, 몸 드래그 = 들기
-        await sleep(2600); await settle(); cx = m.x; const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, []); const hb = headBone(sd);
+        await sleep(2600); await settle(); cx = m.x; const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); const hb = headBone(sd);
         const g = headGeom(); const topY = H - g.top, neckY = H - g.neckY, hx = g.headX, eyeSY = H - g.eyeY;
         say(`zones(erpin): head=${hb?.data.name} eyes=${eyeBones(sd).length} anchors=${g.anchors} u=${g.u.toFixed(0)}px browY=${(g.browY - g.neckY).toFixed(0)}px-above-neck patY=${((ctrlBone(sd, "pat")?.worldY ?? 0) - g.neckY).toFixed(0)} zone(top+20)=${zoneAt(hx, topY + 20)} zone(eye)=${zoneAt(hx, eyeSY)} zone(neck+10)=${zoneAt(hx, neckY - 10)} zone(body)=${zoneAt(cx, H - m.y - 30)} zone(beside head)=${zoneAt(hx + 4 * g.u, eyeSY)} (expect head / cheek / cheek / body / body)`);
         shot("idle-before"); await sleep(120); const py = topY + 25; fire("mousedown", hx, py); say(`press head → state=${m.state} anim=${m.anim} (expect touch, 대기 애니 유지 — 머리는 놓아야 꿀밤/끌어야 쓰다듬기)`);
@@ -1012,7 +1031,7 @@
         for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 6, py); } await sleep(40); shot("pat-drag"); await sleep(120); say(`pat drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect pat Pat_Idle, Character_Pat 본이 손을 따라 20~48px 이동)`);
         fire("mouseup", hx + 48, py); await sleep(30); say(`pat release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Pat_End + erpin/touch2*)`);
         await sleep(400); say(`pat ctrl bone after release: kind=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect null, ≈0 = 제자리로 감쇠)`);
-        await sleep(3500); await settle(); sd.skeleton.getBounds(o, z, []); const cy2 = H - (hb ? hb.worldY : o.y + z.y * 0.55) - 12;
+        await sleep(3500); await settle(); sd.skeleton.getBounds(o, z, bTmp); const cy2 = H - (hb ? hb.worldY : o.y + z.y * 0.55) - 12;
         fire("mousedown", hx, cy2); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 8, cy2 + i * 3); }
         await sleep(40); shot("cheek-drag"); await sleep(120); { const b = ctrlBone(sd, "cheek"); say(`cheek drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} bone=${b?.data.name} parent=${b?.parent?.data.name} offset=${(grabOffsetPx("cheek") ?? -1).toFixed(0)}px (expect touch Touch_Idle 유지, Character_Ball_Move 본이 커서를 따라 30~70px 이동 → 얼굴이 절반 따라옴)`); }
         shot("cheek-drag2"); await sleep(120); fire("mouseup", hx + 64, cy2 + 24); await sleep(30); say(`cheek release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`);
