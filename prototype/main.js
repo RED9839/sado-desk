@@ -498,7 +498,10 @@ function chatProfile(id) {
   prof.key = hero; prof.koOf = koOfHero;
   if (relations && relations[hero]) prof.rel = relations[hero];
   if (bible[hero]) prof.bible = bible[hero];
-  if (vsamples[hero]) prof.sampleLines = vsamples[hero];
+  // 말투 예시: 손으로 지은 3줄 뒤에 혼잣말 대본을 붙인다. 혼잣말은 사도마다 12줄쯤 되고 전부 말투 검사를 통과한
+  // 지은 문장이라, 모델이 어미·자칭·말버릇을 붙잡을 표본이 셋에서 열다섯으로 는다. 게임 대사는 아니다(원칙)
+  const own = vsamples[hero] || [], talk = (selfTalk[hero] || []).map(l => l.t).filter(t => !own.includes(t));
+  if (own.length || talk.length) prof.sampleLines = [...own, ...talk.slice(0, 12)];
   prof.theaters = theaters.filter(t => (t.castKeys || []).includes(hero)).sort((x, y) => y.season - x.season);
   return prof;
 }
