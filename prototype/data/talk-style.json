@@ -1,6951 +1,7690 @@
 {
- "alice": {
-  "n": 169,
-  "nStory": 42,
-  "nSent": 96,
-  "endings": {
-   "casual": 0.958,
-   "polite": 0.021,
-   "formal": 0.021
-  },
-  "endingsLobby": {
-   "casual": 0.946,
-   "formal": 0.054
-  },
-  "endingsStory": {
-   "casual": 0.959,
-   "polite": 0.041
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "너": 2,
-   "넌": 1
-  },
-  "me": {
-   "내가": 7,
-   "난": 3,
-   "나도": 2,
-   "우리": 2,
-   "나는": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "미래",
-   "별종",
-   "나랑",
-   "토끼",
-   "미용"
-  ]
- },
- "allet": {
-  "n": 68,
-  "nStory": 4,
-  "nSent": 49,
-  "endings": {
-   "casual": 0.633,
-   "formal": 0.347,
-   "hao": 0.02
-  },
-  "endingsLobby": {
-   "casual": 0.583,
-   "formal": 0.389,
-   "hao": 0.028
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "formal": 0.667,
-   "casual": 0.333
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 3,
-   "교수님": 1
-  },
-  "me": {},
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "완료"
-  ]
- },
- "amelia": {
-  "n": 686,
-  "nStory": 565,
-  "nSent": 623,
-  "endings": {
-   "formal": 0.53,
-   "casual": 0.274,
-   "polite": 0.144,
-   "hao": 0.05,
-   "royal": 0.002
-  },
-  "endingsLobby": {
-   "formal": 0.579,
-   "polite": 0.263,
-   "casual": 0.132,
-   "hao": 0.026
-  },
-  "endingsStory": {
-   "formal": 0.521,
-   "casual": 0.287,
-   "polite": 0.138,
-   "hao": 0.052,
-   "royal": 0.002
-  },
-  "endingsTouch": {
-   "polite": 0.571,
-   "formal": 0.286,
-   "hao": 0.143
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 7,
-  "style": "formal",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6,
-   "당신": 4,
-   "교주": 3,
-   "니가": 1,
-   "넌": 1,
-   "님": 1
-  },
-  "me": {
-   "제가": 18,
-   "저는": 4,
-   "저를": 3,
-   "내가": 2,
-   "나는": 2
-  },
-  "interj": [
-   "흥",
-   "흠"
-  ],
-  "catch": [
-   "시장님",
-   "아멜리",
-   "진압반",
-   "마십시오",
-   "엘레나님",
-   "주십시오",
-   "지지율",
-   "검사기",
-   "장치",
-   "기본",
-   "적성",
-   "설정"
-  ]
- },
- "ameliar41": {
-  "n": 507,
-  "nStory": 428,
-  "nSent": 395,
-  "endings": {
-   "casual": 0.947,
-   "royal": 0.043,
-   "formal": 0.01
-  },
-  "endingsLobby": {
-   "casual": 0.865,
-   "royal": 0.135
-  },
-  "endingsStory": {
-   "casual": 0.966,
-   "royal": 0.026,
-   "formal": 0.009
-  },
-  "endingsTouch": {
-   "casual": 0.857,
-   "royal": 0.143
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 11,
-   "니가": 5,
-   "너": 4,
-   "네가": 4,
-   "넌": 1,
-   "자기": 1
-  },
-  "me": {
-   "내가": 23,
-   "나를": 8,
-   "나는": 7,
-   "난": 5,
-   "우리": 4
-  },
-  "interj": [
-   "흠",
-   "흥"
-  ],
-  "catch": [
-   "차원",
-   "몸의",
-   "고향",
-   "시장",
-   "감히",
-   "차원문",
-   "몸은",
-   "몸이",
-   "완벽한",
-   "몸을",
-   "문을",
-   "이몸"
-  ]
- },
- "aragnia": {
-  "n": 79,
-  "nStory": 0,
-  "nSent": 48,
-  "endings": {
-   "royal": 0.562,
-   "casual": 0.396,
-   "polite": 0.042
-  },
-  "endingsLobby": {
-   "royal": 0.55,
-   "casual": 0.425,
-   "polite": 0.025
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "royal": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "royal",
-  "addr": "그대",
-  "addrCounts": {
-   "그대": 1
-  },
-  "me": {
-   "나를": 3,
-   "짐이": 1,
-   "짐은": 1
-  },
-  "interj": [],
-  "catch": [
-   "아우",
-   "여왕",
-   "그대",
-   "진주",
-   "것이냐",
-   "않느냐",
-   "예쁜",
-   "왕국",
-   "최강",
-   "나의"
-  ]
- },
- "arco": {
-  "n": 125,
-  "nStory": 32,
-  "nSent": 94,
-  "endings": {
-   "casual": 0.564,
-   "polite": 0.426,
-   "formal": 0.011
-  },
-  "endingsLobby": {
-   "polite": 0.625,
-   "casual": 0.354,
-   "formal": 0.021
-  },
-  "endingsStory": {
-   "casual": 0.842,
-   "polite": 0.158
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 48,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6,
-   "교수님": 4,
-   "너": 3,
-   "니가": 1,
-   "넌": 1
-  },
-  "me": {
-   "난": 1,
-   "나를": 1
-  },
-  "interj": [],
-  "catch": [
-   "댄스",
-   "배틀",
-   "블레이드",
-   "교수님"
-  ]
- },
- "arnet": {
-  "n": 79,
-  "nStory": 0,
-  "nSent": 54,
-  "endings": {
-   "polite": 0.593,
-   "casual": 0.389,
-   "formal": 0.019
-  },
-  "endingsLobby": {
-   "polite": 0.721,
-   "casual": 0.256,
-   "formal": 0.023
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.75,
-   "casual": 0.25
-  },
-  "nLobbySent": 43,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교수님",
-  "addrCounts": {
-   "교수님": 3,
-   "교주님": 2
-  },
-  "me": {
-   "제가": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "심판",
-   "결투",
-   "싸움"
-  ]
- },
- "asana": {
-  "n": 153,
-  "nStory": 60,
-  "nSent": 115,
-  "endings": {
-   "polite": 0.609,
-   "casual": 0.252,
-   "formal": 0.13,
-   "noun": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.581,
-   "casual": 0.256,
-   "formal": 0.14,
-   "noun": 0.023
-  },
-  "endingsStory": {
-   "polite": 0.629,
-   "casual": 0.242,
-   "formal": 0.129
-  },
-  "endingsTouch": {
-   "polite": 0.667,
-   "casual": 0.333
-  },
-  "nLobbySent": 43,
-  "nTouchSent": 9,
-  "style": "polite",
-  "addr": "당신",
-  "addrCounts": {
-   "당신": 3,
-   "교주님": 2,
-   "교수님": 2,
-   "선생님": 1,
-   "너": 1,
-   "넌": 1
-  },
-  "me": {
-   "제가": 6,
-   "저를": 3,
-   "우리": 2,
-   "저는": 1,
-   "저도": 1
-  },
-  "interj": [
-   "어머",
-   "아하"
-  ],
-  "catch": [
-   "요가",
-   "자세",
-   "스트레칭",
-   "건강",
-   "부장님",
-   "다리",
-   "몸이",
-   "회장님",
-   "멋진",
-   "건강한"
-  ]
- },
- "ashur": {
-  "n": 591,
-  "nStory": 498,
-  "nSent": 534,
-  "endings": {
-   "polite": 0.493,
-   "casual": 0.489,
-   "formal": 0.015,
-   "royal": 0.002,
-   "hao": 0.002
-  },
-  "endingsLobby": {
-   "casual": 0.629,
-   "polite": 0.343,
-   "formal": 0.029
-  },
-  "endingsStory": {
-   "polite": 0.506,
-   "casual": 0.475,
-   "formal": 0.014,
-   "royal": 0.002,
-   "hao": 0.002
-  },
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 27,
-   "너": 4,
-   "자기": 2,
-   "네가": 2,
-   "교주": 2,
-   "님": 1
-  },
-  "me": {
-   "내가": 18,
-   "제가": 10,
-   "나는": 8,
-   "저도": 6,
-   "우리": 3
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "마법",
-   "빵집",
-   "연구",
-   "빵을",
-   "캐릭터",
-   "제빵",
-   "논문",
-   "네르님",
-   "에슈르",
-   "마법학교",
-   "방으로",
-   "수정"
-  ]
- },
- "ashurmagi": {
-  "n": 219,
-  "nStory": 140,
-  "nSent": 196,
-  "endings": {
-   "casual": 0.791,
-   "polite": 0.204,
-   "formal": 0.005
-  },
-  "endingsLobby": {
-   "polite": 0.775,
-   "casual": 0.225
-  },
-  "endingsStory": {
-   "casual": 0.951,
-   "polite": 0.042,
-   "formal": 0.007
-  },
-  "endingsTouch": {
-   "polite": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "너": 6,
-   "교주님": 6,
-   "자기": 1,
-   "니가": 1
-  },
-  "me": {
-   "내가": 12,
-   "나는": 6,
-   "제가": 5,
-   "난": 1,
-   "저를": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "마법",
-   "미래",
-   "민트",
-   "연구",
-   "마법학교",
-   "평소",
-   "빵을"
-  ]
- },
- "aurora": {
-  "n": 529,
-  "nStory": 450,
-  "nSent": 417,
-  "endings": {
-   "casual": 0.463,
-   "formal": 0.408,
-   "polite": 0.113,
-   "hao": 0.017
-  },
-  "endingsLobby": {
-   "formal": 0.771,
-   "polite": 0.171,
-   "casual": 0.029,
-   "hao": 0.029
-  },
-  "endingsStory": {
-   "casual": 0.511,
-   "formal": 0.363,
-   "polite": 0.11,
-   "hao": 0.016
-  },
-  "endingsTouch": {
-   "formal": 0.833,
-   "hao": 0.167
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 6,
-  "style": "formal",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "친구": 2,
-   "교수님": 2,
-   "주인님": 1
-  },
-  "me": {
-   "제가": 13,
-   "내가": 11,
-   "저도": 4,
-   "난": 4,
-   "저는": 2
-  },
-  "interj": [
-   "하아",
-   "으악"
-  ],
-  "catch": [
-   "정령",
-   "벨벳님",
-   "마을",
-   "주민들",
-   "감정",
-   "이대",
-   "플라즈마",
-   "마녀님",
-   "벨베님",
-   "최근",
-   "그들",
-   "그치"
-  ]
- },
- "aya": {
-  "n": 509,
-  "nStory": 374,
-  "nSent": 359,
-  "endings": {
-   "casual": 0.981,
-   "formal": 0.011,
-   "polite": 0.006,
-   "royal": 0.003
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.981,
-   "formal": 0.013,
-   "polite": 0.006
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 13,
-   "네가": 8,
-   "너": 7,
-   "니가": 2,
-   "자기": 2
-  },
-  "me": {
-   "내가": 28,
-   "나도": 10,
-   "우리": 9,
-   "난": 9,
-   "나는": 6
-  },
-  "interj": [
-   "하아"
-  ],
-  "catch": [
-   "동생들",
-   "에피카",
-   "이드",
-   "시온",
-   "클로",
-   "마카샤",
-   "희망",
-   "찾을",
-   "조언",
-   "조안"
-  ]
- },
- "ayla": {
-  "n": 93,
-  "nStory": 0,
-  "nSent": 41,
-  "endings": {
-   "casual": 0.951,
-   "ayla": 0.049
-  },
-  "endingsLobby": {
-   "casual": 0.938,
-   "ayla": 0.062
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 32,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "친구": 3
-  },
-  "me": {
-   "내가": 3,
-   "난": 2,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "친구",
-   "그만",
-   "거구마",
-   "없구마"
-  ]
- },
- "bana": {
-  "n": 157,
-  "nStory": 94,
-  "nSent": 140,
-  "endings": {
-   "casual": 0.971,
-   "formal": 0.014,
-   "polite": 0.007,
-   "noun": 0.007
-  },
-  "endingsLobby": {
-   "casual": 0.897,
-   "formal": 0.051,
-   "polite": 0.026,
-   "noun": 0.026
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 0.857,
-   "polite": 0.143
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "친구": 6,
-   "교주": 4,
-   "너": 3,
-   "니가": 1,
-   "넌": 1,
-   "손님": 1
-  },
-  "me": {
-   "내가": 10,
-   "난": 4,
-   "나도": 3,
-   "우리": 2,
-   "나는": 1
-  },
-  "interj": [],
-  "catch": [
-   "이거",
-   "이건",
-   "장치",
-   "엘프",
-   "슈팡",
-   "슈퍼볼트",
-   "수리",
-   "전설"
-  ]
- },
- "barie": {
-  "n": 153,
-  "nStory": 89,
-  "nSent": 134,
-  "endings": {
-   "polite": 0.515,
-   "casual": 0.455,
-   "formal": 0.03
-  },
-  "endingsLobby": {
-   "polite": 0.763,
-   "casual": 0.211,
-   "formal": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.581,
-   "polite": 0.384,
-   "formal": 0.035
-  },
-  "endingsTouch": {
-   "polite": 0.875,
-   "casual": 0.125
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "친구",
-  "addrCounts": {
-   "친구": 2,
-   "교주님": 2,
-   "너": 1,
-   "네가": 1,
-   "손님": 1,
-   "교수님": 1
-  },
-  "me": {
-   "내가": 3,
-   "제가": 1,
-   "나도": 1,
-   "저는": 1
-  },
-  "interj": [],
-  "catch": [
-   "레비",
-   "백사",
-   "책을",
-   "도서관",
-   "주문",
-   "벨벳님"
-  ]
- },
- "barong": {
-  "n": 108,
-  "nStory": 2,
-  "nSent": 53,
-  "endings": {
-   "casual": 0.981,
-   "polite": 0.019
-  },
-  "endingsLobby": {
-   "casual": 0.975,
-   "polite": 0.025
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "넌": 1,
-   "너": 1
-  },
-  "me": {
-   "난": 4,
-   "내가": 4,
-   "나를": 1,
-   "나는": 1
-  },
-  "interj": [],
-  "catch": [
-   "댄스",
-   "콩콩"
-  ]
- },
- "belita": {
-  "n": 469,
-  "nStory": 376,
-  "nSent": 364,
-  "endings": {
-   "casual": 0.909,
-   "royal": 0.066,
-   "formal": 0.019,
-   "noun": 0.003,
-   "polite": 0.003
-  },
-  "endingsLobby": {
-   "casual": 0.833,
-   "royal": 0.133,
-   "formal": 0.033
-  },
-  "endingsStory": {
-   "casual": 0.917,
-   "royal": 0.062,
-   "formal": 0.015,
-   "noun": 0.003,
-   "polite": 0.003
-  },
-  "endingsTouch": {
-   "royal": 0.5,
-   "casual": 0.5
-  },
-  "nLobbySent": 30,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 16,
-   "네가": 12,
-   "너": 3,
-   "니가": 1,
-   "주인": 1,
-   "그대": 1
-  },
-  "me": {
-   "내가": 20,
-   "나도": 11,
-   "우리": 8,
-   "나는": 6,
-   "나를": 2
-  },
-  "interj": [
-   "으악",
-   "흠"
-  ],
-  "catch": [
-   "에르핀",
-   "뿌리",
-   "프리클",
-   "동생",
-   "쉐럼",
-   "마력",
-   "밧줄",
-   "스노키",
-   "구덩",
-   "마녀들이여",
-   "않느냐",
-   "구덩이"
-  ]
- },
- "beni": {
-  "n": 142,
-  "nStory": 63,
-  "nSent": 111,
-  "endings": {
-   "casual": 0.685,
-   "polite": 0.306,
-   "hao": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.514,
-   "casual": 0.486
-  },
-  "endingsStory": {
-   "casual": 0.776,
-   "polite": 0.209,
-   "hao": 0.015
-  },
-  "endingsTouch": {
-   "polite": 0.833,
-   "casual": 0.167
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "대장": 12,
-   "교주님": 9,
-   "교수님": 2
-  },
-  "me": {
-   "난": 3,
-   "제가": 3,
-   "내가": 2,
-   "우리": 2,
-   "나는": 2
-  },
-  "interj": [
-   "하하"
-  ],
-  "catch": [
-   "대장",
-   "루퍼",
-   "먹을",
-   "놀이",
-   "하하"
-  ]
- },
- "benibeni": {
-  "n": 94,
-  "nStory": 1,
-  "nSent": 45,
-  "endings": {
-   "polite": 0.867,
-   "casual": 0.111,
-   "noun": 0.022
-  },
-  "endingsLobby": {
-   "polite": 0.914,
-   "casual": 0.057,
-   "noun": 0.029
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "친구": 1
-  },
-  "me": {
-   "저는": 2,
-   "제가": 1
-  },
-  "interj": [
-   "으악",
-   "우와",
-   "흠"
-  ],
-  "catch": []
- },
- "bigwood": {
-  "n": 120,
-  "nStory": 41,
-  "nSent": 82,
-  "endings": {
-   "casual": 0.976,
-   "noun": 0.012,
-   "polite": 0.012
-  },
-  "endingsLobby": {
-   "casual": 0.944,
-   "noun": 0.028,
-   "polite": 0.028
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 0.875,
-   "polite": 0.125
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 7,
-   "너": 1
-  },
-  "me": {
-   "나도": 2,
-   "난": 1,
-   "내가": 1
-  },
-  "interj": [],
-  "catch": [
-   "비구드",
-   "유령",
-   "열매",
-   "정령산",
-   "거냐",
-   "요정",
-   "비구두",
-   "착한"
-  ]
- },
- "blanchet": {
-  "n": 163,
-  "nStory": 45,
-  "nSent": 99,
-  "endings": {
-   "polite": 0.455,
-   "casual": 0.374,
-   "formal": 0.162,
-   "royal": 0.01
-  },
-  "endingsLobby": {
-   "polite": 0.562,
-   "formal": 0.271,
-   "casual": 0.167
-  },
-  "endingsStory": {
-   "casual": 0.575,
-   "polite": 0.375,
-   "formal": 0.05
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 48,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 10,
-   "교주": 2,
-   "교수님": 1,
-   "네가": 1
-  },
-  "me": {
-   "제가": 5,
-   "저는": 4,
-   "저도": 2,
-   "우리": 2,
-   "나는": 1
-  },
-  "interj": [],
-  "catch": [
-   "감독님",
-   "배역",
-   "촬영",
-   "응원",
-   "니콜",
-   "연기",
-   "감정",
-   "푸른",
-   "장미"
-  ]
- },
- "butter": {
-  "n": 225,
-  "nStory": 118,
-  "nSent": 156,
-  "endings": {
-   "polite": 0.609,
-   "casual": 0.378,
-   "royal": 0.006,
-   "noun": 0.006
-  },
-  "endingsLobby": {
-   "polite": 0.905,
-   "casual": 0.095
-  },
-  "endingsStory": {
-   "polite": 0.495,
-   "casual": 0.485,
-   "royal": 0.01,
-   "noun": 0.01
-  },
-  "endingsTouch": {
-   "polite": 0.875,
-   "casual": 0.125
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "너": 1,
-   "니가": 1,
-   "네가": 1,
-   "언니": 1,
-   "교장님": 1
-  },
-  "me": {
-   "나도": 3,
-   "저는": 3,
-   "제가": 3,
-   "우리": 3,
-   "내가": 2
-  },
-  "interj": [
-   "어이",
-   "우와"
-  ],
-  "catch": [
-   "버터",
-   "코미",
-   "티그",
-   "천장님",
-   "마을",
-   "동시",
-   "친구들",
-   "사료",
-   "구덩이",
-   "훈련",
-   "멋진"
-  ]
- },
- "callamori": {
-  "n": 30,
-  "nStory": 0,
-  "nSent": 15,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 13,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": null,
-  "addrCounts": {},
-  "me": {
-   "우리": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "canna": {
-  "n": 266,
-  "nStory": 159,
-  "nSent": 201,
-  "endings": {
-   "casual": 0.433,
-   "formal": 0.328,
-   "polite": 0.224,
-   "hao": 0.01,
-   "haso": 0.005
-  },
-  "endingsLobby": {
-   "casual": 0.351,
-   "formal": 0.324,
-   "polite": 0.297,
-   "hao": 0.027
-  },
-  "endingsStory": {
-   "casual": 0.448,
-   "formal": 0.325,
-   "polite": 0.221,
-   "haso": 0.006
-  },
-  "endingsTouch": {
-   "casual": 0.4,
-   "hao": 0.2,
-   "polite": 0.2,
-   "formal": 0.2
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 5,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6,
-   "교주": 3,
-   "너": 2,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 5,
-   "우리": 2,
-   "저도": 1,
-   "저는": 1,
-   "나는": 1
-  },
-  "interj": [
-   "으악",
-   "하아"
-  ],
-  "catch": [
-   "시장님",
-   "휴가",
-   "아멜리아님",
-   "진압반",
-   "사격",
-   "용병"
-  ]
- },
- "canta": {
-  "n": 113,
-  "nStory": 49,
-  "nSent": 100,
-  "endings": {
-   "casual": 0.94,
-   "polite": 0.04,
-   "formal": 0.01,
-   "noun": 0.01
-  },
-  "endingsLobby": {
-   "casual": 0.974,
-   "noun": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.904,
-   "polite": 0.077,
-   "formal": 0.019
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3,
-   "너": 2,
-   "마스터": 1
-  },
-  "me": {
-   "내가": 3,
-   "나도": 2,
-   "제가": 1,
-   "저는": 1,
-   "난": 1
-  },
-  "interj": [],
-  "catch": [
-   "팽이",
-   "사탕",
-   "이거"
-  ]
- },
- "carren": {
-  "n": 66,
-  "nStory": 1,
-  "nSent": 40,
-  "endings": {
-   "casual": 0.825,
-   "polite": 0.15,
-   "noun": 0.025
-  },
-  "endingsLobby": {
-   "casual": 0.839,
-   "polite": 0.129,
-   "noun": 0.032
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 0.714,
-   "polite": 0.286
-  },
-  "nLobbySent": 31,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 2,
-   "교수님": 2,
-   "당신": 1
-  },
-  "me": {},
-  "interj": [],
-  "catch": [
-   "당근"
-  ]
- },
- "chloe": {
-  "n": 585,
-  "nStory": 441,
-  "nSent": 450,
-  "endings": {
-   "casual": 0.998,
-   "formal": 0.002
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.997,
-   "formal": 0.003
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 11,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "언니": 19,
-   "교주": 13,
-   "너": 11,
-   "니가": 8,
-   "넌": 4,
-   "자기": 1
-  },
-  "me": {
-   "내가": 28,
-   "난": 14,
-   "우리": 12,
-   "나도": 8,
-   "나는": 5
-  },
-  "interj": [
-   "흠",
-   "흥"
-  ],
-  "catch": [
-   "세바스티안",
-   "에피카",
-   "떠난",
-   "동생들",
-   "언니들",
-   "은석이",
-   "만났는데",
-   "옷을",
-   "동생",
-   "느껴져"
-  ]
- },
- "chopi": {
-  "n": 64,
-  "nStory": 0,
-  "nSent": 43,
-  "endings": {
-   "polite": 0.744,
-   "casual": 0.256
-  },
-  "endingsLobby": {
-   "polite": 0.73,
-   "casual": 0.27
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 2
-  },
-  "me": {
-   "제가": 1,
-   "나도": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "crepe": {
-  "n": 43,
-  "nStory": 0,
-  "nSent": 2,
-  "endings": {
-   "polite": 0.5,
-   "formal": 0.5
-  },
-  "endingsLobby": {
-   "polite": 0.5,
-   "formal": 0.5
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.5,
-   "formal": 0.5
-  },
-  "nLobbySent": 2,
-  "nTouchSent": 2,
-  "style": "polite",
-  "addr": null,
-  "addrCounts": {},
-  "me": {
-   "저도": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "cuee": {
-  "n": 71,
-  "nStory": 7,
-  "nSent": 44,
-  "endings": {
-   "polite": 0.591,
-   "casual": 0.318,
-   "formal": 0.091
-  },
-  "endingsLobby": {
-   "polite": 0.706,
-   "casual": 0.235,
-   "formal": 0.059
-  },
-  "endingsStory": {
-   "formal": 0.5,
-   "casual": 0.5
-  },
-  "endingsTouch": {
-   "polite": 0.667,
-   "formal": 0.333
-  },
-  "nLobbySent": 34,
-  "nTouchSent": 3,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4
-  },
-  "me": {
-   "난": 1,
-   "저는": 1,
-   "나는": 1,
-   "내가": 1
-  },
-  "interj": [],
-  "catch": [
-   "오이"
-  ]
- },
- "daya": {
-  "n": 288,
-  "nStory": 181,
-  "nSent": 208,
-  "endings": {
-   "casual": 0.87,
-   "royal": 0.106,
-   "polite": 0.019,
-   "hao": 0.005
-  },
-  "endingsLobby": {
-   "casual": 0.75,
-   "royal": 0.222,
-   "hao": 0.028
-  },
-  "endingsStory": {
-   "casual": 0.89,
-   "royal": 0.086,
-   "polite": 0.025
-  },
-  "endingsTouch": {
-   "royal": 0.571,
-   "casual": 0.429
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "네가": 8,
-   "교주": 7,
-   "그대": 2,
-   "넌": 1,
-   "친구": 1,
-   "니가": 1
-  },
-  "me": {
-   "내가": 10,
-   "나도": 7,
-   "우리": 5,
-   "난": 4,
-   "나는": 2
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "비비",
-   "용족",
-   "것이냐",
-   "용족들",
-   "서열",
-   "다이아몬드",
-   "않느냐",
-   "지상",
-   "결투",
-   "대결",
-   "제이드",
-   "노력"
-  ]
- },
- "dayapureshine": {
-  "n": 279,
-  "nStory": 179,
-  "nSent": 202,
-  "endings": {
-   "casual": 0.772,
-   "royal": 0.218,
-   "formal": 0.01
-  },
-  "endingsLobby": {
-   "casual": 0.686,
-   "royal": 0.286,
-   "formal": 0.029
-  },
-  "endingsStory": {
-   "casual": 0.796,
-   "royal": 0.197,
-   "formal": 0.006
-  },
-  "endingsTouch": {
-   "casual": 0.857,
-   "royal": 0.143
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 17,
-   "그대": 6,
-   "니가": 4,
-   "네가": 1,
-   "너": 1
-  },
-  "me": {
-   "내가": 14,
-   "나는": 4,
-   "우리": 2,
-   "나를": 2,
-   "나도": 2
-  },
-  "interj": [
-   "하아"
-  ],
-  "catch": [
-   "비비",
-   "그대",
-   "것이냐",
-   "마법소녀",
-   "더욱",
-   "은의",
-   "않느냐",
-   "부장",
-   "퓨어샤인",
-   "속성",
-   "알이",
-   "샤인"
-  ]
- },
- "delia": {
-  "n": 220,
-  "nStory": 126,
-  "nSent": 183,
-  "endings": {
-   "polite": 0.656,
-   "casual": 0.339,
-   "noun": 0.005
-  },
-  "endingsLobby": {
-   "polite": 0.568,
-   "casual": 0.405,
-   "noun": 0.027
-  },
-  "endingsStory": {
-   "polite": 0.681,
-   "casual": 0.319
-  },
-  "endingsTouch": {
-   "casual": 0.8,
-   "polite": 0.2
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 5,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 10,
-   "언니": 8,
-   "교수님": 3,
-   "선생님": 2
-  },
-  "me": {
-   "우리": 5,
-   "제가": 4,
-   "저도": 3,
-   "나도": 3,
-   "저는": 3
-  },
-  "interj": [
-   "헤헤",
-   "우와"
-  ],
-  "catch": [
-   "선장님",
-   "헤헤",
-   "우와",
-   "얼른",
-   "엄청",
-   "재밌",
-   "탐험",
-   "저랑",
-   "친구들",
-   "모험",
-   "해적들",
-   "에이"
-  ]
- },
- "diana": {
-  "n": 638,
-  "nStory": 517,
-  "nSent": 495,
-  "endings": {
-   "casual": 0.509,
-   "formal": 0.253,
-   "polite": 0.212,
-   "royal": 0.016,
-   "hao": 0.01
-  },
-  "endingsLobby": {
-   "polite": 0.447,
-   "casual": 0.289,
-   "formal": 0.263
-  },
-  "endingsStory": {
-   "casual": 0.528,
-   "formal": 0.256,
-   "polite": 0.187,
-   "royal": 0.018,
-   "hao": 0.011
-  },
-  "endingsTouch": {
-   "polite": 0.714,
-   "casual": 0.143,
-   "formal": 0.143
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 9,
-   "네가": 8,
-   "니가": 5,
-   "교수님": 5,
-   "자기": 5,
-   "너": 5
-  },
-  "me": {
-   "제가": 23,
-   "내가": 20,
-   "저는": 11,
-   "우리": 5,
-   "난": 5
-  },
-  "interj": [
-   "하아",
-   "하하",
-   "흠"
-  ],
-  "catch": [
-   "마을",
-   "티그",
-   "영웅",
-   "달린",
-   "자매들",
-   "독사",
-   "나이",
-   "빈을",
-   "허물",
-   "악몽",
-   "짓이",
-   "어린"
-  ]
- },
- "dianayester": {
-  "n": 243,
-  "nStory": 136,
-  "nSent": 151,
-  "endings": {
-   "casual": 0.993,
-   "formal": 0.007
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.991,
-   "formal": 0.009
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "너",
-  "addrCounts": {
-   "너": 14,
-   "네가": 4,
-   "니가": 1,
-   "교주": 1
-  },
-  "me": {
-   "내가": 10,
-   "나는": 2,
-   "난": 2,
-   "나를": 1,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "마을",
-   "촌장"
-  ]
- },
- "ed": {
-  "n": 335,
-  "nStory": 214,
-  "nSent": 217,
-  "endings": {
-   "casual": 0.862,
-   "polite": 0.097,
-   "formal": 0.037,
-   "royal": 0.005
-  },
-  "endingsLobby": {
-   "casual": 0.5,
-   "polite": 0.333,
-   "formal": 0.167
-  },
-  "endingsStory": {
-   "casual": 0.951,
-   "polite": 0.037,
-   "royal": 0.006,
-   "formal": 0.006
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": null,
-  "addrCounts": {
-   "언니": 19,
-   "교주님": 5,
-   "교수님": 5,
-   "교주": 5,
-   "네가": 2,
-   "니가": 1
-  },
-  "me": {
-   "내가": 19,
-   "나도": 9,
-   "나는": 7,
-   "우리": 5,
-   "난": 5
-  },
-  "interj": [],
-  "catch": [
-   "꿈을",
-   "나타",
-   "꿈이",
-   "이드",
-   "꿈속",
-   "꿈은",
-   "둘째",
-   "꿈의",
-   "주도권",
-   "우릴",
-   "영원히",
-   "이들"
-  ]
- },
- "edrehab": {
-  "n": 93,
-  "nStory": 0,
-  "nSent": 48,
-  "endings": {
-   "polite": 0.729,
-   "casual": 0.25,
-   "noun": 0.021
-  },
-  "endingsLobby": {
-   "polite": 0.775,
-   "casual": 0.2,
-   "noun": 0.025
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교수님",
-  "addrCounts": {
-   "교수님": 2,
-   "교주님": 2,
-   "언니": 1
-  },
-  "me": {
-   "제가": 3,
-   "저는": 2,
-   "우리": 1,
-   "나는": 1,
-   "내가": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "아직",
-   "뮤트",
-   "아침"
-  ]
- },
- "eisia": {
-  "n": 231,
-  "nStory": 124,
-  "nSent": 177,
-  "endings": {
-   "casual": 0.972,
-   "hao": 0.011,
-   "formal": 0.006,
-   "polite": 0.006,
-   "royal": 0.006
-  },
-  "endingsLobby": {
-   "casual": 0.897,
-   "hao": 0.026,
-   "formal": 0.026,
-   "polite": 0.026,
-   "royal": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.992,
-   "hao": 0.008
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "너": 8,
-   "넌": 6,
-   "교주": 5,
-   "누나": 1,
-   "니가": 1
-  },
-  "me": {
-   "내가": 19,
-   "난": 8,
-   "나도": 2,
-   "우리": 1,
-   "이 몸": 1
-  },
-  "interj": [
-   "흠",
-   "하아"
-  ],
-  "catch": [
-   "멜론",
-   "아이스크림",
-   "게임"
-  ]
- },
- "elena": {
-  "n": 1011,
-  "nStory": 904,
-  "nSent": 918,
-  "endings": {
-   "casual": 0.985,
-   "formal": 0.009,
-   "polite": 0.004,
-   "noun": 0.001,
-   "royal": 0.001
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.984,
-   "formal": 0.009,
-   "polite": 0.005,
-   "noun": 0.001,
-   "royal": 0.001
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 20,
-   "니가": 16,
-   "너": 16,
-   "네가": 10,
-   "넌": 8,
-   "자기": 3
-  },
-  "me": {
-   "내가": 45,
-   "우리": 32,
-   "나도": 14,
-   "난": 13,
-   "나는": 10
-  },
-  "interj": [
-   "하아",
-   "흠",
-   "훗"
-  ],
-  "catch": [
-   "아멜리",
-   "차원문",
-   "뮤트",
-   "리뉴",
-   "실험",
-   "샘플",
-   "처음문",
-   "이동",
-   "기계",
-   "드론",
-   "핸드폰",
-   "출력"
-  ]
- },
- "epica": {
-  "n": 311,
-  "nStory": 190,
-  "nSent": 237,
-  "endings": {
-   "casual": 0.7,
-   "hao": 0.245,
-   "polite": 0.046,
-   "royal": 0.004,
-   "formal": 0.004
-  },
-  "endingsLobby": {
-   "casual": 0.756,
-   "hao": 0.22,
-   "formal": 0.024
-  },
-  "endingsStory": {
-   "casual": 0.688,
-   "hao": 0.247,
-   "polite": 0.059,
-   "royal": 0.005
-  },
-  "endingsTouch": {
-   "casual": 0.714,
-   "hao": 0.286
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": null,
-  "addrCounts": {
-   "교주님": 2,
-   "교수님": 1,
-   "자네": 1,
-   "당신": 1,
-   "그대": 1,
-   "교주": 1
-  },
-  "me": {
-   "우리": 3,
-   "소인": 2,
-   "짐이": 1,
-   "난": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "소인",
-   "이야기",
-   "현자님",
-   "사장",
-   "클로",
-   "않소",
-   "말이오",
-   "소이",
-   "것이오",
-   "그렇소",
-   "있소",
-   "같소"
-  ]
- },
- "erpin": {
-  "n": 1722,
-  "nStory": 1587,
-  "nSent": 1623,
-  "endings": {
-   "casual": 0.986,
-   "formal": 0.004,
-   "polite": 0.004,
-   "royal": 0.003,
-   "noun": 0.002,
-   "hao": 0.001
-  },
-  "endingsLobby": {
-   "casual": 0.974,
-   "noun": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.987,
-   "formal": 0.004,
-   "polite": 0.004,
-   "royal": 0.003,
-   "noun": 0.001,
-   "hao": 0.001
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 51,
-   "너": 35,
-   "니가": 26,
-   "넌": 9,
-   "언니": 9,
-   "자기": 7
-  },
-  "me": {
-   "내가": 88,
-   "나도": 39,
-   "우리": 24,
-   "난": 22,
-   "나는": 14
-  },
-  "interj": [
-   "흠",
-   "으악",
-   "우와",
-   "하아",
-   "엥",
-   "흥"
-  ],
-  "catch": [
-   "네르",
-   "냄새",
-   "네루",
-   "애슈루",
-   "오케",
-   "아악",
-   "백성들이여",
-   "반란군",
-   "초콜릿",
-   "시스트",
-   "백성들",
-   "메르"
-  ]
- },
- "erpinroyale": {
-  "n": 251,
-  "nStory": 158,
-  "nSent": 198,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 4,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 13,
-   "언니": 5,
-   "자기": 1,
-   "니가": 1,
-   "너": 1,
-   "넌": 1
-  },
-  "me": {
-   "내가": 14,
-   "나도": 4,
-   "나는": 4,
-   "난": 2,
-   "나를": 2
-  },
-  "interj": [
-   "흥",
-   "헤헤"
-  ],
-  "catch": [
-   "넘넘",
-   "네르",
-   "애슈루",
-   "내루",
-   "케이크",
-   "이따",
-   "에르핀"
-  ]
- },
- "espi": {
-  "n": 128,
-  "nStory": 49,
-  "nSent": 95,
-  "endings": {
-   "casual": 0.989,
-   "polite": 0.011
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.979,
-   "polite": 0.021
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 2,
-   "너": 2,
-   "자기": 1,
-   "네가": 1
-  },
-  "me": {
-   "내가": 3,
-   "난": 1,
-   "나는": 1,
-   "저도": 1
-  },
-  "interj": [],
-  "catch": [
-   "우왕",
-   "꿈은",
-   "기자땅"
-  ]
- },
- "festa": {
-  "n": 113,
-  "nStory": 34,
-  "nSent": 84,
-  "endings": {
-   "casual": 0.94,
-   "formal": 0.036,
-   "polite": 0.024
-  },
-  "endingsLobby": {
-   "casual": 0.895,
-   "formal": 0.053,
-   "polite": 0.053
-  },
-  "endingsStory": {
-   "casual": 0.971,
-   "formal": 0.029
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "너": 3,
-   "니가": 1,
-   "넌": 1,
-   "자기": 1,
-   "네가": 1
-  },
-  "me": {
-   "내가": 3,
-   "나는": 2,
-   "난": 2,
-   "나도": 1,
-   "나를": 1
-  },
-  "interj": [],
-  "catch": [
-   "자유",
-   "기타"
-  ]
- },
- "fricle": {
-  "n": 481,
-  "nStory": 374,
-  "nSent": 426,
-  "endings": {
-   "casual": 0.927,
-   "formal": 0.066,
-   "polite": 0.007
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.919,
-   "formal": 0.073,
-   "polite": 0.008
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 34,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": null,
-  "addrCounts": {
-   "너": 10,
-   "네가": 8,
-   "니가": 4,
-   "넌": 4,
-   "주인님": 3,
-   "교주님": 2
-  },
-  "me": {
-   "내가": 22,
-   "난": 13,
-   "우리": 9,
-   "나는": 6,
-   "나도": 4
-  },
-  "interj": [
-   "흠",
-   "흥",
-   "으악",
-   "하아"
-  ],
-  "catch": [
-   "벨리타님",
-   "계획",
-   "벨리타",
-   "날씨",
-   "쉐럼",
-   "뿐이",
-   "덩굴",
-   "벨벳",
-   "주인님",
-   "루비용족",
-   "피고인",
-   "연락"
-  ]
- },
- "gabia": {
-  "n": 132,
-  "nStory": 41,
-  "nSent": 37,
-  "endings": {
-   "casual": 0.946,
-   "noun": 0.027,
-   "polite": 0.027
-  },
-  "endingsLobby": {
-   "casual": 0.909,
-   "polite": 0.091
-  },
-  "endingsStory": {
-   "casual": 0.955,
-   "noun": 0.045
-  },
-  "endingsTouch": {},
-  "nLobbySent": 11,
-  "nTouchSent": 0,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4
-  },
-  "me": {
-   "나도": 2,
-   "난": 2,
-   "우리": 1,
-   "나는": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "쪼금"
-  ]
- },
- "guin": {
-  "n": 285,
-  "nStory": 178,
-  "nSent": 205,
-  "endings": {
-   "casual": 0.99,
-   "noun": 0.005,
-   "hao": 0.005
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.988,
-   "noun": 0.006,
-   "hao": 0.006
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 10,
-   "교주님": 5,
-   "너": 2,
-   "자네": 1
-  },
-  "me": {
-   "내가": 13,
-   "나도": 7,
-   "우리": 2,
-   "난": 2,
-   "나는": 1
-  },
-  "interj": [
-   "우와"
-  ],
-  "catch": [
-   "새로운",
-   "해적",
-   "눈이",
-   "아이스",
-   "에버",
-   "탐험",
-   "기분이",
-   "고향",
-   "지도",
-   "해변",
-   "안개",
-   "변덕"
-  ]
- },
- "haley": {
-  "n": 165,
-  "nStory": 58,
-  "nSent": 106,
-  "endings": {
-   "casual": 0.953,
-   "royal": 0.038,
-   "noun": 0.009
-  },
-  "endingsLobby": {
-   "casual": 0.978,
-   "noun": 0.022
-  },
-  "endingsStory": {
-   "casual": 0.942,
-   "royal": 0.058
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 45,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 11,
-   "대장": 1,
-   "그대": 1,
-   "자네": 1
-  },
-  "me": {
-   "내가": 5,
-   "우리": 1,
-   "나도": 1,
-   "난": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "함선",
-   "평화",
-   "제군",
-   "장교",
-   "나와",
-   "지원함",
-   "헤일리",
-   "나설"
-  ]
- },
- "haleysane": {
-  "n": 197,
-  "nStory": 104,
-  "nSent": 140,
-  "endings": {
-   "casual": 0.979,
-   "royal": 0.021
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.967,
-   "royal": 0.033
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 18,
-   "자기": 1,
-   "자네": 1
-  },
-  "me": {
-   "내가": 3,
-   "나는": 2,
-   "나를": 1,
-   "우리": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "훈련",
-   "말일세",
-   "슈로",
-   "가르쳐",
-   "준비",
-   "장교",
-   "물에"
-  ]
- },
- "heidi": {
-  "n": 146,
-  "nStory": 67,
-  "nSent": 120,
-  "endings": {
-   "polite": 0.558,
-   "casual": 0.433,
-   "formal": 0.008
-  },
-  "endingsLobby": {
-   "polite": 0.649,
-   "casual": 0.351
-  },
-  "endingsStory": {
-   "polite": 0.542,
-   "casual": 0.458
-  },
-  "endingsTouch": {
-   "polite": 0.833,
-   "casual": 0.167
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 8,
-   "교장님": 1
-  },
-  "me": {
-   "제가": 1,
-   "저는": 1,
-   "내가": 1
-  },
-  "interj": [
-   "으악"
-  ],
-  "catch": [
-   "특정",
-   "사진",
-   "완전",
-   "칠칵",
-   "특종",
-   "기사",
-   "궁극",
-   "취재",
-   "반장님",
-   "인터뷰",
-   "가장",
-   "아멜리"
-  ]
- },
- "hilde": {
-  "n": 330,
-  "nStory": 223,
-  "nSent": 259,
-  "endings": {
-   "polite": 0.761,
-   "casual": 0.224,
-   "formal": 0.012,
-   "royal": 0.004
-  },
-  "endingsLobby": {
-   "polite": 0.821,
-   "casual": 0.179
-  },
-  "endingsStory": {
-   "polite": 0.751,
-   "casual": 0.239,
-   "royal": 0.005,
-   "formal": 0.005
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 8,
-   "교수님": 4,
-   "당신": 1
-  },
-  "me": {
-   "제가": 21,
-   "저도": 4,
-   "저는": 4,
-   "내가": 3,
-   "난": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "병원",
-   "환자분",
-   "헤일리",
-   "시로",
-   "바캉스",
-   "병실",
-   "원인",
-   "의사",
-   "치료",
-   "증상",
-   "스트레스"
-  ]
- },
- "ifrit": {
-  "n": 209,
-  "nStory": 130,
-  "nSent": 174,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 33,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "니가": 4,
-   "네가": 3,
-   "넌": 2,
-   "너": 1,
-   "자기": 1
-  },
-  "me": {
-   "내가": 11,
-   "우리": 4,
-   "나는": 3,
-   "난": 2,
-   "나를": 1
-  },
-  "interj": [
-   "흥"
-  ],
-  "catch": [
-   "영웅",
-   "검을",
-   "우루스",
-   "주인"
-  ]
- },
- "inkle": {
-  "n": 218,
-  "nStory": 125,
-  "nSent": 140,
-  "endings": {
-   "casual": 0.679,
-   "hao": 0.307,
-   "royal": 0.007,
-   "polite": 0.007
-  },
-  "endingsLobby": {
-   "casual": 0.75,
-   "hao": 0.25
-  },
-  "endingsStory": {
-   "casual": 0.657,
-   "hao": 0.323,
-   "royal": 0.01,
-   "polite": 0.01
-  },
-  "endingsTouch": {
-   "casual": 0.833,
-   "hao": 0.167
-  },
-  "nLobbySent": 32,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "자네": 3,
-   "넌": 2
-  },
-  "me": {
-   "내가": 8,
-   "난": 4,
-   "나를": 1
-  },
-  "interj": [],
-  "catch": [
-   "이야기",
-   "않소",
-   "에르핀",
-   "것이오",
-   "선택",
-   "자네들",
-   "것인",
-   "같소",
-   "힝힝",
-   "결말",
-   "웅성웅성",
-   "회장"
-  ]
- },
- "jade": {
-  "n": 134,
-  "nStory": 53,
-  "nSent": 111,
-  "endings": {
-   "casual": 0.784,
-   "polite": 0.162,
-   "formal": 0.054
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.571,
-   "polite": 0.321,
-   "formal": 0.107
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 46,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "고객님": 1,
-   "님": 1,
-   "너": 1
-  },
-  "me": {
-   "제가": 3,
-   "내가": 3,
-   "저는": 2,
-   "나도": 2,
-   "나를": 1
-  },
-  "interj": [],
-  "catch": [
-   "여왕",
-   "지식",
-   "광장",
-   "판결"
-  ]
- },
- "joanne": {
-  "n": 1010,
-  "nStory": 889,
-  "nSent": 770,
-  "endings": {
-   "casual": 0.718,
-   "formal": 0.153,
-   "polite": 0.065,
-   "haso": 0.027,
-   "royal": 0.025,
-   "hao": 0.012
-  },
-  "endingsLobby": {
-   "formal": 0.444,
-   "casual": 0.278,
-   "haso": 0.111,
-   "polite": 0.083,
-   "royal": 0.056,
-   "hao": 0.028
-  },
-  "endingsStory": {
-   "casual": 0.745,
-   "formal": 0.135,
-   "polite": 0.062,
-   "haso": 0.023,
-   "royal": 0.023,
-   "hao": 0.011
-  },
-  "endingsTouch": {
-   "casual": 0.5,
-   "polite": 0.333,
-   "formal": 0.167
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 6,
-  "style": "formal",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 36,
-   "네가": 10,
-   "니가": 6,
-   "너": 5,
-   "넌": 3,
-   "선생님": 3
-  },
-  "me": {
-   "내가": 43,
-   "제가": 13,
-   "난": 9,
-   "나는": 9,
-   "저는": 8
-  },
-  "interj": [
-   "흠",
-   "하아"
-  ],
-  "catch": [
-   "사제장",
-   "사제장님",
-   "스키",
-   "믿음",
-   "사제들",
-   "자들",
-   "은총",
-   "네르사",
-   "모르겠군",
-   "사도들",
-   "부디",
-   "자를"
-  ]
- },
- "jubee": {
-  "n": 78,
-  "nStory": 0,
-  "nSent": 54,
-  "endings": {
-   "casual": 0.796,
-   "jubee": 0.185,
-   "polite": 0.019
-  },
-  "endingsLobby": {
-   "casual": 0.804,
-   "jubee": 0.174,
-   "polite": 0.022
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 0.714,
-   "jubee": 0.286
-  },
-  "nLobbySent": 46,
-  "nTouchSent": 7,
-  "style": "jubee",
-  "addr": "언니",
-  "addrCounts": {
-   "언니": 1
-  },
-  "me": {
-   "난": 1,
-   "내가": 1
-  },
-  "interj": [],
-  "catch": [
-   "아니다비",
-   "젤리",
-   "추비",
-   "주비",
-   "안녕"
-  ]
- },
- "kathy": {
-  "n": 168,
-  "nStory": 75,
-  "nSent": 112,
-  "endings": {
-   "casual": 0.679,
-   "polite": 0.312,
-   "noun": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.564,
-   "casual": 0.41,
-   "noun": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.85,
-   "polite": 0.15
-  },
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "교수님": 2,
-   "너": 1,
-   "네가": 1
-  },
-  "me": {
-   "난": 5,
-   "나는": 4,
-   "저는": 4,
-   "내가": 2,
-   "제가": 2
-  },
-  "interj": [],
-  "catch": [
-   "유령",
-   "공포",
-   "주스",
-   "토마토"
-  ]
- },
- "kidian": {
-  "n": 141,
-  "nStory": 34,
-  "nSent": 66,
-  "endings": {
-   "casual": 0.97,
-   "royal": 0.03
-  },
-  "endingsLobby": {
-   "casual": 0.967,
-   "royal": 0.033
-  },
-  "endingsStory": {
-   "casual": 0.963,
-   "royal": 0.037
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 30,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 8,
-   "주인님": 2,
-   "네가": 1
-  },
-  "me": {
-   "내가": 4,
-   "나도": 4,
-   "나를": 1,
-   "난": 1,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "주인님",
-   "고마워"
-  ]
- },
- "kishya": {
-  "n": 358,
-  "nStory": 279,
-  "nSent": 331,
-  "endings": {
-   "casual": 0.994,
-   "polite": 0.003,
-   "royal": 0.003
-  },
-  "endingsLobby": {
-   "casual": 0.973,
-   "royal": 0.027
-  },
-  "endingsStory": {
-   "casual": 0.996,
-   "polite": 0.004
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "너": 4,
-   "니가": 1,
-   "넌": 1,
-   "자기": 1,
-   "네가": 1
-  },
-  "me": {
-   "난": 29,
-   "내가": 28,
-   "나도": 9,
-   "우리": 4,
-   "나는": 3
-  },
-  "interj": [
-   "어이",
-   "하아"
-  ],
-  "catch": [
-   "팬들",
-   "무대",
-   "공연장",
-   "공연",
-   "착한",
-   "보이샷",
-   "언더돌",
-   "대체",
-   "그치",
-   "팬인",
-   "적당히",
-   "조명"
-  ]
- },
- "kommy": {
-  "n": 182,
-  "nStory": 89,
-  "nSent": 144,
-  "endings": {
-   "casual": 0.986,
-   "hao": 0.007,
-   "polite": 0.007
-  },
-  "endingsLobby": {
-   "casual": 0.974,
-   "polite": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.99,
-   "hao": 0.01
-  },
-  "endingsTouch": {
-   "casual": 0.875,
-   "polite": 0.125
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3,
-   "넌": 2,
-   "친구": 2,
-   "너": 1
-  },
-  "me": {
-   "나도": 3,
-   "난": 2,
-   "내가": 1,
-   "나는": 1,
-   "우리": 1
-  },
-  "interj": [
-   "히히",
-   "흠",
-   "흐흐"
-  ],
-  "catch": [
-   "사료",
-   "코미",
-   "버터",
-   "고민",
-   "냄새",
-   "고미",
-   "먹을",
-   "배달"
-  ]
- },
- "kommyswim": {
-  "n": 114,
-  "nStory": 2,
-  "nSent": 50,
-  "endings": {
-   "casual": 0.98,
-   "polite": 0.02
-  },
-  "endingsLobby": {
-   "casual": 0.972,
-   "polite": 0.028
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 0.833,
-   "polite": 0.167
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4
-  },
-  "me": {
-   "나는": 1,
-   "난": 1,
-   "나도": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "코미",
-   "가는",
-   "놀이터",
-   "표정",
-   "고민",
-   "괜찮"
-  ]
- },
- "kyarot": {
-  "n": 142,
-  "nStory": 35,
-  "nSent": 78,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 5,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 6,
-   "너": 1
-  },
-  "me": {
-   "내가": 4,
-   "난": 3,
-   "나는": 1,
-   "나도": 1,
-   "우리": 1
-  },
-  "interj": [
-   "우와",
-   "흠"
-  ],
-  "catch": [
-   "당근",
-   "사탕수수",
-   "요리"
-  ]
- },
- "laika": {
-  "n": 236,
-  "nStory": 129,
-  "nSent": 181,
-  "endings": {
-   "casual": 0.956,
-   "polite": 0.017,
-   "formal": 0.017,
-   "royal": 0.006,
-   "noun": 0.006
-  },
-  "endingsLobby": {
-   "casual": 0.972,
-   "noun": 0.028
-  },
-  "endingsStory": {
-   "casual": 0.948,
-   "polite": 0.022,
-   "formal": 0.022,
-   "royal": 0.007
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "니가": 2,
-   "너": 1,
-   "자기": 1,
-   "주인": 1,
-   "넌": 1
-  },
-  "me": {
-   "내가": 19,
-   "난": 11,
-   "우리": 2,
-   "나는": 1,
-   "나도": 1
-  },
-  "interj": [
-   "헤헤",
-   "으으"
-  ],
-  "catch": [
-   "번개",
-   "전기",
-   "제품",
-   "신라님",
-   "회장",
-   "발표"
-  ]
- },
- "lazy": {
-  "n": 62,
-  "nStory": 0,
-  "nSent": 40,
-  "endings": {
-   "polite": 0.55,
-   "casual": 0.4,
-   "formal": 0.05
-  },
-  "endingsLobby": {
-   "polite": 0.515,
-   "casual": 0.424,
-   "formal": 0.061
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.5,
-   "casual": 0.5
-  },
-  "nLobbySent": 33,
-  "nTouchSent": 4,
-  "style": "polite",
-  "addr": "교수님",
-  "addrCounts": {
-   "교수님": 3,
-   "교주님": 2,
-   "님": 1
-  },
-  "me": {
-   "난": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "leets": {
-  "n": 122,
-  "nStory": 34,
-  "nSent": 87,
-  "endings": {
-   "casual": 0.598,
-   "polite": 0.391,
-   "formal": 0.011
-  },
-  "endingsLobby": {
-   "polite": 0.644,
-   "casual": 0.333,
-   "formal": 0.022
-  },
-  "endingsStory": {
-   "casual": 0.935,
-   "polite": 0.065
-  },
-  "endingsTouch": {
-   "polite": 0.833,
-   "casual": 0.167
-  },
-  "nLobbySent": 45,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "너": 4,
-   "교주님": 4,
-   "넌": 1,
-   "교수님": 1,
-   "교주": 1,
-   "네가": 1
-  },
-  "me": {
-   "나는": 2,
-   "제가": 2,
-   "나를": 1,
-   "저는": 1,
-   "저도": 1
-  },
-  "interj": [],
-  "catch": [
-   "다야님",
-   "골드",
-   "준비",
-   "끝없",
-   "싸움"
-  ]
- },
- "lethe": {
-  "n": 77,
-  "nStory": 13,
-  "nSent": 63,
-  "endings": {
-   "casual": 0.984,
-   "polite": 0.016
-  },
-  "endingsLobby": {
-   "casual": 0.976,
-   "polite": 0.024
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3,
-   "너": 2,
-   "넌": 2
-  },
-  "me": {
-   "내가": 2,
-   "난": 2
-  },
-  "interj": [],
-  "catch": [
-   "기억",
-   "레이저",
-   "나쁜"
-  ]
- },
- "levi": {
-  "n": 144,
-  "nStory": 66,
-  "nSent": 119,
-  "endings": {
-   "polite": 0.504,
-   "casual": 0.454,
-   "formal": 0.017,
-   "noun": 0.017,
-   "hao": 0.008
-  },
-  "endingsLobby": {
-   "polite": 0.514,
-   "casual": 0.432,
-   "noun": 0.027,
-   "formal": 0.027
-  },
-  "endingsStory": {
-   "polite": 0.528,
-   "casual": 0.444,
-   "hao": 0.014,
-   "formal": 0.014
-  },
-  "endingsTouch": {
-   "polite": 0.833,
-   "formal": 0.167
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "사장님",
-  "addrCounts": {
-   "사장님": 3,
-   "교수님": 3,
-   "네가": 1,
-   "교주님": 1,
-   "손님": 1
-  },
-  "me": {
-   "난": 3,
-   "제가": 1,
-   "저는": 1,
-   "저도": 1
-  },
-  "interj": [
-   "으악"
-  ],
-  "catch": [
-   "알바",
-   "레비",
-   "사장님"
-  ]
- },
- "levigraduate": {
-  "n": 79,
-  "nStory": 0,
-  "nSent": 54,
-  "endings": {
-   "polite": 0.574,
-   "casual": 0.296,
-   "formal": 0.111,
-   "noun": 0.019
-  },
-  "endingsLobby": {
-   "polite": 0.581,
-   "casual": 0.279,
-   "formal": 0.116,
-   "noun": 0.023
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.625,
-   "formal": 0.25,
-   "casual": 0.125
-  },
-  "nLobbySent": 43,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 1,
-   "교수님": 1
-  },
-  "me": {
-   "저도": 2,
-   "내가": 1,
-   "저를": 1
-  },
-  "interj": [],
-  "catch": [
-   "쉬는"
-  ]
- },
- "lion": {
-  "n": 173,
-  "nStory": 66,
-  "nSent": 112,
-  "endings": {
-   "casual": 0.545,
-   "polite": 0.42,
-   "formal": 0.027,
-   "hao": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.721,
-   "casual": 0.186,
-   "formal": 0.07,
-   "hao": 0.023
-  },
-  "endingsStory": {
-   "casual": 0.828,
-   "polite": 0.172
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 43,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6,
-   "너": 3,
-   "네가": 2,
-   "당신": 2,
-   "넌": 1,
-   "니가": 1
-  },
-  "me": {
-   "내가": 4,
-   "저도": 3,
-   "저는": 2,
-   "난": 1,
-   "제가": 1
-  },
-  "interj": [],
-  "catch": [
-   "빌런",
-   "천장님",
-   "촌장님",
-   "히어로"
-  ]
- },
- "maestromk2": {
-  "n": 83,
-  "nStory": 0,
-  "nSent": 48,
-  "endings": {
-   "casual": 0.562,
-   "formal": 0.208,
-   "noun": 0.125,
-   "hao": 0.042,
-   "polite": 0.042,
-   "royal": 0.021
-  },
-  "endingsLobby": {
-   "casual": 0.541,
-   "formal": 0.189,
-   "noun": 0.162,
-   "hao": 0.054,
-   "polite": 0.027,
-   "royal": 0.027
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "noun": 0.455,
-   "casual": 0.273,
-   "formal": 0.273
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 11,
-  "style": "casual",
-  "addr": "너",
-  "addrCounts": {
-   "너": 2,
-   "교주": 1,
-   "교주님": 1,
-   "휴먼": 1
-  },
-  "me": {
-   "제가": 1
-  },
-  "interj": [],
-  "catch": [
-   "완료",
-   "외부",
-   "학습",
-   "시스템",
-   "마에스트"
-  ]
- },
- "mago": {
-  "n": 126,
-  "nStory": 48,
-  "nSent": 88,
-  "endings": {
-   "casual": 0.523,
-   "polite": 0.466,
-   "royal": 0.011
-  },
-  "endingsLobby": {
-   "polite": 0.576,
-   "casual": 0.394,
-   "royal": 0.03
-  },
-  "endingsStory": {
-   "casual": 0.617,
-   "polite": 0.383
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 33,
-  "nTouchSent": 5,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 5,
-   "니가": 2,
-   "너": 2,
-   "당신": 1,
-   "넌": 1,
-   "친구": 1
-  },
-  "me": {
-   "제가": 6,
-   "우리": 1,
-   "내가": 1,
-   "나를": 1,
-   "저를": 1
-  },
-  "interj": [],
-  "catch": [
-   "벨벳",
-   "친구들",
-   "동물",
-   "목장",
-   "양들"
-  ]
- },
- "maison": {
-  "n": 64,
-  "nStory": 0,
-  "nSent": 42,
-  "endings": {
-   "casual": 0.833,
-   "polite": 0.119,
-   "noun": 0.024,
-   "formal": 0.024
-  },
-  "endingsLobby": {
-   "casual": 0.848,
-   "polite": 0.091,
-   "noun": 0.03,
-   "formal": 0.03
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 33,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 6,
-   "자기": 1,
-   "넌": 1
-  },
-  "me": {
-   "나는": 1,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "교주",
-   "집이"
-  ]
- },
- "makasha": {
-  "n": 664,
-  "nStory": 571,
-  "nSent": 572,
-  "endings": {
-   "casual": 0.869,
-   "polite": 0.068,
-   "formal": 0.058,
-   "royal": 0.003,
-   "hao": 0.002
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.856,
-   "polite": 0.075,
-   "formal": 0.063,
-   "royal": 0.004,
-   "hao": 0.002
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 5,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "네가": 14,
-   "너": 6,
-   "넌": 5,
-   "교주": 4,
-   "자기": 2
-  },
-  "me": {
-   "내가": 18,
-   "나는": 12,
-   "우리": 5,
-   "난": 3,
-   "나도": 3
-  },
-  "interj": [
-   "이히히",
-   "하아",
-   "흐음",
-   "으악"
-  ],
-  "catch": [
-   "우로스",
-   "우루스",
-   "팔다리",
-   "운명",
-   "긴긴",
-   "이히히",
-   "검사",
-   "히히히",
-   "예언",
-   "작전",
-   "왕관",
-   "증인"
-  ]
- },
- "marie": {
-  "n": 219,
-  "nStory": 155,
-  "nSent": 202,
-  "endings": {
-   "casual": 0.649,
-   "polite": 0.327,
-   "formal": 0.015,
-   "royal": 0.01
-  },
-  "endingsLobby": {
-   "polite": 0.561,
-   "casual": 0.439
-  },
-  "endingsStory": {
-   "casual": 0.709,
-   "polite": 0.258,
-   "formal": 0.02,
-   "royal": 0.013
-  },
-  "endingsTouch": {
-   "polite": 0.625,
-   "casual": 0.375
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "네가",
-  "addrCounts": {
-   "네가": 2,
-   "교주님": 2,
-   "교수님": 1
-  },
-  "me": {
-   "내가": 8,
-   "난": 5,
-   "제가": 4,
-   "나는": 4,
-   "나도": 2
-  },
-  "interj": [],
-  "catch": [
-   "폭탄",
-   "에이",
-   "모험"
-  ]
- },
- "mayo": {
-  "n": 273,
-  "nStory": 195,
-  "nSent": 214,
-  "endings": {
-   "noun": 0.514,
-   "casual": 0.481,
-   "polite": 0.005
-  },
-  "endingsLobby": {
-   "noun": 0.588,
-   "casual": 0.412
-  },
-  "endingsStory": {
-   "noun": 0.512,
-   "casual": 0.482,
-   "polite": 0.006
-  },
-  "endingsTouch": {
-   "noun": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 34,
-  "nTouchSent": 7,
-  "style": "noun",
-  "addr": "교주",
-  "addrCounts": {
-   "너": 8,
-   "교주": 7,
-   "친구": 4,
-   "넌": 1,
-   "주인": 1,
-   "자기": 1
-  },
-  "me": {
-   "내가": 10,
-   "난": 9,
-   "나는": 3,
-   "나도": 2
-  },
-  "interj": [],
-  "catch": [
-   "거임",
-   "수집품",
-   "수지품",
-   "유령",
-   "아님",
-   "있음",
-   "극장",
-   "알바",
-   "거잉",
-   "수집",
-   "인간"
-  ]
- },
- "mayocool": {
-  "n": 138,
-  "nStory": 45,
-  "nSent": 102,
-  "endings": {
-   "noun": 0.608,
-   "casual": 0.353,
-   "polite": 0.039
-  },
-  "endingsLobby": {
-   "noun": 0.682,
-   "casual": 0.295,
-   "polite": 0.023
-  },
-  "endingsStory": {
-   "noun": 0.543,
-   "casual": 0.391,
-   "polite": 0.065
-  },
-  "endingsTouch": {
-   "noun": 0.75,
-   "casual": 0.25
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 8,
-  "style": "noun",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 1,
-   "너": 1
-  },
-  "me": {
-   "내가": 14,
-   "나는": 2,
-   "난": 2,
-   "나도": 2,
-   "본인": 1
-  },
-  "interj": [],
-  "catch": [
-   "수집품",
-   "수지품",
-   "멋진",
-   "거임",
-   "있음",
-   "그거",
-   "없음",
-   "않음",
-   "같음"
-  ]
- },
- "meluna": {
-  "n": 120,
-  "nStory": 41,
-  "nSent": 89,
-  "endings": {
-   "polite": 0.764,
-   "casual": 0.202,
-   "formal": 0.034
-  },
-  "endingsLobby": {
-   "polite": 0.757,
-   "casual": 0.216,
-   "formal": 0.027
-  },
-  "endingsStory": {
-   "polite": 0.8,
-   "casual": 0.15,
-   "formal": 0.05
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 3,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 4,
-   "우리": 1,
-   "저는": 1
-  },
-  "interj": [],
-  "catch": [
-   "멜론",
-   "역시"
-  ]
- },
- "miro": {
-  "n": 93,
-  "nStory": 0,
-  "nSent": 47,
-  "endings": {
-   "polite": 0.532,
-   "casual": 0.426,
-   "noun": 0.021,
-   "formal": 0.021
-  },
-  "endingsLobby": {
-   "polite": 0.583,
-   "casual": 0.361,
-   "noun": 0.028,
-   "formal": 0.028
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "교수님": 1,
-   "교장님": 1,
-   "선생님": 1,
-   "언니": 1
-  },
-  "me": {
-   "제가": 6,
-   "내가": 4,
-   "나는": 2,
-   "저는": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "거울",
-   "흐흐흐",
-   "항상"
-  ]
- },
- "momo": {
-  "n": 117,
-  "nStory": 10,
-  "nSent": 62,
-  "endings": {
-   "formal": 0.742,
-   "casual": 0.226,
-   "polite": 0.032
-  },
-  "endingsLobby": {
-   "formal": 0.75,
-   "casual": 0.205,
-   "polite": 0.045
-  },
-  "endingsStory": {
-   "formal": 0.833,
-   "casual": 0.167
-  },
-  "endingsTouch": {
-   "formal": 1.0
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 7,
-  "style": "formal",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6
-  },
-  "me": {
-   "이 몸": 1,
-   "제가": 1,
-   "저도": 1
-  },
-  "interj": [
-   "야호",
-   "으악"
-  ],
-  "catch": [
-   "인류",
-   "모모",
-   "수련"
-  ]
- },
- "mute": {
-  "n": 288,
-  "nStory": 195,
-  "nSent": 233,
-  "endings": {
-   "casual": 0.476,
-   "polite": 0.275,
-   "formal": 0.227,
-   "hao": 0.013,
-   "noun": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.561,
-   "casual": 0.22,
-   "formal": 0.171,
-   "noun": 0.049
-  },
-  "endingsStory": {
-   "casual": 0.552,
-   "formal": 0.243,
-   "polite": 0.188,
-   "hao": 0.017
-  },
-  "endingsTouch": {
-   "polite": 0.375,
-   "casual": 0.375,
-   "formal": 0.125,
-   "noun": 0.125
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 13,
-   "네가": 4,
-   "교수님": 4,
-   "니가": 3,
-   "마스터": 1,
-   "너": 1
-  },
-  "me": {
-   "제가": 6,
-   "저는": 4,
-   "우리": 2,
-   "저도": 2,
-   "나는": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "헤일리",
-   "데이터",
-   "확률",
-   "사건",
-   "권한",
-   "못할",
-   "행동",
-   "변수",
-   "뮤트",
-   "경우",
-   "패턴",
-   "교진님"
-  ]
- },
- "mynx": {
-  "n": 65,
-  "nStory": 0,
-  "nSent": 50,
-  "endings": {
-   "polite": 0.5,
-   "casual": 0.44,
-   "formal": 0.04,
-   "noun": 0.02
-  },
-  "endingsLobby": {
-   "polite": 0.5,
-   "casual": 0.429,
-   "formal": 0.048,
-   "noun": 0.024
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 0.571,
-   "polite": 0.429
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "선생님",
-  "addrCounts": {
-   "선생님": 1,
-   "교주님": 1,
-   "교수님": 1
-  },
-  "me": {
-   "나는": 3,
-   "제가": 2,
-   "저는": 2
-  },
-  "interj": [],
-  "catch": []
- },
- "naia": {
-  "n": 242,
-  "nStory": 121,
-  "nSent": 169,
-  "endings": {
-   "casual": 0.994,
-   "polite": 0.006
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.992,
-   "polite": 0.008
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 8,
-   "니가": 2,
-   "너": 1,
-   "주인": 1,
-   "자기": 1,
-   "네가": 1
-  },
-  "me": {
-   "내가": 7,
-   "우리": 5,
-   "난": 4,
-   "나도": 3,
-   "나는": 2
-  },
-  "interj": [
-   "흠",
-   "우와"
-  ],
-  "catch": [
-   "이프리트",
-   "정령들",
-   "너희들",
-   "정령산",
-   "프리트",
-   "물의",
-   "응원"
-  ]
- },
- "ner": {
-  "n": 1494,
-  "nStory": 1387,
-  "nSent": 1396,
-  "endings": {
-   "polite": 0.589,
-   "casual": 0.304,
-   "formal": 0.102,
-   "royal": 0.003,
-   "noun": 0.001,
-   "hao": 0.001
-  },
-  "endingsLobby": {
-   "polite": 0.651,
-   "formal": 0.209,
-   "casual": 0.14
-  },
-  "endingsStory": {
-   "polite": 0.587,
-   "casual": 0.31,
-   "formal": 0.098,
-   "royal": 0.003,
-   "noun": 0.001,
-   "hao": 0.001
-  },
-  "endingsTouch": {
-   "polite": 0.571,
-   "formal": 0.429
-  },
-  "nLobbySent": 43,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 65,
-   "교수님": 7,
-   "너": 7,
-   "교주": 6,
-   "넌": 4,
-   "님": 3
-  },
-  "me": {
-   "제가": 60,
-   "내가": 21,
-   "저도": 20,
-   "저는": 15,
-   "우리": 12
-  },
-  "interj": [
-   "흠",
-   "하아",
-   "흐흐",
-   "어라",
-   "으으"
-  ],
-  "catch": [
-   "자매님",
-   "감독님",
-   "여원님",
-   "규주님",
-   "왕궁",
-   "조한",
-   "뒷골목",
-   "일기장",
-   "반란군",
-   "조한자매님",
-   "주교님",
-   "마카롱"
-  ]
- },
- "nerrage": {
-  "n": 210,
-  "nStory": 117,
-  "nSent": 163,
-  "endings": {
-   "casual": 0.442,
-   "polite": 0.423,
-   "formal": 0.129,
-   "noun": 0.006
-  },
-  "endingsLobby": {
-   "polite": 0.725,
-   "casual": 0.15,
-   "formal": 0.1,
-   "noun": 0.025
-  },
-  "endingsStory": {
-   "casual": 0.559,
-   "polite": 0.315,
-   "formal": 0.126
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 12,
-   "당신": 2,
-   "그대": 1,
-   "니가": 1,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 6,
-   "우리": 2,
-   "저도": 2,
-   "저는": 1,
-   "내가": 1
-  },
-  "interj": [
-   "아하"
-  ],
-  "catch": [
-   "에르핀",
-   "여원님",
-   "다음",
-   "왕관"
-  ]
- },
- "neti": {
-  "n": 150,
-  "nStory": 57,
-  "nSent": 106,
-  "endings": {
-   "polite": 0.802,
-   "casual": 0.189,
-   "formal": 0.009
-  },
-  "endingsLobby": {
-   "polite": 0.9,
-   "casual": 0.075,
-   "formal": 0.025
-  },
-  "endingsStory": {
-   "polite": 0.732,
-   "casual": 0.268
-  },
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 5,
-   "님": 1,
-   "자기": 1,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 3,
-   "저도": 3
-  },
-  "interj": [
-   "으헤헤"
-  ],
-  "catch": [
-   "비비",
-   "좋은",
-   "용족",
-   "유물",
-   "발굴",
-   "은혜",
-   "생선",
-   "번째",
-   "오팔"
-  ]
- },
- "nicole": {
-  "n": 488,
-  "nStory": 409,
-  "nSent": 526,
-  "endings": {
-   "casual": 0.709,
-   "polite": 0.253,
-   "formal": 0.034,
-   "noun": 0.002,
-   "royal": 0.002
-  },
-  "endingsLobby": {
-   "casual": 0.548,
-   "polite": 0.452
-  },
-  "endingsStory": {
-   "casual": 0.723,
-   "polite": 0.236,
-   "formal": 0.036,
-   "noun": 0.002,
-   "royal": 0.002
-  },
-  "endingsTouch": {
-   "casual": 0.5,
-   "polite": 0.5
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 8,
-   "너": 4,
-   "교수님": 4,
-   "넌": 2,
-   "니가": 1,
-   "자기": 1
-  },
-  "me": {
-   "제가": 18,
-   "나는": 9,
-   "난": 6,
-   "내가": 4,
-   "우리": 3
-  },
-  "interj": [
-   "하아",
-   "흠",
-   "히히",
-   "하하",
-   "흥"
-  ],
-  "catch": [
-   "영화",
-   "퍽퍽",
-   "니콜",
-   "촬영",
-   "천재",
-   "팝콘",
-   "완전",
-   "여러분",
-   "감독",
-   "와바박",
-   "영화감독",
-   "인류"
-  ]
- },
- "niffel": {
-  "n": 30,
-  "nStory": 0,
-  "nSent": 12,
-  "endings": {
-   "casual": 0.917,
-   "noun": 0.083
-  },
-  "endingsLobby": {
-   "casual": 0.909,
-   "noun": 0.091
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 11,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "너": 1,
-   "주인": 1
-  },
-  "me": {
-   "나는": 1,
-   "나를": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "교주"
-  ]
- },
- "noone": {
-  "n": 33,
-  "nStory": 0,
-  "nSent": 12,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 11,
-  "nTouchSent": 4,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 1
-  },
-  "me": {
-   "난": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "opal": {
-  "n": 121,
-  "nStory": 0,
-  "nSent": 59,
-  "endings": {
-   "polite": 0.814,
-   "casual": 0.186
-  },
-  "endingsLobby": {
-   "polite": 0.851,
-   "casual": 0.149
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.875,
-   "casual": 0.125
-  },
-  "nLobbySent": 47,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "친구": 1,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 6,
-   "우리": 2,
-   "저도": 1
-  },
-  "interj": [
-   "우와",
-   "아하"
-  ],
-  "catch": [
-   "에헤",
-   "선배님들",
-   "우와",
-   "선배님"
-  ]
- },
- "orr": {
-  "n": 256,
-  "nStory": 163,
-  "nSent": 215,
-  "endings": {
-   "casual": 0.972,
-   "polite": 0.023,
-   "noun": 0.005
-  },
-  "endingsLobby": {
-   "casual": 0.979,
-   "noun": 0.021
-  },
-  "endingsStory": {
-   "casual": 0.968,
-   "polite": 0.032
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 48,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 17,
-   "너": 1,
-   "자기": 1,
-   "넌": 1
-  },
-  "me": {
-   "내가": 10,
-   "난": 6,
-   "우리": 3,
-   "나는": 2,
-   "나도": 2
-  },
-  "interj": [
-   "우와",
-   "흐흐",
-   "흥",
-   "으으"
-  ],
-  "catch": [
-   "발명품",
-   "방주",
-   "발명가",
-   "장교님",
-   "빵주",
-   "부품",
-   "훈련",
-   "헤일리",
-   "버전"
-  ]
- },
- "patula": {
-  "n": 107,
-  "nStory": 43,
-  "nSent": 83,
-  "endings": {
-   "casual": 0.566,
-   "polite": 0.398,
-   "formal": 0.024,
-   "royal": 0.012
-  },
-  "endingsLobby": {
-   "casual": 0.733,
-   "polite": 0.233,
-   "royal": 0.033
-  },
-  "endingsStory": {
-   "polite": 0.578,
-   "casual": 0.378,
-   "formal": 0.044
-  },
-  "endingsTouch": {
-   "polite": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 30,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "사장님": 2,
-   "자기": 1
-  },
-  "me": {
-   "저도": 2,
-   "내가": 2,
-   "나도": 1,
-   "제가": 1,
-   "난": 1
-  },
-  "interj": [],
-  "catch": [
-   "마법",
-   "빵집",
-   "사장님",
-   "주방",
-   "요리"
-  ]
- },
- "picora": {
-  "n": 124,
-  "nStory": 17,
-  "nSent": 76,
-  "endings": {
-   "polite": 0.539,
-   "casual": 0.461
-  },
-  "endingsLobby": {
-   "polite": 0.636,
-   "casual": 0.364
-  },
-  "endingsStory": {
-   "casual": 0.524,
-   "polite": 0.476
-  },
-  "endingsTouch": {
-   "polite": 0.714,
-   "casual": 0.286
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "선생님",
-  "addrCounts": {
-   "선생님": 2,
-   "사장님": 1,
-   "넌": 1
-  },
-  "me": {
-   "저도": 2,
-   "제가": 1,
-   "저를": 1,
-   "나는": 1,
-   "저는": 1
-  },
-  "interj": [],
-  "catch": [
-   "스승님",
-   "스티커",
-   "마법",
-   "패션"
-  ]
- },
- "pira": {
-  "n": 239,
-  "nStory": 146,
-  "nSent": 156,
-  "endings": {
-   "casual": 0.994,
-   "royal": 0.006
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.99,
-   "royal": 0.01
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3,
-   "너": 3,
-   "넌": 2,
-   "니가": 2,
-   "네가": 1
-  },
-  "me": {
-   "내가": 12,
-   "난": 4,
-   "나도": 1,
-   "나는": 1,
-   "나를": 1
-  },
-  "interj": [
-   "으악"
-  ],
-  "catch": [
-   "그래",
-   "거냐",
-   "고래",
-   "사제장",
-   "골드",
-   "노는",
-   "깡패"
-  ]
- },
- "polan": {
-  "n": 400,
-  "nStory": 293,
-  "nSent": 325,
-  "endings": {
-   "casual": 0.677,
-   "formal": 0.243,
-   "polite": 0.058,
-   "hao": 0.018,
-   "royal": 0.003
-  },
-  "endingsLobby": {
-   "casual": 0.41,
-   "formal": 0.359,
-   "polite": 0.128,
-   "hao": 0.103
-  },
-  "endingsStory": {
-   "casual": 0.712,
-   "formal": 0.227,
-   "polite": 0.05,
-   "hao": 0.007,
-   "royal": 0.004
-  },
-  "endingsTouch": {
-   "formal": 0.571,
-   "hao": 0.286,
-   "polite": 0.143
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 10,
-   "교수님": 5,
-   "너": 4,
-   "니가": 3
-  },
-  "me": {
-   "내가": 7,
-   "저는": 5,
-   "우리": 3,
-   "제가": 3,
-   "나는": 2
-  },
-  "interj": [
-   "흠",
-   "하아"
-  ],
-  "catch": [
-   "경비대",
-   "거냐",
-   "마리",
-   "사제장",
-   "사건",
-   "리코더",
-   "승리",
-   "피고인",
-   "사탕",
-   "경비대장",
-   "재판장님",
-   "증인"
-  ]
- },
- "posher": {
-  "n": 132,
-  "nStory": 11,
-  "nSent": 53,
-  "endings": {
-   "casual": 0.962,
-   "polite": 0.019,
-   "formal": 0.019
-  },
-  "endingsLobby": {
-   "casual": 0.969,
-   "formal": 0.031
-  },
-  "endingsStory": {
-   "casual": 0.909,
-   "polite": 0.091
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 32,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "교주님": 1,
-   "니가": 1
-  },
-  "me": {
-   "내가": 4,
-   "우리": 1,
-   "난": 1
-  },
-  "interj": [],
-  "catch": [
-   "포션",
-   "실험",
-   "기타",
-   "결과"
-  ]
- },
- "ran": {
-  "n": 896,
-  "nStory": 787,
-  "nSent": 697,
-  "endings": {
-   "casual": 0.766,
-   "polite": 0.191,
-   "formal": 0.037,
-   "royal": 0.003,
-   "hao": 0.003
-  },
-  "endingsLobby": {
-   "polite": 0.525,
-   "casual": 0.3,
-   "formal": 0.175
-  },
-  "endingsStory": {
-   "casual": 0.802,
-   "polite": 0.165,
-   "formal": 0.026,
-   "royal": 0.003,
-   "hao": 0.003
-  },
-  "endingsTouch": {
-   "polite": 0.8,
-   "formal": 0.2
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 10,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "네가": 18,
-   "교주님": 14,
-   "너": 4,
-   "자기": 4,
-   "교수님": 2,
-   "니가": 1
-  },
-  "me": {
-   "내가": 32,
-   "나는": 21,
-   "제가": 15,
-   "난": 12,
-   "저는": 10
-  },
-  "interj": [
-   "흠",
-   "하아"
-  ],
-  "catch": [
-   "우로스",
-   "오로스",
-   "주군",
-   "증오",
-   "읽는",
-   "듣는",
-   "검을",
-   "피를",
-   "재미있군",
-   "보물들",
-   "슈러",
-   "벗이"
-  ]
- },
- "renewaawaken": {
-  "n": 285,
-  "nStory": 192,
-  "nSent": 234,
-  "endings": {
-   "polite": 0.65,
-   "casual": 0.303,
-   "formal": 0.043,
-   "royal": 0.004
-  },
-  "endingsLobby": {
-   "polite": 0.579,
-   "casual": 0.263,
-   "formal": 0.158
-  },
-  "endingsStory": {
-   "polite": 0.679,
-   "casual": 0.304,
-   "formal": 0.011,
-   "royal": 0.005
-  },
-  "endingsTouch": {
-   "polite": 0.571,
-   "formal": 0.286,
-   "casual": 0.143
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 21,
-   "교수님": 8,
-   "사장님": 1,
-   "네가": 1,
-   "교장님": 1,
-   "친구": 1
-  },
-  "me": {
-   "제가": 13,
-   "저도": 6,
-   "저는": 1,
-   "내가": 1,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "시간",
-   "능력",
-   "시공간",
-   "벨리타",
-   "씨가",
-   "호박",
-   "마요씨",
-   "미래",
-   "책을",
-   "중력",
-   "리뉴"
-  ]
- },
- "ricota": {
-  "n": 94,
-  "nStory": 1,
-  "nSent": 58,
-  "endings": {
-   "formal": 0.448,
-   "polite": 0.362,
-   "casual": 0.172,
-   "royal": 0.017
-  },
-  "endingsLobby": {
-   "polite": 0.413,
-   "formal": 0.413,
-   "casual": 0.152,
-   "royal": 0.022
-  },
-  "endingsStory": {
-   "formal": 1.0
-  },
-  "endingsTouch": {
-   "formal": 0.714,
-   "polite": 0.286
-  },
-  "nLobbySent": 46,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 6,
-   "그대": 1
-  },
-  "me": {
-   "제가": 2,
-   "저를": 1,
-   "나는": 1
-  },
-  "interj": [],
-  "catch": [
-   "요리",
-   "좋은",
-   "재료"
-  ]
- },
- "rim": {
-  "n": 222,
-  "nStory": 115,
-  "nSent": 151,
-  "endings": {
-   "casual": 0.404,
-   "polite": 0.298,
-   "formal": 0.265,
-   "hao": 0.013,
-   "noun": 0.013,
-   "royal": 0.007
-  },
-  "endingsLobby": {
-   "casual": 0.629,
-   "polite": 0.171,
-   "formal": 0.143,
-   "noun": 0.057
-  },
-  "endingsStory": {
-   "polite": 0.352,
-   "formal": 0.324,
-   "casual": 0.296,
-   "hao": 0.019,
-   "royal": 0.009
-  },
-  "endingsTouch": {
-   "casual": 0.5,
-   "polite": 0.375,
-   "noun": 0.125
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "네가",
-  "addrCounts": {
-   "네가": 2,
-   "니가": 1,
-   "자기": 1,
-   "친구": 1,
-   "교주": 1,
-   "넌": 1
-  },
-  "me": {
-   "제가": 6,
-   "나는": 2,
-   "나도": 1,
-   "내가": 1
-  },
-  "interj": [
-   "하아"
-  ],
-  "catch": [
-   "쉐이디",
-   "유령",
-   "유령들",
-   "균형",
-   "본능"
-  ]
- },
- "rimchaos": {
-  "n": 121,
-  "nStory": 0,
-  "nSent": 54,
-  "endings": {
-   "casual": 0.593,
-   "polite": 0.241,
-   "formal": 0.167
-  },
-  "endingsLobby": {
-   "casual": 0.545,
-   "polite": 0.25,
-   "formal": 0.205
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.571,
-   "formal": 0.286,
-   "casual": 0.143
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 1,
-   "교주": 1,
-   "당신": 1,
-   "네가": 1,
-   "주인": 1,
-   "너": 1
-  },
-  "me": {
-   "제가": 6,
-   "내가": 6,
-   "나는": 3,
-   "우리": 1,
-   "난": 1
-  },
-  "interj": [
-   "흠",
-   "흥"
-  ],
-  "catch": [
-   "혼돈",
-   "유령",
-   "마음"
-  ]
- },
- "risty": {
-  "n": 107,
-  "nStory": 0,
-  "nSent": 37,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 28,
-  "nTouchSent": 4,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 6,
-   "너": 3
-  },
-  "me": {
-   "내가": 6,
-   "나도": 2,
-   "난": 1
-  },
-  "interj": [
-   "흐흐",
-   "하아"
-  ],
-  "catch": [
-   "게임",
-   "실력"
-  ]
- },
- "rohne": {
-  "n": 285,
-  "nStory": 207,
-  "nSent": 255,
-  "endings": {
-   "polite": 0.733,
-   "casual": 0.231,
-   "formal": 0.031,
-   "royal": 0.004
-  },
-  "endingsLobby": {
-   "polite": 0.634,
-   "casual": 0.317,
-   "formal": 0.024,
-   "royal": 0.024
-  },
-  "endingsStory": {
-   "polite": 0.775,
-   "casual": 0.191,
-   "formal": 0.034
-  },
-  "endingsTouch": {
-   "polite": 0.667,
-   "casual": 0.333
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 9,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 9,
-   "자기": 2,
-   "마스터": 1,
-   "친구": 1
-  },
-  "me": {
-   "제가": 6,
-   "저는": 6,
-   "저도": 3,
-   "난": 1,
-   "나를": 1
-  },
-  "interj": [],
-  "catch": [
-   "돈가스",
-   "인간",
-   "스파이",
-   "스파",
-   "내일",
-   "비슷한",
-   "무기"
-  ]
- },
- "rohnemayor": {
-  "n": 233,
-  "nStory": 140,
-  "nSent": 182,
-  "endings": {
-   "polite": 0.643,
-   "casual": 0.286,
-   "formal": 0.049,
-   "noun": 0.011,
-   "hao": 0.005,
-   "royal": 0.005
-  },
-  "endingsLobby": {
-   "polite": 0.595,
-   "casual": 0.286,
-   "formal": 0.119
-  },
-  "endingsStory": {
-   "polite": 0.692,
-   "casual": 0.269,
-   "noun": 0.015,
-   "formal": 0.015,
-   "hao": 0.008
-  },
-  "endingsTouch": {
-   "polite": 1.0
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 19,
-   "자기": 1,
-   "님": 1,
-   "교수님": 1
-  },
-  "me": {
-   "제가": 5,
-   "우리": 2,
-   "나는": 2,
-   "저는": 1,
-   "내가": 1
-  },
-  "interj": [
-   "우와"
-  ],
-  "catch": [
-   "돈가스",
-   "시장",
-   "언더돌",
-   "볼샷",
-   "위한",
-   "헤일리"
-  ]
- },
- "rollett": {
-  "n": 97,
-  "nStory": 4,
-  "nSent": 54,
-  "endings": {
-   "casual": 0.833,
-   "polite": 0.111,
-   "formal": 0.037,
-   "noun": 0.019
-  },
-  "endingsLobby": {
-   "casual": 0.892,
-   "polite": 0.081,
-   "noun": 0.027
-  },
-  "endingsStory": {
-   "polite": 0.5,
-   "formal": 0.333,
-   "casual": 0.167
-  },
-  "endingsTouch": {
-   "casual": 0.833,
-   "polite": 0.167
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 8,
-   "마스터": 2,
-   "넌": 1
-  },
-  "me": {
-   "내가": 4,
-   "나는": 1
-  },
-  "interj": [],
-  "catch": [
-   "계획"
-  ]
- },
- "ronnie": {
-  "n": 356,
-  "nStory": 277,
-  "nSent": 262,
-  "endings": {
-   "casual": 0.756,
-   "formal": 0.176,
-   "polite": 0.05,
-   "hao": 0.019
-  },
-  "endingsLobby": {
-   "formal": 0.625,
-   "casual": 0.15,
-   "polite": 0.125,
-   "hao": 0.1
-  },
-  "endingsStory": {
-   "casual": 0.868,
-   "formal": 0.094,
-   "polite": 0.033,
-   "hao": 0.005
-  },
-  "endingsTouch": {
-   "polite": 0.333,
-   "hao": 0.333,
-   "formal": 0.333
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 6,
-  "style": "formal",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 8,
-   "니가": 5,
-   "너": 4,
-   "자기": 4,
-   "네가": 3,
-   "대장": 2
-  },
-  "me": {
-   "내가": 25,
-   "나는": 14,
-   "나를": 5,
-   "나도": 4,
-   "제가": 3
-  },
-  "interj": [
-   "흠",
-   "하아",
-   "흥"
-  ],
-  "catch": [
-   "황금손",
-   "리코더",
-   "경비대",
-   "과거",
-   "대장님",
-   "후회",
-   "마리",
-   "세월",
-   "쓰레기",
-   "사탕"
-  ]
- },
- "rude": {
-  "n": 129,
-  "nStory": 50,
-  "nSent": 92,
-  "endings": {
-   "casual": 0.957,
-   "noun": 0.022,
-   "formal": 0.022
-  },
-  "endingsLobby": {
-   "casual": 0.968,
-   "noun": 0.032
-  },
-  "endingsStory": {
-   "casual": 0.939,
-   "formal": 0.041,
-   "noun": 0.02
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 31,
-  "nTouchSent": 3,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 5,
-   "네가": 1,
-   "너": 1,
-   "넌": 1,
-   "자기": 1
-  },
-  "me": {
-   "내가": 6,
-   "나는": 3,
-   "나도": 2,
-   "우리": 1
-  },
-  "interj": [],
-  "catch": [
-   "다야님",
-   "리츠",
-   "운동"
-  ]
- },
- "rufo": {
-  "n": 195,
-  "nStory": 102,
-  "nSent": 170,
-  "endings": {
-   "casual": 0.894,
-   "formal": 0.053,
-   "polite": 0.035,
-   "royal": 0.006,
-   "hao": 0.006,
-   "noun": 0.006
-  },
-  "endingsLobby": {
-   "casual": 0.976,
-   "noun": 0.024
-  },
-  "endingsStory": {
-   "casual": 0.868,
-   "formal": 0.074,
-   "polite": 0.041,
-   "royal": 0.008,
-   "hao": 0.008
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "대장": 5,
-   "교주": 3,
-   "네가": 1
-  },
-  "me": {
-   "우리": 6,
-   "내가": 4,
-   "저는": 1
-  },
-  "interj": [
-   "으악",
-   "하하",
-   "흠"
-  ],
-  "catch": [
-   "대장",
-   "것이냐",
-   "사료스탕스",
-   "사료",
-   "티그"
-  ]
- },
- "sari": {
-  "n": 64,
-  "nStory": 0,
-  "nSent": 44,
-  "endings": {
-   "casual": 0.818,
-   "polite": 0.182
-  },
-  "endingsLobby": {
-   "casual": 0.789,
-   "polite": 0.211
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3
-  },
-  "me": {
-   "저는": 1,
-   "제가": 1,
-   "나도": 1,
-   "난": 1,
-   "나는": 1
-  },
-  "interj": [
-   "우와"
-  ],
-  "catch": [
-   "얘기"
-  ]
- },
- "scizor": {
-  "n": 106,
-  "nStory": 27,
-  "nSent": 77,
-  "endings": {
-   "casual": 0.974,
-   "hao": 0.013,
-   "polite": 0.013
-  },
-  "endingsLobby": {
-   "casual": 0.949,
-   "hao": 0.026,
-   "polite": 0.026
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 0.833,
-   "hao": 0.167
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 2,
-   "넌": 1
-  },
-  "me": {
-   "내가": 4,
-   "나를": 1,
-   "난": 1,
-   "이 몸": 1
-  },
-  "interj": [],
-  "catch": [
-   "빌런",
-   "시저",
-   "가위",
-   "악행"
-  ]
- },
- "selline": {
-  "n": 142,
-  "nStory": 21,
-  "nSent": 68,
-  "endings": {
-   "casual": 0.985,
-   "noun": 0.015
-  },
-  "endingsLobby": {
-   "casual": 0.975,
-   "noun": 0.025
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 9,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "너": 3,
-   "니가": 1
-  },
-  "me": {
-   "내가": 4,
-   "나도": 3,
-   "우리": 3,
-   "난": 2,
-   "나를": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "도발",
-   "분위기",
-   "표정",
-   "어때"
-  ]
- },
- "shady": {
-  "n": 300,
-  "nStory": 193,
-  "nSent": 243,
-  "endings": {
-   "casual": 0.979,
-   "formal": 0.012,
-   "polite": 0.008
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.975,
-   "formal": 0.015,
-   "polite": 0.01
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "너": 11,
-   "교주": 4,
-   "넌": 3,
-   "님": 1,
-   "니가": 1,
-   "언니": 1
-  },
-  "me": {
-   "내가": 12,
-   "나도": 5,
-   "우리": 4,
-   "난": 2,
-   "나는": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "쉐이디",
-   "신라님",
-   "파인애플",
-   "장난감",
-   "장난",
-   "솔직히"
-  ]
- },
- "shadytwisted": {
-  "n": 211,
-  "nStory": 118,
-  "nSent": 168,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 42,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 11,
-   "너": 8,
-   "네가": 3,
-   "넌": 2
-  },
-  "me": {
-   "내가": 16,
-   "나도": 7,
-   "우리": 4,
-   "난": 4,
-   "소녀": 1
-  },
-  "interj": [
-   "흠",
-   "하아"
-  ],
-  "catch": [
-   "제품",
-   "인형"
-  ]
- },
- "shasha": {
-  "n": 109,
-  "nStory": 2,
-  "nSent": 55,
-  "endings": {
-   "polite": 0.673,
-   "casual": 0.255,
-   "formal": 0.073
-  },
-  "endingsLobby": {
-   "polite": 0.805,
-   "casual": 0.122,
-   "formal": 0.073
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "polite": 0.857,
-   "formal": 0.143
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 3
-  },
-  "me": {
-   "저는": 3,
-   "제가": 2,
-   "저도": 1
-  },
-  "interj": [],
-  "catch": [
-   "텀블러"
-  ]
- },
- "sherum": {
-  "n": 679,
-  "nStory": 571,
-  "nSent": 581,
-  "endings": {
-   "polite": 0.392,
-   "casual": 0.356,
-   "formal": 0.219,
-   "noun": 0.024,
-   "royal": 0.005,
-   "hao": 0.003
-  },
-  "endingsLobby": {
-   "polite": 0.463,
-   "casual": 0.259,
-   "noun": 0.167,
-   "formal": 0.111
-  },
-  "endingsStory": {
-   "polite": 0.387,
-   "casual": 0.368,
-   "formal": 0.233,
-   "royal": 0.006,
-   "hao": 0.004,
-   "noun": 0.002
-  },
-  "endingsTouch": {
-   "casual": 0.3,
-   "noun": 0.3,
-   "polite": 0.3,
-   "formal": 0.1
-  },
-  "nLobbySent": 54,
-  "nTouchSent": 10,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 17,
-   "자기": 2,
-   "네가": 2,
-   "교수님": 2,
-   "선생님": 1,
-   "자네": 1
-  },
-  "me": {
-   "제가": 21,
-   "내가": 10,
-   "저는": 8,
-   "난": 2,
-   "저도": 2
-  },
-  "interj": [
-   "흠",
-   "하하"
-  ],
-  "catch": [
-   "내용",
-   "기록",
-   "수업",
-   "유령들",
-   "수인",
-   "벨리타",
-   "그림일기",
-   "뱀의",
-   "도서관",
-   "역사",
-   "책의",
-   "기원"
-  ]
- },
- "shoupan": {
-  "n": 328,
-  "nStory": 221,
-  "nSent": 276,
-  "endings": {
-   "casual": 0.949,
-   "polite": 0.022,
-   "formal": 0.018,
-   "royal": 0.004,
-   "hao": 0.004,
-   "noun": 0.004
-  },
-  "endingsLobby": {
-   "casual": 0.946,
-   "formal": 0.027,
-   "noun": 0.027
-  },
-  "endingsStory": {
-   "casual": 0.948,
-   "polite": 0.026,
-   "formal": 0.017,
-   "royal": 0.004,
-   "hao": 0.004
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "니가",
-  "addrCounts": {
-   "니가": 4,
-   "너": 2,
-   "넌": 1,
-   "교주님": 1,
-   "교주": 1
-  },
-  "me": {
-   "내가": 13,
-   "난": 11,
-   "나도": 2,
-   "우리": 2,
-   "나는": 1
-  },
-  "interj": [
-   "으악",
-   "우와"
-  ],
-  "catch": [
-   "슈퍼볼트",
-   "슈퍼",
-   "으악",
-   "슈팡",
-   "달려",
-   "양갱",
-   "브레이크",
-   "달릴",
-   "슈파볼트",
-   "배달",
-   "고장",
-   "케이크"
-  ]
- },
- "silphir": {
-  "n": 100,
-  "nStory": 8,
-  "nSent": 61,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 4,
-   "너": 2,
-   "넌": 1
-  },
-  "me": {
-   "내가": 4,
-   "나는": 3,
-   "난": 1,
-   "나도": 1
-  },
-  "interj": [],
-  "catch": [
-   "이길"
-  ]
- },
- "silvia": {
-  "n": 364,
-  "nStory": 262,
-  "nSent": 259,
-  "endings": {
-   "haso": 0.421,
-   "casual": 0.328,
-   "formal": 0.201,
-   "polite": 0.046,
-   "hao": 0.004
-  },
-  "endingsLobby": {
-   "haso": 0.61,
-   "casual": 0.195,
-   "formal": 0.146,
-   "polite": 0.049
-  },
-  "endingsStory": {
-   "haso": 0.383,
-   "casual": 0.354,
-   "formal": 0.214,
-   "polite": 0.044,
-   "hao": 0.005
-  },
-  "endingsTouch": {
-   "haso": 0.714,
-   "casual": 0.143,
-   "formal": 0.143
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 7,
-  "style": "haso",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 5,
-   "그대": 2,
-   "자기": 1,
-   "교수님": 1
-  },
-  "me": {
-   "내가": 7,
-   "소녀": 5,
-   "우리": 1,
-   "저도": 1,
-   "난": 1
-  },
-  "interj": [
-   "흠",
-   "으으",
-   "아하",
-   "얍"
-  ],
-  "catch": [
-   "소녀",
-   "냠냠",
-   "이모님",
-   "껍질",
-   "진은",
-   "식으로",
-   "대공",
-   "품위"
-  ]
- },
- "sist": {
-  "n": 145,
-  "nStory": 52,
-  "nSent": 108,
-  "endings": {
-   "polite": 0.556,
-   "casual": 0.324,
-   "formal": 0.093,
-   "hao": 0.028
-  },
-  "endingsLobby": {
-   "polite": 0.732,
-   "casual": 0.146,
-   "formal": 0.122
-  },
-  "endingsStory": {
-   "polite": 0.446,
-   "casual": 0.429,
-   "formal": 0.071,
-   "hao": 0.054
-  },
-  "endingsTouch": {
-   "polite": 0.714,
-   "formal": 0.286
-  },
-  "nLobbySent": 41,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "고객님",
-  "addrCounts": {
-   "고객님": 2,
-   "교수님": 1,
-   "주인": 1,
-   "교주님": 1,
-   "교주": 1
-  },
-  "me": {
-   "제가": 2,
-   "내가": 1,
-   "저는": 1,
-   "난": 1
-  },
-  "interj": [
-   "아이고",
-   "흠"
-  ],
-  "catch": [
-   "장사",
-   "말씀",
-   "감자칩",
-   "서비스"
-  ]
- },
- "skea": {
-  "n": 630,
-  "nStory": 551,
-  "nSent": 474,
-  "endings": {
-   "casual": 0.502,
-   "formal": 0.27,
-   "polite": 0.15,
-   "haso": 0.034,
-   "royal": 0.025,
-   "hao": 0.015,
-   "noun": 0.004
-  },
-  "endingsLobby": {
-   "casual": 0.435,
-   "formal": 0.261,
-   "polite": 0.261,
-   "noun": 0.043
-  },
-  "endingsStory": {
-   "casual": 0.501,
-   "formal": 0.272,
-   "polite": 0.146,
-   "haso": 0.036,
-   "royal": 0.027,
-   "hao": 0.016,
-   "noun": 0.002
-  },
-  "endingsTouch": {
-   "casual": 0.667,
-   "polite": 0.333
-  },
-  "nLobbySent": 23,
-  "nTouchSent": 3,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교수님": 22,
-   "교주님": 21,
-   "네가": 4,
-   "주인": 3,
-   "니가": 2,
-   "당신": 1
-  },
-  "me": {
-   "제가": 15,
-   "내가": 11,
-   "저는": 7,
-   "나는": 5,
-   "우리": 4
-  },
-  "interj": [
-   "하아",
-   "하하",
-   "흠"
-  ],
-  "catch": [
-   "교수님",
-   "꿈속",
-   "사제들",
-   "목소리",
-   "사제",
-   "기도",
-   "이곳",
-   "부디",
-   "잠에",
-   "꿈을",
-   "죽음",
-   "조언"
-  ]
- },
- "snorky": {
-  "n": 124,
-  "nStory": 31,
-  "nSent": 76,
-  "endings": {
-   "casual": 0.803,
-   "formal": 0.132,
-   "polite": 0.039,
-   "hao": 0.013,
-   "noun": 0.013
-  },
-  "endingsLobby": {
-   "casual": 0.714,
-   "formal": 0.171,
-   "polite": 0.057,
-   "hao": 0.029,
-   "noun": 0.029
-  },
-  "endingsStory": {
-   "casual": 0.844,
-   "formal": 0.125,
-   "polite": 0.031
-  },
-  "endingsTouch": {
-   "formal": 0.571,
-   "casual": 0.286,
-   "polite": 0.143
-  },
-  "nLobbySent": 35,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "너",
-  "addrCounts": {
-   "너": 1,
-   "교주님": 1
-  },
-  "me": {
-   "내가": 6,
-   "제가": 4,
-   "나도": 3,
-   "난": 1,
-   "나를": 1
-  },
-  "interj": [
-   "하아"
-  ],
-  "catch": [
-   "밧줄",
-   "파티"
-  ]
- },
- "sparrot": {
-  "n": 651,
-  "nStory": 572,
-  "nSent": 631,
-  "endings": {
-   "casual": 0.994,
-   "royal": 0.005,
-   "noun": 0.002
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.993,
-   "royal": 0.005,
-   "noun": 0.002
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 31,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "너",
-  "addrCounts": {
-   "너": 8,
-   "자기": 3,
-   "니가": 3,
-   "넌": 2
-  },
-  "me": {
-   "내가": 41,
-   "나는": 10,
-   "우리": 7,
-   "나를": 5,
-   "나도": 3
-  },
-  "interj": [
-   "흠",
-   "하아",
-   "하하",
-   "으악",
-   "앗",
-   "흥"
-  ],
-  "catch": [
-   "해적",
-   "선장",
-   "교장",
-   "해적단",
-   "해적들",
-   "배를",
-   "보물",
-   "위대한",
-   "강철",
-   "꼴뚜기",
-   "기세",
-   "섬을"
-  ]
- },
- "speaki": {
-  "n": 270,
-  "nStory": 195,
-  "nSent": 245,
-  "endings": {
-   "polite": 0.522,
-   "casual": 0.396,
-   "noun": 0.041,
-   "formal": 0.041
-  },
-  "endingsLobby": {
-   "polite": 0.8,
-   "casual": 0.15,
-   "formal": 0.05
-  },
-  "endingsStory": {
-   "polite": 0.459,
-   "casual": 0.454,
-   "noun": 0.052,
-   "formal": 0.036
-  },
-  "endingsTouch": {
-   "polite": 0.833,
-   "casual": 0.167
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 6,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 12,
-   "친구": 7,
-   "네가": 3,
-   "교주": 3,
-   "자기": 1,
-   "교수님": 1
-  },
-  "me": {
-   "내가": 6,
-   "저도": 3,
-   "저는": 2,
-   "우리": 2,
-   "제가": 2
-  },
-  "interj": [
-   "헤헤"
-  ],
-  "catch": [
-   "스피키",
-   "호박",
-   "친구",
-   "네르",
-   "하하",
-   "에스피",
-   "쉐이디님",
-   "제사장",
-   "거임",
-   "여러분"
-  ]
- },
- "speakimaid": {
-  "n": 93,
-  "nStory": 0,
-  "nSent": 61,
-  "endings": {
-   "polite": 0.836,
-   "casual": 0.115,
-   "formal": 0.049
-  },
-  "endingsLobby": {
-   "polite": 0.851,
-   "casual": 0.085,
-   "formal": 0.064
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 47,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "교주": 2,
-   "주인": 1
-  },
-  "me": {
-   "제가": 2,
-   "저도": 1
-  },
-  "interj": [],
-  "catch": [
-   "크레페",
-   "청소",
-   "메이드"
-  ]
- },
- "suro": {
-  "n": 585,
-  "nStory": 474,
-  "nSent": 437,
-  "endings": {
-   "casual": 0.787,
-   "polite": 0.176,
-   "formal": 0.027,
-   "royal": 0.009
-  },
-  "endingsLobby": {
-   "casual": 0.545,
-   "polite": 0.386,
-   "formal": 0.045,
-   "royal": 0.023
-  },
-  "endingsStory": {
-   "casual": 0.818,
-   "polite": 0.153,
-   "formal": 0.021,
-   "royal": 0.008
-  },
-  "endingsTouch": {
-   "polite": 0.75,
-   "formal": 0.25
-  },
-  "nLobbySent": 44,
-  "nTouchSent": 8,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 11,
-   "네가": 7,
-   "너": 6,
-   "선생님": 5,
-   "넌": 3,
-   "친구": 2
-  },
-  "me": {
-   "내가": 22,
-   "나는": 16,
-   "난": 10,
-   "제가": 7,
-   "나를": 4
-  },
-  "interj": [
-   "하아",
-   "으으",
-   "흠",
-   "아하",
-   "으악"
-  ],
-  "catch": [
-   "티그",
-   "영웅",
-   "촌장",
-   "선생님",
-   "걷는",
-   "아하",
-   "오해",
-   "흐흐흐흐흐"
-  ]
- },
- "sylla": {
-  "n": 330,
-  "nStory": 217,
-  "nSent": 253,
-  "endings": {
-   "casual": 0.984,
-   "polite": 0.008,
-   "royal": 0.004,
-   "formal": 0.004
-  },
-  "endingsLobby": {
-   "casual": 0.974,
-   "formal": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.99,
-   "polite": 0.005,
-   "royal": 0.005
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "네가": 10,
-   "너": 7,
-   "교주": 6,
-   "자기": 4
-  },
-  "me": {
-   "내가": 16,
-   "우리": 7,
-   "나는": 4,
-   "난": 3,
-   "나도": 3
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "바람",
-   "쉐이디",
-   "정령들",
-   "훈련",
-   "라이카",
-   "이프리트",
-   "으윽",
-   "저쪽",
-   "에슈르",
-   "기운"
-  ]
- },
- "taida": {
-  "n": 73,
-  "nStory": 9,
-  "nSent": 56,
-  "endings": {
-   "polite": 0.464,
-   "casual": 0.411,
-   "formal": 0.107,
-   "noun": 0.018
-  },
-  "endingsLobby": {
-   "polite": 0.45,
-   "casual": 0.425,
-   "formal": 0.125
-  },
-  "endingsStory": {
-   "polite": 0.5,
-   "casual": 0.375,
-   "noun": 0.125
-  },
-  "endingsTouch": {
-   "casual": 0.375,
-   "polite": 0.375,
-   "formal": 0.25
-  },
-  "nLobbySent": 40,
-  "nTouchSent": 8,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "님": 1,
-   "교수님": 1
-  },
-  "me": {
-   "저는": 1,
-   "저도": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "tig": {
-  "n": 620,
-  "nStory": 498,
-  "nSent": 530,
-  "endings": {
-   "casual": 0.991,
-   "noun": 0.006,
-   "formal": 0.002,
-   "royal": 0.002
-  },
-  "endingsLobby": {
-   "casual": 0.921,
-   "noun": 0.053,
-   "royal": 0.026
-  },
-  "endingsStory": {
-   "casual": 0.996,
-   "formal": 0.002,
-   "noun": 0.002
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 5,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "너": 17,
-   "교주": 12,
-   "니가": 7,
-   "넌": 6,
-   "자기": 4,
-   "네가": 3
-  },
-  "me": {
-   "내가": 37,
-   "난": 15,
-   "우리": 10,
-   "나는": 5,
-   "나도": 4
-  },
-  "interj": [
-   "우와",
-   "하아",
-   "으으",
-   "하하",
-   "으악"
-  ],
-  "catch": [
-   "할망구",
-   "슈루",
-   "슈로",
-   "사료스탕스",
-   "촌장",
-   "조용히",
-   "리온",
-   "루퍼",
-   "버터",
-   "도시",
-   "무사",
-   "티그님"
-  ]
- },
- "tighero": {
-  "n": 204,
-  "nStory": 111,
-  "nSent": 156,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 33,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 12,
-   "네가": 7,
-   "너": 6,
-   "니가": 2,
-   "넌": 2
-  },
-  "me": {
-   "내가": 20,
-   "나는": 7,
-   "난": 6,
-   "나도": 5,
-   "나를": 1
-  },
-  "interj": [
-   "흥"
-  ],
-  "catch": [
-   "길을",
-   "슈로",
-   "영웅",
-   "우루스",
-   "방금",
-   "규주",
-   "있었던"
-  ]
- },
- "ui": {
-  "n": 432,
-  "nStory": 301,
-  "nSent": 327,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 1.0
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 36,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "친구": 28,
-   "언니": 9,
-   "교주": 8,
-   "자기": 3,
-   "네가": 1,
-   "니가": 1
-  },
-  "me": {
-   "우리": 8,
-   "내가": 6,
-   "난": 6,
-   "나도": 1,
-   "나는": 1
-  },
-  "interj": [
-   "히히",
-   "으으",
-   "하아",
-   "흠"
-  ],
-  "catch": [
-   "친구",
-   "우이",
-   "하얀",
-   "행복",
-   "소원",
-   "친구들",
-   "에루",
-   "용족",
-   "용적",
-   "오이",
-   "작은",
-   "에로"
-  ]
- },
- "uros": {
-  "n": 485,
-  "nStory": 271,
-  "nSent": 307,
-  "endings": {
-   "casual": 0.678,
-   "polite": 0.244,
-   "formal": 0.075,
-   "noun": 0.003
-  },
-  "endingsLobby": {
-   "casual": 0.647,
-   "polite": 0.294,
-   "formal": 0.044,
-   "noun": 0.015
-  },
-  "endingsStory": {
-   "casual": 0.688,
-   "polite": 0.226,
-   "formal": 0.086
-  },
-  "endingsTouch": {
-   "polite": 0.5,
-   "casual": 0.5
-  },
-  "nLobbySent": 68,
-  "nTouchSent": 12,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 11,
-   "네가": 3,
-   "너": 3,
-   "자기": 2,
-   "니가": 2,
-   "친구": 2
-  },
-  "me": {
-   "내가": 13,
-   "나는": 11,
-   "나를": 9,
-   "제가": 8,
-   "저는": 7
-  },
-  "interj": [
-   "흠",
-   "으으",
-   "오오",
-   "헤헤"
-  ],
-  "catch": [
-   "우로스",
-   "나를",
-   "길을",
-   "에피카",
-   "스스로",
-   "순환",
-   "낚시"
-  ]
- },
- "vela": {
-  "n": 610,
-  "nStory": 503,
-  "nSent": 555,
-  "endings": {
-   "casual": 0.996,
-   "polite": 0.002,
-   "noun": 0.002
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.996,
-   "polite": 0.002,
-   "noun": 0.002
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 38,
-  "nTouchSent": 6,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "너": 19,
-   "교주": 15,
-   "네가": 12,
-   "넌": 7,
-   "친구": 4,
-   "니가": 1
-  },
-  "me": {
-   "내가": 41,
-   "난": 13,
-   "나도": 10,
-   "나는": 9,
-   "나를": 2
-  },
-  "interj": [
-   "흠",
-   "으악",
-   "흥",
-   "우와"
-  ],
-  "catch": [
-   "존재",
-   "존재감",
-   "재미있",
-   "개나리",
-   "해줘",
-   "존재님",
-   "존재들",
-   "눈에",
-   "다크넷",
-   "방에",
-   "신기한"
-  ]
- },
- "velvet": {
-  "n": 537,
-  "nStory": 444,
-  "nSent": 463,
-  "endings": {
-   "casual": 0.981,
-   "polite": 0.015,
-   "royal": 0.004
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.978,
-   "polite": 0.017,
-   "royal": 0.005
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 5,
-  "style": "casual",
-  "addr": "너",
-  "addrCounts": {
-   "너": 19,
-   "니가": 6,
-   "넌": 5,
-   "주인님": 3,
-   "자기": 2,
-   "네가": 2
-  },
-  "me": {
-   "내가": 42,
-   "난": 10,
-   "나는": 7,
-   "나도": 5,
-   "우리": 1
-  },
-  "interj": [
-   "하아",
-   "흠",
-   "흥",
-   "으악",
-   "하하",
-   "히히"
-  ],
-  "catch": [
-   "여왕",
-   "레비",
-   "프리클",
-   "지상",
-   "주인님",
-   "주제",
-   "도끼",
-   "비켜",
-   "궁전",
-   "왕좌",
-   "보수"
-  ]
- },
- "veroo": {
-  "n": 64,
-  "nStory": 0,
-  "nSent": 40,
-  "endings": {
-   "casual": 0.975,
-   "noun": 0.025
-  },
-  "endingsLobby": {
-   "casual": 0.968,
-   "noun": 0.032
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 31,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 3,
-   "너": 2
-  },
-  "me": {
-   "내가": 1
-  },
-  "interj": [],
-  "catch": []
- },
- "vivi": {
-  "n": 1495,
-  "nStory": 1354,
-  "nSent": 1255,
-  "endings": {
-   "casual": 0.489,
-   "polite": 0.441,
-   "vivi": 0.053,
-   "formal": 0.012,
-   "noun": 0.002,
-   "royal": 0.002,
-   "hao": 0.001
-  },
-  "endingsLobby": {
-   "polite": 0.673,
-   "vivi": 0.143,
-   "casual": 0.122,
-   "noun": 0.061
-  },
-  "endingsStory": {
-   "casual": 0.507,
-   "polite": 0.429,
-   "vivi": 0.049,
-   "formal": 0.013,
-   "royal": 0.002,
-   "hao": 0.001
-  },
-  "endingsTouch": {
-   "vivi": 0.571,
-   "polite": 0.429
-  },
-  "nLobbySent": 49,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 21,
-   "언니": 14,
-   "니가": 7,
-   "자기": 6,
-   "너": 6,
-   "당신": 4
-  },
-  "me": {
-   "내가": 40,
-   "나는": 28,
-   "우리": 12,
-   "난": 9,
-   "제가": 7
-  },
-  "interj": [
-   "흠",
-   "하아",
-   "하하"
-  ],
-  "catch": [
-   "소녀",
-   "다이아몬드",
-   "은석공",
-   "실비",
-   "자매들",
-   "목적",
-   "숙녀",
-   "엄마",
-   "은혜",
-   "명예",
-   "막내",
-   "소년"
-  ]
- },
- "xxionx": {
-  "n": 766,
-  "nStory": 631,
-  "nSent": 670,
-  "endings": {
-   "casual": 0.925,
-   "polite": 0.034,
-   "formal": 0.034,
-   "royal": 0.003,
-   "noun": 0.001,
-   "hao": 0.001
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {
-   "casual": 0.92,
-   "polite": 0.037,
-   "formal": 0.037,
-   "royal": 0.003,
-   "noun": 0.002,
-   "hao": 0.002
-  },
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 37,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 18,
-   "너": 12,
-   "넌": 5,
-   "사장님": 5,
-   "언니": 3,
-   "네가": 1
-  },
-  "me": {
-   "내가": 33,
-   "난": 13,
-   "나는": 9,
-   "우리": 7,
-   "나도": 7
-  },
-  "interj": [
-   "흐흐",
-   "흠",
-   "아하",
-   "크크",
-   "흥"
-  ],
-  "catch": [
-   "비비",
-   "사장님",
-   "어둠",
-   "이드",
-   "재판장님",
-   "클로에",
-   "클로",
-   "시온",
-   "다크",
-   "타겟",
-   "동생",
-   "이들"
-  ]
- },
- "yomi": {
-  "n": 130,
-  "nStory": 37,
-  "nSent": 89,
-  "endings": {
-   "polite": 0.64,
-   "casual": 0.18,
-   "formal": 0.157,
-   "hao": 0.011,
-   "noun": 0.011
-  },
-  "endingsLobby": {
-   "polite": 0.615,
-   "formal": 0.205,
-   "casual": 0.128,
-   "hao": 0.026,
-   "noun": 0.026
-  },
-  "endingsStory": {
-   "polite": 0.711,
-   "casual": 0.237,
-   "formal": 0.053
-  },
-  "endingsTouch": {
-   "polite": 0.857,
-   "casual": 0.143
-  },
-  "nLobbySent": 39,
-  "nTouchSent": 7,
-  "style": "polite",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4,
-   "교수님": 2,
-   "당신": 1
-  },
-  "me": {
-   "제가": 4,
-   "저도": 2,
-   "저를": 1
-  },
-  "interj": [
-   "흠"
-  ],
-  "catch": [
-   "달이",
-   "요정들",
-   "사제",
-   "달림",
-   "달빛"
-  ]
- },
- "youngchun": {
-  "n": 25,
-  "nStory": 0,
-  "nSent": 3,
-  "endings": {
-   "casual": 1.0
-  },
-  "endingsLobby": {
-   "casual": 1.0
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 1.0
-  },
-  "nLobbySent": 3,
-  "nTouchSent": 3,
-  "style": "casual",
-  "addr": "교주",
-  "addrCounts": {
-   "교주": 1
-  },
-  "me": {},
-  "interj": [],
-  "catch": []
- },
- "yumimi": {
-  "n": 64,
-  "nStory": 0,
-  "nSent": 42,
-  "endings": {
-   "casual": 0.714,
-   "polite": 0.286
-  },
-  "endingsLobby": {
-   "casual": 0.656,
-   "polite": 0.344
-  },
-  "endingsStory": {},
-  "endingsTouch": {
-   "casual": 0.857,
-   "polite": 0.143
-  },
-  "nLobbySent": 32,
-  "nTouchSent": 7,
-  "style": "casual",
-  "addr": "교주님",
-  "addrCounts": {
-   "교주님": 4
-  },
-  "me": {
-   "저도": 1,
-   "나는": 1,
-   "내가": 1
-  },
-  "interj": [],
-  "catch": [
-   "자연"
-  ]
- }
+"alice": {
+"n": 169,
+"nStory": 42,
+"nSent": 96,
+"endings": {
+"casual": 0.958,
+"polite": 0.021,
+"formal": 0.021
+},
+"endingsLobby": {
+"casual": 0.946,
+"formal": 0.054
+},
+"endingsStory": {
+"casual": 0.959,
+"polite": 0.041
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"너": 2,
+"넌": 1
+},
+"me": {
+"내가": 7,
+"난": 3,
+"나도": 2,
+"우리": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"미래",
+"별종",
+"나랑",
+"토끼",
+"미용"
+],
+"written": {
+"n": 196,
+"endings": {
+"casual": 0.883,
+"polite": 0.107
+}
+}
+},
+"allet": {
+"n": 68,
+"nStory": 4,
+"nSent": 49,
+"endings": {
+"casual": 0.633,
+"formal": 0.347,
+"hao": 0.02
+},
+"endingsLobby": {
+"casual": 0.583,
+"formal": 0.389,
+"hao": 0.028
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"formal": 0.667,
+"casual": 0.333
+},
+"nLobbySent": 36,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4
+},
+"me": {},
+"interj": [],
+"catch": [
+"완료"
+]
+},
+"amelia": {
+"n": 686,
+"nStory": 565,
+"nSent": 623,
+"endings": {
+"formal": 0.53,
+"casual": 0.274,
+"polite": 0.144,
+"hao": 0.05,
+"royal": 0.002
+},
+"endingsLobby": {
+"formal": 0.579,
+"polite": 0.263,
+"casual": 0.132,
+"hao": 0.026
+},
+"endingsStory": {
+"formal": 0.521,
+"casual": 0.287,
+"polite": 0.138,
+"hao": 0.052,
+"royal": 0.002
+},
+"endingsTouch": {
+"polite": 0.571,
+"formal": 0.286,
+"hao": 0.143
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 7,
+"당신": 4,
+"교주": 3,
+"니가": 1,
+"넌": 1,
+"님": 1
+},
+"me": {
+"제가": 18,
+"저는": 4,
+"저를": 3,
+"내가": 2,
+"나는": 2
+},
+"interj": [],
+"catch": [
+"시장님",
+"아멜리",
+"진압반",
+"마십시오",
+"엘레나님",
+"주십시오",
+"지지율",
+"검사기",
+"장치",
+"기본",
+"적성",
+"설정"
+],
+"written": {
+"n": 1010,
+"endings": {
+"casual": 0.539,
+"formal": 0.334,
+"polite": 0.06,
+"hao": 0.05
+}
+}
+},
+"ameliar41": {
+"n": 507,
+"nStory": 428,
+"nSent": 395,
+"endings": {
+"casual": 0.947,
+"royal": 0.043,
+"formal": 0.01
+},
+"endingsLobby": {
+"casual": 0.865,
+"royal": 0.135
+},
+"endingsStory": {
+"casual": 0.966,
+"royal": 0.026,
+"formal": 0.009
+},
+"endingsTouch": {
+"casual": 0.857,
+"royal": 0.143
+},
+"nLobbySent": 37,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 11,
+"니가": 5,
+"너": 4,
+"네가": 4,
+"넌": 1,
+"자기": 1
+},
+"me": {
+"내가": 23,
+"나를": 8,
+"나는": 7,
+"난": 5,
+"우리": 4
+},
+"interj": [],
+"catch": [
+"차원",
+"몸의",
+"고향",
+"시장",
+"감히",
+"차원문",
+"몸은",
+"몸이",
+"완벽한",
+"몸을",
+"문을",
+"이몸"
+]
+},
+"aragnia": {
+"n": 79,
+"nStory": 0,
+"nSent": 48,
+"endings": {
+"royal": 0.562,
+"casual": 0.396,
+"polite": 0.042
+},
+"endingsLobby": {
+"royal": 0.55,
+"casual": 0.425,
+"polite": 0.025
+},
+"endingsStory": {},
+"endingsTouch": {
+"royal": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "royal",
+"addr": null,
+"addrCounts": {
+"그대": 1
+},
+"me": {
+"나를": 3,
+"짐이": 1,
+"짐은": 1
+},
+"interj": [],
+"catch": [
+"아우",
+"여왕",
+"그대",
+"진주",
+"것이냐",
+"않느냐",
+"예쁜",
+"왕국",
+"최강",
+"나의"
+],
+"tic": {
+"form": "royal",
+"ratio": 0.587,
+"voice": 0.562,
+"text": 0.326,
+"voiceFair": 0.587,
+"textFair": 0.326
+},
+"written": {
+"n": 144,
+"endings": {
+"casual": 0.674,
+"royal": 0.326
+}
+}
+},
+"arco": {
+"n": 125,
+"nStory": 32,
+"nSent": 94,
+"endings": {
+"casual": 0.564,
+"polite": 0.426,
+"formal": 0.011
+},
+"endingsLobby": {
+"polite": 0.625,
+"casual": 0.354,
+"formal": 0.021
+},
+"endingsStory": {
+"casual": 0.842,
+"polite": 0.158
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 48,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 10,
+"너": 3,
+"니가": 1,
+"넌": 1
+},
+"me": {
+"난": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"댄스",
+"배틀",
+"블레이드",
+"교수님"
+],
+"written": {
+"n": 94,
+"endings": {
+"casual": 0.574,
+"polite": 0.362,
+"formal": 0.053
+}
+}
+},
+"arnet": {
+"n": 79,
+"nStory": 0,
+"nSent": 54,
+"endings": {
+"polite": 0.593,
+"casual": 0.389,
+"formal": 0.019
+},
+"endingsLobby": {
+"polite": 0.721,
+"casual": 0.256,
+"formal": 0.023
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.75,
+"casual": 0.25
+},
+"nLobbySent": 43,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5
+},
+"me": {
+"제가": 1
+},
+"interj": [],
+"catch": [
+"심판",
+"결투",
+"싸움"
+],
+"written": {
+"n": 50,
+"endings": {
+"casual": 0.98,
+"polite": 0.02
+}
+}
+},
+"asana": {
+"n": 153,
+"nStory": 60,
+"nSent": 115,
+"endings": {
+"polite": 0.609,
+"casual": 0.252,
+"formal": 0.13,
+"noun": 0.009
+},
+"endingsLobby": {
+"polite": 0.581,
+"casual": 0.256,
+"formal": 0.14,
+"noun": 0.023
+},
+"endingsStory": {
+"polite": 0.629,
+"casual": 0.242,
+"formal": 0.129
+},
+"endingsTouch": {
+"polite": 0.667,
+"casual": 0.333
+},
+"nLobbySent": 43,
+"nTouchSent": 9,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"당신": 3,
+"선생님": 1,
+"너": 1,
+"넌": 1
+},
+"me": {
+"제가": 6,
+"저를": 3,
+"우리": 2,
+"저는": 1,
+"저도": 1
+},
+"interj": [
+"어머"
+],
+"catch": [
+"요가",
+"자세",
+"스트레칭",
+"건강",
+"부장님",
+"다리",
+"몸이",
+"회장님",
+"멋진",
+"건강한"
+],
+"written": {
+"n": 245,
+"endings": {
+"casual": 0.429,
+"polite": 0.404,
+"formal": 0.135,
+"hao": 0.024
+}
+}
+},
+"ashur": {
+"n": 591,
+"nStory": 498,
+"nSent": 534,
+"endings": {
+"polite": 0.493,
+"casual": 0.489,
+"formal": 0.015,
+"royal": 0.002,
+"hao": 0.002
+},
+"endingsLobby": {
+"casual": 0.629,
+"polite": 0.343,
+"formal": 0.029
+},
+"endingsStory": {
+"polite": 0.506,
+"casual": 0.475,
+"formal": 0.014,
+"royal": 0.002,
+"hao": 0.002
+},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 35,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 27,
+"너": 4,
+"자기": 2,
+"네가": 2,
+"교주": 2,
+"님": 1
+},
+"me": {
+"내가": 18,
+"제가": 10,
+"나는": 8,
+"저도": 6,
+"우리": 3
+},
+"interj": [],
+"catch": [
+"마법",
+"빵집",
+"연구",
+"빵을",
+"캐릭터",
+"제빵",
+"논문",
+"네르님",
+"에슈르",
+"마법학교",
+"방으로",
+"수정"
+],
+"written": {
+"n": 888,
+"endings": {
+"casual": 0.829,
+"polite": 0.161
+}
+}
+},
+"ashurmagi": {
+"n": 219,
+"nStory": 140,
+"nSent": 196,
+"endings": {
+"casual": 0.791,
+"polite": 0.204,
+"formal": 0.005
+},
+"endingsLobby": {
+"polite": 0.775,
+"casual": 0.225
+},
+"endingsStory": {
+"casual": 0.951,
+"polite": 0.042,
+"formal": 0.007
+},
+"endingsTouch": {
+"polite": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"너": 6,
+"교주님": 6,
+"자기": 1,
+"니가": 1
+},
+"me": {
+"내가": 12,
+"나는": 6,
+"제가": 5,
+"난": 1,
+"저를": 1
+},
+"interj": [],
+"catch": [
+"마법",
+"미래",
+"민트",
+"연구",
+"마법학교",
+"평소",
+"빵을"
+]
+},
+"aurora": {
+"n": 529,
+"nStory": 450,
+"nSent": 417,
+"endings": {
+"casual": 0.463,
+"formal": 0.408,
+"polite": 0.113,
+"hao": 0.017
+},
+"endingsLobby": {
+"formal": 0.771,
+"polite": 0.171,
+"casual": 0.029,
+"hao": 0.029
+},
+"endingsStory": {
+"casual": 0.511,
+"formal": 0.363,
+"polite": 0.11,
+"hao": 0.016
+},
+"endingsTouch": {
+"formal": 0.833,
+"hao": 0.167
+},
+"nLobbySent": 35,
+"nTouchSent": 6,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"친구": 2,
+"주인님": 1
+},
+"me": {
+"제가": 13,
+"내가": 11,
+"저도": 4,
+"난": 4,
+"저는": 2
+},
+"interj": [],
+"catch": [
+"정령",
+"벨벳님",
+"마을",
+"주민들",
+"감정",
+"이대",
+"플라즈마",
+"마녀님",
+"벨베님",
+"최근",
+"그들",
+"그치"
+],
+"written": {
+"n": 429,
+"endings": {
+"casual": 0.499,
+"formal": 0.375,
+"polite": 0.091,
+"hao": 0.028
+}
+}
+},
+"aya": {
+"n": 509,
+"nStory": 374,
+"nSent": 359,
+"endings": {
+"casual": 0.981,
+"formal": 0.011,
+"polite": 0.006,
+"royal": 0.003
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.981,
+"formal": 0.013,
+"polite": 0.006
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 13,
+"네가": 8,
+"너": 7,
+"니가": 2,
+"자기": 2
+},
+"me": {
+"내가": 28,
+"나도": 10,
+"우리": 9,
+"난": 9,
+"나는": 6
+},
+"interj": [],
+"catch": [
+"동생들",
+"에피카",
+"이드",
+"시온",
+"클로",
+"마카샤",
+"희망",
+"찾을",
+"조언",
+"조안"
+],
+"written": {
+"n": 291,
+"endings": {
+"casual": 0.969
+}
+}
+},
+"ayla": {
+"n": 93,
+"nStory": 0,
+"nSent": 41,
+"endings": {
+"casual": 0.951,
+"ayla": 0.049
+},
+"endingsLobby": {
+"casual": 0.938,
+"ayla": 0.062
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 32,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"친구": 3
+},
+"me": {
+"내가": 3,
+"난": 2,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"친구",
+"그만",
+"거구마",
+"없구마"
+],
+"tic": {
+"form": "ayla",
+"ratio": 0.326,
+"voice": 0.049,
+"text": 0.2,
+"voiceFair": 0.049,
+"textFair": 0.326,
+"label": "~라바 / ~그마 (문장 끝을 이렇게 맺는다)",
+"note": "'~그마'만 재고 있었으나 인물 사전의 기본 어미는 '~라바'다. 둘 다 쓴다"
+},
+"written": {
+"n": 315,
+"endings": {
+"casual": 0.413,
+"formal": 0.308,
+"ayla": 0.2,
+"polite": 0.063
+}
+}
+},
+"bana": {
+"n": 157,
+"nStory": 94,
+"nSent": 140,
+"endings": {
+"casual": 0.971,
+"formal": 0.014,
+"polite": 0.007,
+"noun": 0.007
+},
+"endingsLobby": {
+"casual": 0.897,
+"formal": 0.051,
+"polite": 0.026,
+"noun": 0.026
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 0.857,
+"polite": 0.143
+},
+"nLobbySent": 39,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"친구": 6,
+"교주": 4,
+"너": 3,
+"니가": 1,
+"넌": 1,
+"손님": 1
+},
+"me": {
+"내가": 10,
+"난": 4,
+"나도": 3,
+"우리": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"이거",
+"이건",
+"장치",
+"엘프",
+"슈팡",
+"슈퍼볼트",
+"수리",
+"전설"
+],
+"written": {
+"n": 347,
+"endings": {
+"casual": 0.833,
+"formal": 0.092,
+"polite": 0.063
+}
+}
+},
+"barie": {
+"n": 153,
+"nStory": 89,
+"nSent": 134,
+"endings": {
+"polite": 0.515,
+"casual": 0.455,
+"formal": 0.03
+},
+"endingsLobby": {
+"polite": 0.763,
+"casual": 0.211,
+"formal": 0.026
+},
+"endingsStory": {
+"casual": 0.581,
+"polite": 0.384,
+"formal": 0.035
+},
+"endingsTouch": {
+"polite": 0.875,
+"casual": 0.125
+},
+"nLobbySent": 38,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 3,
+"친구": 2,
+"너": 1,
+"네가": 1,
+"손님": 1
+},
+"me": {
+"내가": 3,
+"제가": 1,
+"나도": 1,
+"저는": 1
+},
+"interj": [],
+"catch": [
+"레비",
+"백사",
+"책을",
+"도서관",
+"주문",
+"벨벳님"
+],
+"tic": {
+"form": "custom",
+"label": "~요오 (해요체 끝을 길게 늘인다)",
+"ratio": 0.5,
+"text": 0.11,
+"n": 139,
+"note": "글자 말뭉치(극장)는 11%지만 위키 대사표의 교주 대상 대사에서는 거의 매 문장이라 상향"
+},
+"written": {
+"n": 179,
+"endings": {
+"casual": 0.598,
+"polite": 0.397
+}
+}
+},
+"barong": {
+"n": 108,
+"nStory": 2,
+"nSent": 53,
+"endings": {
+"casual": 0.981,
+"polite": 0.019
+},
+"endingsLobby": {
+"casual": 0.975,
+"polite": 0.025
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"넌": 1,
+"너": 1
+},
+"me": {
+"난": 4,
+"내가": 4,
+"나를": 1,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"댄스",
+"콩콩"
+],
+"written": {
+"n": 126,
+"endings": {
+"casual": 0.992
+}
+}
+},
+"belita": {
+"n": 469,
+"nStory": 376,
+"nSent": 364,
+"endings": {
+"casual": 0.909,
+"royal": 0.066,
+"formal": 0.019,
+"noun": 0.003,
+"polite": 0.003
+},
+"endingsLobby": {
+"casual": 0.833,
+"royal": 0.133,
+"formal": 0.033
+},
+"endingsStory": {
+"casual": 0.917,
+"royal": 0.062,
+"formal": 0.015,
+"noun": 0.003,
+"polite": 0.003
+},
+"endingsTouch": {
+"royal": 0.5,
+"casual": 0.5
+},
+"nLobbySent": 30,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 16,
+"네가": 12,
+"너": 3,
+"니가": 1,
+"주인": 1,
+"그대": 1
+},
+"me": {
+"내가": 20,
+"나도": 11,
+"우리": 8,
+"나는": 6,
+"나를": 2
+},
+"interj": [],
+"catch": [
+"에르핀",
+"뿌리",
+"프리클",
+"동생",
+"쉐럼",
+"마력",
+"밧줄",
+"스노키",
+"구덩",
+"마녀들이여",
+"않느냐",
+"구덩이"
+],
+"tic": {
+"form": "royal",
+"ratio": 0.094,
+"voice": 0.066,
+"text": 0.094,
+"voiceFair": 0.068,
+"textFair": 0.094
+},
+"written": {
+"n": 403,
+"endings": {
+"casual": 0.903,
+"royal": 0.094
+}
+}
+},
+"beni": {
+"n": 142,
+"nStory": 63,
+"nSent": 111,
+"endings": {
+"casual": 0.685,
+"polite": 0.306,
+"hao": 0.009
+},
+"endingsLobby": {
+"polite": 0.514,
+"casual": 0.486
+},
+"endingsStory": {
+"casual": 0.776,
+"polite": 0.209,
+"hao": 0.015
+},
+"endingsTouch": {
+"polite": 0.833,
+"casual": 0.167
+},
+"nLobbySent": 35,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"대장": 12,
+"교주님": 11
+},
+"me": {
+"난": 3,
+"제가": 3,
+"내가": 2,
+"우리": 2,
+"나는": 2
+},
+"interj": [],
+"catch": [
+"대장",
+"루퍼",
+"먹을",
+"놀이",
+"하하"
+],
+"written": {
+"n": 308,
+"endings": {
+"casual": 0.825,
+"polite": 0.166
+}
+}
+},
+"benibeni": {
+"n": 94,
+"nStory": 1,
+"nSent": 45,
+"endings": {
+"polite": 0.867,
+"casual": 0.111,
+"noun": 0.022
+},
+"endingsLobby": {
+"polite": 0.914,
+"casual": 0.057,
+"noun": 0.029
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 35,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"친구": 1
+},
+"me": {
+"저는": 2,
+"제가": 1
+},
+"interj": [],
+"catch": []
+},
+"bigwood": {
+"n": 120,
+"nStory": 41,
+"nSent": 82,
+"endings": {
+"casual": 0.976,
+"noun": 0.012,
+"polite": 0.012
+},
+"endingsLobby": {
+"casual": 0.944,
+"noun": 0.028,
+"polite": 0.028
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 0.875,
+"polite": 0.125
+},
+"nLobbySent": 36,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 7,
+"너": 1
+},
+"me": {
+"나도": 2,
+"난": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"비구드",
+"유령",
+"열매",
+"정령산",
+"거냐",
+"요정",
+"비구두",
+"착한"
+],
+"written": {
+"n": 70,
+"endings": {
+"casual": 0.957,
+"formal": 0.043
+}
+}
+},
+"blanchet": {
+"n": 163,
+"nStory": 45,
+"nSent": 99,
+"endings": {
+"polite": 0.455,
+"casual": 0.374,
+"formal": 0.162,
+"royal": 0.01
+},
+"endingsLobby": {
+"polite": 0.562,
+"formal": 0.271,
+"casual": 0.167
+},
+"endingsStory": {
+"casual": 0.575,
+"polite": 0.375,
+"formal": 0.05
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 48,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 11,
+"교주": 2,
+"네가": 1
+},
+"me": {
+"제가": 5,
+"저는": 4,
+"저도": 2,
+"우리": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"감독님",
+"배역",
+"촬영",
+"응원",
+"니콜",
+"연기",
+"감정",
+"푸른",
+"장미"
+],
+"written": {
+"n": 276,
+"endings": {
+"casual": 0.58,
+"polite": 0.355,
+"formal": 0.062
+}
+}
+},
+"butter": {
+"n": 225,
+"nStory": 118,
+"nSent": 156,
+"endings": {
+"polite": 0.609,
+"casual": 0.378,
+"royal": 0.006,
+"noun": 0.006
+},
+"endingsLobby": {
+"polite": 0.905,
+"casual": 0.095
+},
+"endingsStory": {
+"polite": 0.495,
+"casual": 0.485,
+"royal": 0.01,
+"noun": 0.01
+},
+"endingsTouch": {
+"polite": 0.875,
+"casual": 0.125
+},
+"nLobbySent": 42,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"너": 1,
+"니가": 1,
+"네가": 1,
+"언니": 1
+},
+"me": {
+"나도": 3,
+"저는": 3,
+"제가": 3,
+"우리": 3,
+"내가": 2
+},
+"interj": [
+"어이"
+],
+"catch": [
+"버터",
+"코미",
+"티그",
+"천장님",
+"마을",
+"동시",
+"친구들",
+"사료",
+"구덩이",
+"훈련",
+"멋진"
+],
+"written": {
+"n": 656,
+"endings": {
+"casual": 0.71,
+"polite": 0.285
+}
+}
+},
+"callamori": {
+"n": 30,
+"nStory": 0,
+"nSent": 15,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 13,
+"nTouchSent": 8,
+"style": "casual",
+"addr": null,
+"addrCounts": {},
+"me": {
+"우리": 1
+},
+"interj": [],
+"catch": []
+},
+"canna": {
+"n": 266,
+"nStory": 159,
+"nSent": 201,
+"endings": {
+"casual": 0.428,
+"formal": 0.333,
+"polite": 0.224,
+"hao": 0.01,
+"haso": 0.005
+},
+"endingsLobby": {
+"formal": 0.351,
+"casual": 0.324,
+"polite": 0.297,
+"hao": 0.027
+},
+"endingsStory": {
+"casual": 0.448,
+"formal": 0.325,
+"polite": 0.221,
+"haso": 0.006
+},
+"endingsTouch": {
+"formal": 0.4,
+"hao": 0.2,
+"casual": 0.2,
+"polite": 0.2
+},
+"nLobbySent": 37,
+"nTouchSent": 5,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 7,
+"교주": 3,
+"너": 2
+},
+"me": {
+"제가": 5,
+"우리": 2,
+"저도": 1,
+"저는": 1,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"시장님",
+"휴가",
+"아멜리아님",
+"진압반",
+"사격",
+"용병"
+],
+"written": {
+"n": 312,
+"endings": {
+"casual": 0.587,
+"formal": 0.247,
+"polite": 0.151
+}
+}
+},
+"canta": {
+"n": 113,
+"nStory": 49,
+"nSent": 100,
+"endings": {
+"casual": 0.94,
+"polite": 0.04,
+"formal": 0.01,
+"noun": 0.01
+},
+"endingsLobby": {
+"casual": 0.974,
+"noun": 0.026
+},
+"endingsStory": {
+"casual": 0.904,
+"polite": 0.077,
+"formal": 0.019
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 39,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3,
+"너": 2,
+"마스터": 1
+},
+"me": {
+"내가": 3,
+"나도": 2,
+"제가": 1,
+"저는": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"팽이",
+"사탕",
+"이거"
+],
+"written": {
+"n": 167,
+"endings": {
+"casual": 0.617,
+"formal": 0.228,
+"polite": 0.126,
+"hao": 0.024
+}
+}
+},
+"carren": {
+"n": 66,
+"nStory": 1,
+"nSent": 40,
+"endings": {
+"casual": 0.825,
+"polite": 0.15,
+"noun": 0.025
+},
+"endingsLobby": {
+"casual": 0.839,
+"polite": 0.129,
+"noun": 0.032
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 0.714,
+"polite": 0.286
+},
+"nLobbySent": 31,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"당신": 1
+},
+"me": {},
+"interj": [],
+"catch": [
+"당근"
+],
+"written": {
+"n": 44,
+"endings": {
+"casual": 0.977,
+"polite": 0.023
+}
+}
+},
+"chloe": {
+"n": 585,
+"nStory": 441,
+"nSent": 450,
+"endings": {
+"casual": 0.998,
+"formal": 0.002
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.997,
+"formal": 0.003
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 41,
+"nTouchSent": 11,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"언니": 19,
+"교주": 13,
+"너": 11,
+"니가": 8,
+"넌": 4,
+"자기": 1
+},
+"me": {
+"내가": 28,
+"난": 14,
+"우리": 12,
+"나도": 8,
+"나는": 5
+},
+"interj": [],
+"catch": [
+"세바스티안",
+"에피카",
+"떠난",
+"동생들",
+"언니들",
+"은석이",
+"만났는데",
+"옷을",
+"동생",
+"느껴져"
+],
+"written": {
+"n": 501,
+"endings": {
+"casual": 0.954,
+"polite": 0.038
+}
+}
+},
+"chopi": {
+"n": 64,
+"nStory": 0,
+"nSent": 43,
+"endings": {
+"polite": 0.744,
+"casual": 0.256
+},
+"endingsLobby": {
+"polite": 0.73,
+"casual": 0.27
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "polite",
+"addr": null,
+"addrCounts": {
+"교주님": 2
+},
+"me": {
+"제가": 1,
+"나도": 1
+},
+"interj": [],
+"catch": []
+},
+"crepe": {
+"n": 43,
+"nStory": 0,
+"nSent": 2,
+"endings": {
+"polite": 0.5,
+"formal": 0.5
+},
+"endingsLobby": {
+"polite": 0.5,
+"formal": 0.5
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.5,
+"formal": 0.5
+},
+"nLobbySent": 2,
+"nTouchSent": 2,
+"style": "polite",
+"addr": null,
+"addrCounts": {},
+"me": {
+"저도": 1
+},
+"interj": [],
+"catch": [],
+"written": {
+"n": 60,
+"endings": {
+"polite": 0.483,
+"casual": 0.467,
+"formal": 0.033
+}
+}
+},
+"cuee": {
+"n": 71,
+"nStory": 7,
+"nSent": 44,
+"endings": {
+"polite": 0.591,
+"casual": 0.318,
+"formal": 0.091
+},
+"endingsLobby": {
+"polite": 0.706,
+"casual": 0.235,
+"formal": 0.059
+},
+"endingsStory": {
+"formal": 0.5,
+"casual": 0.5
+},
+"endingsTouch": {
+"polite": 0.667,
+"formal": 0.333
+},
+"nLobbySent": 34,
+"nTouchSent": 3,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4
+},
+"me": {
+"난": 1,
+"저는": 1,
+"나는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"오이"
+]
+},
+"daya": {
+"n": 288,
+"nStory": 181,
+"nSent": 208,
+"endings": {
+"casual": 0.87,
+"royal": 0.106,
+"polite": 0.019,
+"hao": 0.005
+},
+"endingsLobby": {
+"casual": 0.75,
+"royal": 0.222,
+"hao": 0.028
+},
+"endingsStory": {
+"casual": 0.89,
+"royal": 0.086,
+"polite": 0.025
+},
+"endingsTouch": {
+"royal": 0.571,
+"casual": 0.429
+},
+"nLobbySent": 36,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"네가": 8,
+"교주": 7,
+"그대": 2,
+"넌": 1,
+"친구": 1,
+"니가": 1
+},
+"me": {
+"내가": 10,
+"나도": 7,
+"우리": 5,
+"난": 4,
+"나는": 2
+},
+"interj": [],
+"catch": [
+"비비",
+"용족",
+"것이냐",
+"용족들",
+"서열",
+"다이아몬드",
+"않느냐",
+"지상",
+"결투",
+"대결",
+"제이드",
+"노력"
+],
+"tic": {
+"form": "royal",
+"ratio": 0.141,
+"voice": 0.106,
+"text": 0.139,
+"voiceFair": 0.109,
+"textFair": 0.141
+},
+"written": {
+"n": 527,
+"endings": {
+"casual": 0.844,
+"royal": 0.139
+}
+}
+},
+"dayapureshine": {
+"n": 279,
+"nStory": 179,
+"nSent": 202,
+"endings": {
+"casual": 0.772,
+"royal": 0.218,
+"formal": 0.01
+},
+"endingsLobby": {
+"casual": 0.686,
+"royal": 0.286,
+"formal": 0.029
+},
+"endingsStory": {
+"casual": 0.796,
+"royal": 0.197,
+"formal": 0.006
+},
+"endingsTouch": {
+"casual": 0.857,
+"royal": 0.143
+},
+"nLobbySent": 35,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 17,
+"그대": 6,
+"니가": 4,
+"네가": 1,
+"너": 1
+},
+"me": {
+"내가": 14,
+"나는": 4,
+"우리": 2,
+"나를": 2,
+"나도": 2
+},
+"interj": [],
+"catch": [
+"비비",
+"그대",
+"것이냐",
+"마법소녀",
+"더욱",
+"은의",
+"않느냐",
+"부장",
+"퓨어샤인",
+"속성",
+"알이",
+"샤인"
+],
+"tic": {
+"form": "royal",
+"ratio": 0.9,
+"voice": 0.218,
+"text": 0,
+"voiceFair": 0.22,
+"textFair": null,
+"note": "위키 대사표 11줄이 전부 하대체 — 극장 말뭉치 0.22 는 스토리 대사가 섞인 값"
+}
+},
+"delia": {
+"n": 220,
+"nStory": 126,
+"nSent": 183,
+"endings": {
+"polite": 0.656,
+"casual": 0.339,
+"noun": 0.005
+},
+"endingsLobby": {
+"polite": 0.568,
+"casual": 0.405,
+"noun": 0.027
+},
+"endingsStory": {
+"polite": 0.681,
+"casual": 0.319
+},
+"endingsTouch": {
+"casual": 0.8,
+"polite": 0.2
+},
+"nLobbySent": 37,
+"nTouchSent": 5,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 13,
+"언니": 8,
+"선생님": 2
+},
+"me": {
+"우리": 5,
+"제가": 4,
+"저도": 3,
+"나도": 3,
+"저는": 3
+},
+"interj": [],
+"catch": [
+"선장님",
+"헤헤",
+"우와",
+"얼른",
+"엄청",
+"재밌",
+"탐험",
+"저랑",
+"친구들",
+"모험",
+"해적들",
+"에이"
+],
+"written": {
+"n": 171,
+"endings": {
+"polite": 0.567,
+"casual": 0.433
+}
+}
+},
+"diana": {
+"n": 638,
+"nStory": 517,
+"nSent": 495,
+"endings": {
+"casual": 0.509,
+"formal": 0.253,
+"polite": 0.212,
+"royal": 0.016,
+"hao": 0.01
+},
+"endingsLobby": {
+"polite": 0.447,
+"casual": 0.289,
+"formal": 0.263
+},
+"endingsStory": {
+"casual": 0.528,
+"formal": 0.256,
+"polite": 0.187,
+"royal": 0.018,
+"hao": 0.011
+},
+"endingsTouch": {
+"polite": 0.714,
+"casual": 0.143,
+"formal": 0.143
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 14,
+"네가": 8,
+"니가": 5,
+"자기": 5,
+"너": 5
+},
+"me": {
+"제가": 23,
+"내가": 20,
+"저는": 11,
+"우리": 5,
+"난": 5
+},
+"interj": [],
+"catch": [
+"마을",
+"티그",
+"영웅",
+"달린",
+"자매들",
+"독사",
+"나이",
+"빈을",
+"허물",
+"악몽",
+"짓이",
+"어린"
+],
+"written": {
+"n": 402,
+"endings": {
+"casual": 0.813,
+"polite": 0.085,
+"formal": 0.067,
+"royal": 0.02
+}
+}
+},
+"dianayester": {
+"n": 243,
+"nStory": 136,
+"nSent": 151,
+"endings": {
+"casual": 0.993,
+"formal": 0.007
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.991,
+"formal": 0.009
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 35,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "너",
+"addrCounts": {
+"너": 14,
+"네가": 4,
+"니가": 1,
+"교주": 1
+},
+"me": {
+"내가": 10,
+"나는": 2,
+"난": 2,
+"나를": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"마을",
+"촌장"
+]
+},
+"ed": {
+"n": 335,
+"nStory": 214,
+"nSent": 217,
+"endings": {
+"casual": 0.862,
+"polite": 0.097,
+"formal": 0.037,
+"royal": 0.005
+},
+"endingsLobby": {
+"casual": 0.5,
+"polite": 0.333,
+"formal": 0.167
+},
+"endingsStory": {
+"casual": 0.951,
+"polite": 0.037,
+"royal": 0.006,
+"formal": 0.006
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 42,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"언니": 19,
+"교주님": 10,
+"교주": 5,
+"네가": 2,
+"니가": 1,
+"자기": 1
+},
+"me": {
+"내가": 19,
+"나도": 9,
+"나는": 7,
+"우리": 5,
+"난": 5
+},
+"interj": [],
+"catch": [
+"꿈을",
+"나타",
+"꿈이",
+"이드",
+"꿈속",
+"꿈은",
+"둘째",
+"꿈의",
+"주도권",
+"우릴",
+"영원히",
+"이들"
+],
+"written": {
+"n": 374,
+"endings": {
+"casual": 0.922,
+"polite": 0.067
+}
+}
+},
+"edrehab": {
+"n": 93,
+"nStory": 0,
+"nSent": 48,
+"endings": {
+"polite": 0.729,
+"casual": 0.25,
+"noun": 0.021
+},
+"endingsLobby": {
+"polite": 0.775,
+"casual": 0.2,
+"noun": 0.025
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"언니": 1
+},
+"me": {
+"제가": 3,
+"저는": 2,
+"우리": 1,
+"나는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"아직",
+"뮤트",
+"아침"
+]
+},
+"eisia": {
+"n": 231,
+"nStory": 124,
+"nSent": 177,
+"endings": {
+"casual": 0.972,
+"hao": 0.011,
+"formal": 0.006,
+"polite": 0.006,
+"royal": 0.006
+},
+"endingsLobby": {
+"casual": 0.897,
+"hao": 0.026,
+"formal": 0.026,
+"polite": 0.026,
+"royal": 0.026
+},
+"endingsStory": {
+"casual": 0.992,
+"hao": 0.008
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 39,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"너": 8,
+"넌": 6,
+"교주": 5,
+"누나": 1,
+"니가": 1
+},
+"me": {
+"내가": 19,
+"난": 8,
+"나도": 2,
+"우리": 1,
+"이 몸": 1
+},
+"interj": [],
+"catch": [
+"멜론",
+"아이스크림",
+"게임"
+],
+"written": {
+"n": 116,
+"endings": {
+"casual": 0.948,
+"formal": 0.026
+}
+}
+},
+"elena": {
+"n": 1011,
+"nStory": 904,
+"nSent": 918,
+"endings": {
+"casual": 0.985,
+"formal": 0.009,
+"polite": 0.004,
+"noun": 0.001,
+"royal": 0.001
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.984,
+"formal": 0.009,
+"polite": 0.005,
+"noun": 0.001,
+"royal": 0.001
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 36,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 20,
+"니가": 16,
+"너": 16,
+"네가": 10,
+"넌": 8,
+"자기": 3
+},
+"me": {
+"내가": 45,
+"우리": 32,
+"나도": 14,
+"난": 13,
+"나는": 10
+},
+"interj": [
+"훗"
+],
+"catch": [
+"아멜리",
+"차원문",
+"뮤트",
+"리뉴",
+"실험",
+"샘플",
+"처음문",
+"이동",
+"기계",
+"드론",
+"핸드폰",
+"출력"
+],
+"written": {
+"n": 994,
+"endings": {
+"casual": 0.996
+}
+}
+},
+"epica": {
+"n": 311,
+"nStory": 190,
+"nSent": 237,
+"endings": {
+"casual": 0.7,
+"hao": 0.245,
+"polite": 0.046,
+"royal": 0.004,
+"formal": 0.004
+},
+"endingsLobby": {
+"casual": 0.756,
+"hao": 0.22,
+"formal": 0.024
+},
+"endingsStory": {
+"casual": 0.688,
+"hao": 0.247,
+"polite": 0.059,
+"royal": 0.005
+},
+"endingsTouch": {
+"casual": 0.714,
+"hao": 0.286
+},
+"nLobbySent": 41,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 3,
+"자네": 1,
+"당신": 1,
+"그대": 1,
+"교주": 1,
+"넌": 1
+},
+"me": {
+"우리": 3,
+"소인": 2,
+"짐이": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"소인",
+"이야기",
+"현자님",
+"사장",
+"클로",
+"않소",
+"말이오",
+"소이",
+"것이오",
+"그렇소",
+"있소",
+"같소"
+],
+"tic": {
+"form": "hao",
+"ratio": 0.305,
+"voice": 0.245,
+"text": 0.283,
+"voiceFair": 0.259,
+"textFair": 0.305
+},
+"written": {
+"n": 279,
+"endings": {
+"casual": 0.645,
+"hao": 0.283,
+"polite": 0.057
+}
+}
+},
+"erpin": {
+"n": 1722,
+"nStory": 1587,
+"nSent": 1623,
+"endings": {
+"casual": 0.986,
+"formal": 0.004,
+"polite": 0.004,
+"royal": 0.003,
+"noun": 0.002,
+"hao": 0.001
+},
+"endingsLobby": {
+"casual": 0.974,
+"noun": 0.026
+},
+"endingsStory": {
+"casual": 0.987,
+"formal": 0.004,
+"polite": 0.004,
+"royal": 0.003,
+"noun": 0.001,
+"hao": 0.001
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 51,
+"너": 35,
+"니가": 26,
+"넌": 9,
+"언니": 9,
+"자기": 7
+},
+"me": {
+"내가": 88,
+"나도": 39,
+"우리": 24,
+"난": 22,
+"나는": 14
+},
+"interj": [
+"엥"
+],
+"catch": [
+"네르",
+"냄새",
+"네루",
+"애슈루",
+"오케",
+"아악",
+"백성들이여",
+"반란군",
+"초콜릿",
+"시스트",
+"백성들",
+"메르"
+],
+"written": {
+"n": 1629,
+"endings": {
+"casual": 0.992
+}
+}
+},
+"erpinroyale": {
+"n": 251,
+"nStory": 158,
+"nSent": 198,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 41,
+"nTouchSent": 4,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 13,
+"언니": 5,
+"자기": 1,
+"니가": 1,
+"너": 1,
+"넌": 1
+},
+"me": {
+"내가": 14,
+"나도": 4,
+"나는": 4,
+"난": 2,
+"나를": 2
+},
+"interj": [],
+"catch": [
+"넘넘",
+"네르",
+"애슈루",
+"내루",
+"케이크",
+"이따",
+"에르핀"
+]
+},
+"espi": {
+"n": 128,
+"nStory": 49,
+"nSent": 95,
+"endings": {
+"casual": 0.989,
+"polite": 0.011
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.979,
+"polite": 0.021
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 36,
+"nTouchSent": 7,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"교주": 2,
+"너": 2,
+"자기": 1,
+"네가": 1
+},
+"me": {
+"내가": 3,
+"난": 1,
+"나는": 1,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"우왕",
+"꿈은",
+"기자땅"
+],
+"tic": {
+"form": "custom",
+"label": "~요오 (말끝을 늘인다)",
+"ratio": 0.07,
+"text": 0.07,
+"n": 152
+},
+"written": {
+"n": 317,
+"endings": {
+"casual": 0.883,
+"hao": 0.069,
+"polite": 0.041
+}
+}
+},
+"festa": {
+"n": 113,
+"nStory": 34,
+"nSent": 84,
+"endings": {
+"casual": 0.94,
+"formal": 0.036,
+"polite": 0.024
+},
+"endingsLobby": {
+"casual": 0.895,
+"formal": 0.053,
+"polite": 0.053
+},
+"endingsStory": {
+"casual": 0.971,
+"formal": 0.029
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"너": 3,
+"니가": 1,
+"넌": 1,
+"자기": 1,
+"네가": 1
+},
+"me": {
+"내가": 3,
+"나는": 2,
+"난": 2,
+"나도": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"자유",
+"기타"
+],
+"written": {
+"n": 110,
+"endings": {
+"casual": 0.982
+}
+}
+},
+"fricle": {
+"n": 481,
+"nStory": 374,
+"nSent": 426,
+"endings": {
+"casual": 0.927,
+"formal": 0.066,
+"polite": 0.007
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.919,
+"formal": 0.073,
+"polite": 0.008
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 34,
+"nTouchSent": 7,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"너": 10,
+"네가": 8,
+"니가": 4,
+"넌": 4,
+"주인님": 3,
+"교주님": 2
+},
+"me": {
+"내가": 22,
+"난": 13,
+"우리": 9,
+"나는": 6,
+"나도": 4
+},
+"interj": [],
+"catch": [
+"벨리타님",
+"계획",
+"벨리타",
+"날씨",
+"쉐럼",
+"뿐이",
+"덩굴",
+"벨벳",
+"주인님",
+"루비용족",
+"피고인",
+"연락"
+],
+"written": {
+"n": 475,
+"endings": {
+"casual": 0.907,
+"formal": 0.067
+}
+}
+},
+"gabia": {
+"n": 132,
+"nStory": 41,
+"nSent": 37,
+"endings": {
+"casual": 0.946,
+"noun": 0.027,
+"polite": 0.027
+},
+"endingsLobby": {
+"casual": 0.909,
+"polite": 0.091
+},
+"endingsStory": {
+"casual": 0.955,
+"noun": 0.045
+},
+"endingsTouch": {},
+"nLobbySent": 11,
+"nTouchSent": 0,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4
+},
+"me": {
+"나도": 2,
+"난": 2,
+"우리": 1,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"쪼금"
+]
+},
+"guin": {
+"n": 285,
+"nStory": 178,
+"nSent": 205,
+"endings": {
+"casual": 0.99,
+"noun": 0.005,
+"hao": 0.005
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.988,
+"noun": 0.006,
+"hao": 0.006
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 35,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 10,
+"교주님": 5,
+"너": 2,
+"자네": 1
+},
+"me": {
+"내가": 13,
+"나도": 7,
+"우리": 2,
+"난": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"새로운",
+"해적",
+"눈이",
+"아이스",
+"에버",
+"탐험",
+"기분이",
+"고향",
+"지도",
+"해변",
+"안개",
+"변덕"
+],
+"written": {
+"n": 165,
+"endings": {
+"casual": 0.994
+}
+}
+},
+"haley": {
+"n": 165,
+"nStory": 58,
+"nSent": 106,
+"endings": {
+"casual": 0.953,
+"royal": 0.038,
+"noun": 0.009
+},
+"endingsLobby": {
+"casual": 0.978,
+"noun": 0.022
+},
+"endingsStory": {
+"casual": 0.942,
+"royal": 0.058
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 45,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 11,
+"대장": 1,
+"그대": 1,
+"자네": 1
+},
+"me": {
+"내가": 5,
+"우리": 1,
+"나도": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"함선",
+"평화",
+"제군",
+"장교",
+"나와",
+"지원함",
+"헤일리",
+"나설"
+],
+"written": {
+"n": 513,
+"endings": {
+"casual": 0.981
+}
+}
+},
+"haleysane": {
+"n": 197,
+"nStory": 104,
+"nSent": 140,
+"endings": {
+"casual": 0.979,
+"royal": 0.021
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.967,
+"royal": 0.033
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 18,
+"자기": 1,
+"자네": 1
+},
+"me": {
+"내가": 3,
+"나는": 2,
+"나를": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"훈련",
+"말일세",
+"슈로",
+"가르쳐",
+"준비",
+"장교",
+"물에"
+]
+},
+"heidi": {
+"n": 146,
+"nStory": 67,
+"nSent": 120,
+"endings": {
+"polite": 0.558,
+"casual": 0.433,
+"formal": 0.008
+},
+"endingsLobby": {
+"polite": 0.649,
+"casual": 0.351
+},
+"endingsStory": {
+"polite": 0.542,
+"casual": 0.458
+},
+"endingsTouch": {
+"polite": 0.833,
+"casual": 0.167
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 9
+},
+"me": {
+"제가": 1,
+"저는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"특정",
+"사진",
+"완전",
+"칠칵",
+"특종",
+"기사",
+"궁극",
+"취재",
+"반장님",
+"인터뷰",
+"가장",
+"아멜리"
+],
+"written": {
+"n": 123,
+"endings": {
+"casual": 0.528,
+"polite": 0.439,
+"formal": 0.033
+}
+}
+},
+"hilde": {
+"n": 330,
+"nStory": 223,
+"nSent": 259,
+"endings": {
+"polite": 0.761,
+"casual": 0.224,
+"formal": 0.012,
+"royal": 0.004
+},
+"endingsLobby": {
+"polite": 0.821,
+"casual": 0.179
+},
+"endingsStory": {
+"polite": 0.751,
+"casual": 0.239,
+"royal": 0.005,
+"formal": 0.005
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 39,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 12,
+"당신": 1
+},
+"me": {
+"제가": 21,
+"저도": 4,
+"저는": 4,
+"내가": 3,
+"난": 1
+},
+"interj": [],
+"catch": [
+"병원",
+"환자분",
+"헤일리",
+"시로",
+"바캉스",
+"병실",
+"원인",
+"의사",
+"치료",
+"증상",
+"스트레스"
+],
+"written": {
+"n": 459,
+"endings": {
+"polite": 0.678,
+"casual": 0.307
+}
+}
+},
+"ifrit": {
+"n": 209,
+"nStory": 130,
+"nSent": 174,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 33,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"니가": 4,
+"네가": 3,
+"넌": 2,
+"너": 1,
+"자기": 1
+},
+"me": {
+"내가": 11,
+"우리": 4,
+"나는": 3,
+"난": 2,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"영웅",
+"검을",
+"우루스",
+"주인"
+],
+"written": {
+"n": 94,
+"endings": {
+"casual": 1.0
+}
+}
+},
+"inkle": {
+"n": 218,
+"nStory": 125,
+"nSent": 140,
+"endings": {
+"casual": 0.679,
+"hao": 0.307,
+"royal": 0.007,
+"polite": 0.007
+},
+"endingsLobby": {
+"casual": 0.75,
+"hao": 0.25
+},
+"endingsStory": {
+"casual": 0.657,
+"hao": 0.323,
+"royal": 0.01,
+"polite": 0.01
+},
+"endingsTouch": {
+"casual": 0.833,
+"hao": 0.167
+},
+"nLobbySent": 32,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"자네": 3,
+"넌": 2
+},
+"me": {
+"내가": 8,
+"난": 4,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"이야기",
+"않소",
+"에르핀",
+"것이오",
+"선택",
+"자네들",
+"것인",
+"같소",
+"힝힝",
+"결말",
+"웅성웅성",
+"회장"
+],
+"tic": {
+"form": "hao",
+"ratio": 0.398,
+"voice": 0.307,
+"text": 0.391,
+"voiceFair": 0.311,
+"textFair": 0.398
+},
+"written": {
+"n": 110,
+"endings": {
+"casual": 0.591,
+"hao": 0.391
+}
+}
+},
+"jade": {
+"n": 134,
+"nStory": 53,
+"nSent": 111,
+"endings": {
+"casual": 0.784,
+"polite": 0.162,
+"formal": 0.054
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.571,
+"polite": 0.321,
+"formal": 0.107
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 46,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"고객님": 1,
+"님": 1,
+"너": 1
+},
+"me": {
+"제가": 3,
+"내가": 3,
+"저는": 2,
+"나도": 2,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"여왕",
+"지식",
+"광장",
+"판결"
+]
+},
+"joanne": {
+"n": 1010,
+"nStory": 889,
+"nSent": 770,
+"endings": {
+"casual": 0.718,
+"formal": 0.153,
+"polite": 0.065,
+"haso": 0.027,
+"royal": 0.025,
+"hao": 0.012
+},
+"endingsLobby": {
+"formal": 0.444,
+"casual": 0.278,
+"haso": 0.111,
+"polite": 0.083,
+"royal": 0.056,
+"hao": 0.028
+},
+"endingsStory": {
+"casual": 0.745,
+"formal": 0.135,
+"polite": 0.062,
+"haso": 0.023,
+"royal": 0.023,
+"hao": 0.011
+},
+"endingsTouch": {
+"casual": 0.5,
+"polite": 0.333,
+"formal": 0.167
+},
+"nLobbySent": 36,
+"nTouchSent": 6,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 38,
+"네가": 10,
+"니가": 6,
+"너": 5,
+"넌": 3,
+"선생님": 3
+},
+"me": {
+"내가": 43,
+"제가": 13,
+"난": 9,
+"나는": 9,
+"저는": 8
+},
+"interj": [],
+"catch": [
+"사제장",
+"사제장님",
+"스키",
+"믿음",
+"사제들",
+"자들",
+"은총",
+"네르사",
+"모르겠군",
+"사도들",
+"부디",
+"자를"
+],
+"written": {
+"n": 767,
+"endings": {
+"casual": 0.794,
+"formal": 0.11,
+"royal": 0.039,
+"polite": 0.037
+}
+}
+},
+"jubee": {
+"n": 78,
+"nStory": 0,
+"nSent": 54,
+"endings": {
+"casual": 0.796,
+"jubee": 0.185,
+"polite": 0.019
+},
+"endingsLobby": {
+"casual": 0.804,
+"jubee": 0.174,
+"polite": 0.022
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 0.714,
+"jubee": 0.286
+},
+"nLobbySent": 46,
+"nTouchSent": 7,
+"style": "jubee",
+"addr": null,
+"addrCounts": {
+"언니": 1
+},
+"me": {
+"난": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"아니다비",
+"젤리",
+"추비",
+"주비",
+"안녕"
+],
+"tic": {
+"form": "jubee",
+"ratio": 0.95,
+"voice": 0.185,
+"text": 0.5,
+"voiceFair": 0.189,
+"textFair": 0.5
+},
+"written": {
+"n": 64,
+"endings": {
+"jubee": 0.5,
+"casual": 0.5
+}
+}
+},
+"kathy": {
+"n": 168,
+"nStory": 75,
+"nSent": 112,
+"endings": {
+"casual": 0.679,
+"polite": 0.312,
+"noun": 0.009
+},
+"endingsLobby": {
+"polite": 0.564,
+"casual": 0.41,
+"noun": 0.026
+},
+"endingsStory": {
+"casual": 0.85,
+"polite": 0.15
+},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 39,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"너": 1,
+"네가": 1
+},
+"me": {
+"난": 5,
+"나는": 4,
+"저는": 4,
+"내가": 2,
+"제가": 2
+},
+"interj": [],
+"catch": [
+"유령",
+"공포",
+"주스",
+"토마토"
+],
+"written": {
+"n": 74,
+"endings": {
+"casual": 0.797,
+"polite": 0.189
+}
+}
+},
+"kidian": {
+"n": 141,
+"nStory": 34,
+"nSent": 66,
+"endings": {
+"casual": 0.97,
+"royal": 0.03
+},
+"endingsLobby": {
+"casual": 0.967,
+"royal": 0.033
+},
+"endingsStory": {
+"casual": 0.963,
+"royal": 0.037
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 30,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 8,
+"주인님": 2,
+"네가": 1
+},
+"me": {
+"내가": 4,
+"나도": 4,
+"나를": 1,
+"난": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"주인님",
+"고마워"
+],
+"written": {
+"n": 89,
+"endings": {
+"casual": 1.0
+}
+}
+},
+"kishya": {
+"n": 358,
+"nStory": 279,
+"nSent": 331,
+"endings": {
+"casual": 0.994,
+"polite": 0.003,
+"royal": 0.003
+},
+"endingsLobby": {
+"casual": 0.973,
+"royal": 0.027
+},
+"endingsStory": {
+"casual": 0.996,
+"polite": 0.004
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"너": 4,
+"니가": 1,
+"넌": 1,
+"자기": 1,
+"네가": 1
+},
+"me": {
+"난": 29,
+"내가": 28,
+"나도": 9,
+"우리": 4,
+"나는": 3
+},
+"interj": [
+"어이"
+],
+"catch": [
+"팬들",
+"무대",
+"공연장",
+"공연",
+"착한",
+"보이샷",
+"언더돌",
+"대체",
+"그치",
+"팬인",
+"적당히",
+"조명"
+],
+"written": {
+"n": 340,
+"endings": {
+"casual": 0.994
+}
+}
+},
+"kommy": {
+"n": 182,
+"nStory": 89,
+"nSent": 144,
+"endings": {
+"casual": 0.986,
+"hao": 0.007,
+"polite": 0.007
+},
+"endingsLobby": {
+"casual": 0.974,
+"polite": 0.026
+},
+"endingsStory": {
+"casual": 0.99,
+"hao": 0.01
+},
+"endingsTouch": {
+"casual": 0.875,
+"polite": 0.125
+},
+"nLobbySent": 38,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3,
+"넌": 2,
+"친구": 2,
+"너": 1
+},
+"me": {
+"나도": 3,
+"난": 2,
+"내가": 1,
+"나는": 1,
+"우리": 1
+},
+"interj": [
+"히히"
+],
+"catch": [
+"사료",
+"코미",
+"버터",
+"고민",
+"냄새",
+"고미",
+"먹을",
+"배달"
+],
+"written": {
+"n": 577,
+"endings": {
+"casual": 0.971,
+"polite": 0.026
+}
+}
+},
+"kommyswim": {
+"n": 114,
+"nStory": 2,
+"nSent": 50,
+"endings": {
+"casual": 0.98,
+"polite": 0.02
+},
+"endingsLobby": {
+"casual": 0.972,
+"polite": 0.028
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 0.833,
+"polite": 0.167
+},
+"nLobbySent": 36,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4
+},
+"me": {
+"나는": 1,
+"난": 1,
+"나도": 1
+},
+"interj": [],
+"catch": [
+"코미",
+"가는",
+"놀이터",
+"표정",
+"고민",
+"괜찮"
+]
+},
+"kyarot": {
+"n": 142,
+"nStory": 35,
+"nSent": 78,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 35,
+"nTouchSent": 5,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 6,
+"너": 1
+},
+"me": {
+"내가": 4,
+"난": 3,
+"나는": 1,
+"나도": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"당근",
+"사탕수수",
+"요리"
+],
+"written": {
+"n": 343,
+"endings": {
+"casual": 0.991
+}
+}
+},
+"laika": {
+"n": 236,
+"nStory": 129,
+"nSent": 181,
+"endings": {
+"casual": 0.956,
+"polite": 0.017,
+"formal": 0.017,
+"royal": 0.006,
+"noun": 0.006
+},
+"endingsLobby": {
+"casual": 0.972,
+"noun": 0.028
+},
+"endingsStory": {
+"casual": 0.948,
+"polite": 0.022,
+"formal": 0.022,
+"royal": 0.007
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 36,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"니가": 2,
+"너": 1,
+"자기": 1,
+"주인": 1,
+"넌": 1
+},
+"me": {
+"내가": 19,
+"난": 11,
+"우리": 2,
+"나는": 1,
+"나도": 1
+},
+"interj": [],
+"catch": [
+"번개",
+"전기",
+"제품",
+"신라님",
+"회장",
+"발표"
+],
+"written": {
+"n": 167,
+"endings": {
+"casual": 0.928,
+"polite": 0.042
+}
+}
+},
+"lazy": {
+"n": 62,
+"nStory": 0,
+"nSent": 40,
+"endings": {
+"polite": 0.55,
+"casual": 0.4,
+"formal": 0.05
+},
+"endingsLobby": {
+"polite": 0.515,
+"casual": 0.424,
+"formal": 0.061
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.5,
+"casual": 0.5
+},
+"nLobbySent": 33,
+"nTouchSent": 4,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"님": 1
+},
+"me": {
+"난": 1
+},
+"interj": [],
+"catch": []
+},
+"leets": {
+"n": 122,
+"nStory": 34,
+"nSent": 87,
+"endings": {
+"casual": 0.598,
+"polite": 0.391,
+"formal": 0.011
+},
+"endingsLobby": {
+"polite": 0.644,
+"casual": 0.333,
+"formal": 0.022
+},
+"endingsStory": {
+"casual": 0.935,
+"polite": 0.065
+},
+"endingsTouch": {
+"polite": 0.833,
+"casual": 0.167
+},
+"nLobbySent": 45,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"너": 4,
+"넌": 1,
+"교주": 1,
+"네가": 1
+},
+"me": {
+"나는": 2,
+"제가": 2,
+"나를": 1,
+"저는": 1,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"다야님",
+"골드",
+"준비",
+"끝없",
+"싸움"
+],
+"written": {
+"n": 410,
+"endings": {
+"casual": 0.832,
+"polite": 0.137,
+"formal": 0.029
+}
+}
+},
+"lethe": {
+"n": 77,
+"nStory": 13,
+"nSent": 63,
+"endings": {
+"casual": 0.984,
+"polite": 0.016
+},
+"endingsLobby": {
+"casual": 0.976,
+"polite": 0.024
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 41,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3,
+"너": 2,
+"넌": 2
+},
+"me": {
+"내가": 2,
+"난": 2
+},
+"interj": [],
+"catch": [
+"기억",
+"레이저",
+"나쁜"
+],
+"written": {
+"n": 157,
+"endings": {
+"casual": 0.994
+}
+}
+},
+"levi": {
+"n": 144,
+"nStory": 66,
+"nSent": 119,
+"endings": {
+"polite": 0.504,
+"casual": 0.454,
+"formal": 0.017,
+"noun": 0.017,
+"hao": 0.008
+},
+"endingsLobby": {
+"polite": 0.514,
+"casual": 0.432,
+"noun": 0.027,
+"formal": 0.027
+},
+"endingsStory": {
+"polite": 0.528,
+"casual": 0.444,
+"hao": 0.014,
+"formal": 0.014
+},
+"endingsTouch": {
+"polite": 0.833,
+"formal": 0.167
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"사장님": 3,
+"네가": 1,
+"손님": 1
+},
+"me": {
+"난": 3,
+"제가": 1,
+"저는": 1,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"알바",
+"레비",
+"사장님"
+],
+"tic": {
+"form": "custom",
+"label": "~구요 (해요체 끝을 늘인다)",
+"ratio": 0.1,
+"text": 0.1,
+"n": 71
+},
+"written": {
+"n": 96,
+"endings": {
+"casual": 0.667,
+"polite": 0.323
+}
+}
+},
+"levigraduate": {
+"n": 79,
+"nStory": 0,
+"nSent": 54,
+"endings": {
+"polite": 0.574,
+"casual": 0.296,
+"formal": 0.111,
+"noun": 0.019
+},
+"endingsLobby": {
+"polite": 0.581,
+"casual": 0.279,
+"formal": 0.116,
+"noun": 0.023
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.625,
+"formal": 0.25,
+"casual": 0.125
+},
+"nLobbySent": 43,
+"nTouchSent": 8,
+"style": "polite",
+"addr": null,
+"addrCounts": {
+"교주": 1,
+"교주님": 1
+},
+"me": {
+"저도": 2,
+"내가": 1,
+"저를": 1
+},
+"interj": [],
+"catch": [
+"쉬는"
+]
+},
+"lion": {
+"n": 173,
+"nStory": 66,
+"nSent": 112,
+"endings": {
+"casual": 0.545,
+"polite": 0.42,
+"formal": 0.027,
+"hao": 0.009
+},
+"endingsLobby": {
+"polite": 0.721,
+"casual": 0.186,
+"formal": 0.07,
+"hao": 0.023
+},
+"endingsStory": {
+"casual": 0.828,
+"polite": 0.172
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 43,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"너": 3,
+"네가": 2,
+"당신": 2,
+"넌": 1,
+"니가": 1
+},
+"me": {
+"내가": 4,
+"저도": 3,
+"저는": 2,
+"난": 1,
+"제가": 1
+},
+"interj": [],
+"catch": [
+"빌런",
+"천장님",
+"촌장님",
+"히어로"
+],
+"written": {
+"n": 465,
+"endings": {
+"casual": 0.815,
+"polite": 0.17
+}
+}
+},
+"maestromk2": {
+"n": 83,
+"nStory": 0,
+"nSent": 48,
+"endings": {
+"casual": 0.562,
+"formal": 0.208,
+"noun": 0.125,
+"hao": 0.042,
+"polite": 0.042,
+"royal": 0.021
+},
+"endingsLobby": {
+"casual": 0.541,
+"formal": 0.189,
+"noun": 0.162,
+"hao": 0.054,
+"polite": 0.027,
+"royal": 0.027
+},
+"endingsStory": {},
+"endingsTouch": {
+"noun": 0.455,
+"casual": 0.273,
+"formal": 0.273
+},
+"nLobbySent": 37,
+"nTouchSent": 11,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"너": 2,
+"교주": 1,
+"교주님": 1,
+"휴먼": 1
+},
+"me": {
+"제가": 1
+},
+"interj": [],
+"catch": [
+"완료",
+"외부",
+"학습",
+"시스템",
+"마에스트"
+],
+"tic": {
+"form": "noun",
+"ratio": 0.182,
+"voice": 0.125,
+"text": 0,
+"voiceFair": 0.182,
+"textFair": null
+}
+},
+"mago": {
+"n": 126,
+"nStory": 48,
+"nSent": 88,
+"endings": {
+"casual": 0.523,
+"polite": 0.466,
+"royal": 0.011
+},
+"endingsLobby": {
+"polite": 0.576,
+"casual": 0.394,
+"royal": 0.03
+},
+"endingsStory": {
+"casual": 0.617,
+"polite": 0.383
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 33,
+"nTouchSent": 5,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"니가": 2,
+"너": 2,
+"당신": 1,
+"넌": 1,
+"친구": 1
+},
+"me": {
+"제가": 6,
+"우리": 1,
+"내가": 1,
+"나를": 1,
+"저를": 1
+},
+"interj": [],
+"catch": [
+"벨벳",
+"친구들",
+"동물",
+"목장",
+"양들"
+],
+"written": {
+"n": 171,
+"endings": {
+"casual": 0.754,
+"polite": 0.228
+}
+}
+},
+"maison": {
+"n": 64,
+"nStory": 0,
+"nSent": 42,
+"endings": {
+"casual": 0.833,
+"polite": 0.119,
+"noun": 0.024,
+"formal": 0.024
+},
+"endingsLobby": {
+"casual": 0.848,
+"polite": 0.091,
+"noun": 0.03,
+"formal": 0.03
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 33,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 6,
+"자기": 1,
+"넌": 1
+},
+"me": {
+"나는": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"교주",
+"집이"
+]
+},
+"makasha": {
+"n": 664,
+"nStory": 571,
+"nSent": 572,
+"endings": {
+"casual": 0.869,
+"polite": 0.068,
+"formal": 0.058,
+"royal": 0.003,
+"hao": 0.002
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.856,
+"polite": 0.075,
+"formal": 0.063,
+"royal": 0.004,
+"hao": 0.002
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 42,
+"nTouchSent": 5,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"네가": 14,
+"너": 6,
+"넌": 5,
+"교주": 4,
+"자기": 2
+},
+"me": {
+"내가": 18,
+"나는": 12,
+"우리": 5,
+"난": 3,
+"나도": 3
+},
+"interj": [
+"이히히",
+"흐음"
+],
+"catch": [
+"우로스",
+"우루스",
+"팔다리",
+"운명",
+"긴긴",
+"이히히",
+"검사",
+"히히히",
+"예언",
+"작전",
+"왕관",
+"증인"
+],
+"written": {
+"n": 653,
+"endings": {
+"casual": 0.956
+}
+}
+},
+"marie": {
+"n": 219,
+"nStory": 155,
+"nSent": 202,
+"endings": {
+"casual": 0.649,
+"polite": 0.327,
+"formal": 0.015,
+"royal": 0.01
+},
+"endingsLobby": {
+"polite": 0.561,
+"casual": 0.439
+},
+"endingsStory": {
+"casual": 0.709,
+"polite": 0.258,
+"formal": 0.02,
+"royal": 0.013
+},
+"endingsTouch": {
+"polite": 0.625,
+"casual": 0.375
+},
+"nLobbySent": 41,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 3,
+"네가": 2
+},
+"me": {
+"내가": 8,
+"난": 5,
+"제가": 4,
+"나는": 4,
+"나도": 2
+},
+"interj": [],
+"catch": [
+"폭탄",
+"에이",
+"모험"
+],
+"written": {
+"n": 278,
+"endings": {
+"casual": 0.597,
+"polite": 0.349,
+"formal": 0.032
+}
+}
+},
+"mayo": {
+"n": 273,
+"nStory": 195,
+"nSent": 214,
+"endings": {
+"noun": 0.514,
+"casual": 0.481,
+"polite": 0.005
+},
+"endingsLobby": {
+"noun": 0.588,
+"casual": 0.412
+},
+"endingsStory": {
+"noun": 0.512,
+"casual": 0.482,
+"polite": 0.006
+},
+"endingsTouch": {
+"noun": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 34,
+"nTouchSent": 7,
+"style": "noun",
+"addr": "교주",
+"addrCounts": {
+"너": 8,
+"교주": 7,
+"친구": 4,
+"넌": 1,
+"주인": 1,
+"자기": 1
+},
+"me": {
+"내가": 10,
+"난": 9,
+"나는": 3,
+"나도": 2
+},
+"interj": [],
+"catch": [
+"거임",
+"수집품",
+"수지품",
+"유령",
+"아님",
+"있음",
+"극장",
+"알바",
+"거잉",
+"수집",
+"인간"
+],
+"tic": {
+"form": "noun",
+"ratio": 0.565,
+"voice": 0.514,
+"text": 0.554,
+"voiceFair": 0.517,
+"textFair": 0.565
+},
+"written": {
+"n": 195,
+"endings": {
+"noun": 0.554,
+"casual": 0.426
+}
+}
+},
+"mayocool": {
+"n": 138,
+"nStory": 45,
+"nSent": 102,
+"endings": {
+"noun": 0.608,
+"casual": 0.353,
+"polite": 0.039
+},
+"endingsLobby": {
+"noun": 0.682,
+"casual": 0.295,
+"polite": 0.023
+},
+"endingsStory": {
+"noun": 0.543,
+"casual": 0.391,
+"polite": 0.065
+},
+"endingsTouch": {
+"noun": 0.75,
+"casual": 0.25
+},
+"nLobbySent": 44,
+"nTouchSent": 8,
+"style": "noun",
+"addr": null,
+"addrCounts": {
+"교주": 1,
+"너": 1
+},
+"me": {
+"내가": 14,
+"나는": 2,
+"난": 2,
+"나도": 2,
+"본인": 1
+},
+"interj": [],
+"catch": [
+"수집품",
+"수지품",
+"멋진",
+"거임",
+"있음",
+"그거",
+"없음",
+"않음",
+"같음"
+],
+"tic": {
+"form": "noun",
+"ratio": 0.633,
+"voice": 0.608,
+"text": 0,
+"voiceFair": 0.633,
+"textFair": null
+}
+},
+"meluna": {
+"n": 120,
+"nStory": 41,
+"nSent": 89,
+"endings": {
+"polite": 0.764,
+"casual": 0.202,
+"formal": 0.034
+},
+"endingsLobby": {
+"polite": 0.757,
+"casual": 0.216,
+"formal": 0.027
+},
+"endingsStory": {
+"polite": 0.8,
+"casual": 0.15,
+"formal": 0.05
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4
+},
+"me": {
+"제가": 4,
+"우리": 1,
+"저는": 1
+},
+"interj": [],
+"catch": [
+"멜론",
+"역시"
+],
+"written": {
+"n": 109,
+"endings": {
+"polite": 0.761,
+"casual": 0.156,
+"formal": 0.073
+}
+}
+},
+"miro": {
+"n": 93,
+"nStory": 0,
+"nSent": 47,
+"endings": {
+"polite": 0.532,
+"casual": 0.426,
+"noun": 0.021,
+"formal": 0.021
+},
+"endingsLobby": {
+"polite": 0.583,
+"casual": 0.361,
+"noun": 0.028,
+"formal": 0.028
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 36,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"선생님": 1,
+"언니": 1
+},
+"me": {
+"제가": 6,
+"내가": 4,
+"나는": 2,
+"저는": 1
+},
+"interj": [],
+"catch": [
+"거울",
+"흐흐흐",
+"항상"
+],
+"written": {
+"n": 112,
+"endings": {
+"casual": 0.643,
+"polite": 0.321,
+"formal": 0.036
+}
+}
+},
+"momo": {
+"n": 117,
+"nStory": 10,
+"nSent": 62,
+"endings": {
+"formal": 0.742,
+"casual": 0.226,
+"polite": 0.032
+},
+"endingsLobby": {
+"formal": 0.75,
+"casual": 0.205,
+"polite": 0.045
+},
+"endingsStory": {
+"formal": 0.833,
+"casual": 0.167
+},
+"endingsTouch": {
+"formal": 1.0
+},
+"nLobbySent": 44,
+"nTouchSent": 7,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6
+},
+"me": {
+"이 몸": 1,
+"제가": 1,
+"저도": 1
+},
+"interj": [
+"야호"
+],
+"catch": [
+"인류",
+"모모",
+"수련"
+],
+"tic": {
+"form": "momo",
+"ratio": 0.9,
+"voice": 0,
+"text": 0.173,
+"voiceFair": 0.0,
+"textFair": 0.286,
+"note": "위키 대사표에 반말이 한 줄도 없다 — 극장 말뭉치 0.286 은 스토리 대사가 섞인 값"
+},
+"written": {
+"n": 422,
+"endings": {
+"formal": 0.431,
+"casual": 0.334,
+"momo": 0.173,
+"polite": 0.055
+}
+}
+},
+"mute": {
+"n": 288,
+"nStory": 195,
+"nSent": 233,
+"endings": {
+"casual": 0.476,
+"polite": 0.275,
+"formal": 0.227,
+"hao": 0.013,
+"noun": 0.009
+},
+"endingsLobby": {
+"polite": 0.561,
+"casual": 0.22,
+"formal": 0.171,
+"noun": 0.049
+},
+"endingsStory": {
+"casual": 0.552,
+"formal": 0.243,
+"polite": 0.188,
+"hao": 0.017
+},
+"endingsTouch": {
+"polite": 0.375,
+"casual": 0.375,
+"formal": 0.125,
+"noun": 0.125
+},
+"nLobbySent": 41,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 17,
+"네가": 4,
+"니가": 3,
+"마스터": 1,
+"너": 1
+},
+"me": {
+"제가": 6,
+"저는": 4,
+"우리": 2,
+"저도": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"헤일리",
+"데이터",
+"확률",
+"사건",
+"권한",
+"못할",
+"행동",
+"변수",
+"뮤트",
+"경우",
+"패턴",
+"교진님"
+],
+"written": {
+"n": 98,
+"endings": {
+"casual": 0.745,
+"polite": 0.112,
+"formal": 0.102,
+"hao": 0.031
+}
+}
+},
+"mynx": {
+"n": 65,
+"nStory": 0,
+"nSent": 50,
+"endings": {
+"polite": 0.5,
+"casual": 0.44,
+"formal": 0.04,
+"noun": 0.02
+},
+"endingsLobby": {
+"polite": 0.5,
+"casual": 0.429,
+"formal": 0.048,
+"noun": 0.024
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 0.571,
+"polite": 0.429
+},
+"nLobbySent": 42,
+"nTouchSent": 7,
+"style": "polite",
+"addr": null,
+"addrCounts": {
+"교주님": 2,
+"선생님": 1
+},
+"me": {
+"나는": 3,
+"제가": 2,
+"저는": 2
+},
+"interj": [],
+"catch": []
+},
+"naia": {
+"n": 242,
+"nStory": 121,
+"nSent": 169,
+"endings": {
+"casual": 0.994,
+"polite": 0.006
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.992,
+"polite": 0.008
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 8,
+"니가": 2,
+"너": 1,
+"주인": 1,
+"자기": 1,
+"네가": 1
+},
+"me": {
+"내가": 7,
+"우리": 5,
+"난": 4,
+"나도": 3,
+"나는": 2
+},
+"interj": [],
+"catch": [
+"이프리트",
+"정령들",
+"너희들",
+"정령산",
+"프리트",
+"물의",
+"응원"
+],
+"written": {
+"n": 170,
+"endings": {
+"casual": 0.994
+}
+}
+},
+"ner": {
+"n": 1494,
+"nStory": 1387,
+"nSent": 1396,
+"endings": {
+"polite": 0.589,
+"casual": 0.304,
+"formal": 0.102,
+"royal": 0.003,
+"noun": 0.001,
+"hao": 0.001
+},
+"endingsLobby": {
+"polite": 0.651,
+"formal": 0.209,
+"casual": 0.14
+},
+"endingsStory": {
+"polite": 0.587,
+"casual": 0.31,
+"formal": 0.098,
+"royal": 0.003,
+"noun": 0.001,
+"hao": 0.001
+},
+"endingsTouch": {
+"polite": 0.571,
+"formal": 0.429
+},
+"nLobbySent": 43,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 72,
+"너": 7,
+"교주": 6,
+"넌": 4,
+"님": 3,
+"자기": 3
+},
+"me": {
+"제가": 60,
+"내가": 21,
+"저도": 20,
+"저는": 15,
+"우리": 12
+},
+"interj": [
+"어라"
+],
+"catch": [
+"자매님",
+"감독님",
+"여원님",
+"규주님",
+"왕궁",
+"조한",
+"뒷골목",
+"일기장",
+"반란군",
+"조한자매님",
+"주교님",
+"마카롱"
+],
+"written": {
+"n": 1687,
+"endings": {
+"polite": 0.563,
+"casual": 0.377,
+"formal": 0.052
+}
+}
+},
+"nerrage": {
+"n": 210,
+"nStory": 117,
+"nSent": 163,
+"endings": {
+"casual": 0.442,
+"polite": 0.423,
+"formal": 0.129,
+"noun": 0.006
+},
+"endingsLobby": {
+"polite": 0.725,
+"casual": 0.15,
+"formal": 0.1,
+"noun": 0.025
+},
+"endingsStory": {
+"casual": 0.559,
+"polite": 0.315,
+"formal": 0.126
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 13,
+"당신": 2,
+"그대": 1,
+"니가": 1
+},
+"me": {
+"제가": 6,
+"우리": 2,
+"저도": 2,
+"저는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"에르핀",
+"여원님",
+"다음",
+"왕관"
+]
+},
+"neti": {
+"n": 150,
+"nStory": 57,
+"nSent": 106,
+"endings": {
+"polite": 0.802,
+"casual": 0.189,
+"formal": 0.009
+},
+"endingsLobby": {
+"polite": 0.9,
+"casual": 0.075,
+"formal": 0.025
+},
+"endingsStory": {
+"polite": 0.732,
+"casual": 0.268
+},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 40,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"님": 1,
+"자기": 1
+},
+"me": {
+"제가": 3,
+"저도": 3
+},
+"interj": [
+"으헤헤"
+],
+"catch": [
+"비비",
+"좋은",
+"용족",
+"유물",
+"발굴",
+"은혜",
+"생선",
+"번째",
+"오팔"
+],
+"tic": {
+"form": "custom",
+"label": "~용 (해요체 끝을 '용'으로 늘인다)",
+"ratio": 0.65,
+"text": 0.41,
+"n": 91,
+"note": "위키 대사표는 절반을 크게 넘는다 — 0.41 은 극장 말뭉치(남과 하는 대사 포함) 실측"
+},
+"written": {
+"n": 126,
+"endings": {
+"casual": 0.698,
+"polite": 0.278
+}
+}
+},
+"nicole": {
+"n": 488,
+"nStory": 409,
+"nSent": 526,
+"endings": {
+"casual": 0.709,
+"polite": 0.253,
+"formal": 0.034,
+"noun": 0.002,
+"royal": 0.002
+},
+"endingsLobby": {
+"casual": 0.548,
+"polite": 0.452
+},
+"endingsStory": {
+"casual": 0.723,
+"polite": 0.236,
+"formal": 0.036,
+"noun": 0.002,
+"royal": 0.002
+},
+"endingsTouch": {
+"casual": 0.5,
+"polite": 0.5
+},
+"nLobbySent": 42,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 12,
+"너": 4,
+"넌": 2,
+"니가": 1,
+"자기": 1,
+"마스터": 1
+},
+"me": {
+"제가": 18,
+"나는": 9,
+"난": 6,
+"내가": 4,
+"우리": 3
+},
+"interj": [
+"히히"
+],
+"catch": [
+"영화",
+"퍽퍽",
+"니콜",
+"촬영",
+"천재",
+"팝콘",
+"완전",
+"여러분",
+"감독",
+"와바박",
+"영화감독",
+"인류"
+],
+"written": {
+"n": 592,
+"endings": {
+"casual": 0.681,
+"polite": 0.265,
+"formal": 0.047
+}
+}
+},
+"niffel": {
+"n": 30,
+"nStory": 0,
+"nSent": 12,
+"endings": {
+"casual": 0.917,
+"noun": 0.083
+},
+"endingsLobby": {
+"casual": 0.909,
+"noun": 0.091
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 11,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"너": 1,
+"주인": 1
+},
+"me": {
+"나는": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"교주"
+],
+"tic": {
+"form": "noun",
+"ratio": 0.083,
+"voice": 0.083,
+"text": 0,
+"voiceFair": 0.083,
+"textFair": null
+}
+},
+"noone": {
+"n": 33,
+"nStory": 0,
+"nSent": 12,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 11,
+"nTouchSent": 4,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"교주": 1
+},
+"me": {
+"난": 1
+},
+"interj": [],
+"catch": []
+},
+"opal": {
+"n": 121,
+"nStory": 0,
+"nSent": 59,
+"endings": {
+"polite": 0.814,
+"casual": 0.186
+},
+"endingsLobby": {
+"polite": 0.851,
+"casual": 0.149
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.875,
+"casual": 0.125
+},
+"nLobbySent": 47,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"친구": 1
+},
+"me": {
+"제가": 6,
+"우리": 2,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"에헤",
+"선배님들",
+"우와",
+"선배님"
+],
+"written": {
+"n": 50,
+"endings": {
+"polite": 0.52,
+"casual": 0.46,
+"formal": 0.02
+}
+}
+},
+"orr": {
+"n": 256,
+"nStory": 163,
+"nSent": 215,
+"endings": {
+"casual": 0.972,
+"polite": 0.023,
+"noun": 0.005
+},
+"endingsLobby": {
+"casual": 0.979,
+"noun": 0.021
+},
+"endingsStory": {
+"casual": 0.968,
+"polite": 0.032
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 48,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 17,
+"너": 1,
+"자기": 1,
+"넌": 1
+},
+"me": {
+"내가": 10,
+"난": 6,
+"우리": 3,
+"나는": 2,
+"나도": 2
+},
+"interj": [],
+"catch": [
+"발명품",
+"방주",
+"발명가",
+"장교님",
+"빵주",
+"부품",
+"훈련",
+"헤일리",
+"버전"
+],
+"written": {
+"n": 269,
+"endings": {
+"casual": 0.907,
+"polite": 0.074
+}
+}
+},
+"patula": {
+"n": 107,
+"nStory": 43,
+"nSent": 83,
+"endings": {
+"casual": 0.566,
+"polite": 0.398,
+"formal": 0.024,
+"royal": 0.012
+},
+"endingsLobby": {
+"casual": 0.733,
+"polite": 0.233,
+"royal": 0.033
+},
+"endingsStory": {
+"polite": 0.578,
+"casual": 0.378,
+"formal": 0.044
+},
+"endingsTouch": {
+"polite": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 30,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"사장님": 2,
+"자기": 1
+},
+"me": {
+"저도": 2,
+"내가": 2,
+"나도": 1,
+"제가": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"마법",
+"빵집",
+"사장님",
+"주방",
+"요리"
+],
+"written": {
+"n": 111,
+"endings": {
+"casual": 0.613,
+"polite": 0.36
+}
+}
+},
+"picora": {
+"n": 124,
+"nStory": 17,
+"nSent": 76,
+"endings": {
+"polite": 0.539,
+"casual": 0.461
+},
+"endingsLobby": {
+"polite": 0.636,
+"casual": 0.364
+},
+"endingsStory": {
+"casual": 0.524,
+"polite": 0.476
+},
+"endingsTouch": {
+"polite": 0.714,
+"casual": 0.286
+},
+"nLobbySent": 44,
+"nTouchSent": 7,
+"style": "polite",
+"addr": null,
+"addrCounts": {
+"선생님": 2,
+"사장님": 1,
+"넌": 1
+},
+"me": {
+"저도": 2,
+"제가": 1,
+"저를": 1,
+"나는": 1,
+"저는": 1
+},
+"interj": [],
+"catch": [
+"스승님",
+"스티커",
+"마법",
+"패션"
+],
+"written": {
+"n": 387,
+"endings": {
+"casual": 0.721,
+"polite": 0.269
+}
+}
+},
+"pira": {
+"n": 239,
+"nStory": 146,
+"nSent": 156,
+"endings": {
+"casual": 0.994,
+"royal": 0.006
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.99,
+"royal": 0.01
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 41,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3,
+"너": 3,
+"넌": 2,
+"니가": 2,
+"네가": 1
+},
+"me": {
+"내가": 12,
+"난": 4,
+"나도": 1,
+"나는": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"그래",
+"거냐",
+"고래",
+"사제장",
+"골드",
+"노는",
+"깡패"
+],
+"tic": {
+"form": "custom",
+"label": "~고래 (말끝마다 고래, 가끔 ~냐로/~야로)",
+"ratio": 0.42,
+"text": 0.42,
+"n": 125
+},
+"written": {
+"n": 149,
+"endings": {
+"casual": 0.987
+}
+}
+},
+"polan": {
+"n": 400,
+"nStory": 293,
+"nSent": 325,
+"endings": {
+"casual": 0.677,
+"formal": 0.243,
+"polite": 0.058,
+"hao": 0.018,
+"royal": 0.003
+},
+"endingsLobby": {
+"casual": 0.41,
+"formal": 0.359,
+"polite": 0.128,
+"hao": 0.103
+},
+"endingsStory": {
+"casual": 0.712,
+"formal": 0.227,
+"polite": 0.05,
+"hao": 0.007,
+"royal": 0.004
+},
+"endingsTouch": {
+"formal": 0.571,
+"hao": 0.286,
+"polite": 0.143
+},
+"nLobbySent": 39,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 15,
+"너": 4,
+"니가": 3
+},
+"me": {
+"내가": 7,
+"저는": 5,
+"우리": 3,
+"제가": 3,
+"나는": 2
+},
+"interj": [],
+"catch": [
+"경비대",
+"거냐",
+"마리",
+"사제장",
+"사건",
+"리코더",
+"승리",
+"피고인",
+"사탕",
+"경비대장",
+"재판장님",
+"증인"
+],
+"written": {
+"n": 338,
+"endings": {
+"casual": 0.82,
+"formal": 0.142
+}
+}
+},
+"posher": {
+"n": 132,
+"nStory": 11,
+"nSent": 53,
+"endings": {
+"casual": 0.962,
+"polite": 0.019,
+"formal": 0.019
+},
+"endingsLobby": {
+"casual": 0.969,
+"formal": 0.031
+},
+"endingsStory": {
+"casual": 0.909,
+"polite": 0.091
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 32,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"교주님": 1,
+"니가": 1
+},
+"me": {
+"내가": 4,
+"우리": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"포션",
+"실험",
+"기타",
+"결과"
+],
+"written": {
+"n": 112,
+"endings": {
+"casual": 0.83,
+"polite": 0.143,
+"formal": 0.027
+}
+}
+},
+"ran": {
+"n": 896,
+"nStory": 787,
+"nSent": 697,
+"endings": {
+"casual": 0.766,
+"polite": 0.191,
+"formal": 0.037,
+"royal": 0.003,
+"hao": 0.003
+},
+"endingsLobby": {
+"polite": 0.525,
+"casual": 0.3,
+"formal": 0.175
+},
+"endingsStory": {
+"casual": 0.802,
+"polite": 0.165,
+"formal": 0.026,
+"royal": 0.003,
+"hao": 0.003
+},
+"endingsTouch": {
+"polite": 0.8,
+"formal": 0.2
+},
+"nLobbySent": 40,
+"nTouchSent": 10,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"네가": 18,
+"교주님": 16,
+"너": 4,
+"자기": 4,
+"니가": 1,
+"친구": 1
+},
+"me": {
+"내가": 32,
+"나는": 21,
+"제가": 15,
+"난": 12,
+"저는": 10
+},
+"interj": [],
+"catch": [
+"우로스",
+"오로스",
+"주군",
+"증오",
+"읽는",
+"듣는",
+"검을",
+"피를",
+"재미있군",
+"보물들",
+"슈러",
+"벗이"
+],
+"written": {
+"n": 333,
+"endings": {
+"casual": 0.772,
+"polite": 0.171,
+"formal": 0.048
+}
+}
+},
+"renewaawaken": {
+"n": 285,
+"nStory": 192,
+"nSent": 234,
+"endings": {
+"polite": 0.65,
+"casual": 0.303,
+"formal": 0.043,
+"royal": 0.004
+},
+"endingsLobby": {
+"polite": 0.579,
+"casual": 0.263,
+"formal": 0.158
+},
+"endingsStory": {
+"polite": 0.679,
+"casual": 0.304,
+"formal": 0.011,
+"royal": 0.005
+},
+"endingsTouch": {
+"polite": 0.571,
+"formal": 0.286,
+"casual": 0.143
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 30,
+"사장님": 1,
+"네가": 1,
+"친구": 1
+},
+"me": {
+"제가": 13,
+"저도": 6,
+"저는": 1,
+"내가": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"시간",
+"능력",
+"시공간",
+"벨리타",
+"씨가",
+"호박",
+"마요씨",
+"미래",
+"책을",
+"중력",
+"리뉴"
+]
+},
+"ricota": {
+"n": 94,
+"nStory": 1,
+"nSent": 58,
+"endings": {
+"formal": 0.448,
+"polite": 0.362,
+"casual": 0.172,
+"royal": 0.017
+},
+"endingsLobby": {
+"polite": 0.413,
+"formal": 0.413,
+"casual": 0.152,
+"royal": 0.022
+},
+"endingsStory": {
+"formal": 1.0
+},
+"endingsTouch": {
+"formal": 0.714,
+"polite": 0.286
+},
+"nLobbySent": 46,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"그대": 1
+},
+"me": {
+"제가": 2,
+"저를": 1,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"요리",
+"좋은",
+"재료"
+],
+"written": {
+"n": 102,
+"endings": {
+"casual": 0.382,
+"formal": 0.324,
+"polite": 0.275,
+"hao": 0.02
+}
+}
+},
+"rim": {
+"n": 222,
+"nStory": 115,
+"nSent": 151,
+"endings": {
+"casual": 0.404,
+"polite": 0.298,
+"formal": 0.265,
+"hao": 0.013,
+"noun": 0.013,
+"royal": 0.007
+},
+"endingsLobby": {
+"casual": 0.629,
+"polite": 0.171,
+"formal": 0.143,
+"noun": 0.057
+},
+"endingsStory": {
+"polite": 0.352,
+"formal": 0.324,
+"casual": 0.296,
+"hao": 0.019,
+"royal": 0.009
+},
+"endingsTouch": {
+"casual": 0.5,
+"polite": 0.375,
+"noun": 0.125
+},
+"nLobbySent": 35,
+"nTouchSent": 8,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"네가": 2,
+"니가": 1,
+"자기": 1,
+"친구": 1,
+"교주": 1,
+"넌": 1
+},
+"me": {
+"제가": 6,
+"나는": 2,
+"나도": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"쉐이디",
+"유령",
+"유령들",
+"균형",
+"본능"
+],
+"written": {
+"n": 469,
+"endings": {
+"casual": 0.846,
+"polite": 0.102,
+"formal": 0.043
+}
+}
+},
+"rimchaos": {
+"n": 121,
+"nStory": 0,
+"nSent": 54,
+"endings": {
+"casual": 0.593,
+"polite": 0.241,
+"formal": 0.167
+},
+"endingsLobby": {
+"casual": 0.545,
+"polite": 0.25,
+"formal": 0.205
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.571,
+"formal": 0.286,
+"casual": 0.143
+},
+"nLobbySent": 44,
+"nTouchSent": 7,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"교주님": 1,
+"교주": 1,
+"당신": 1,
+"네가": 1,
+"주인": 1,
+"너": 1
+},
+"me": {
+"제가": 6,
+"내가": 6,
+"나는": 3,
+"우리": 1,
+"난": 1
+},
+"interj": [],
+"catch": [
+"혼돈",
+"유령",
+"마음"
+]
+},
+"risty": {
+"n": 107,
+"nStory": 0,
+"nSent": 37,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 28,
+"nTouchSent": 4,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 6,
+"너": 3
+},
+"me": {
+"내가": 6,
+"나도": 2,
+"난": 1
+},
+"interj": [],
+"catch": [
+"게임",
+"실력"
+],
+"written": {
+"n": 440,
+"endings": {
+"casual": 0.984
+}
+}
+},
+"rohne": {
+"n": 285,
+"nStory": 207,
+"nSent": 255,
+"endings": {
+"polite": 0.733,
+"casual": 0.231,
+"formal": 0.031,
+"royal": 0.004
+},
+"endingsLobby": {
+"polite": 0.634,
+"casual": 0.317,
+"formal": 0.024,
+"royal": 0.024
+},
+"endingsStory": {
+"polite": 0.775,
+"casual": 0.191,
+"formal": 0.034
+},
+"endingsTouch": {
+"polite": 0.667,
+"casual": 0.333
+},
+"nLobbySent": 41,
+"nTouchSent": 9,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 9,
+"자기": 2,
+"마스터": 1,
+"친구": 1
+},
+"me": {
+"제가": 6,
+"저는": 6,
+"저도": 3,
+"난": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"돈가스",
+"인간",
+"스파이",
+"스파",
+"내일",
+"비슷한",
+"무기"
+],
+"written": {
+"n": 607,
+"endings": {
+"polite": 0.573,
+"casual": 0.376,
+"formal": 0.036
+}
+}
+},
+"rohnemayor": {
+"n": 233,
+"nStory": 140,
+"nSent": 182,
+"endings": {
+"polite": 0.643,
+"casual": 0.286,
+"formal": 0.049,
+"noun": 0.011,
+"hao": 0.005,
+"royal": 0.005
+},
+"endingsLobby": {
+"polite": 0.595,
+"casual": 0.286,
+"formal": 0.119
+},
+"endingsStory": {
+"polite": 0.692,
+"casual": 0.269,
+"noun": 0.015,
+"formal": 0.015,
+"hao": 0.008
+},
+"endingsTouch": {
+"polite": 1.0
+},
+"nLobbySent": 42,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 20,
+"자기": 1,
+"님": 1
+},
+"me": {
+"제가": 5,
+"우리": 2,
+"나는": 2,
+"저는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"돈가스",
+"시장",
+"언더돌",
+"볼샷",
+"위한",
+"헤일리"
+]
+},
+"rollett": {
+"n": 97,
+"nStory": 4,
+"nSent": 54,
+"endings": {
+"casual": 0.833,
+"polite": 0.111,
+"formal": 0.037,
+"noun": 0.019
+},
+"endingsLobby": {
+"casual": 0.892,
+"polite": 0.081,
+"noun": 0.027
+},
+"endingsStory": {
+"polite": 0.5,
+"formal": 0.333,
+"casual": 0.167
+},
+"endingsTouch": {
+"casual": 0.833,
+"polite": 0.167
+},
+"nLobbySent": 37,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 8,
+"마스터": 2,
+"넌": 1
+},
+"me": {
+"내가": 4,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"계획"
+],
+"written": {
+"n": 214,
+"endings": {
+"casual": 0.916,
+"polite": 0.042,
+"formal": 0.028
+}
+}
+},
+"ronnie": {
+"n": 356,
+"nStory": 277,
+"nSent": 262,
+"endings": {
+"casual": 0.756,
+"formal": 0.176,
+"polite": 0.05,
+"hao": 0.019
+},
+"endingsLobby": {
+"formal": 0.625,
+"casual": 0.15,
+"polite": 0.125,
+"hao": 0.1
+},
+"endingsStory": {
+"casual": 0.868,
+"formal": 0.094,
+"polite": 0.033,
+"hao": 0.005
+},
+"endingsTouch": {
+"polite": 0.333,
+"hao": 0.333,
+"formal": 0.333
+},
+"nLobbySent": 40,
+"nTouchSent": 6,
+"style": "formal",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 8,
+"니가": 5,
+"너": 4,
+"자기": 4,
+"네가": 3,
+"대장": 2
+},
+"me": {
+"내가": 25,
+"나는": 14,
+"나를": 5,
+"나도": 4,
+"제가": 3
+},
+"interj": [],
+"catch": [
+"황금손",
+"리코더",
+"경비대",
+"과거",
+"대장님",
+"후회",
+"마리",
+"세월",
+"쓰레기",
+"사탕"
+],
+"written": {
+"n": 394,
+"endings": {
+"casual": 0.701,
+"polite": 0.19,
+"formal": 0.099
+}
+}
+},
+"rude": {
+"n": 129,
+"nStory": 50,
+"nSent": 92,
+"endings": {
+"casual": 0.957,
+"noun": 0.022,
+"formal": 0.022
+},
+"endingsLobby": {
+"casual": 0.968,
+"noun": 0.032
+},
+"endingsStory": {
+"casual": 0.939,
+"formal": 0.041,
+"noun": 0.02
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 31,
+"nTouchSent": 3,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 5,
+"네가": 1,
+"너": 1,
+"넌": 1,
+"자기": 1
+},
+"me": {
+"내가": 6,
+"나는": 3,
+"나도": 2,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"다야님",
+"리츠",
+"운동"
+],
+"written": {
+"n": 190,
+"endings": {
+"casual": 0.884,
+"formal": 0.084,
+"polite": 0.021
+}
+}
+},
+"rufo": {
+"n": 195,
+"nStory": 102,
+"nSent": 170,
+"endings": {
+"casual": 0.894,
+"formal": 0.053,
+"polite": 0.035,
+"royal": 0.006,
+"hao": 0.006,
+"noun": 0.006
+},
+"endingsLobby": {
+"casual": 0.976,
+"noun": 0.024
+},
+"endingsStory": {
+"casual": 0.868,
+"formal": 0.074,
+"polite": 0.041,
+"royal": 0.008,
+"hao": 0.008
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 41,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"대장": 5,
+"교주": 3,
+"네가": 1
+},
+"me": {
+"우리": 6,
+"내가": 4,
+"저는": 1
+},
+"interj": [],
+"catch": [
+"대장",
+"것이냐",
+"사료스탕스",
+"사료",
+"티그"
+],
+"tic": {
+"form": "custom",
+"label": "~것이다/~것이냐 (반말 끝을 이렇게 맺는다)",
+"ratio": 0.62,
+"text": 0.62,
+"n": 148
+},
+"written": {
+"n": 240,
+"endings": {
+"casual": 0.971
+}
+}
+},
+"sari": {
+"n": 64,
+"nStory": 0,
+"nSent": 44,
+"endings": {
+"casual": 0.818,
+"polite": 0.182
+},
+"endingsLobby": {
+"casual": 0.789,
+"polite": 0.211
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3
+},
+"me": {
+"저는": 1,
+"제가": 1,
+"나도": 1,
+"난": 1,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"얘기"
+]
+},
+"scizor": {
+"n": 106,
+"nStory": 27,
+"nSent": 77,
+"endings": {
+"casual": 0.974,
+"hao": 0.013,
+"polite": 0.013
+},
+"endingsLobby": {
+"casual": 0.949,
+"hao": 0.026,
+"polite": 0.026
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 0.833,
+"hao": 0.167
+},
+"nLobbySent": 39,
+"nTouchSent": 6,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"교주": 2,
+"넌": 1
+},
+"me": {
+"내가": 4,
+"나를": 1,
+"난": 1,
+"이 몸": 1
+},
+"interj": [],
+"catch": [
+"빌런",
+"시저",
+"가위",
+"악행"
+],
+"written": {
+"n": 97,
+"endings": {
+"casual": 0.979
+}
+}
+},
+"selline": {
+"n": 142,
+"nStory": 21,
+"nSent": 68,
+"endings": {
+"casual": 0.985,
+"noun": 0.015
+},
+"endingsLobby": {
+"casual": 0.975,
+"noun": 0.025
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 40,
+"nTouchSent": 9,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"너": 3,
+"니가": 1
+},
+"me": {
+"내가": 4,
+"나도": 3,
+"우리": 3,
+"난": 2,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"도발",
+"분위기",
+"표정",
+"어때"
+],
+"written": {
+"n": 177,
+"endings": {
+"casual": 0.989
+}
+}
+},
+"shady": {
+"n": 300,
+"nStory": 193,
+"nSent": 243,
+"endings": {
+"casual": 0.979,
+"formal": 0.012,
+"polite": 0.008
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.975,
+"formal": 0.015,
+"polite": 0.01
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 36,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"너": 11,
+"교주": 4,
+"넌": 3,
+"님": 1,
+"니가": 1,
+"언니": 1
+},
+"me": {
+"내가": 12,
+"나도": 5,
+"우리": 4,
+"난": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"쉐이디",
+"신라님",
+"파인애플",
+"장난감",
+"장난",
+"솔직히"
+],
+"written": {
+"n": 343,
+"endings": {
+"casual": 0.994
+}
+}
+},
+"shadytwisted": {
+"n": 211,
+"nStory": 118,
+"nSent": 168,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 42,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 11,
+"너": 8,
+"네가": 3,
+"넌": 2
+},
+"me": {
+"내가": 16,
+"나도": 7,
+"우리": 4,
+"난": 4,
+"소녀": 1
+},
+"interj": [],
+"catch": [
+"제품",
+"인형"
+]
+},
+"shasha": {
+"n": 109,
+"nStory": 2,
+"nSent": 55,
+"endings": {
+"polite": 0.673,
+"casual": 0.255,
+"formal": 0.073
+},
+"endingsLobby": {
+"polite": 0.805,
+"casual": 0.122,
+"formal": 0.073
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"polite": 0.857,
+"formal": 0.143
+},
+"nLobbySent": 41,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 3
+},
+"me": {
+"저는": 3,
+"제가": 2,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"텀블러"
+],
+"written": {
+"n": 153,
+"endings": {
+"casual": 0.758,
+"polite": 0.235
+}
+}
+},
+"sherum": {
+"n": 679,
+"nStory": 571,
+"nSent": 581,
+"endings": {
+"polite": 0.392,
+"casual": 0.356,
+"formal": 0.219,
+"noun": 0.024,
+"royal": 0.005,
+"hao": 0.003
+},
+"endingsLobby": {
+"polite": 0.463,
+"casual": 0.259,
+"noun": 0.167,
+"formal": 0.111
+},
+"endingsStory": {
+"polite": 0.387,
+"casual": 0.368,
+"formal": 0.233,
+"royal": 0.006,
+"hao": 0.004,
+"noun": 0.002
+},
+"endingsTouch": {
+"casual": 0.3,
+"noun": 0.3,
+"polite": 0.3,
+"formal": 0.1
+},
+"nLobbySent": 54,
+"nTouchSent": 10,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 19,
+"자기": 2,
+"네가": 2,
+"선생님": 1,
+"자네": 1
+},
+"me": {
+"제가": 21,
+"내가": 10,
+"저는": 8,
+"난": 2,
+"저도": 2
+},
+"interj": [],
+"catch": [
+"내용",
+"기록",
+"수업",
+"유령들",
+"수인",
+"벨리타",
+"그림일기",
+"뱀의",
+"도서관",
+"역사",
+"책의",
+"기원"
+],
+"written": {
+"n": 382,
+"endings": {
+"casual": 0.51,
+"polite": 0.332,
+"formal": 0.141
+}
+}
+},
+"shoupan": {
+"n": 328,
+"nStory": 221,
+"nSent": 276,
+"endings": {
+"casual": 0.949,
+"polite": 0.022,
+"formal": 0.018,
+"royal": 0.004,
+"hao": 0.004,
+"noun": 0.004
+},
+"endingsLobby": {
+"casual": 0.946,
+"formal": 0.027,
+"noun": 0.027
+},
+"endingsStory": {
+"casual": 0.948,
+"polite": 0.026,
+"formal": 0.017,
+"royal": 0.004,
+"hao": 0.004
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "니가",
+"addrCounts": {
+"니가": 4,
+"너": 2,
+"넌": 1,
+"교주님": 1,
+"교주": 1
+},
+"me": {
+"내가": 13,
+"난": 11,
+"나도": 2,
+"우리": 2,
+"나는": 1
+},
+"interj": [],
+"catch": [
+"슈퍼볼트",
+"슈퍼",
+"으악",
+"슈팡",
+"달려",
+"양갱",
+"브레이크",
+"달릴",
+"슈파볼트",
+"배달",
+"고장",
+"케이크"
+],
+"written": {
+"n": 358,
+"endings": {
+"casual": 0.947,
+"polite": 0.025,
+"formal": 0.022
+}
+}
+},
+"silphir": {
+"n": 100,
+"nStory": 8,
+"nSent": 61,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 44,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 4,
+"너": 2,
+"넌": 1
+},
+"me": {
+"내가": 4,
+"나는": 3,
+"난": 1,
+"나도": 1
+},
+"interj": [],
+"catch": [
+"이길"
+],
+"written": {
+"n": 297,
+"endings": {
+"casual": 1.0
+}
+}
+},
+"silvia": {
+"n": 364,
+"nStory": 262,
+"nSent": 259,
+"endings": {
+"haso": 0.421,
+"casual": 0.328,
+"formal": 0.201,
+"polite": 0.046,
+"hao": 0.004
+},
+"endingsLobby": {
+"haso": 0.61,
+"casual": 0.195,
+"formal": 0.146,
+"polite": 0.049
+},
+"endingsStory": {
+"haso": 0.383,
+"casual": 0.354,
+"formal": 0.214,
+"polite": 0.044,
+"hao": 0.005
+},
+"endingsTouch": {
+"haso": 0.714,
+"casual": 0.143,
+"formal": 0.143
+},
+"nLobbySent": 41,
+"nTouchSent": 7,
+"style": "haso",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"그대": 2,
+"자기": 1
+},
+"me": {
+"내가": 7,
+"소녀": 5,
+"우리": 1,
+"저도": 1,
+"난": 1
+},
+"interj": [
+"얍"
+],
+"catch": [
+"소녀",
+"냠냠",
+"이모님",
+"껍질",
+"진은",
+"식으로",
+"대공",
+"품위"
+],
+"tic": {
+"form": "haso",
+"ratio": 0.63,
+"voice": 0.421,
+"text": 0.277,
+"voiceFair": 0.63,
+"textFair": 0.422
+},
+"written": {
+"n": 242,
+"endings": {
+"casual": 0.339,
+"haso": 0.277,
+"formal": 0.223,
+"polite": 0.157
+}
+}
+},
+"sist": {
+"n": 145,
+"nStory": 52,
+"nSent": 108,
+"endings": {
+"polite": 0.556,
+"casual": 0.324,
+"formal": 0.093,
+"hao": 0.028
+},
+"endingsLobby": {
+"polite": 0.732,
+"casual": 0.146,
+"formal": 0.122
+},
+"endingsStory": {
+"polite": 0.446,
+"casual": 0.429,
+"formal": 0.071,
+"hao": 0.054
+},
+"endingsTouch": {
+"polite": 0.714,
+"formal": 0.286
+},
+"nLobbySent": 41,
+"nTouchSent": 7,
+"style": "polite",
+"addr": null,
+"addrCounts": {
+"교주님": 2,
+"고객님": 2,
+"주인": 1,
+"교주": 1
+},
+"me": {
+"제가": 2,
+"내가": 1,
+"저는": 1,
+"난": 1
+},
+"interj": [
+"아이고"
+],
+"catch": [
+"장사",
+"말씀",
+"감자칩",
+"서비스"
+],
+"tic": {
+"form": "custom",
+"label": "~다요 (합니다체에 '요'를 붙인다)",
+"ratio": 0.08,
+"text": 0.08,
+"n": 121
+},
+"written": {
+"n": 189,
+"endings": {
+"casual": 0.831,
+"polite": 0.143,
+"formal": 0.026
+}
+}
+},
+"skea": {
+"n": 630,
+"nStory": 551,
+"nSent": 474,
+"endings": {
+"casual": 0.502,
+"formal": 0.27,
+"polite": 0.15,
+"haso": 0.034,
+"royal": 0.025,
+"hao": 0.015,
+"noun": 0.004
+},
+"endingsLobby": {
+"casual": 0.435,
+"formal": 0.261,
+"polite": 0.261,
+"noun": 0.043
+},
+"endingsStory": {
+"casual": 0.501,
+"formal": 0.272,
+"polite": 0.146,
+"haso": 0.036,
+"royal": 0.027,
+"hao": 0.016,
+"noun": 0.002
+},
+"endingsTouch": {
+"casual": 0.667,
+"polite": 0.333
+},
+"nLobbySent": 23,
+"nTouchSent": 3,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 43,
+"네가": 4,
+"주인": 3,
+"니가": 2,
+"당신": 1
+},
+"me": {
+"제가": 15,
+"내가": 11,
+"저는": 7,
+"나는": 5,
+"우리": 4
+},
+"interj": [],
+"catch": [
+"교수님",
+"꿈속",
+"사제들",
+"목소리",
+"사제",
+"기도",
+"이곳",
+"부디",
+"잠에",
+"꿈을",
+"죽음",
+"조언"
+],
+"written": {
+"n": 185,
+"endings": {
+"casual": 0.578,
+"formal": 0.178,
+"polite": 0.081,
+"royal": 0.076,
+"haso": 0.07
+}
+}
+},
+"snorky": {
+"n": 124,
+"nStory": 31,
+"nSent": 76,
+"endings": {
+"casual": 0.803,
+"formal": 0.132,
+"polite": 0.039,
+"hao": 0.013,
+"noun": 0.013
+},
+"endingsLobby": {
+"casual": 0.714,
+"formal": 0.171,
+"polite": 0.057,
+"hao": 0.029,
+"noun": 0.029
+},
+"endingsStory": {
+"casual": 0.844,
+"formal": 0.125,
+"polite": 0.031
+},
+"endingsTouch": {
+"formal": 0.571,
+"casual": 0.286,
+"polite": 0.143
+},
+"nLobbySent": 35,
+"nTouchSent": 7,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"너": 1,
+"교주님": 1
+},
+"me": {
+"내가": 6,
+"제가": 4,
+"나도": 3,
+"난": 1,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"밧줄",
+"파티"
+],
+"written": {
+"n": 226,
+"endings": {
+"casual": 0.544,
+"formal": 0.31,
+"polite": 0.119
+}
+}
+},
+"sparrot": {
+"n": 651,
+"nStory": 572,
+"nSent": 631,
+"endings": {
+"casual": 0.994,
+"royal": 0.005,
+"noun": 0.002
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.993,
+"royal": 0.005,
+"noun": 0.002
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 31,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "너",
+"addrCounts": {
+"너": 8,
+"자기": 3,
+"니가": 3,
+"넌": 2
+},
+"me": {
+"내가": 41,
+"나는": 10,
+"우리": 7,
+"나를": 5,
+"나도": 3
+},
+"interj": [
+"앗"
+],
+"catch": [
+"해적",
+"선장",
+"교장",
+"해적단",
+"해적들",
+"배를",
+"보물",
+"위대한",
+"강철",
+"꼴뚜기",
+"기세",
+"섬을"
+],
+"written": {
+"n": 1093,
+"endings": {
+"casual": 0.996
+}
+}
+},
+"speaki": {
+"n": 270,
+"nStory": 195,
+"nSent": 245,
+"endings": {
+"polite": 0.522,
+"casual": 0.396,
+"noun": 0.041,
+"formal": 0.041
+},
+"endingsLobby": {
+"polite": 0.8,
+"casual": 0.15,
+"formal": 0.05
+},
+"endingsStory": {
+"polite": 0.459,
+"casual": 0.454,
+"noun": 0.052,
+"formal": 0.036
+},
+"endingsTouch": {
+"polite": 0.833,
+"casual": 0.167
+},
+"nLobbySent": 40,
+"nTouchSent": 6,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 13,
+"친구": 7,
+"네가": 3,
+"교주": 3,
+"자기": 1,
+"너": 1
+},
+"me": {
+"내가": 6,
+"저도": 3,
+"저는": 2,
+"우리": 2,
+"제가": 2
+},
+"interj": [],
+"catch": [
+"스피키",
+"호박",
+"친구",
+"네르",
+"하하",
+"에스피",
+"쉐이디님",
+"제사장",
+"거임",
+"여러분"
+],
+"tic": {
+"form": "custom",
+"label": "~요오 (해요체 끝을 길게 늘인다)",
+"ratio": 0.19,
+"text": 0.19,
+"n": 160
+},
+"written": {
+"n": 282,
+"endings": {
+"casual": 0.507,
+"polite": 0.482
+}
+}
+},
+"speakimaid": {
+"n": 93,
+"nStory": 0,
+"nSent": 61,
+"endings": {
+"polite": 0.836,
+"casual": 0.115,
+"formal": 0.049
+},
+"endingsLobby": {
+"polite": 0.851,
+"casual": 0.085,
+"formal": 0.064
+},
+"endingsStory": {},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 47,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4,
+"교주": 2,
+"주인": 1
+},
+"me": {
+"제가": 2,
+"저도": 1
+},
+"interj": [],
+"catch": [
+"크레페",
+"청소",
+"메이드"
+]
+},
+"suro": {
+"n": 585,
+"nStory": 474,
+"nSent": 437,
+"endings": {
+"casual": 0.787,
+"polite": 0.176,
+"formal": 0.027,
+"royal": 0.009
+},
+"endingsLobby": {
+"casual": 0.545,
+"polite": 0.386,
+"formal": 0.045,
+"royal": 0.023
+},
+"endingsStory": {
+"casual": 0.818,
+"polite": 0.153,
+"formal": 0.021,
+"royal": 0.008
+},
+"endingsTouch": {
+"polite": 0.75,
+"formal": 0.25
+},
+"nLobbySent": 44,
+"nTouchSent": 8,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 12,
+"네가": 7,
+"너": 6,
+"선생님": 5,
+"넌": 3,
+"친구": 2
+},
+"me": {
+"내가": 22,
+"나는": 16,
+"난": 10,
+"제가": 7,
+"나를": 4
+},
+"interj": [],
+"catch": [
+"티그",
+"영웅",
+"촌장",
+"선생님",
+"걷는",
+"아하",
+"오해",
+"흐흐흐흐흐"
+],
+"written": {
+"n": 226,
+"endings": {
+"casual": 0.92,
+"polite": 0.049
+}
+}
+},
+"sylla": {
+"n": 330,
+"nStory": 217,
+"nSent": 253,
+"endings": {
+"casual": 0.984,
+"polite": 0.008,
+"royal": 0.004,
+"formal": 0.004
+},
+"endingsLobby": {
+"casual": 0.974,
+"formal": 0.026
+},
+"endingsStory": {
+"casual": 0.99,
+"polite": 0.005,
+"royal": 0.005
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"네가": 10,
+"너": 7,
+"교주": 6,
+"자기": 4
+},
+"me": {
+"내가": 16,
+"우리": 7,
+"나는": 4,
+"난": 3,
+"나도": 3
+},
+"interj": [],
+"catch": [
+"바람",
+"쉐이디",
+"정령들",
+"훈련",
+"라이카",
+"이프리트",
+"으윽",
+"저쪽",
+"에슈르",
+"기운"
+],
+"written": {
+"n": 427,
+"endings": {
+"casual": 0.981
+}
+}
+},
+"taida": {
+"n": 73,
+"nStory": 9,
+"nSent": 56,
+"endings": {
+"polite": 0.464,
+"casual": 0.411,
+"formal": 0.107,
+"noun": 0.018
+},
+"endingsLobby": {
+"polite": 0.45,
+"casual": 0.425,
+"formal": 0.125
+},
+"endingsStory": {
+"polite": 0.5,
+"casual": 0.375,
+"noun": 0.125
+},
+"endingsTouch": {
+"casual": 0.375,
+"polite": 0.375,
+"formal": 0.25
+},
+"nLobbySent": 40,
+"nTouchSent": 8,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 5,
+"님": 1
+},
+"me": {
+"저는": 1,
+"저도": 1
+},
+"interj": [],
+"catch": [],
+"written": {
+"n": 125,
+"endings": {
+"casual": 0.824,
+"formal": 0.112,
+"polite": 0.064
+}
+}
+},
+"tig": {
+"n": 620,
+"nStory": 498,
+"nSent": 530,
+"endings": {
+"casual": 0.991,
+"noun": 0.006,
+"formal": 0.002,
+"royal": 0.002
+},
+"endingsLobby": {
+"casual": 0.921,
+"noun": 0.053,
+"royal": 0.026
+},
+"endingsStory": {
+"casual": 0.996,
+"formal": 0.002,
+"noun": 0.002
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 5,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"너": 17,
+"교주": 12,
+"니가": 7,
+"넌": 6,
+"자기": 4,
+"네가": 3
+},
+"me": {
+"내가": 37,
+"난": 15,
+"우리": 10,
+"나는": 5,
+"나도": 4
+},
+"interj": [],
+"catch": [
+"할망구",
+"슈루",
+"슈로",
+"사료스탕스",
+"촌장",
+"조용히",
+"리온",
+"루퍼",
+"버터",
+"도시",
+"무사",
+"티그님"
+],
+"written": {
+"n": 943,
+"endings": {
+"casual": 0.999
+}
+}
+},
+"tighero": {
+"n": 204,
+"nStory": 111,
+"nSent": 156,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 33,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 12,
+"네가": 7,
+"너": 6,
+"니가": 2,
+"넌": 2
+},
+"me": {
+"내가": 20,
+"나는": 7,
+"난": 6,
+"나도": 5,
+"나를": 1
+},
+"interj": [],
+"catch": [
+"길을",
+"슈로",
+"영웅",
+"우루스",
+"방금",
+"규주",
+"있었던"
+]
+},
+"ui": {
+"n": 432,
+"nStory": 301,
+"nSent": 327,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 1.0
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 36,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"친구": 28,
+"언니": 9,
+"교주": 8,
+"자기": 3,
+"네가": 1,
+"니가": 1
+},
+"me": {
+"우리": 8,
+"내가": 6,
+"난": 6,
+"나도": 1,
+"나는": 1
+},
+"interj": [
+"히히"
+],
+"catch": [
+"친구",
+"우이",
+"하얀",
+"행복",
+"소원",
+"친구들",
+"에루",
+"용족",
+"용적",
+"오이",
+"작은",
+"에로"
+],
+"written": {
+"n": 282,
+"endings": {
+"casual": 1.0
+}
+}
+},
+"uros": {
+"n": 485,
+"nStory": 271,
+"nSent": 307,
+"endings": {
+"casual": 0.678,
+"polite": 0.244,
+"formal": 0.075,
+"noun": 0.003
+},
+"endingsLobby": {
+"casual": 0.647,
+"polite": 0.294,
+"formal": 0.044,
+"noun": 0.015
+},
+"endingsStory": {
+"casual": 0.688,
+"polite": 0.226,
+"formal": 0.086
+},
+"endingsTouch": {
+"polite": 0.5,
+"casual": 0.5
+},
+"nLobbySent": 68,
+"nTouchSent": 12,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 13,
+"네가": 3,
+"너": 3,
+"자기": 2,
+"니가": 2,
+"친구": 2
+},
+"me": {
+"내가": 13,
+"나는": 11,
+"나를": 9,
+"제가": 8,
+"저는": 7
+},
+"interj": [
+"오오"
+],
+"catch": [
+"우로스",
+"나를",
+"길을",
+"에피카",
+"스스로",
+"순환",
+"낚시"
+],
+"written": {
+"n": 210,
+"endings": {
+"casual": 0.719,
+"polite": 0.248,
+"formal": 0.033
+}
+}
+},
+"vela": {
+"n": 610,
+"nStory": 503,
+"nSent": 555,
+"endings": {
+"casual": 0.996,
+"polite": 0.002,
+"noun": 0.002
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.996,
+"polite": 0.002,
+"noun": 0.002
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 38,
+"nTouchSent": 6,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"너": 19,
+"교주": 15,
+"네가": 12,
+"넌": 7,
+"친구": 4,
+"니가": 1
+},
+"me": {
+"내가": 41,
+"난": 13,
+"나도": 10,
+"나는": 9,
+"나를": 2
+},
+"interj": [],
+"catch": [
+"존재",
+"존재감",
+"재미있",
+"개나리",
+"해줘",
+"존재님",
+"존재들",
+"눈에",
+"다크넷",
+"방에",
+"신기한"
+],
+"written": {
+"n": 377,
+"endings": {
+"casual": 0.995
+}
+}
+},
+"velvet": {
+"n": 537,
+"nStory": 444,
+"nSent": 463,
+"endings": {
+"casual": 0.981,
+"polite": 0.015,
+"royal": 0.004
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.978,
+"polite": 0.017,
+"royal": 0.005
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 39,
+"nTouchSent": 5,
+"style": "casual",
+"addr": "너",
+"addrCounts": {
+"너": 19,
+"니가": 6,
+"넌": 5,
+"주인님": 3,
+"자기": 2,
+"네가": 2
+},
+"me": {
+"내가": 42,
+"난": 10,
+"나는": 7,
+"나도": 5,
+"우리": 1
+},
+"interj": [
+"히히"
+],
+"catch": [
+"여왕",
+"레비",
+"프리클",
+"지상",
+"주인님",
+"주제",
+"도끼",
+"비켜",
+"궁전",
+"왕좌",
+"보수"
+],
+"written": {
+"n": 568,
+"endings": {
+"casual": 0.974,
+"polite": 0.025
+}
+}
+},
+"veroo": {
+"n": 64,
+"nStory": 0,
+"nSent": 40,
+"endings": {
+"casual": 0.975,
+"noun": 0.025
+},
+"endingsLobby": {
+"casual": 0.968,
+"noun": 0.032
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 31,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 3,
+"너": 2
+},
+"me": {
+"내가": 1
+},
+"interj": [],
+"catch": []
+},
+"vivi": {
+"n": 1495,
+"nStory": 1354,
+"nSent": 1255,
+"endings": {
+"casual": 0.489,
+"polite": 0.441,
+"vivi": 0.053,
+"formal": 0.012,
+"noun": 0.002,
+"royal": 0.002,
+"hao": 0.001
+},
+"endingsLobby": {
+"polite": 0.673,
+"vivi": 0.143,
+"casual": 0.122,
+"noun": 0.061
+},
+"endingsStory": {
+"casual": 0.507,
+"polite": 0.429,
+"vivi": 0.049,
+"formal": 0.013,
+"royal": 0.002,
+"hao": 0.001
+},
+"endingsTouch": {
+"vivi": 0.571,
+"polite": 0.429
+},
+"nLobbySent": 49,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 24,
+"언니": 14,
+"니가": 7,
+"자기": 6,
+"너": 6,
+"당신": 4
+},
+"me": {
+"내가": 40,
+"나는": 28,
+"우리": 12,
+"난": 9,
+"제가": 7
+},
+"interj": [],
+"catch": [
+"소녀",
+"다이아몬드",
+"은석공",
+"실비",
+"자매들",
+"목적",
+"숙녀",
+"엄마",
+"은혜",
+"명예",
+"막내",
+"소년"
+],
+"tic": {
+"form": "vivi",
+"ratio": 0.199,
+"voice": 0.053,
+"text": 0.096,
+"voiceFair": 0.107,
+"textFair": 0.199
+},
+"written": {
+"n": 1051,
+"endings": {
+"casual": 0.511,
+"polite": 0.386,
+"vivi": 0.096
+}
+}
+},
+"xxionx": {
+"n": 766,
+"nStory": 631,
+"nSent": 670,
+"endings": {
+"casual": 0.925,
+"polite": 0.034,
+"formal": 0.034,
+"royal": 0.003,
+"noun": 0.001,
+"hao": 0.001
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {
+"casual": 0.92,
+"polite": 0.037,
+"formal": 0.037,
+"royal": 0.003,
+"noun": 0.002,
+"hao": 0.002
+},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 37,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주",
+"addrCounts": {
+"교주": 18,
+"너": 12,
+"넌": 5,
+"사장님": 5,
+"언니": 3,
+"네가": 1
+},
+"me": {
+"내가": 33,
+"난": 13,
+"나는": 9,
+"우리": 7,
+"나도": 7
+},
+"interj": [
+"크크"
+],
+"catch": [
+"비비",
+"사장님",
+"어둠",
+"이드",
+"재판장님",
+"클로에",
+"클로",
+"시온",
+"다크",
+"타겟",
+"동생",
+"이들"
+],
+"written": {
+"n": 582,
+"endings": {
+"casual": 0.966
+}
+}
+},
+"yomi": {
+"n": 130,
+"nStory": 37,
+"nSent": 89,
+"endings": {
+"polite": 0.64,
+"casual": 0.18,
+"formal": 0.157,
+"hao": 0.011,
+"noun": 0.011
+},
+"endingsLobby": {
+"polite": 0.615,
+"formal": 0.205,
+"casual": 0.128,
+"hao": 0.026,
+"noun": 0.026
+},
+"endingsStory": {
+"polite": 0.711,
+"casual": 0.237,
+"formal": 0.053
+},
+"endingsTouch": {
+"polite": 0.857,
+"casual": 0.143
+},
+"nLobbySent": 39,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 6,
+"당신": 1
+},
+"me": {
+"제가": 4,
+"저도": 2,
+"저를": 1
+},
+"interj": [],
+"catch": [
+"달이",
+"요정들",
+"사제",
+"달림",
+"달빛"
+],
+"written": {
+"n": 81,
+"endings": {
+"polite": 0.63,
+"casual": 0.309,
+"formal": 0.037,
+"noun": 0.025
+}
+}
+},
+"youngchun": {
+"n": 25,
+"nStory": 0,
+"nSent": 3,
+"endings": {
+"casual": 1.0
+},
+"endingsLobby": {
+"casual": 1.0
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 1.0
+},
+"nLobbySent": 3,
+"nTouchSent": 3,
+"style": "casual",
+"addr": null,
+"addrCounts": {
+"교주": 1
+},
+"me": {},
+"interj": [],
+"catch": [],
+"written": {
+"n": 128,
+"endings": {
+"casual": 0.992
+}
+}
+},
+"yumimi": {
+"n": 64,
+"nStory": 0,
+"nSent": 42,
+"endings": {
+"casual": 0.714,
+"polite": 0.286
+},
+"endingsLobby": {
+"casual": 0.656,
+"polite": 0.344
+},
+"endingsStory": {},
+"endingsTouch": {
+"casual": 0.857,
+"polite": 0.143
+},
+"nLobbySent": 32,
+"nTouchSent": 7,
+"style": "casual",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 4
+},
+"me": {
+"저도": 1,
+"나는": 1,
+"내가": 1
+},
+"interj": [],
+"catch": [
+"자연"
+]
+},
+"_meta": {
+"written": "테마극장 영상 OCR(글로 적힌 대사) 말뭉치에서 잰 어미 비율. 음성 STT는 '~닷·~그마' 같은 표기 말버릇을 듣지 못해 이 말뭉치로 보완했다",
+"tic": "특수 어미 말버릇 — voice/text 는 전체 문장 대비 비율, voiceFair/textFair 는 그 말버릇이 대신하는 어미(예: ~닷↔~니다)와만 견준 비율. ratio 는 프롬프트에 쓰는 값으로 Fair 쪽의 최대치. style·addr·me 의 출처는 talk-ko.json 이고 이 파일이 아니다",
+"ticCustom": "form='custom' 인 항목은 어미 분류기에 규칙이 없던 말버릇이라 label 을 그대로 프롬프트에 쓴다. 비율은 극장 화면 대사 전체 줄 대비"
+},
+"renewa_alba": {
+"n": 285,
+"nStory": 192,
+"nSent": 234,
+"endings": {
+"polite": 0.65,
+"casual": 0.303,
+"formal": 0.043,
+"royal": 0.004
+},
+"endingsLobby": {
+"polite": 0.579,
+"casual": 0.263,
+"formal": 0.158
+},
+"endingsStory": {
+"polite": 0.679,
+"casual": 0.304,
+"formal": 0.011,
+"royal": 0.005
+},
+"endingsTouch": {
+"polite": 0.571,
+"formal": 0.286,
+"casual": 0.143
+},
+"nLobbySent": 38,
+"nTouchSent": 7,
+"style": "polite",
+"addr": "교주님",
+"addrCounts": {
+"교주님": 30,
+"사장님": 1,
+"네가": 1,
+"친구": 1
+},
+"me": {
+"제가": 13,
+"저도": 6,
+"저는": 1,
+"내가": 1,
+"우리": 1
+},
+"interj": [],
+"catch": [
+"시간",
+"능력",
+"시공간",
+"벨리타",
+"씨가",
+"호박",
+"마요씨",
+"미래",
+"책을",
+"중력",
+"리뉴"
+],
+"_from": "renewaawaken"
+}
 }

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """STT 대본(out/scripts/<hero>.jsonl)으로 사도별 말투 분석 → data/talk-style.json + 현재 talk-ko.json과의 차이 보고
 사용: python tools/analyze-scripts.py [--apply]   (--apply: 고신뢰 style/addr 차이를 data/talk-ko.json에 반영)
-분석: 문장 어미 분포(해요/합니다/반말/특수 어미) · 2인칭 호칭 · 자칭 · 감탄사 · 특징 표현(다른 사도 대비 많이 쓰는 말) · 대표 대사 표본
+분석: 문장 어미 분포(해요/합니다/반말/특수 어미) · 2인칭 호칭 · 자칭 · 감탄사 · 특징 표현(다른 사도 대비 많이 쓰는 말)
+대사 원문은 배포 데이터에 넣지 않는다(2차 창작 가이드라인). 표본은 out/talk-style-samples.json 에만 남는다.
+tic·ticCustom·written 은 이 도구가 만들지 않으므로 기존 값을 이어받는다.
 """
 import os, re, json, glob, argparse, collections, math
 
@@ -18,13 +20,14 @@ ENDINGS = [
     ("haso", re.compile(r"(옵니다|사옵니다|옵소서|시옵|나이다|사옵니까|시옵니까)[!?~.…]*$")),
     ("royal", re.compile(r"(노라|이니라|니라|거라|느냐|하라|로다|도다|하게|시게|게나|겠노)[!?~.…]*$")),
     ("hao", re.compile(r"(이오|하오|소이다|구려|시오|겠소|았소|었소|하겠소|이겠소|리오)[!?~.…]*$")),
-    ("formal", re.compile(r"(니다|십시오|십니까|습니까|십쇼|시지요)[!?~.…]*$")),  # ~ㅂ니까(합니까/됩니까)는 ending_of에서 종성 검사로
+    ("formal", re.compile(r"(니다|십시오|십니까|습니까|십쇼|시지요|슴다|슴둥|임다|함다|말임다|입쇼)[!?~.…]*$")),  # 뒤쪽은 군대식 어미(알레트)  # ~ㅂ니까(합니까/됩니까)는 ending_of에서 종성 검사로
     ("polite", re.compile(r"(요|죠|네요|군요|에요|예요|세요|까요|데요|래요|게요|잖아요|거예요|거든요|나요|셨어요|였어요|었어요|았어요)[!?~.…]*$")),
     ("noun", re.compile(r"(함|임|음|됨|됐음|했음|있음|없음|바람|요망)[!?~.…]*$")),
     ("casual", re.compile(r"(야|어|아|지|다|네|냐|니|자|래|줘|봐|군|구나|는데|거든|잖아|게|까|걸|는걸|을걸|거야|텐데|라고|다고|냐고|니까|해|돼|든|나|누|래도|어도|아도|는걸|는군|더라|던데|다니|라니|거지|겠지|을게|을까|을래|을걸)[!?~.…]*$")),
 ]
 FRAG = re.compile(r"(서|고|면|데|라|는|을|를|이|가|에|의|과|와|도|로|만)$")  # 문장이 끊긴 조각 — 어미 집계에서 제외
 ADDR_WORDS = ["교주님", "교주", "주인님", "주인", "마스터", "선생님", "선생", "사도님", "언니", "오빠", "누나", "형", "아저씨", "그대", "당신", "자네", "너", "넌", "네가", "니가", "님", "친구", "교수님", "교장님", "사장님", "휴먼", "대장", "단장", "손님", "고객님", "용사", "여보", "자기"]
+ADDR_FIX = re.compile(r"(?<![가-힣])(교수님|교장님)(?![가-힣])")  # 들리는 소리가 비슷해 STT 가 자주 틀린다
 ME_WORDS = ["저는", "제가", "저도", "저를", "나는", "내가", "나도", "나를", "난", "본인", "이 몸", "소녀", "짐은", "짐이", "소인", "오레", "우리"]
 # 개성이 드러나는 감탄사만 (어/아/응/음/네/그래/좋아 같은 범용 응답어는 제외)
 INTERJ = ["흥", "훗", "후후", "하하", "하핫", "헤헤", "히히", "에헤헤", "우헤헤", "으헤헤", "이히히", "쿠쿠", "큭", "킥킥", "흐응", "흐음", "으음", "어라", "앗", "아앗", "우와", "와아", "오오", "에엥", "으엥", "흐엥", "우우", "으으", "아이고", "어머", "어라라", "에잇", "칫", "쳇", "야호", "만세", "꺄", "꺄아", "하아", "후우", "휴", "흠", "오호", "호오", "네에", "엥", "어이", "얍", "냐", "냥", "뿅", "삐약", "꼬꼬", "으하하", "우하하", "이얍", "오홍", "후훗", "히힛", "에헴", "흐흐", "크크", "우와아", "꺄악", "으악", "히익", "아하", "오옷", "어엇"]
@@ -73,8 +76,9 @@ def analyze_hero(recs):
                     if r["cat"] in ("touch", "dutchrubend"): end_touch[e] += 1  # 확실히 교주를 향한 말(교감 반응)
             first = re.match(r"^([가-힣]{1,4})[,.!~…?]", s)
             if first and first.group(1) in INTERJ: interj[first.group(1)] += 1
+        ta = ADDR_FIX.sub("교주님", t)  # STT 오인식 보정 — 교수님/교장님은 이 세계에 없는 직함이다
         for w in ADDR_WORDS:
-            c = len(re.findall(r"(?<![가-힣])" + re.escape(w) + r"(?![가-힣])", t))
+            c = len(re.findall(r"(?<![가-힣])" + re.escape(w) + r"(?![가-힣])", ta))
             if c: addr[w] += c
         for w in ME_WORDS:
             c = len(re.findall(r"(?<![가-힣])" + re.escape(w) + r"(?![가-힣])", t))
@@ -95,7 +99,9 @@ def analyze_hero(recs):
     # 교주/교주님 → '교주님'이 교주보다 많으면 님
     a = None; gn, g = addr.get("교주님", 0), addr.get("교주", 0)
     if gn + g >= 3: a = "교주님" if gn >= max(3, g * 2) else ("교주" if g >= max(3, gn * 2) else None)
-    elif addr: a = addr.most_common(1)[0][0]
+    elif addr:
+        w, c = addr.most_common(1)[0]
+        if c >= 3: a = w   # 한두 번 스친 호칭이 기본 호칭으로 굳지 않게
     return {
         "n": len(lines), "nStory": len(story), "nSent": n_sent,
         "endings": dist, "endingsLobby": dist_lobby, "endingsStory": dist_story, "endingsTouch": dist_touch, "nLobbySent": sum(end_lobby.values()), "nTouchSent": sum(end_touch.values()), "style": dominant,
@@ -139,6 +145,12 @@ def main():
     # 특징 표현: 다른 사도 대비 비율 (단어가 그 사도 문장에서 차지하는 비율 / 전체 비율)
     glob_words = collections.Counter()
     for h, r in per.items(): glob_words.update(r["_words"])
+    # 감탄사도 '남들도 다 쓰는 것'은 뺀다 — 몇 명에게 붙는지 세어 흔한 것은 개성으로 치지 않는다
+    IJ_COMMON = 5  # 이 수 이상의 사도에게 잡히면 버린다(139명 중 5명 ≈ 3.6%)
+    ij_df = collections.Counter()
+    for r in per.values(): ij_df.update(set(r["interj"]))
+    for r in per.values():
+        r["interj"] = [w for w in r["interj"] if ij_df[w] < IJ_COMMON]
     G = sum(glob_words.values()) or 1
     result = {}
     for h, r in per.items():
@@ -155,7 +167,26 @@ def main():
         result[h] = {k: v for k, v in r.items() if not k.startswith("_") and k != "lines"}
         result[h]["catch"] = [w for w, c, ratio in catch[:12]]
         result[h]["samples"] = pick_samples(r["lines"], r["style"])
+    # 이 도구가 만들지 않는 필드는 기존 값을 그대로 이어받는다.
+    # tic/ticCustom 은 손으로 맞춘 말버릇 비율(ai.js 가 프롬프트에 쓴다), written 은 극장 OCR 말뭉치 분포라
+    # 여기서 다시 계산할 수 없다. 덮어쓰면 그대로 사라진다.
+    KEEP = ("tic", "ticCustom", "written")
+    try:
+        prev = json.load(open(OUT, encoding="utf-8"))
+    except Exception:
+        prev = {}
+    kept = 0
+    for h, r in result.items():
+        old_r = prev.get(h) or {}
+        for k in KEEP:
+            if k in old_r: r[k] = old_r[k]; kept += 1
+    for h, old_r in prev.items():  # 대본이 없어진 사도의 항목도 버리지 않는다
+        if h not in result: result[h] = old_r
+    # 대사 원문(samples)은 배포 데이터에서 뺀다 — 표본은 로컬 리포트로
+    samples = {h: r.pop("samples") for h, r in result.items() if r.get("samples")}
+    json.dump(samples, open("out/talk-style-samples.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     json.dump(result, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    print(f"이어받은 필드 {kept}개 · 표본 {len(samples)}명은 out/talk-style-samples.json 으로 분리")
     # ---- 현재 프로필과 비교 ----
     rows = []; changes = {}
     for h, r in result.items():
