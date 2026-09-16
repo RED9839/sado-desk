@@ -17,7 +17,6 @@ if (!rest.length) { console.error("쓰기: node tools/duo-import.js --multi <파
 
 const bible = JSON.parse(fs.readFileSync(path.join(root, "data", "bible.json"), "utf8"));
 // 사도 한국어 이름 (2자 이상). 자기 이름은 써도 되므로 부를 때 뺀다
-const NAMES = [...new Set(Object.values(bible).filter(x => x && x.ko).map(x => x.ko.replace(/\(.*\)$/, "").trim()))].filter(x => x.length >= 2);
 // 앞말을 아는 척하는 꼴. 짝이 바뀌면 바로 어색해진다
 const BACKREF = /(그 (얘기|말|소리|이야기)|방금 (한|말)|아까 (한|말)|네 말|당신 말|그렇게 말|[가-힣]+ (얘기|이야기|말)(라면|이라면|가 나오|를 하면|는 )|그런 (얘기|말|소리)|맞장구|지금 뭐라)/;
 const KYOJU = /(교주|주인님|사장님|촌장님|선생님)/;
@@ -28,8 +27,7 @@ let total = 0, kept0 = 0;
 
 function duoReasons(kind, line, p) {
   const out = [];
-  const others = NAMES.filter(n => n !== p.ko.replace(/\(.*\)$/, "").trim());
-  for (const n of others) if (line.t.includes(n)) { out.push(`다른 사도 이름(${n})`); break; }
+  { const n = B.otherName(line.t, p); if (n) out.push(`다른 사도 이름(${n})`); }
   if (kind !== "self" && KYOJU.test(line.t)) out.push("교주를 부름(그 자리에 없다)");
   if (kind === "reply" && BACKREF.test(line.t)) out.push("앞말을 되짚음");
   return out;
@@ -60,7 +58,12 @@ function put(h, rows) {
 }
 
 const KIND = { "먼저": "open", "받아": "reply", "자기": "self" };
-const text = fs.readFileSync(rest[0], "utf8");
+const text = fs.readFileSync(rest[0], "utf8").replace(/
+?/g, "
+"); // 윈도 줄바꿈이 섞여도 되게
+
+?/g, "
+"); // 윈도 줄바꿈이 섞여도 되게
 for (const part of text.split(/^\s*#{2,4}\s*/m)) {
   const mk = /^([A-Za-z0-9_]+)/.exec(part.trim()); if (!mk) continue;
   const rows = { open: [], reply: [], self: [] };
