@@ -126,7 +126,8 @@ function wrongName(t, p) {
 }
 function reasons(line, p, seen, corpus) {
   const t = line.t, out = [];
-  if (t.length < 10) out.push("너무 짧음");   // 실제 대사도 5% 는 10자 언저리다
+  if (t.length < 7) out.push("너무 짧음");   // 실제 대사의 최소가 8자다. 7자 미만은 "히힛." "후후." 같은 감탄사뿐이라 사도를 가리지 못한다
+  // (짧은 줄의 원문 대조는 아래에서 통째로 맞춰 본다 — 정규화 4~8자면 포함 검사가 제대로 걸러진다)
   if (t.length > 70) out.push("너무 김");
   if (MD.test(t) || EMOTICON.test(t)) out.push("이모지·이모티콘·마크다운");
   if (BAN.test(t)) out.push("메타 낱말");
