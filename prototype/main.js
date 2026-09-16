@@ -37,9 +37,7 @@ const CHAR_DEFAULTS = {
   skin: "Mini_Crepe",
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
-  // 교감 대사 친밀 단계: 게임은 볼 당기기(touch1_x)·쓰다듬기(touch2_x) 대사가 친밀도 <10 / ≥10 / ≥20 로 3단계다.
-  // 1~3 = 그 단계 대사만, 0 = 셋을 번갈아. 메뉴에서 고른다(renderer/menu.js), 쓰는 곳은 mascot.js byStage()
-  affinity: 3,
+  affinity: 3,         // 교감 대사 친밀 단계: 1(<10) | 2(≥10) | 3(≥20) | 0 = 세 단계 섞기. 볼 당기기(touch1_x)·쓰다듬기(touch2_x) 대사가 게임처럼 단계별로 고정됨
   scale: 0.5, opacity: 1,
   behavior: {
     hop: true, jump: true, idleActs: true,
@@ -251,7 +249,7 @@ function destroyInstance(id) {
 function addCharacter(from) {
   const src = charOf(from) || settings.characters[0];
   let n = settings.characters.length + 1; while (charOf(`c${n}`)) n++;
-  const c = deepMerge({ ...CHAR_DEFAULTS, id: `c${n}` }, { skin: src.skin, mode: src.mode, scale: src.scale, opacity: src.opacity, behavior: src.behavior });
+  const c = deepMerge({ ...CHAR_DEFAULTS, id: `c${n}` }, { skin: src.skin, mode: src.mode, scale: src.scale, opacity: src.opacity, behavior: src.behavior, affinity: src.affinity });
   settings.characters.push(c); saveSettings(); createInstance(c.id); broadcast(); return c.id; // 마스코트 창은 settings 브로드캐스트로 새 캐릭터를 만든다
 }
 function removeCharacter(id) {
@@ -628,7 +626,9 @@ function openSetup() {
   });
   setupWin.loadFile(path.join(__dirname, "renderer", "setup.html"));
   setupWin.webContents.on("console-message", (ev) => console.log(`[setup:${ev.level}] ${ev.message}`));
-  setupWin.once("ready-to-show", () => setupWin.show());
+  // 첫 실행(에셋 없음)엔 이 창이 사용자가 보는 첫 화면이라 다른 창 뒤로 숨지 않게 앞으로 끌어온다. ready-to-show가 안 오는 경우 대비 1.5초 뒤 강제 표시
+  const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
+  setupWin.once("ready-to-show", reveal); setTimeout(reveal, 1500);
   setupWin.on("closed", () => { setupWin = null; });
 }
 const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
@@ -796,6 +796,7 @@ function buildTray() {
     { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
     { type: "separator" },
     { label: "말 걸기 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
+    ...(updateInfo ? [{ label: `새 버전 ${updateInfo.tag} 받기...`, click: () => shell.openExternal(updateInfo.url) }] : []),
     { label: "설정...", click: () => openSettings() },
     { label: hasAssets(ASSET_ROOT) ? "에셋 다시 가져오기..." : "에셋 가져오기...", click: () => openSetup() },
     { label: "사운드 음소거", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
@@ -807,10 +808,30 @@ function buildTray() {
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon.resize({ width: 16, height: 16 }));
   tray.setToolTip(`사도 데스크 — ${settings.characters.map(c => koSkin(c.skin)).join(", ")}`);
   tray.setContextMenu(Menu.buildFromTemplate(items));
-  tray.on("click", () => openSettings());
+  tray.on("click", () => hasAssets(ASSET_ROOT) ? openSettings() : openSetup()); // 에셋이 없으면 설정보다 가져오기 창이 먼저
 }
 
-if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
+if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (!hasAssets(ASSET_ROOT)) { openSetup(); return; } if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
+// ---- 업데이트 확인: 깃허브 최신 릴리스 태그가 이 버전보다 높으면 알림(클릭 → 릴리스 페이지) + 트레이 메뉴에 '새 버전 받기'. 같은 버전은 한 번만 알림 ----
+const UPDATE_REPO = "RED9839/sado-desk";
+let updateInfo = null, updateNotified = "";
+const semver = (v) => String(v || "").replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
+const newerThan = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+async function checkUpdate() {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { "User-Agent": `sado-desk/${app.getVersion()}`, Accept: "application/vnd.github+json" } });
+    if (!r.ok) { console.log("update check", r.status); return; }
+    const j = await r.json(); const tag = j.tag_name || "";
+    if (!newerThan(tag, app.getVersion())) { updateInfo = null; return; }
+    updateInfo = { tag, url: j.html_url || `https://github.com/${UPDATE_REPO}/releases/latest`, asset: (j.assets || []).find(a => /\.exe$/i.test(a.name))?.browser_download_url };
+    if (tray) buildTray();
+    if (updateNotified === tag) return; updateNotified = tag;
+    const { Notification } = require("electron");
+    if (Notification.isSupported()) { const n = new Notification({ title: `사도 데스크 ${tag} 업데이트가 나왔어요`, body: `지금 ${app.getVersion()} → ${tag.replace(/^v/, "")}. 클릭하면 다운로드 페이지가 열려요. (트레이 메뉴에서도 받을 수 있어요)`, silent: true }); n.on("click", () => shell.openExternal(updateInfo.url)); n.show(); }
+    console.log(`update: ${app.getVersion()} → ${tag}`);
+  } catch (e) { console.log("update check 실패", e.message); }
+}
+if (argHas("--update-test")) setTimeout(async () => { await checkUpdate(); console.log("UPDATETEST", app.getVersion(), JSON.stringify(updateInfo), "newer(v9.9.9,cur)=", newerThan("v9.9.9", app.getVersion()), "newer(v0.1.0,cur)=", newerThan("v0.1.0", app.getVersion())); app.quit(); }, 2000);
 let mascotStarted = false;
 function startMascot() {
   if (mascotStarted) { if (mascotWin && !mascotWin.isDestroyed()) { mascotLoaded = false; mascotWin.reload(); } return; } // 재추출 뒤: 창 다시 로드 (did-finish-load에서 config 재전송)
@@ -824,9 +845,10 @@ function startMascot() {
 }
 app.whenReady().then(() => {
   geo = geometry();
-  buildTray(); applyAutoStart();
-  if (hasAssets(ASSET_ROOT)) startMascot();
-  else { console.log("에셋 없음 → 가져오기 창"); openSetup(); }
+  if (hasAssets(ASSET_ROOT)) { buildTray(); startMascot(); }
+  else { console.log("에셋 없음 → 가져오기 창을 첫 화면으로"); openSetup(); buildTray(); }
+  applyAutoStart();
+  setTimeout(() => checkUpdate(), 8000); setInterval(() => checkUpdate(), 6 * 3600 * 1000); // 깃허브 최신 릴리스 확인 (시작 8초 뒤, 이후 6시간마다)
   if (argHas("--settings")) setTimeout(() => openSettings(), +argVal("--settings-delay", 0) || 0);
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
