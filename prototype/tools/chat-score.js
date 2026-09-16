@@ -6,12 +6,7 @@ const SRC = process.argv[2] || "_chattest.json"; // 다른 회차와 견주려�
 const TAG = SRC.replace("_chattest", "").replace(".json", "") || "-now";
 const d = JSON.parse(fs.readFileSync(path.join(root, "out", SRC), "utf8"));
 const EMOK = Object.keys(ai.EMOTIONS);
-const ENDS = [["royal", /(구나|느냐|거라|이니라|니라|로다|도다|말이다|것이다|하라|리라|노라|소이다|겠소|하오|시오)[!?.~…⋯]*$/],
-  ["momo", /(입니닷|겁니닷|니닷|겁니깟|십숏|것입니다|겁니다)[!?.~…⋯]*$/], ["jubee", /(다비|지비|냐비|라비|비)[!?.~…⋯]*$/],
-  ["formal", /(습니다|입니다|니다|십시오|습니까|입니까|슴다|임다|함다|십쇼)[!?.~…⋯]*$/],
-  ["polite", /(요오*|죠오*|용|죵|에요|예요|네요|군요|세요|나요|까요)[!?.~…⋯]*$/],
-  ["casual", /(다|어|야|지|해|래|자|네|군|나|거|걸|데|까|냐|니|봐|줘|아|게)[!?.~…⋯]*$/]];
-const cls = s => { const c = String(s).replace(/[\s.!?~…⋯'"]+$/, ""); for (const [n, rx] of ENDS) if (rx.test(c)) return n; return null; };
+const { matches } = require(require("path").join(__dirname, "style-match.js")); // 말투 판정은 한 군데서
 // '나는 AI가 아니다' 같은 부정은 잘못이 아니다
 const META = [
   [/(AI|인공지능|언어모델|언어 모델|챗봇)/i, "AI 언급"],
@@ -33,8 +28,8 @@ const metaEx = [], codeEx = [];
 for (const r of chat) {
   if (r.addr && r.addr !== "교주") { addrN++; if (r.a.includes(r.addr)) addrHit++; }
   else if (r.addr === "교주") { addrN++; if (/교주(?!님)/.test(r.a)) addrHit++; }
-  const c = cls(r.a.split(/[\n.!?~…]/).filter(Boolean).pop() || r.a);
-  if (c) { endN++; if (c === r.style) endHit++; }
+  const m = matches(r.a, r.style);
+  if (m.ok !== null) { endN++; if (m.ok) endHit++; }
   for (const [rx, label] of META) {
     if (rx.test(r.a)) {
 
