@@ -39,6 +39,7 @@ const DEFAULTS = {
 function encKey(plain) {
   if (!plain) return "";
   try { if (safeStorage.isEncryptionAvailable()) return "enc:" + safeStorage.encryptString(plain).toString("base64"); } catch {}
+  console.warn("safeStorage 사용 불가 — 키를 평문(base64)으로 저장"); // 머리말 주석의 '경고'가 실제로는 어디에도 없어 조용히 평문이 남았다
   return "raw:" + Buffer.from(plain, "utf8").toString("base64");
 }
 function decKey(stored) {
@@ -276,6 +277,7 @@ async function status(ai) {
   const s = {
     ollama: { running: tags !== null, models: tags || [], hasModel: !!tags && tags.some(t => t === cfg.ollama.model || t.split(":")[0] === cfg.ollama.model.split(":")[0]) },
     gemini: { key: !!decKey(cfg.keys.gemini) }, anthropic: { key: !!decKey(cfg.keys.anthropic) }, openai: { key: !!decKey(cfg.keys.openai), base: cfg.openai.base },
+    plainKeys: Object.values(cfg.keys || {}).some(k => typeof k === "string" && k.startsWith("raw:")), // 설정 창이 '암호화되지 않음'을 알릴 수 있게
   };
   s.resolved = resolve(cfg, s);
   return s;
