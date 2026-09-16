@@ -12,6 +12,9 @@ const fs = require("node:fs");
 for (const s of [process.stdout, process.stderr]) {
   try { s.on("error", (e) => { if (!e || e.code !== "EPIPE") throw e; }); } catch {}
 }
+// 메인에서 잡히지 않은 예외는 Electron 이 영어 오류 모달을 띄운다. 상주 앱은 로그만 남기고 계속 산다
+process.on("uncaughtException", (e) => console.error("uncaught:", e && e.stack || e));
+process.on("unhandledRejection", (e) => console.error("unhandled:", e && e.stack || e));
 
 // 앱이 배포하는 데이터(한글 이름표·말투 프로필) = data/ (asar 안). 게임 에셋(스켈레톤·텍스처·보이스)은 배포하지 않고
 // 사용자가 자기 PC의 뮤뮤(트릭컬)에서 추출해 userData/assets 에 둔다 (tools/extract-all.py, 설정 창의 '에셋 가져오기').
@@ -71,12 +74,26 @@ const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 function deepMerge(base, patch) {
   const out = { ...base };
   // 값이 undefined 인 키는 건너뛴다. 없으면 {display: undefined} 같은 패치가 기본값을 지워
-  // 첫 실행(설정 파일 없음)에서 settings.global.display 가 사라지고 geometry() 가 죽는다
-  for (const [k, v] of Object.entries(patch || {})) { if (v === undefined) continue; out[k] = isObj(v) && isObj(base[k]) ? deepMerge(base[k], v) : v; }
+  // 첫 실행(설정 파일 없음)에서 settings.global.display 가 사라지고 geometry() 가 죽는다.
+  // null·NaN 도 마찬가지 — {sound:null} 이 들어오면 다음 시작에서 buildTray 가 죽어 트레이도 사도도 안 뜬다.
+  // 기본값이 객체인 자리엔 객체만 받는다 (설정 파일이 손으로 고쳐져 "display": 1 같은 게 와도 기본을 지킨다)
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (v === undefined || v === null || (typeof v === "number" && !Number.isFinite(v))) continue;
+    if (isObj(base[k])) { if (isObj(v)) out[k] = deepMerge(base[k], v); continue; }
+    out[k] = v;
+  }
   return out;
 }
+let firstRun = false; // 설정 파일이 아예 없을 때만 참. 깨진 파일도 "없음"으로 치면 사도가 둘로 늘어 첫 실행처럼 보인다
 function loadSettings() {
-  let raw = {}; try { raw = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")); } catch {}
+  let raw = {};
+  try { raw = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")); }
+  catch (e) {
+    if (e && e.code === "ENOENT") firstRun = true;
+    // 깨진 파일은 옆에 남겨 둔다 — 기본값으로 덮어쓰면 사용자가 손수 넣은 키·설정을 되살릴 길이 없다
+    else { console.error("settings load", e && e.message); try { fs.copyFileSync(SETTINGS_FILE, SETTINGS_FILE + ".bad"); } catch {} }
+  }
+  if (!isObj(raw)) raw = {};
   let s;
   if (raw.version === 2 && Array.isArray(raw.characters)) s = raw;
   else { // v1(단일 캐릭터) → v2 이관
@@ -88,7 +105,7 @@ function loadSettings() {
     // 설정 파일이 아예 없는 첫 실행이면 둘을 세운다. 사도끼리 잡담 3,708줄은 둘 이상일 때만 도는데
     // 기본이 하나라 "하나 더 부르기"를 우연히 찾은 사람만 볼 수 있었다. 둘째는 네르 — 짝 전용 대사가
     // 47쌍으로 가장 많아, 첫째를 누구로 바꿔도 그 둘 사이의 이야기가 잡힐 가능성이 가장 높다
-    if (!Object.keys(raw).length) s.characters.push({ id: "c2", skin: "Mini_Ner" });
+    if (firstRun) s.characters.push({ id: "c2", skin: "Mini_Ner" });
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
   s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
@@ -101,7 +118,18 @@ let settings = loadSettings();
 let saveTimer = null;
 function saveSettings() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true }); fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2)); } catch (e) { console.error("settings save", e); } }, 150);
+  saveTimer = setTimeout(flushSettings, 150);
+}
+// 임시 파일에 다 쓴 뒤 이름을 바꾼다 — 쓰는 도중 전원이 나가면 settings.json 이 반쪽만 남아 다음 시작이 기본값으로 돌아갔다.
+// rename 이 막히면(백신이 새 파일을 붙잡는 동안) 예전처럼 바로 쓴다
+function flushSettings() {
+  clearTimeout(saveTimer); saveTimer = null;
+  const json = JSON.stringify(settings, null, 2), tmp = SETTINGS_FILE + ".tmp";
+  try {
+    fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
+    try { fs.writeFileSync(tmp, json); fs.renameSync(tmp, SETTINGS_FILE); }
+    catch (e) { console.warn("settings rename", e.message); fs.writeFileSync(SETTINGS_FILE, json); try { fs.unlinkSync(tmp); } catch {} }
+  } catch (e) { console.error("settings save", e); }
 }
 const charOf = (id) => settings.characters.find(c => c.id === id);
 // 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
@@ -120,9 +148,11 @@ function updateSettings(patch, id, sourceId) {
   if (g.news && news) news.start(); // 주기·게시판 변경 → 감시 재시작
   broadcast(sourceId);
 }
+// 설정 창에 주는 원본 — API 키 암호문은 뺀다. 설정 창은 키를 읽지 않고(저장됨/없음은 ai:status 로 보고) 키는 ai:set-key 로만 들어온다
+const settingsPublic = () => ({ ...settings, global: { ...settings.global, ai: { ...(settings.global.ai || {}), keys: undefined } } });
 function broadcast(sourceId) {
   if (mascotWin && !mascotWin.isDestroyed() && mascotLoaded && mascotWin.webContents.id !== sourceId) mascotWin.webContents.send("settings", viewsAll()); // 자기 패치의 에코는 안 보냄(연속 패치 때 옛 값으로 되돌아가는 문제)
-  for (const w of [settingsWin, menuWin]) if (w && !w.isDestroyed() && w.webContents.id !== sourceId) w.webContents.send("settings", w === settingsWin ? settings : viewFor(menuFor));
+  for (const w of [settingsWin, menuWin]) if (w && !w.isDestroyed() && w.webContents.id !== sourceId) w.webContents.send("settings", w === settingsWin ? settingsPublic() : viewFor(menuFor));
   if (tray) buildTray();
 }
 
@@ -196,7 +226,10 @@ function createHitWindow() {
   });
   hitWin.setAlwaysOnTop(true, "screen-saver");
   hitWin.loadFile(path.join(__dirname, "renderer", "hit.html"));
-  hitWin.on("closed", () => { hitWin = null; hitShown = false; });
+  const w = hitWin;
+  w.on("closed", () => { if (hitWin !== w) return; hitWin = null; hitShown = false; });
+  // 렌더러가 죽으면 창은 남는데 입력을 아무 데도 전하지 않는다 — 사도가 '클릭이 안 되는' 상태. 다시 띄운다
+  w.webContents.on("render-process-gone", (_e, d) => { console.log("hit renderer gone:", d.reason); if (hitWin === w && !w.isDestroyed()) w.webContents.reload(); });
 }
 const screenRect = (r) => ({ x: Math.round(geo.x + r.x), y: Math.round(geo.y + r.y), width: Math.max(8, Math.round(r.w)), height: Math.max(8, Math.round(r.h)) });
 const inRect = (r, x, y, pad) => r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
@@ -227,6 +260,7 @@ function updateHitTarget(x, y) {
   placeHit(best);
 }
 function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test"), fpsProbe: argHas("--fps-probe") }; }
+let rendererGone = []; // 마스코트 렌더러가 죽은 시각들 — 무한 재시작을 막는다
 function createMascotWindow() {
   if (mascotWin && !mascotWin.isDestroyed()) return;
   if (!geo) geo = geometry();
@@ -254,7 +288,18 @@ function createMascotWindow() {
     lastCursor = null; mascotLoaded = true;
     win.webContents.send("config", mascotConfig());
   });
-  win.on("closed", () => { mascotWin = null; mascotLoaded = false; });
+  win.on("closed", () => { if (mascotWin !== win) return; mascotWin = null; mascotLoaded = false; }); // 그 사이 새로 만든 창을 지우지 않게
+  // 렌더러(스파인·WebGL)가 죽으면 창은 투명하게 남고 사도만 사라진다 — 트레이는 살아 있으니 사용자는 이유를 모른다.
+  // 옛 바운딩은 다 지워 히트 창이 빈자리를 잡지 않게 하고, 잠시 뒤 다시 로드한다 (did-finish-load 가 config 를 다시 보낸다)
+  win.webContents.on("render-process-gone", (_e, d) => {
+    console.log("mascot renderer gone:", d.reason, d.exitCode);
+    for (const inst of instances.values()) inst.rect = null;
+    placeHit(null); mascotLoaded = false;
+    // 로드마다 죽는 상태(GPU·메모리)면 1초마다 영원히 다시 띄우게 된다. 5분에 세 번까지만
+    const now = Date.now(); rendererGone = rendererGone.filter(t => now - t < 300000); rendererGone.push(now);
+    if (rendererGone.length > 3) { console.error("mascot renderer keeps dying — giving up until restart"); return; }
+    if (d.reason !== "clean-exit") setTimeout(() => { if (mascotWin === win && !win.isDestroyed()) win.reload(); }, 1000 * rendererGone.length);
+  });
 }
 function createInstance(id) { if (!instances.has(id)) instances.set(id, { rect: null }); }
 function destroyInstance(id) {
@@ -291,13 +336,14 @@ function openSettings(tab, forId) {
   });
   settingsWin.loadFile(path.join(__dirname, "renderer", "settings.html"));
   settingsWin.webContents.on("console-message", (ev) => console.log(`[settings:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
-  settingsWin.once("ready-to-show", () => { settingsWin.show(); tell(); });
+  { const w = settingsWin; w.once("ready-to-show", () => { if (settingsWin === w && !w.isDestroyed()) { w.show(); tell(); } }); }
   if (argHas("--shot-settings")) {
     const tabs = ["character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
     const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
     setTimeout(shoot, 5000);
   }
-  settingsWin.on("closed", () => { settingsWin = null; });
+  const w = settingsWin;
+  w.on("closed", () => { if (settingsWin === w) settingsWin = null; });
   if (argHas("--devtools")) settingsWin.webContents.openDevTools({ mode: "detach" });
 }
 
@@ -348,8 +394,10 @@ function showBubble(id, payload) {
     bubbleWin.setAlwaysOnTop(true, "screen-saver");
     bubbleWin.loadFile(path.join(__dirname, "renderer", "bubble.html"));
     bubbleWin.webContents.on("console-message", (ev) => console.log(`[bubble:${ev.level}] ${ev.message}`));
-    bubbleWin.on("closed", () => { bubbleWin = null; bubbleFor = null; bubbleBounds = null; bubbleAnchor = null; });
-    bubbleWin.webContents.once("did-finish-load", () => { bubbleWin.webContents.send("show", payload); bubblePlace(id); bubbleWin.showInactive(); });
+    const w = bubbleWin;
+    w.on("closed", () => { if (bubbleWin !== w) return; bubbleWin = null; bubbleFor = null; bubbleBounds = null; bubbleAnchor = null; });
+    w.webContents.on("render-process-gone", (_e, d) => { console.log("bubble renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 말풍선이 새 창을 만든다
+    w.webContents.once("did-finish-load", () => { if (w.isDestroyed()) return; w.webContents.send("show", payload); bubblePlace(id); w.showInactive(); });
   } else { bubbleAnchor = null; bubbleWin.webContents.send("show", payload); bubblePlace(id); if (!bubbleWin.isVisible()) bubbleWin.showInactive(); }
 }
 function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.close(); }
@@ -405,8 +453,11 @@ function openChat(id, opt = {}) {
   chatWin.setAlwaysOnTop(true, "screen-saver");
   chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
   chatWin.webContents.on("console-message", (ev) => console.log(`[chat:${ev.level}] ${ev.message}`));
-  chatWin.on("closed", () => { chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) { chatAbort.abort(); chatAbort = null; } chatBusy = false; });
-  chatWin.webContents.once("did-finish-load", send);
+  const w = chatWin;
+  // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
+  w.on("closed", () => { if (chatWin !== w) return; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
+  w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
+  w.webContents.once("did-finish-load", send);
 }
 function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
 const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
@@ -425,12 +476,14 @@ async function chatTurn(id, userText, opts = {}) {
     (userText || opts.image)
       ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
       : { role: "user", text: "(사용자가 조용히 있다)" }];
-  chatAbort = new AbortController();
+  // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말·잡담이 전부 막혔다. 90초면 끊는다
+  const ctl = chatAbort = new AbortController(); let timedOut = false, partial = "";
+  const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 90_000);
   sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
   try {
     const now = new Date();
     const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
-    const r = await Ai.chat(ai, prof, msgs, (d) => chatSend("chat:token", { delta: d }), { extra, signal: chatAbort.signal });
+    const r = await Ai.chat(ai, prof, msgs, (d) => { partial += d; chatSend("chat:token", { delta: d }); }, { extra, signal: ctl.signal });
     const saved = [...hist, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
     if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
     if (opts.say) chatSend("chat:say", { text: r.text }); else chatSend("chat:done", { text: r.text, emotion: r.emotion });
@@ -438,10 +491,13 @@ async function chatTurn(id, userText, opts = {}) {
     console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
     return r;
   } catch (e) {
-    const msg = e.name === "AbortError" ? "" : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
-    if (msg) chatSend("chat:done", { error: msg }); console.log("chat error:", e.message);
+    const aborted = ctl.signal.aborted || e.name === "AbortError" || e.name === "TimeoutError"; // 창 닫기(사용자) 또는 90초 시한. Gemini 재시도 대기 중이면 "취소됨" Error 로 온다
+    const msg = aborted ? (timedOut ? "AI 가 한참 답을 하지 않아 그만두었어요." : "") : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
+    // 끊긴 턴에도 chat:done 은 보낸다 — 렌더러는 이걸 받아야 입력칸을 다시 연다. 창을 닫아 끊은 경우엔 받을 창이 없어 그냥 사라진다
+    chatSend("chat:done", msg ? { error: msg } : { text: partial });
+    console.log("chat error:", timedOut ? "timeout(90s)" : e.message);
     return null;
-  } finally { chatBusy = false; chatAbort = null; lastChatAt = Date.now(); }
+  } finally { clearTimeout(timer); if (chatAbort === ctl) { chatBusy = false; chatAbort = null; } lastChatAt = Date.now(); } // 이 턴의 것일 때만 내린다
 }
 // ---- 화면 보기: 캐릭터가 서 있는 모니터를 캡처해(축소 JPEG) AI에 첨부. 설정 ai.screen 이 켜져 있을 때만 ----
 async function captureScreenFor(id) {
@@ -517,7 +573,15 @@ function pickDuo(key, kind) {
   return line;
 }
 // 대본으로 한 판. 대본이 없으면 null 을 돌려주니 부르는 쪽이 AI 로 물러설 수 있다
+// 걸어가 만나는 데 드는 시간. 1.5초 고정이었더니 모니터 양끝에 선 둘은 아직 걷는 중에 말풍선이 떴다.
+// 렌더러(mascot.js hop)의 속도 = moveSpeed × scale × 2 × hopSpeed/100 px/s — moveSpeed 는 형태별 90~120 이라 가장 느린 90 으로 잡는다.
+// 둘이 마주 걸어오니 각자 거리의 절반만 간다. 최대 8초
+const meetWait = (ax, bx, gap, ...ids) => {
+  const spd = Math.min(...ids.map(id => 90 * ((charOf(id) || {}).scale || 0.5) * 2 * ((((charOf(id) || {}).behavior || {}).hopSpeed || 100) / 100)));
+  return Math.min(8000, 800 + Math.max(0, Math.abs(ax - bx) - gap) / 2 / Math.max(30, spd) * 1000);
+};
 async function duoScript(idA, idB, opts = {}) {
+  if (duoBusy || chatBusy) return { busy: true }; // 잡담 중에 또 시키면(메뉴 연타·타이머와 겹침) 둘이 동시에 걷고 말풍선이 뒤섞였다. 값이 있으니 부르는 쪽이 AI 로 물러서지도 않는다
   const profA = chatProfile(idA), profB = chatProfile(idB);
   if (!profA || !profB) return null;
   const same = profA.key === profB.key;
@@ -544,7 +608,7 @@ async function duoScript(idA, idB, opts = {}) {
     const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
     sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
     sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
-    await new Promise(r => setTimeout(r, 1500)); // 다가가는 시간
+    await new Promise(r => setTimeout(r, meetWait(ax, bx, gap, idA, idB))); // 다가가는 시간
     for (const [id, prof, line] of script) {
       const other = id === idA ? idB : idA;
       const who = same ? `${prof.ko} · ${id === idA ? "왼쪽" : "오른쪽"}` : prof.ko;
@@ -575,12 +639,14 @@ async function duoTalk(idA, idB, opts = {}) {
     const mid = (ax + bx) / 2, gap = (A.rect.w + B.rect.w) / 2 + 80, left = ax <= bx;
     sendMascot(idA, "meet", { x: bx, to: left ? mid - gap / 2 : mid + gap / 2, w: B.rect.w, hold: 45000 });
     sendMascot(idB, "meet", { x: ax, to: left ? mid + gap / 2 : mid - gap / 2, w: A.rect.w, hold: 45000 });
-    const now = new Date();
+    const now = new Date(), metAt = Date.now();
     let image = null; if (opts.screen && screenAllowed()) { try { image = await captureScreenFor(idA); } catch (e) { console.log("duo capture:", e.message); } }
-    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image });
+    // 제공자가 멎으면 duoBusy 가 영영 남아 대화·혼잣말·잡담이 전부 막혔고 풀 방법이 없었다. 90초면 끊는다
+    const duoSig = AbortSignal.timeout(90_000);
+    const r = await Ai.duo(settings.global.ai, profA, profB, { n: 4, extra: `지금은 ${now.getHours()}시 ${now.getMinutes()}분.`, topic: opts.topic, image, signal: duoSig });
     console.log(`duo[${idA}×${idB}] ${r.provider}/${r.model} lines=${r.lines.length}` + (r.lines.length ? "" : " raw=" + r.raw.slice(0, 200)));
     if (!r.lines.length) { showBubble(idA, { items: [], text: { head: "", body: "(대화 대본을 만들지 못했어요 — 한 번 더 시켜 주세요)", tail: "", who: "사도 데스크" }, ttl: 6000 }); return r; }
-    await new Promise(res => setTimeout(res, 1500)); // 다가가는 시간
+    await new Promise(res => setTimeout(res, Math.max(300, meetWait(ax, bx, gap, idA, idB) - (Date.now() - metAt)))); // 다가가는 시간 — AI 를 기다린 만큼은 이미 걸었다
     for (const ln of r.lines) {
       const id = ln.who === "a" ? idA : idB, prof = ln.who === "a" ? profA : profB;
       const who = profA.ko === profB.ko ? (prof.skin ? `${prof.ko} · ${prof.skin}` : `${prof.ko} · 기본`) : prof.ko;
@@ -600,6 +666,7 @@ async function duoTalk(idA, idB, opts = {}) {
     console.log("duo error:", e.message);
     // 사용자가 메뉴로 시켰는데 조용히 실패하면 "안 되는구나"밖에 모름 → 이유를 말풍선으로
     const why = e.message === "no-provider" ? "AI 제공자가 없어요. 설정 → AI 대화에서 Ollama나 API 키를 넣어 주세요."
+      : (duoSig.aborted || e.name === "TimeoutError" || e.name === "AbortError") ? "AI 가 한참 답을 하지 않아 그만두었어요." // Anthropic SDK 는 name 을 안 세우고 Gemini 재시도 취소는 "취소됨" Error 라 signal 로 본다
       : /429|quota|한도/i.test(e.message) ? "AI 무료 한도를 잠깐 넘었어요. 몇 분 뒤 다시 시켜 주세요."
       : /503|high demand/i.test(e.message) ? "AI 서버가 잠시 붐벼요. 잠시 뒤 다시 시켜 주세요."
       : `AI 오류: ${String(e.message || e).slice(0, 120)}`;
@@ -615,13 +682,15 @@ function duoPair() { // 화면에서 서로 가장 가까운 서로 다른 사�
   }
   return best;
 }
-ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoScript(me, o).then(r => { if (!r) duoTalk(me, o); }); });   // 대본이 없는 짝만 AI 로
+ipcMain.on("chat:duo", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoScript(me, o).then(r => { if (!r) duoTalk(me, o); }).catch(e => console.log("duo script:", e.message)); });   // 대본이 없는 짝만 AI 로 (바쁠 때의 {busy} 도 값이라 AI 로 안 넘어간다)
 ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
 ipcMain.on("chat:duo-screen", (e, id) => { const me = id || instanceOf(e.sender); if (!me || !instances.get(me) || !instances.get(me).rect) return; const others = [...instances.keys()].filter(x => x !== me && instances.get(x).rect); if (!others.length) return; const o = others.sort((p, q) => Math.abs(instances.get(p).rect.x - instances.get(me).rect.x) - Math.abs(instances.get(q).rect.x - instances.get(me).rect.x))[0]; duoTalk(me, o, { screen: true }); });
 ipcMain.on("chat:close", () => closeChat());
 ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
-ipcMain.on("chat:resize", (_e, h) => { if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(Math.round(h), d.height) }; chatPlace(chatFor); } });
+// 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
+const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
+ipcMain.on("chat:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(h, d.height) }; chatPlace(chatFor); } });
 ipcMain.on("chat:open", (e, id) => openChat(id || instanceOf(e.sender) || settings.characters[0].id));
 // 설정창용
 ipcMain.handle("ai:status", () => Ai.status(settings.global.ai));
@@ -634,6 +703,7 @@ ipcMain.handle("ai:test", async (_e, provider) => {
 let pullProc = null;
 ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pull <model> (CLI가 PATH에 있어야 함)
   if (pullProc) return resolve({ ok: false, error: "이미 내려받는 중" });
+  if (typeof model !== "string" || !/^[\w.\-\/]+(:[\w.\-]+)?$/.test(model) || model.startsWith("-")) return resolve({ ok: false, error: "모델 이름이 올바르지 않아요 (예: exaone3.5:7.8b)" }); // 명령줄 인자로 넘어가니 "-" 로 시작하는 옵션 꼴은 막는다
   const { spawn } = require("node:child_process"); let last = "";
   try { pullProc = spawn("ollama", ["pull", model], { windowsHide: true }); } catch (err) { return resolve({ ok: false, error: err.message }); }
   const relay = (d) => { const t = d.toString("utf8").replace(/\r/g, "\n").split("\n").map(s => s.trim()).filter(Boolean); if (t.length) { last = t[t.length - 1]; if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("ai:pull-progress", last); } };
@@ -680,7 +750,8 @@ setInterval(async () => {
     const opened = lastChatAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
     setTimeout(() => { if (chatWin && !chatWin.isDestroyed() && !chatWin.isFocused() && !chatBusy && lastChatAt === opened) closeChat(); }, sec * 1000);
   }, 900);
-  } finally { proactiveBusy = false; }
+  } catch (e) { console.log("proactive error:", e.message); } // setInterval 의 async 콜백에서 던지면 unhandledRejection 으로 새 나가 분마다 오류가 쌓인다
+  finally { proactiveBusy = false; }
 }, 60000);
 app._startedAt = Date.now();
 function initNews() {
@@ -709,9 +780,11 @@ function openMenu(id, sx, sy) {
   });
   menuWin.setAlwaysOnTop(true, "screen-saver");
   menuWin.loadFile(path.join(__dirname, "renderer", "menu.html"));
-  menuWin.once("ready-to-show", () => { menuWin.show(); menuWin.focus(); });
-  menuWin.on("blur", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.close(); });
-  menuWin.on("closed", () => { menuWin = null; menuFor = null; });
+  { const w = menuWin; w.once("ready-to-show", () => { if (menuWin === w && !w.isDestroyed()) { w.show(); w.focus(); } }); }
+  const w = menuWin;
+  w.on("blur", () => { if (!w.isDestroyed()) w.close(); });
+  w.on("closed", () => { if (menuWin !== w) return; menuWin = null; menuFor = null; });
+  w.webContents.on("render-process-gone", (_e, d) => { console.log("menu renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 우클릭이 새 창을 만든다
   menuWin.webContents.on("console-message", (ev) => console.log(`[menu:${ev.level}] ${ev.message}`));
 }
 
@@ -746,8 +819,15 @@ function showGuideOnce() {
   }, 4000);
 }
 ipcMain.on("quit", () => app.quit());
-ipcMain.handle("settings:get", (e, id) => id ? viewFor(id) : settings);
-ipcMain.on("settings:set", (e, patch, id) => updateSettings(patch, id || instanceOf(e.sender), e.sender.id));
+ipcMain.handle("settings:get", (e, id) => id ? viewFor(id) : settingsPublic());
+// 렌더러가 보내는 패치는 값만 받는다. id·version·characters 는 메인이 정하는 뼈대라 캐릭터 밑으로 들어오면 안 되고,
+// ai.keys 는 ai:set-key 로만(설정 창에는 키를 주지 않으니 되돌아오는 패치에 keys 가 있으면 잘못된 것)
+ipcMain.on("settings:set", (e, patch, id) => {
+  if (!isObj(patch)) return;
+  const p = { ...patch }; delete p.id; delete p.version; delete p.characters;
+  if (isObj(p.ai) && "keys" in p.ai) { p.ai = { ...p.ai }; delete p.ai.keys; }
+  updateSettings(p, id || instanceOf(e.sender), e.sender.id);
+});
 ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
 ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
 ipcMain.on("settings:open", (e, tab, id) => openSettings(tab, id || menuFor || instanceOf(e.sender)));
@@ -777,7 +857,8 @@ function openSetup() {
   // 첫 실행(에셋 없음)엔 이 창이 사용자가 보는 첫 화면이라 다른 창 뒤로 숨지 않게 앞으로 끌어온다. ready-to-show가 안 오는 경우 대비 1.5초 뒤 강제 표시
   const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
   setupWin.once("ready-to-show", reveal); setTimeout(reveal, 1500);
-  setupWin.on("closed", () => { setupWin = null; });
+  const w = setupWin;
+  w.on("closed", () => { if (setupWin === w) setupWin = null; });
 }
 const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
 // preload 가 파일 읽기를 허용할 폴더(앱 폴더·에셋 폴더·userData). 동기여야 preload 초기화 때 쓸 수 있다
@@ -869,7 +950,7 @@ ipcMain.on("assets:cancel", () => {
   killTree(pid, () => { try { if (extractProc) extractProc.kill(); } catch {} });
 });
 ipcMain.on("assets:open-setup", () => openSetup());
-ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
+ipcMain.on("assets:open-root", () => { try { fs.mkdirSync(ASSET_ROOT, { recursive: true }); } catch (e) { console.warn("assets root mkdir", e.message); } shell.openPath(ASSET_ROOT); }); // 설정에 적힌 폴더가 없는 드라이브(빠진 USB)면 mkdir 이 던진다
 ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });
 
 // 새 소식
@@ -883,7 +964,7 @@ ipcMain.on("news:test", async () => { // 미리보기: 지금 올라와 있는 �
   const id = settings.characters[0].id, ttl = Math.max(8, +(settings.global.news || {}).ttlSec || 40) * 1000;
   showBubble(id, { items, text: Talk.announce(items, talkProfile()), ttl }); sendMascot(id, "announce", { n: items.length, sound: (settings.global.news || {}).sound !== false, hold: ttl + 2000 });
 });
-ipcMain.on("bubble:resize", (_e, h) => { if (bubbleWin && !bubbleWin.isDestroyed()) { bubbleBounds = { ...(bubbleBounds || { x: 0, y: 0, width: BUBBLE_W }), height: Math.max(80, Math.round(h)) }; bubblePlace(bubbleFor); } });
+ipcMain.on("bubble:resize", (_e, h) => { h = heightOf(h, 1); if (h === null) return; if (bubbleWin && !bubbleWin.isDestroyed()) { bubbleBounds = { ...(bubbleBounds || { x: 0, y: 0, width: BUBBLE_W }), height: Math.max(80, h) }; bubblePlace(bubbleFor); } });
 ipcMain.on("bubble:close", () => closeBubble());
 ipcMain.on("open-path", (_e, which) => { if (which === "settings") shell.showItemInFolder(SETTINGS_FILE); else if (which === "assets") shell.openPath(ASSET_ROOT); });
 ipcMain.on("char:add", (e, from) => addCharacter(from || instanceOf(e.sender)));
@@ -903,7 +984,7 @@ ipcMain.on("hit-ev", (e, ev) => {
 });
 ipcMain.on("menu:open", (e, p, id) => { if (id && charOf(id) && geo) openMenu(id, geo.x + p.x, geo.y + p.y); });
 ipcMain.on("menu:close", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.close(); });
-ipcMain.on("menu:resize", (_e, h) => { if (menuWin && !menuWin.isDestroyed()) { const b = menuWin.getBounds(); const d = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea; const nh = Math.min(Math.round(h), d.height); menuWin.setBounds({ x: b.x, y: Math.min(b.y, d.y + d.height - nh), width: MENU_W, height: nh }); } });
+ipcMain.on("menu:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (menuWin && !menuWin.isDestroyed()) { const b = menuWin.getBounds(); const d = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea; const nh = Math.min(h, d.height); menuWin.setBounds({ x: b.x, y: Math.min(b.y, d.y + d.height - nh), width: MENU_W, height: nh }); } });
 function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsOf.get(id)) || catalog.sdAnimations || [], standing: STANDING, assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, hasAssets: hasAssets(ASSET_ROOT), settingsFile: SETTINGS_FILE, version: app.getVersion(), electron: process.versions.electron }; }
 
 if (argHas("--hit-test")) setTimeout(() => {
@@ -1089,4 +1170,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });

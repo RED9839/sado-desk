@@ -2,7 +2,7 @@
 (() => {
   const host = window.host;
   const el = (id) => document.getElementById(id);
-  let ttlMs = 30000, remain = 30000, tick = null, hovering = false;
+  let ttlMs = 30000, remain = 30000, tick = null, hovering = false, shownAt = 0;
   const fmtDate = (d) => { if (!d) return ""; const t = new Date(d); return isNaN(t) ? "" : `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`; };
   function render({ items, text, ttl }) {
     const say = text || Talk.announce(items, null);
@@ -22,10 +22,13 @@
       t.appendChild(ttl); t.appendChild(dt); d.appendChild(t); box.appendChild(d);
     }
     if ((items || []).length > 4) { const more = document.createElement("div"); more.className = "tail"; more.textContent = `…외 ${items.length - 4}개는 우클릭 메뉴 → 새 소식`; box.appendChild(more); }
-    ttlMs = remain = ttl || 30000;
+    ttlMs = remain = ttl || 30000; shownAt = performance.now();
+    // 창은 숨겼다 다시 쓰는 것이라 커서가 올라간 채 닫히면 mouseleave 가 안 와 hovering 이 true 로 남는다 → 다음 말풍선이 영영 안 닫혔다
+    hovering = false; el("bar").style.animationPlayState = "running";
     el("bar").style.animation = "none"; void el("bar").offsetWidth; el("bar").style.animation = `shrink ${ttlMs}ms linear forwards`;
     requestAnimationFrame(() => host.bubbleResize(Math.ceil(document.getElementById("bubble").getBoundingClientRect().height) + 22));
-    clearInterval(tick); tick = setInterval(() => { if (hovering) return; remain -= 250; if (remain <= 0) { clearInterval(tick); host.bubbleClose(); } }, 250);
+    // 올려 두면 멈추되 TTL 의 4배까지만 — 커서를 말풍선 위에 두고 자리를 비우면 하루 종일 떠 있었다
+    clearInterval(tick); tick = setInterval(() => { if (hovering && performance.now() - shownAt < ttlMs * 4) return; remain -= 250; if (remain <= 0) { clearInterval(tick); host.bubbleClose(); } }, 250);
   }
   document.getElementById("bubble").addEventListener("mouseenter", () => { hovering = true; el("bar").style.animationPlayState = "paused"; });
   document.getElementById("bubble").addEventListener("mouseleave", () => { hovering = false; el("bar").style.animationPlayState = "running"; });

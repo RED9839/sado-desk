@@ -151,19 +151,22 @@
     if (cats.touch) { cats.cheek = cats.touch.filter(f => /touch1(_\d+)?(_skin\d+)?\.ogg$/.test(f)); cats.pat = cats.touch.filter(f => /touch2(_\d+)?(_skin\d+)?\.ogg$/.test(f)); }
     return { hero: voiceIndex[hero] ? hero : null, skin, cats, base: h.base || {} };
   }
-  const countVoices = (vs) => Object.values(vs.cats).reduce((n, l) => n + l.length, 0);
+  // cheek·pat 은 touch 를 둘로 가른 것이라 따로 세면 같은 파일이 두 번 들어간다(에르핀 스킨1: 6이 12로)
+  const countVoices = (vs) => Object.entries(vs.cats).reduce((n, [c, l]) => n + (c === "cheek" || c === "pat" ? 0 : l.length), 0);
   function loadImage(src) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src; }); }
   // 아틀라스 텍스처 로드. pma:false 아틀라스는 업로드 시 프리멀티플라이해서 PMA 백버퍼와 맞춘다 (가장자리 흰 테 방지)
   async function loadAtlas(atlasPath, dir) {
     const atlas = new spine.TextureAtlas(host.readText(atlasPath));
     const textures = [];
-    for (const page of atlas.pages) {
-      const img = await loadImage(`file:///${dir}/${page.name}`);
-      ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, page.pma ? 0 : 1);
-      const tex = new spine.GLTexture(ctx, img); textures.push(tex);
-      ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-      page.setTexture(tex);
-    }
+    try {
+      for (const page of atlas.pages) {
+        const img = await loadImage(`file:///${dir}/${page.name}`);
+        ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, page.pma ? 0 : 1);
+        const tex = new spine.GLTexture(ctx, img); textures.push(tex);
+        ctx.gl.pixelStorei(ctx.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+        page.setTexture(tex);
+      }
+    } catch (e) { for (const t of textures) try { t.dispose(); } catch {} throw e; } // 페이지가 여럿인 아틀라스에서 둘째 그림이 없으면 첫째 GL 텍스처가 아무도 모르게 남는다
     return { atlas, textures };
   }
   // ---- SD(스탠딩) 에셋 찾기: 사이트 HD 우선, 없으면 게임 추출본, 스킨 전용 없으면 기본 ----
@@ -189,7 +192,8 @@
   const firstMascot = () => mascots.values().next().value || null;
   const debugOn = () => { const f = firstMascot(); return !!(f && f.S.display.debug); };
 
-  host.on("config", async (c) => { cfg = c; try { await init(); } catch (e) { console.error("init 실패", e && (e.stack || e.message || e)); } });
+  // init 이 죽으면 창은 떠 있는데 아무것도 안 그려져 "실행이 안 된다"로만 보였다 — 콘솔은 사용자가 못 본다
+  host.on("config", async (c) => { cfg = c; try { await init(); } catch (e) { console.error("init 실패", e && (e.stack || e.message || e)); hud.textContent = `에셋을 읽지 못했어요 — 트레이 → 에셋 다시 가져오기\n${e && e.message || e}`; hud.style.display = "block"; hud.dataset.stuck = "1"; } }); // stuck: 다음 sync 가 디버그 꺼짐이라고 지우지 않게
   host.on("settings", (views) => sync(views));
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
@@ -204,9 +208,9 @@
     for (const v of views) {
       const mas = mascots.get(v.id);
       if (mas) mas.applySettings(v);
-      else { const nm = Mascot(v.id, v); mascots.set(v.id, nm); await nm.start(); }
+      else { const nm = Mascot(v.id, v); mascots.set(v.id, nm); try { await nm.start(); } catch (e) { console.error("start 실패", v.id, e); } } // 한 명이 실패해도 나머지는 세운다
     }
-    hud.style.display = debugOn() ? "block" : "none";
+    if (!hud.dataset.stuck) hud.style.display = debugOn() ? "block" : "none";
   }
 
   async function init() {
@@ -362,6 +366,7 @@
       if (v <= 0) return;
       if (cat === "voice" && currentVoice) { currentVoice.pause(); currentVoice = null; }
       const a = new Audio(src); a.volume = v; a.play().catch(() => {});
+      a.onended = () => { a.removeAttribute("src"); a.load(); }; // 다 들은 요소가 디코더·파일 핸들을 쥔 채 GC 를 기다린다 — 하루 종일 켜 두는 앱이라 놓아 준다
       if (cat === "voice") currentVoice = a;
     }
     // 앞 카테고리에 파일이 하나라도 있으면 거기서 멈추던 것을, 후보를 다 합쳐 고르게 바꿨다.
@@ -408,7 +413,9 @@
       if (!S.sound.motionVoice && !force) return null;
       const cats = voiceCatsFor(anim); if (!cats) return null;
       const now = performance.now() / 1000;
-      const emote = EMOTE_CATS.has(cats[0]);
+      // playVoiceOwn 은 앞 카테고리가 비면 뒤로 내려가므로, 게이트도 실제로 나올 묶음 기준으로 — victory 가 없는 사도는 joy(짧은 리액션)가 나오는데 대사 게이트(30%/15초)에 걸려 조용했다
+      const played = cats.find(c => (voiceSet.cats[c] || []).length) || cats[0];
+      const emote = EMOTE_CATS.has(played);
       if (!force) {
         if (emote) { if (Math.random() * 100 >= (S.sound.emoteVoiceChance ?? 85)) return null; if (now - lastEmoteAt < 2.5) return null; }
         else { if (Math.random() * 100 >= S.sound.motionVoiceChance) return null; if (now - lastMotionVoiceAt < S.sound.motionVoiceCooldown) return null; }
@@ -441,19 +448,22 @@
 
     async function start() {
       makeChar(mini, miniData);
-      if (!miniData.findSkin(S.skin)) S.skin = "Mini_Crepe";
+      if (!miniData.findSkin(S.skin)) { S.skin = "Mini_Crepe"; host.setSettings({ skin: S.skin }, id); } // 메인에도 알린다 — 설정창은 여전히 없는 스킨을 가리키고 있었다
       setSkin(S.skin, false);
       { const p = geoD.find(d => d.primary) || geoD[0]; m.x = p ? (p.x0 + p.x1) / 2 + (Math.random() - 0.5) * (p.x1 - p.x0) * 0.4 : W / 2; }
       await activateMode(true);
     }
-    function dispose() { unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); }
+    // activating++ 로 진행 중인 activateMode 를 무효화한다 — 캐릭터를 지우는 도중 SD 로드가 끝나면 내려놓은 슬롯에 다시 채워 넣고(텍스처 누수) spawn() 이 죽은 미니미 스켈레톤을 건드렸다
+    function dispose() { disposed = true; activating++; unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); }
     function onGeo() { if (m.state !== "boot") { m.x = clampX(m.x); if (m.state !== "thrown" && m.state !== "drag") m.y = floorAt(m.x); } }
 
     async function loadSlot(slot, r) {
-      if (!r) { unloadSlot(slot); return false; }
+      if (!r) { slot.want = null; unloadSlot(slot); return false; }
       const key = `${r.dir}/${r.stem}`;
+      slot.want = key; // 스킨을 빠르게 두 번 바꾸면 먼저 시작한(느린) 로드가 나중에 끝나 새 스킨 위에 옛 스킨을 덮어썼다 (이미 든 것으로 돌아오는 요청도 진행 중인 로드를 무효화해야 한다)
       if (slot.key === key && slot.skeleton) return true;
       const { atlas, textures } = await loadAtlas(`${r.dir}/${r.stem}.atlas`, r.dir);
+      if (slot.want !== key || disposed) { for (const t of textures) try { t.dispose(); } catch {} return false; }
       const data = new spine.SkeletonBinary(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(host.readBytes(`${r.dir}/${r.stem}.skel`));
       unloadSlot(slot);
       makeChar(slot, data); slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; slot.textures = textures; slot.key = key; slot.src = r.src; slot.A = r.src === "ingame" ? ingamePools(data) : sdPools(data); slot.family = r.src === "ingame" ? "ingame" : "standing";
@@ -465,26 +475,33 @@
       if (active === slot) active = (slot !== sd && sd.skeleton) ? sd : mini; // 그리는 중인 슬롯을 내리면 안전한 쪽으로
       for (const t of slot.textures || []) try { t.dispose(); } catch {} slot.textures = []; slot.skeleton = null; slot.state = null; slot.data = null; slot.key = null; slot.headBoneCached = undefined; slot.eyeBonesCached = undefined; slot.ctrlCache = undefined; slot.hideCache = null; if (slot === sd) grab.kind = null;
     }
-    let activating = 0;
+    let activating = 0, disposed = false;
     async function activateMode(first) {
       const want = S.mode === "sd" || S.mode === "ingame" ? "sd" : "minimi";
       const seq = ++activating;
       if (active === sdI) active = sd.skeleton ? sd : mini; // 전환 동안 인게임 슬롯이 교체될 수 있음
       if (want === "sd") {
         let ok = false;
+        // 로드 하나가 끝날 때마다 아직 내 차례인지 본다. loadSlot 은 뒤에 온 요청에 밀리면 false 를 돌려주는데,
+        // 그걸 "스탠딩이 없다"로 읽고 인게임 폴백을 시작하면 새 요청이 막 든 sd 슬롯을 옛 요청의 폴백이 덮어쓴다
+        const stale = () => seq !== activating || disposed;
         try {
           if (S.mode === "ingame") {
             // 인게임 형태: 전투·마이홈 SD 스켈레톤을 그대로 (Move로 걷고 Spawn으로 등장). 없으면 스탠딩으로 대체
             unloadSlot(sdI);
-            ok = await loadSlot(sd, resolveIngame(S.skin)) || await loadSlot(sd, resolveSD(S.skin));
+            ok = await loadSlot(sd, resolveIngame(S.skin));
+            if (!ok && !stale()) ok = await loadSlot(sd, resolveSD(S.skin));
           } else {
             // SD = 스탠딩(대기·상호작용). 스탠딩이 없는 캐릭터만 인게임 SD로 대체
             const okS = await loadSlot(sd, resolveSD(S.skin));
+            if (stale()) throw null;
             const okI = !okS ? await loadSlot(sdI, resolveIngame(S.skin)) : (unloadSlot(sdI), false);
+            if (stale()) throw null;
             if (!okS && okI) { await loadSlot(sd, resolveIngame(S.skin)); unloadSlot(sdI); }
             ok = okS || okI;
           }
-        } catch (e) { console.warn("SD 로드 실패", e); }
+        } catch (e) { if (e !== null) console.warn("SD 로드 실패", e); }
+        if (disposed) { unloadSlot(sd); unloadSlot(sdI); return; } // 로드 중에 캐릭터가 지워졌다 — 방금 든 것을 다시 내려놓는다
         if (seq !== activating) return; // 더 최신 요청이 있음
         if (!ok) { console.warn("SD 없음 → 미니미로", S.skin); }
         active = ok ? sd : mini;
@@ -507,7 +524,7 @@
     // 다른 사도 쪽으로 다가가서(창 기준 x) 그쪽을 본다 — 둘이 잡담할 때. 도착하면 holdUntil 동안 제자리
     function meet(arg) {
       if (!arg || typeof arg.x !== "number") return;
-      if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
+      if (HANDS.has(m.state)) return;
       holdUntil = Math.max(holdUntil, performance.now() + (arg.hold || 30000));
       // 메인이 자리(to)를 정해 주면 거기로(둘이 동시에 움직여도 겹치지 않게 중간점 기준), 아니면 상대 옆(폭 절반씩 + 여유)
       const gap = ((m.w || 120) + (arg.w || m.w || 120)) / 2 + 48;
@@ -523,7 +540,8 @@
     //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(듣는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
     function emote(arg) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
-      if (["drag", "thrown", "touch", "pat", "tickle", "smash1"].includes(m.state)) return;
+      if (HANDS.has(m.state)) return;
+      if (m.state === "hop" && m.faceAfter) { m.pendingEmote = arg; return; } // 다가가는 중(meet) — 표정을 지금 바꾸면 이동이 끊겨 상대 옆에 못 간다. 도착하면 그때 한다
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
@@ -548,7 +566,7 @@
     function logState(tag) { console.log(`STATE[${tag}] ${m.state} anim=${m.anim} timer=${(m.timer || 0).toFixed(1)} facing=${facing}`); }
     function announce(arg) {
       if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
-      if (["drag", "thrown", "touch", "pat", "tickle"].includes(m.state)) return;
+      if (HANDS.has(m.state)) return; // smash1 이 빠져 있어 꿀밤 1단 도중 소식이 오면 2단(대사)이 잘렸다
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const cand = active === mini ? ["Idle3_7", "Act1_1", "Success", "Idle2_4"] : ["Talk_1", "Point_1", "Hi_1", "Happy_1", "Blank_1", "Proud_1", ...(A.react || [])];
@@ -627,6 +645,8 @@
     // 예전에는 "4초 이하"로 아예 걸러 버렸고, 그 탓에 사도 413명 중 258명은 승리 모션을 볼 수 없었다.
     // animationEnd 를 줄이면 그 지점에서 complete 가 떠 평소대로 대기 동작으로 섞여 들어간다(defaultMix).
     const ONESHOT_CAP = 6;
+    // complete 하나로 대기에 돌아오는 상태들. complete 가 안 오면(엔트리 교체·트랙 비움) 그 상태에 영영 서 있으니 update 가 시간을 세어 강제로 돌려놓는다
+    const ONESHOT_STATES = new Set(["react", "jump", "land", "spawn", "smash1"]);
     function play(name, loop) {
       if (!has(name)) name = firstOf(active.A.hold, "Idle_1", "Idle1_1");
       if (!name) return null;
@@ -635,7 +655,7 @@
       if (!loop && e && e.animationEnd > ONESHOT_CAP) e.animationEnd = ONESHOT_CAP;
       return e;
     }
-    function playOnce(name, nextState) { m.state = nextState; m.rot = 0; play(name, false); }
+    function playOnce(name, nextState) { m.state = nextState; m.rot = 0; m.oneT = 0; play(name, false); }
     // 꿀밤은 게임처럼 2단: Smash_End_1(맞는 순간, dutchrubend1 = "아얏" 소리) → 끝나면 Smash_End_2(머리 감싸는 포즈, dutchrubend2 = 대사 "머리 때리지 마!")
     //   스킨 보이스 묶음엔 dutchrubend2_skinN만 있고 맞는 소리는 base에만 있어서 1단은 base에서 찾는다
     function voiceFile(re, ...lists) { for (const l of lists) { const c = (l || []).filter(f => re.test(f)); if (c.length) return pick(c); } return null; }
@@ -700,7 +720,7 @@
       if (B.hop && r < B.hopChance && !holding()) {
         if (isSD()) useSlot(slotForMove());
         const A = active.A;
-        m.state = "hop"; m.hopT = 0;
+        m.state = "hop"; m.hopT = 0; m.faceAfter = 0; m.pendingEmote = null; // meet 가 남긴 것이 다음 산책에 새어 들면 도착해서 엉뚱한 쪽을 보며 표정을 짓는다
         const cur = dispAt(m.x), others = geoD.filter(d => d !== cur);
         if (others.length && Math.random() < 0.2) { const d = pick(others); m.targetX = clampX(d.x0 + m.w / 2 + WALL_MARGIN + Math.random() * Math.max(1, d.x1 - d.x0 - m.w - WALL_MARGIN * 2)); } // 다른 모니터로 원정
         else m.targetX = clampX(m.x + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * Math.max(0, B.hopRange - 80)));
@@ -725,6 +745,7 @@
     function update(dt) {
       if (!active.skeleton) return;
       if (cfg.logPos && (logT += dt) > 1) { logT = 0; console.log(`POS[${id}] ${active === mini ? "minimi" : active.family} ${m.state} ${m.anim} x=${m.x.toFixed(0)} screenY=${(H - m.y).toFixed(0)} w=${m.w.toFixed(0)} h=${m.h.toFixed(0)} rot=${m.rot.toFixed(1)} over=${m.over}`); }
+      if (ONESHOT_STATES.has(m.state)) { if ((m.oneT = (m.oneT || 0) + dt) > ONESHOT_CAP + 2) { console.warn(`oneshot watchdog ${m.state}/${m.anim}`); restThenDecide(); } } else m.oneT = 0;
       switch (m.state) {
         case "idle":
           if (voicePlaying()) m.timer = Math.max(m.timer, 0.5); // 대사가 끝나기 전엔 다음 모션 안 함
@@ -743,7 +764,13 @@
             const hh = gentle ? 7 : active.A.hopHeight;
             m.y = floorY + Math.abs(Math.sin(ph * Math.PI)) * hh * scale() * 2; m.rot = Math.sin(ph * Math.PI * 2) * (gentle ? 2 : 4) * -dir;
           }
-          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; restThenDecide(); if (m.faceAfter) { facing = m.faceAfter; m.faceAfter = 0; applyFacing(); } }
+          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) {
+            // restThenDecide 가 다시 hop 을 고를 수 있다(moodOn → decideIdle). 그때 상대 쪽으로 돌려놓으면 가는 방향과 반대를 보며 걷는다
+            const fa = m.faceAfter, pe = m.pendingEmote; m.faceAfter = 0; m.pendingEmote = null;
+            m.x = m.targetX; restThenDecide();
+            if (fa && m.state !== "hop") { facing = fa; applyFacing(); }
+            if (pe) emote(pe); // 오는 동안 미뤄 둔 표정
+          }
           break;
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
@@ -751,7 +778,7 @@
           if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoiceOwn("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
-          m.x = mouse.gx; m.y = mouse.gy;
+          m.x = clampX(mouse.gx); m.y = mouse.gy; // 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다
           m.rot = spine.MathUtils.clamp(-m.vx * 0.02, -25, 25);
           break;
         case "thrown": {
@@ -923,7 +950,8 @@
         smashHit();
       } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd && Math.hypot(grab.dx, grab.dy) >= TAP_PX) { // 볼을 끌었을 때만 → touch1_x ("당기지 마!")
         playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoiceOwn("cheek", "touch");
-      } else {                                 // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
+      } else if (m.state === "thrown") { /* 공중에서 톡 — 잡아 끌지 않았으면 그대로 떨어지게 둔다(react 로 바꾸면 중력이 멈춰 공중에 선다) */
+      } else {                               // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
         if (isSD()) useSlot(slotForRest());
         let reacts = active.A.react.filter(has);
         if (active === sd) { const soft = reacts.filter(n => /^(Happy|Smile|Laugh|Shy|Proud|Excited|Taunt)_/.test(n)); if (soft.length) reacts = soft; } // 몸 톡은 놀람(으아악)도 빼고 웃음·수줍음만

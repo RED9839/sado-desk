@@ -17,7 +17,7 @@
   const patchOf = (p, v) => p.split(".").reverse().reduce((acc, k) => ({ [k]: acc }), v);
   const fmt = (v, f) => f === "%" ? Math.round(v) + "%" : f === "px" ? Math.round(v) + "px" : f === "s" ? (+v).toFixed(1) + "s" : f === "s0" ? Math.round(v) + "초" : f === "min" ? Math.round(v) + "분" : v;
   const set = (p, v) => { setLocal(p, v); host.setSettings(patchOf(p, v), cur); };
-  function setLocal(p, v) { const ks = p.split("."); let o = GLOBAL_KEYS.has(ks[0]) ? FULL.global : charOf(cur); for (const k of ks.slice(0, -1)) o = o[k]; o[ks[ks.length - 1]] = v; S = view(); }
+  function setLocal(p, v) { const ks = p.split("."); let o = GLOBAL_KEYS.has(ks[0]) ? FULL.global : charOf(cur); for (const k of ks.slice(0, -1)) o = o[k] || (o[k] = {}); o[ks[ks.length - 1]] = v; S = view(); } // 옛 설정 파일엔 news·ai·talk 이 없어 중간 객체가 비면 여기서 죽었다
 
   // ---- 캐릭터(인스턴스) 선택 바 ----
   const chipsEl = document.getElementById("char-chips");
@@ -35,6 +35,7 @@
   const showTab = (name) => {
     for (const b of document.querySelectorAll("nav button")) b.classList.toggle("on", b.dataset.tab === name);
     for (const s of document.querySelectorAll("main section")) s.classList.toggle("on", s.id === "tab-" + name);
+    if (name === "ai") refreshAi(); else if (name === "news") renderNews(); // 브로드캐스트 때는 보이는 탭만 새로 그리므로, 탭을 열 때 한 번은 채워야 한다
   };
   for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
   host.on("tab", (t) => showTab(t));
@@ -53,16 +54,18 @@
       else if (el.tagName === "SELECT") el.addEventListener("change", () => set(p, el.value));
       else if (el.type === "text") el.addEventListener("change", () => set(p, el.value.trim()));
     }
+    // 글자 입력은 change(포커스가 떠날 때)에만 저장된다 — 타이핑하고 곧장 창을 닫으면 change 가 안 와 적은 것이 사라졌다
+    window.addEventListener("beforeunload", () => { const el = document.activeElement; if (!el || el.type !== "text" || !el.dataset.s) return; const v = el.value.trim(); if (v !== (getPath(S, el.dataset.s) ?? "")) set(el.dataset.s, v); });
   }
   function renderControls() {
     for (const el of document.querySelectorAll("[data-s]")) {
       const v = getPath(S, el.dataset.s), mul = +(el.dataset.scale || 1);
       if (el.type === "checkbox") el.checked = !!v;
       else if (el.type === "radio") el.checked = (v === el.value);
-      else if (el.type === "range") { el.value = v * mul; const val = el.parentElement.querySelector(".val"); if (val) val.textContent = fmt(v * mul, val.dataset.fmt); }
+      else if (el.type === "range") { if (document.activeElement === el) continue; el.value = v * mul; const val = el.parentElement.querySelector(".val"); if (val) val.textContent = fmt(v * mul, val.dataset.fmt); } // 끌고 있는 슬라이더는 브로드캐스트로 되돌리지 않는다(글자·선택과 같은 규칙)
       else if (el.tagName === "SELECT" || el.type === "text") { if (document.activeElement !== el) el.value = v ?? ""; }
     }
-    if (document.getElementById("tab-ai")) refreshAi();
+    if (document.querySelector("#tab-ai.on")) refreshAi(); // 설정이 바뀔 때마다(슬라이더 한 칸에도) Ollama 에 물어봤다 — 보이는 탭일 때만
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
@@ -201,7 +204,7 @@
   document.getElementById("reset").addEventListener("click", () => { if (confirm("모든 설정을 기본값으로 되돌릴까요?")) host.resetSettings(); });
 
   // ---- 동기화 ----
-  host.on("settings", (s) => { FULL = s; S = view(); renderControls(); markCurrent(); renderNews(); });
+  host.on("settings", (s) => { FULL = s; S = view(); renderControls(); markCurrent(); if (document.querySelector("#tab-news.on")) renderNews(); });
   host.on("catalog", async (c) => { catalog = c; await loadPages(); buildGrid(); buildAnims(); renderAbout(); });
 
   bindControls(); renderControls(); renderNews();
