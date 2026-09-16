@@ -1,5 +1,6 @@
 """나무위키 캐시(scratch/namu/pages/<한글이름>.txt)의 '대사' 절에서 사도별 말투 프로필을 뽑는다 → assets/talk-ko.json
-프로필: style(어미 부류) · addr(교주 호칭) · interj(자주 쓰는 감탄사) · lines(실제 대사 표본, 기본 사복·한국어만)
+프로필: style(어미 부류) · addr(교주 호칭) · interj(자주 쓰는 감탄사) · share(어미 분포) · n(표본 수)
+대사 원문은 배포 데이터에 넣지 않는다(2차 창작 가이드라인). 표본은 out/talk-report.md 에만 남는다.
 사용: python tools/build-talk.py <namu_pages_dir>
 style 판정은 어미 통계 + 수동 보정(OVERRIDE). 결과 요약은 out/talk-report.md"""
 import json, os, re, sys, collections
@@ -17,7 +18,7 @@ END_RULES = [  # (style, regex on 어미(문장부호 제거 후))
     ("noun", re.compile(r"(함|임|음|됨|봄|감|옴|짐|남|림|듦|줌|삼|섬|굼|힘|냄|켬|픔|름|뜸|쁨|낌|밈|김|낌)$")),
     ("royal", re.compile(r"(거라|노라|느냐|이냐|것이냐|다만|니라|로다|더냐|도다|하라|말거라|겠노라|것인가|하였다|하겠다|하였느냐|이더냐|리라|리다)$")),
     ("hao", re.compile(r"(소|오|구려|시오|외다|하오|이오|다오|리오)$")),
-    ("formal", re.compile(r"(습니다|입니다|니다|십시오|습니까|입니까|니까|십니다|시죠|시지요)$")),
+    ("formal", re.compile(r"(습니다|입니다|니다|십시오|습니까|입니까|니까|십니다|시죠|시지요|슴다|슴둥|함다|임다|십쇼|입쇼)$")),  # 뒤쪽은 군대식 어미
     ("polite", re.compile(r"(요|죠|세요|에요|예요|네요|군요|게요|을게요|까요|지요|래요|나요|어요|아요)$")),
     ("casual", re.compile(r"(다|어|야|지|해|래|자|네|군|나|거|걸|데|고|까|냐|니|봐|줘|아|게|걔|래|마|든|랬|쟤|응|엉|엥)$")),
 ]
@@ -29,23 +30,69 @@ FOOTNOTE = re.compile(r"\[\d+\]")
 STRIP_END = re.compile(r"[\s.!?~…⋯'\"”’)\]♪♡☆★]+$")
 
 # 수동 보정: 어미 통계로 잡기 어려운 개성 말투
+# Polan: 실측 casual 0.37 은 부하에게 내리는 명령이다. 교주 앞에서는 합니다체라 formal 을 유지한다.
+# Canna: 실측 casual 0.40 은 직속 부하에게 말을 놓기 때문이다. 교주 앞에서는 존댓말이라 formal 을 유지한다.
 OVERRIDE = {
-    "Mayo": {"style": "noun"}, "MayoCool": {"style": "noun"},
-    "Vivi": {"style": "vivi"}, "Silvia": {"style": "haso"},
-    "Daya": {"style": "royal", "addr": "교주"}, "DayaPureShine": {"style": "royal"}, "Belita": {"style": "royal"},
-    "Inkle": {"style": "hao"}, "Epica": {"style": "hao"}, "EpicaSkin2": {"style": "hao"},
+    "Haley": {"interj_add": ["크흠", "훗"]},
+    "Youngchun": {"interj_add": ["으이익", "핫"]},
+    "Goldy": {"interj_add": ["오", "음"]},
+    "Hilde": {"interj_add": ["후훗", "어머"]},
+    "HaleySane": {"interj_add": ["후후", "흠"]},
+    "Heidi": {"interj_add": ["아핫", "오오"]},
+    "Pira": {"interj_add": ["케헤헤", "이야이야"]},
+    "Fricle": {"interj_add": ["치잇", "후웃"]},
+    "Posher": {"interj_add": ["후후", "에잉"]},
+    "Festa": {"interj_add": ["피스", "하핫"]},
+    "Patula": {"interj_add": ["으잇", "엣"]},
+    "TigHero": {"interj_add": ["흐하하", "크윽"]},
+    "Kishya": {"interj_add": ["히힛", "야호"]},
+    "Kidian": {"interj_add": ["으음", "헤헤"]},
+    "Chloe": {"interj_add": ["흐흥", "으으"]},
+    "KommySwim": {"interj_add": ["후후", "으으"]},
+    "Kyarot": {"interj_add": ["쿠헤헤", "얏호"]},
+    "Carren": {"interj_add": ["흐에엥", "으흐흑"]},
+    "Chopi": {"interj_add": ["퍄오옹", "흐에엑"]},
+    "Joanne": {"interj_add": ["으윽", "으응"]},
+    "Jade": {"interj_add": ["후후", "으으"]},
+    "Ifrit": {"interj_add": ["으음", "후우"]},
+    "EdRehab": {"interj_add": ["헤헤", "영차"]},
+    "Ed": {"interj_add": ["으음", "후훗"]},
+    "Yumimi": {"interj_add": ["캬", "으음"]},
+    "Ui": {"interj_add": ["히히", "헤헤"]},
+    "Uros": {"interj_add": ["스하핫", "으음"]},
+    "Yomi": {"interj_add": ["후훗", "으음"]},
+    "Opal": {"interj_add": ["어허", "에헤헤"]},
+    "Orr": {"interj_add": ["으으", "으앗"]},
+    "Aurora": {"interj_add": ["후후", "으으"]},
+    "Elena": {"interj_add": ["흐흥", "크흠"]},
+    "Espi": {"interj_add": ["큭큭", "헤헤"]},
+    "AshurMagi": {"interj_add": ["후훗", "헤헤"]},
+    "ErpinRoyale": {"interj_add": ["쒸이", "으음"]},
+    "Alice": {"interj_add": ["으히히", "으흐흐"]},
+    "Mayo": {"style": "noun", "addr": "수집품"}, "MayoCool": {"style": "noun", "addr": "수집품"},
+    "Vivi": {"style": "vivi", "interj_add": ["오호호", "엣취"]},
+    "Daya": {"style": "royal", "addr": "교주"}, "DayaPureShine": {"style": "royal", "me": None}, "Belita": {"style": "royal", "interj_add": ["후으"]},
+    "Inkle": {"style": "hao", "interj_add": ["잉잉", "흐하"]}, "Epica": {"style": "hao", "me": "소인", "interj_add": ["후훗", "오호", "흠흠"]}, "EpicaSkin2": {"style": "hao"},
     "MaestroMK2": {"style": "robot", "addr": "휴먼"},
-    "Crepe": {"style": "crepe", "addr": "교주님"},
-    "Cuee": {"interj_add": ["오이!", "오이오이!"]}, "Kommy": {"interj_add": ["냥!"]},
-    "Jubee": {"style": "jubee"}, "Ayla": {"style": "ayla"}, "Momo": {"style": "momo"},
-    "Barie": {"style": "polite", "addr": "교주님"}, "SpeakiMaid": {"style": "polite"}, "Skea": {"style": "polite"}, "Sherum": {"style": "polite"},
-    "AmeliaR41": {"style": "casual", "me": "이 몸"}, "Aragnia": {"me": "짐"}, "Silvia": {"me": "소녀"}, "Epica": {"me": "소인"},
-    "Shasha": {"addr": "교주님"}, "Mago": {"addr": "교주님"}, "Suro": {"addr": "교주님"}, "BeniBeni": {"addr": "교주님"},
-    "Butter": {"addr": "교장님"}, "Renewa": {"addr": "교수님"}, "RenewaAwaken": {"addr": "교수님"}, "Lazy": {"addr": "교수님"},
-    "Erpin": {"addr": "교주"}, "Sist": {"style": "polite"}, "Taida": {"style": "polite"}, "Rohne": {"style": "polite"},
-    "Ner": {"style": "formal"}, "Nicole": {"style": "polite"}, "Beni": {"style": "polite"}, "Sari": {"style": "polite"}, "Canna": {"style": "formal"}, "Polan": {"style": "formal"}, "RimChaos": {"style": "polite"},
-    "Guin": {"addr": "교주"}, "NerRage": {"style": "formal"}, "Shoupan": {"me": "슈팡"}, "Rufo": {"addr": "교주"}, "Tig": {"addr": "교주"}, "Ashur": {"addr": "교주"}, "Sparrot": {"addr": "교주", "me": "이 몸"}, "Canta": {"addr": "교주"},
-    "Snorky": {"style": "formal", "addr": "돈"}, "DayaPureShine": {"style": "royal", "me": None}, "Kathy": {"style": "polite"}, "Leets": {"style": "polite"},
+    "Crepe": {"style": "crepe", "addr": "교주님", "interj_add": ["헤헤", "흐아앙"]},
+    "Cuee": {"interj_add": ["오익", "오잉", "오이오이"]}, "Naia": {"interj_add": ["퓨퓨~"]}, "Diana": {"interj_add": ["에구구"]}, "Rollett": {"interj_add": ["울랄라"]}, "Kommy": {"interj_add": ["하암", "냥"]}, "Mago": {"interj_add": ["히힛"], "addr": "교주님"}, "Marie": {"interj_add": ["에헤헷"]}, "Makasha": {"interj_add": ["이-히힛"], "addr": "긴긴-팔다리"}, "Barong": {"interj_add": ["으흐흐"]}, "Leets": {"interj_add": ["크하하"], "style": "polite"}, "Rim": {"style": "polite", "interj_add": ["푸흡"]}, "RimChaos": {"style": "polite", "interj_add": ["으흐흐"]},
+    # 림 자매는 교주 대면 대사가 해요·합쇼체다. 실측 casual 은 레벨업 같은 혼잣말이 끌어올린 값
+    "Jubee": {"style": "jubee", "interj_add": ["애애앵", "푸헤헤"]}, "Ayla": {"style": "ayla"}, "Momo": {"style": "momo"},
+    "Barie": {"style": "polite", "addr": "교주님"}, "Speaki": {"interj_add": ["흐에엥", "으으"]}, "SpeakiMaid": {"style": "polite", "interj_add": ["헤헷", "으으"]}, "Skea": {"style": "polite", "interj_add": ["으음", "후후"]}, "Sherum": {"style": "polite"},
+    "AmeliaR41": {"style": "casual", "me": "이 몸"}, "Aya": {"interj_add": ["후후"]}, "Asana": {"interj_add": ["후우"]}, "Arco": {"interj_add": ["이야", "와우"]}, "Aragnia": {"me": "짐", "interj_add": ["아하핫"]}, "Silvia": {"style": "haso", "me": "소녀", "interj_add": ["오호호"]}, "Arnet": {"interj_add": ["헤헤", "아하핫"]}, "Silphir": {"interj_add": ["으윽", "헤헷"]}, 
+    "Shasha": {"addr": "교주님", "interj_add": ["으으"]}, "Suro": {"addr": "교주님", "interj_add": ["으음"]}, "BeniBeni": {"addr": "교주님", "style": "polite", "interj_add": ["흐헷", "오오"]},
+    # 대사표의 "교장님"(에슈르)·"교수님"은 남을 부른 말이 호칭 집계에 섞인 것이라 교주님으로 되돌린다
+    "Butter": {"addr": "교주님", "me": "버터", "interj_add": ["와아"]}, "Renewa": {"addr": "교주님"}, "RenewaAwaken": {"addr": "교주님"}, "Lazy": {"addr": "교주님"},
+    # 교주를 달리 부르는 사도 — 극장 대본 실측(마카샤 21회, 피코라 49회)
+    "Picora": {"addr": "스승님", "interj_add": ["흠흠", "우으"]},
+    "Erpin": {"addr": "교주", "interj_add": ["히히", "에헤헤", "쒸이"]}, "Scizor": {"interj_add": ["아하핫", "우히힛", "흐후후"]}, "Sist": {"style": "polite", "interj_add": ["헤헤", "아이고"]}, "Taida": {"style": "polite", "interj_add": ["에휴", "으으"]}, "Rohne": {"style": "polite"},
+    # 네르 실측 해요 51% > 합니다 29%, 니콜은 교주 앞에서만 해요체(혼잣말은 반말)
+    "Ner": {"style": "polite"}, "Nicole": {"style": "polite", "interj_add": ["파팝!", "크헤헷"]},
+    "Beni": {"style": "polite", "interj_add": ["으음"]}, "Veroo": {"interj_add": ["이히히", "에헤헤"]}, "Vela": {"interj_add": ["히힛", "아하하"]}, "Velvet": {"interj_add": ["흠", "캬하"]}, "Blanchet": {"interj_add": ["후후"]}, "Selline": {"interj_add": ["후훗", "아하하"]}, "Shady": {"interj_add": ["히히", "으흐흐"]}, "ShadyTwisted": {"interj_add": ["히히", "흐흐"]}, "Sari": {"style": "polite", "interj_add": ["와아", "우후"]}, "Canna": {"style": "formal", "interj_add": ["으하하", "으으"]}, "Polan": {"style": "formal", "interj_add": ["으윽", "흠"]},
+    # 그윈은 반말을 쓰면서도 호칭에만 님을 붙인다. 네르(빡침)은 실측 해요 65%로 본체와 같은 이유
+    "Guin": {"addr": "교주님"}, "NerRage": {"style": "polite"},
+    "Shoupan": {"me": "슈팡", "interj_add": ["으하하", "우히히"]}, "Rufo": {"addr": "교주"}, "Tig": {"addr": "교주", "interj_add": ["크핫", "흐흐"]}, "Ashur": {"addr": "교주", "interj_add": ["으음", "으으"]}, "Sparrot": {"addr": "교장", "me": "이 몸", "interj_add": ["요호호", "야아알", "큭큭"]}, "Canta": {"addr": "교주", "interj_add": ["키히히", "으윽"]},
+    "Snorky": {"style": "formal", "addr": "돈"}, "Kathy": {"style": "polite", "interj_add": ["히익", "흐윽"]}, 
 }
 
 def safe(ko): return re.sub(r'[\\/:*?"<>|]', "_", ko)
@@ -139,10 +186,10 @@ def profile(hero, ko, lines, affinity=None):
     if "style" in ov: style = ov["style"]
     if style in ("formal", "haso", "momo", "vivi") and addr == "교주": addr = "교주님"  # 높임 어미엔 호칭도 높임
     if "addr" in ov: addr = ov["addr"]
-    if "interj_add" in ov: interj = ov["interj_add"] + interj
+    interj = [i for i in interj if (len(i.rstrip("~!")) >= 2 and i.rstrip("~!") not in ("으으", "우우", "저기", "잠깐", "이봐", "음음", "고맙")) or i.rstrip("~!") in ("흥", "훗", "냥", "헷", "홋")]
+    if "interj_add" in ov: interj = ov["interj_add"] + interj  # 손으로 고른 값은 필터를 거치지 않는다
     if "me" in ov: me = ov["me"]  # None이면 자칭 없음
     if "me" not in ov and not me and third >= 0.1: me = ko.split("(")[0]  # 자기 이름 3인칭 (코미, 우이, 빅우드 …)
-    interj = [i for i in interj if (len(i.rstrip("~!")) >= 2 and i.rstrip("~!") not in ("으으", "우우", "저기", "잠깐", "이봐", "음음", "고맙")) or i.rstrip("~!") in ("흥", "훗", "냥", "헷", "홋")]
     src = affinity if affinity else lines
     quotes = [l for l in src if re.search(r"[.!?~…⋯]$", l) and 6 <= len(l) <= 40 and not re.search(r"[\[\]:]", l)][:16]  # 친밀도(로비) 대사만 — 볼 당기기/전투 대사는 문맥이 안 맞음
     return {"ko": ko, "style": style, "addr": addr, "me": me, "interj": interj[:6], "third": round(third, 2), "share": {k: round(v, 2) for k, v in share.items()}, "n": len(lines), "lines": quotes}
@@ -150,6 +197,7 @@ def profile(hero, ko, lines, affinity=None):
 SKIN_OVERRIDE = {  # hero: {skinNo: {...}} — 위키 대사표에서 확인한 스킨별 말버릇
     "Erpin": {"5": {"addr": "주인"}},                        # 풀오토 고딕(메이드): "주인~! 섭섭하게 이럴 거야??"
     "Crepe": {"1": {"interj": ["꼬끼오!", "삐야아아악!", "꼬꼬댁~"]}},  # 뿅아리 클리너
+    "Alice": {"1": {"interj": ["으히히"]}, "3": {"interj": ["으음", "헤헷"]}},
 }
 SKIN_UNMATCHED = []
 def norm(s): return re.sub(r"[\s·ㆍ'\"“”‘’!?.~]", "", s)
@@ -179,6 +227,15 @@ def skin_profiles(hero, base, skin_lines):
     for k, ov in SKIN_OVERRIDE.get(hero, {}).items(): out[k] = {**out.get(k, {"label": names.get("skins", {}).get(hero, {}).get(k, ""), "n": 0}), **ov}
     return out
 
+# 대사표에서 프로필이 안 나오는 사도 — 위키에 대사 절이 없거나(기계음) 다른 사도와 같은 인물인 경우
+MANUAL = {
+    # 기계음('삐빗')만 내고 문장 대사가 없다. 괄호 안 뜻풀이가 실제 말이라 보고 프로필을 손으로 잡는다
+    "EisiaFridge": {"ko": "냉장고", "style": "polite", "addr": "교주님", "me": None,
+                    "interj": ["삐빗", "삐삣"], "third": 0.0, "share": {"polite": 1.0}, "n": 0, "skins": {}},
+    # 리뉴아의 극장 알바 시절 모습 — 같은 인물이라 말투를 그대로 물려받는다(아래에서 복사)
+    "Renewa_alba": {"_inherit": "RenewaAwaken", "ko": "리뉴아(알바)"},
+}
+
 result = {"styles": ["polite", "formal", "casual", "royal", "haso", "vivi", "noun", "hao", "robot", "jubee", "ayla", "momo", "crepe"], "heroes": {}}
 missing = []
 for hero, ko in sorted(names["heroes"].items()):
@@ -200,13 +257,33 @@ for hero, ko in sorted(names["heroes"].items()):
     prof["skins"] = skin_profiles(hero, prof, skin_lines)
     result["heroes"][hero] = prof
 
+for hero, m in MANUAL.items():
+    if hero in result["heroes"]: continue
+    if "_inherit" in m:
+        src = result["heroes"].get(m["_inherit"])
+        if not src: continue
+        d = json.loads(json.dumps(src)); d["ko"] = m["ko"]; result["heroes"][hero] = d
+    else:
+        result["heroes"][hero] = dict(m)
+    if hero in missing or any(x.startswith(m["ko"]) for x in missing):
+        missing = [x for x in missing if x != m["ko"] and not x.startswith(m["ko"] + "(")]
+
 os.makedirs(os.path.join(ROOT, "assets"), exist_ok=True)
-json.dump(result, open(os.path.join(ROOT, "data", "talk-ko.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+def strip_lines(res):
+    """배포용 사본에서 대사 원문을 뺀다 — 리포트는 원본 result 를 그대로 쓴다"""
+    import copy
+    d = copy.deepcopy(res)
+    for p in d["heroes"].values():
+        p.pop("lines", None)
+        for sk in p.get("skins", {}).values(): sk.pop("lines", None)
+    return d
+
+json.dump(strip_lines(result), open(os.path.join(ROOT, "data", "talk-ko.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 os.makedirs(os.path.join(ROOT, "out"), exist_ok=True)
 with open(os.path.join(ROOT, "out", "talk-report.md"), "w", encoding="utf-8") as f:
     f.write(f"# 말투 프로필 ({len(result['heroes'])}명) · 누락 {len(missing)}: {', '.join(missing)}\n\n| 사도 | style | 호칭 | 감탄사 | 3인칭 | 어미 분포 | 표본 |\n|---|---|---|---|---|---|---|\n")
     for hero, p in sorted(result["heroes"].items(), key=lambda kv: kv[1]["ko"]):
-        f.write(f"| {p['ko']} | {p['style']} | {p['addr']} / {p.get('me') or '-'} | {' '.join(p['interj'])} | {p['third']} | {' '.join(f'{k}{int(v*100)}' for k, v in sorted(p['share'].items(), key=lambda x: -x[1]))} | {' / '.join(l[:30] for l in p['lines'][:2]) or '-'} |\n")
+        f.write(f"| {p['ko']} | {p['style']} | {p['addr']} / {p.get('me') or '-'} | {' '.join(p['interj'])} | {p['third']} | {' '.join(f'{k}{int(v*100)}' for k, v in sorted(p['share'].items(), key=lambda x: -x[1]))} | {' / '.join(l[:30] for l in (p.get('lines') or [])[:2]) or '-'} |\n")
     styles = collections.Counter(p["style"] for p in result["heroes"].values())
     f.write(f"\nstyle 분포: {dict(styles)}\n")
     f.write("\n## 스킨별 차이 (기본과 다른 점만)\n\n| 사도 | 스킨 | 대사 수 | 호칭 | 감탄사 | 어미 | 표본 |\n|---|---|---|---|---|---|---|\n")

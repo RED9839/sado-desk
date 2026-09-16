@@ -21,6 +21,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "으히히",
+    "으흐흐",
     "후후"
    ],
    "third": 0.0,
@@ -32,7 +34,10 @@
    "skins": {
     "1": {
      "label": "유령 나라 앨리스",
-     "n": 10
+     "n": 10,
+     "interj": [
+      "으히히"
+     ]
     },
     "2": {
      "label": "숲속 꼬마 유령",
@@ -43,21 +48,25 @@
     },
     "3": {
      "label": "주사위 잡이 토끼",
-     "n": 10
+     "n": 10,
+     "interj": [
+      "으음",
+      "헤헷"
+     ]
     }
    }
   },
   "Allet": {
    "ko": "알레트",
-   "style": "casual",
+   "style": "formal",
    "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.02,
    "share": {
-    "casual": 0.68,
-    "formal": 0.23,
-    "noun": 0.09
+    "casual": 0.27,
+    "formal": 0.65,
+    "noun": 0.08
    },
    "n": 48,
    "skins": {}
@@ -129,6 +138,7 @@
    "addr": "교주",
    "me": "짐",
    "interj": [
+    "아하핫",
     "후훗"
    ],
    "third": 0.0,
@@ -151,7 +161,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "이야",
+    "와우"
+   ],
    "third": 0.02,
    "share": {
     "casual": 0.4,
@@ -163,10 +176,7 @@
    "skins": {
     "1": {
      "label": "스트릿 스쿨러",
-     "n": 10,
-     "interj": [
-      "이야"
-     ]
+     "n": 10
     },
     "2": {
      "label": "베이케이션 스윙",
@@ -182,7 +192,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "헤헤",
+    "아하핫"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.52,
@@ -204,6 +217,7 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "후우",
     "후후"
    ],
    "third": 0.02,
@@ -227,9 +241,12 @@
   "Ashur": {
    "ko": "에슈르",
    "style": "casual",
-   "addr": "교주님",
+   "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으음",
+    "으으"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.52,
@@ -260,7 +277,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후훗",
+    "헤헤"
+   ],
    "third": 0.04,
    "share": {
     "polite": 0.64,
@@ -280,7 +300,10 @@
    "style": "formal",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후후",
+    "으으"
+   ],
    "third": 0.02,
    "share": {
     "formal": 0.7,
@@ -289,7 +312,7 @@
     "hao": 0.05,
     "noun": 0.07
    },
-   "n": 59,
+   "n": 61,
    "skins": {
     "1": {
      "label": "포근포근 반짝이는 휴식",
@@ -302,7 +325,9 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후후"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.9,
@@ -326,10 +351,7 @@
     },
     "4": {
      "label": "첫 눈송이의 춤사위",
-     "n": 15,
-     "interj": [
-      "후후"
-     ]
+     "n": 15
     }
    }
   },
@@ -392,6 +414,7 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "으흐흐",
     "훗"
    ],
    "third": 0.03,
@@ -428,7 +451,9 @@
    "style": "royal",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후으"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.67,
@@ -451,6 +476,7 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "으음",
     "헤헤",
     "하하"
    ],
@@ -473,7 +499,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "흐헷",
+    "오오"
+   ],
    "third": 0.04,
    "share": {
     "polite": 0.66,
@@ -512,7 +541,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후후"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.53,
@@ -531,9 +562,10 @@
   "Butter": {
    "ko": "버터",
    "style": "polite",
-   "addr": "교장님",
-   "me": null,
+   "addr": "교주님",
+   "me": "버터",
    "interj": [
+    "와아",
     "헤헤"
    ],
    "third": 0.06,
@@ -564,13 +596,16 @@
    "style": "formal",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으하하",
+    "으으"
+   ],
    "third": 0.02,
    "share": {
-    "casual": 0.4,
+    "casual": 0.37,
     "polite": 0.17,
     "hao": 0.04,
-    "formal": 0.33,
+    "formal": 0.37,
     "noun": 0.06
    },
    "n": 83,
@@ -590,7 +625,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "키히히",
+    "으윽"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.93,
@@ -605,6 +643,8 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "흐에엥",
+    "으흐흑",
     "히히"
    ],
    "third": 0.0,
@@ -622,7 +662,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "흐흥",
+    "으으"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.89,
@@ -660,7 +703,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "퍄오옹",
+    "흐에엑"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.74,
@@ -675,7 +721,10 @@
    "style": "crepe",
    "addr": "교주님",
    "me": "크레페",
-   "interj": [],
+   "interj": [
+    "헤헤",
+    "흐아앙"
+   ],
    "third": 0.11,
    "share": {
     "hao": 0.12,
@@ -702,8 +751,9 @@
    "addr": "교주님",
    "me": null,
    "interj": [
-    "오이!",
-    "오이오이!",
+    "오익",
+    "오잉",
+    "오이오이",
     "오이"
    ],
    "third": 0.0,
@@ -798,7 +848,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "에구구"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.25,
@@ -870,7 +922,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으음",
+    "후훗"
+   ],
    "third": 0.03,
    "share": {
     "formal": 0.08,
@@ -883,9 +938,6 @@
     "1": {
      "label": "영원의 기다림",
      "n": 11,
-     "interj": [
-      "후훗"
-     ],
      "style": "polite"
     },
     "2": {
@@ -905,7 +957,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "헤헤",
+    "영차"
+   ],
    "third": 0.03,
    "share": {
     "polite": 0.68,
@@ -953,7 +1008,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "흐흥",
+    "크흠"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.92,
@@ -981,7 +1039,11 @@
    "style": "hao",
    "addr": "교주님",
    "me": "소인",
-   "interj": [],
+   "interj": [
+    "후훗",
+    "오호",
+    "흠흠"
+   ],
    "third": 0.0,
    "share": {
     "hao": 0.69,
@@ -993,8 +1055,7 @@
    "skins": {
     "2": {
      "label": "열심열심 응원 단장",
-     "n": 10,
-     "style": "casual"
+     "n": 10
     },
     "1": {
      "label": "오직 당신만을 위한",
@@ -1007,8 +1068,7 @@
      "label": "화살촉에 실려 온 이야기",
      "n": 13,
      "interj": [
-      "에헤헤",
-      "후훗"
+      "에헤헤"
      ]
     }
    }
@@ -1018,7 +1078,11 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "히히",
+    "에헤헤",
+    "쒸이"
+   ],
    "third": 0.02,
    "share": {
     "casual": 0.93,
@@ -1038,23 +1102,16 @@
      "label": "발랄한 현장학습",
      "n": 12,
      "interj": [
-      "우으",
-      "에헤헤"
+      "우으"
      ]
     },
     "2": {
      "label": "왕궁의 화젯거리",
-     "n": 12,
-     "interj": [
-      "히히"
-     ]
+     "n": 12
     },
     "4": {
      "label": "깡총이 파자마",
-     "n": 12,
-     "interj": [
-      "히히"
-     ]
+     "n": 12
     },
     "5": {
      "label": "풀오토 고딕",
@@ -1072,6 +1129,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "쒸이",
+    "으음",
     "헤헷"
    ],
    "third": 0.0,
@@ -1101,6 +1160,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "큭큭",
+    "헤헤",
     "흐흐"
    ],
    "third": 0.0,
@@ -1122,7 +1183,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "피스",
+    "하핫"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.89,
@@ -1143,7 +1207,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "치잇",
+    "후웃"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.86,
@@ -1191,7 +1258,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "오",
+    "음"
+   ],
    "third": 0.06,
    "share": {
     "polite": 0.96,
@@ -1203,7 +1273,7 @@
   "Guin": {
    "ko": "그윈",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.0,
@@ -1231,7 +1301,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "크흠",
+    "훗"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.89,
@@ -1255,7 +1328,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후후",
+    "흠"
+   ],
    "third": 0.05,
    "share": {
     "casual": 0.91,
@@ -1270,6 +1346,8 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "아핫",
+    "오오",
     "오오"
    ],
    "third": 0.01,
@@ -1287,7 +1365,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후훗",
+    "어머"
+   ],
    "third": 0.01,
    "share": {
     "polite": 0.79,
@@ -1312,7 +1393,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으음",
+    "후우"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.93,
@@ -1331,7 +1415,10 @@
    "style": "hao",
    "addr": "자네",
    "me": null,
-   "interj": [],
+   "interj": [
+    "잉잉",
+    "흐하"
+   ],
    "third": 0.0,
    "share": {
     "hao": 0.65,
@@ -1352,7 +1439,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후후",
+    "으으"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.91,
@@ -1372,7 +1462,10 @@
    "style": "formal",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으윽",
+    "으응"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.2,
@@ -1408,7 +1501,10 @@
    "style": "jubee",
    "addr": "교주",
    "me": "쥬비",
-   "interj": [],
+   "interj": [
+    "애애앵",
+    "푸헤헤"
+   ],
    "third": 0.2,
    "share": {
     "noun": 1.0
@@ -1422,6 +1518,8 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "히익",
+    "흐윽",
     "헤헤",
     "크앙"
    ],
@@ -1447,6 +1545,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "으음",
+    "헤헤",
     "후후"
    ],
    "third": 0.0,
@@ -1458,10 +1558,7 @@
    "skins": {
     "1": {
      "label": "친구따라 지상간다",
-     "n": 10,
-     "interj": [
-      "헤헤"
-     ]
+     "n": 10
     },
     "2": {
      "label": "마음속의 은하수",
@@ -1475,6 +1572,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "히힛",
+    "야호",
     "흐음"
    ],
    "third": 0.0,
@@ -1496,7 +1595,8 @@
    "addr": "교주",
    "me": "코미",
    "interj": [
-    "냥!"
+    "하암",
+    "냥"
    ],
    "third": 0.2,
    "share": {
@@ -1527,6 +1627,8 @@
    "addr": "교주",
    "me": "코미",
    "interj": [
+    "후후",
+    "으으",
     "가르릉"
    ],
    "third": 0.27,
@@ -1552,7 +1654,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "쿠헤헤",
+    "얏호"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.92,
@@ -1608,7 +1713,7 @@
   "Lazy": {
    "ko": "레이지",
    "style": "polite",
-   "addr": "교수님",
+   "addr": "교주님",
    "me": null,
    "interj": [],
    "third": 0.0,
@@ -1626,7 +1731,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "크하하"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.52,
@@ -1684,7 +1791,7 @@
   "LeviGraduate": {
    "ko": "레비(졸업)",
    "style": "polite",
-   "addr": "교주",
+   "addr": "교주님",
    "me": null,
    "interj": [
     "어라"
@@ -1761,7 +1868,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "히힛"
+   ],
    "third": 0.01,
    "share": {
     "casual": 0.33,
@@ -1796,9 +1905,10 @@
   "Makasha": {
    "ko": "마카샤",
    "style": "casual",
-   "addr": "교주",
+   "addr": "긴긴-팔다리",
    "me": null,
    "interj": [
+    "이-히힛",
     "흐음"
    ],
    "third": 0.0,
@@ -1827,7 +1937,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "에헤헷"
+   ],
    "third": 0.02,
    "share": {
     "casual": 0.27,
@@ -1840,18 +1952,18 @@
   "Mayo": {
    "ko": "마요",
    "style": "noun",
-   "addr": "교주",
+   "addr": "수집품",
    "me": null,
    "interj": [
-    "흐응",
-    "흐흐"
+    "후후",
+    "흐응"
    ],
    "third": 0.03,
    "share": {
     "noun": 0.98,
     "casual": 0.02
    },
-   "n": 72,
+   "n": 73,
    "skins": {
     "1": {
      "label": "꿈꾸는 수집가",
@@ -1865,7 +1977,7 @@
   "MayoCool": {
    "ko": "마요(멋짐)",
    "style": "noun",
-   "addr": "교주",
+   "addr": "수집품",
    "me": null,
    "interj": [
     "흐흐"
@@ -2022,6 +2134,7 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "퓨퓨~",
     "후훗",
     "헤헤"
    ],
@@ -2130,7 +2243,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "파팝!",
+    "크헤헷"
+   ],
    "third": 0.03,
    "share": {
     "polite": 0.33,
@@ -2148,6 +2264,8 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "어허",
+    "에헤헤",
     "에헤"
    ],
    "third": 0.0,
@@ -2178,6 +2296,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "으으",
+    "으앗",
     "오오"
    ],
    "third": 0.0,
@@ -2200,9 +2320,12 @@
   "Patula": {
    "ko": "파트라",
    "style": "casual",
-   "addr": "교주님",
+   "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으잇",
+    "엣"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.75,
@@ -2215,9 +2338,12 @@
   "Picora": {
    "ko": "피코라",
    "style": "polite",
-   "addr": "교주님",
+   "addr": "스승님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "흠흠",
+    "우으"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.33,
@@ -2241,7 +2367,6 @@
      "label": "트윙클 스윗 리본",
      "n": 12,
      "interj": [
-      "우으",
       "하아"
      ]
     }
@@ -2252,7 +2377,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "케헤헤",
+    "이야이야"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.85,
@@ -2276,7 +2404,10 @@
    "style": "formal",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으윽",
+    "흠"
+   ],
    "third": 0.02,
    "share": {
     "casual": 0.37,
@@ -2306,6 +2437,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "후후",
+    "에잉",
     "흐음"
    ],
    "third": 0.01,
@@ -2322,10 +2455,7 @@
     },
     "2": {
      "label": "방과 후 밴드 활동",
-     "n": 10,
-     "interj": [
-      "후후"
-     ]
+     "n": 10
     },
     "3": {
      "label": "묘약의 랩실 연구원",
@@ -2365,7 +2495,7 @@
   "RenewaAwaken": {
    "ko": "리뉴아",
    "style": "polite",
-   "addr": "교수님",
+   "addr": "교주님",
    "me": null,
    "interj": [
     "후훗"
@@ -2399,7 +2529,7 @@
    ],
    "third": 0.01,
    "share": {
-    "formal": 0.52,
+    "formal": 0.53,
     "polite": 0.31,
     "casual": 0.1,
     "noun": 0.06
@@ -2414,10 +2544,11 @@
   },
   "Rim": {
    "ko": "림",
-   "style": "casual",
+   "style": "polite",
    "addr": "교주",
    "me": null,
    "interj": [
+    "푸흡",
     "흐음"
    ],
    "third": 0.04,
@@ -2435,8 +2566,7 @@
     },
     "3": {
      "label": "나랑 둘이 나들이",
-     "n": 12,
-     "style": "polite"
+     "n": 12
     }
    }
   },
@@ -2445,7 +2575,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으흐흐"
+   ],
    "third": 0.04,
    "share": {
     "formal": 0.14,
@@ -2548,6 +2680,7 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "울랄라",
     "하하"
    ],
    "third": 0.0,
@@ -2561,6 +2694,29 @@
     "1": {
      "label": "봉봉한 바캉스",
      "n": 10
+    }
+   }
+  },
+  "Ronnie": {
+   "ko": "로니",
+   "style": "formal",
+   "addr": "교주님",
+   "me": null,
+   "interj": [],
+   "third": 0.0,
+   "share": {
+    "hao": 0.06,
+    "polite": 0.16,
+    "formal": 0.38,
+    "casual": 0.31,
+    "noun": 0.09
+   },
+   "n": 48,
+   "skins": {
+    "1": {
+     "label": "석양이 질때 쯤",
+     "n": 12,
+     "style": "casual"
     }
    }
   },
@@ -2617,10 +2773,13 @@
   },
   "Sari": {
    "ko": "사리",
-   "style": "casual",
+   "style": "polite",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "와아",
+    "우후"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.31,
@@ -2635,7 +2794,11 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "아하핫",
+    "우히힛",
+    "흐후후"
+   ],
    "third": 0.04,
    "share": {
     "casual": 0.92,
@@ -2650,7 +2813,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후훗",
+    "아하하"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.94,
@@ -2680,7 +2846,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "히히",
+    "으흐흐"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.94,
@@ -2704,7 +2873,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "히히",
+    "흐흐"
+   ],
    "third": 0.04,
    "share": {
     "casual": 0.85,
@@ -2725,6 +2897,7 @@
    "addr": "교주님",
    "me": null,
    "interj": [
+    "으으",
     "헤헷"
    ],
    "third": 0.0,
@@ -2776,7 +2949,10 @@
    "style": "casual",
    "addr": "교주님",
    "me": "슈팡",
-   "interj": [],
+   "interj": [
+    "으하하",
+    "우히히"
+   ],
    "third": 0.07,
    "share": {
     "casual": 0.9,
@@ -2804,6 +2980,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "으윽",
+    "헤헷",
     "후후"
    ],
    "third": 0.0,
@@ -2828,7 +3006,9 @@
    "style": "haso",
    "addr": "교주님",
    "me": "소녀",
-   "interj": [],
+   "interj": [
+    "오호호"
+   ],
    "third": 0.0,
    "share": {
     "haso": 0.82,
@@ -2849,12 +3029,15 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "헤헤",
+    "아이고"
+   ],
    "third": 0.0,
    "share": {
-    "polite": 0.55,
-    "formal": 0.16,
-    "casual": 0.21,
+    "polite": 0.54,
+    "formal": 0.17,
+    "casual": 0.2,
     "noun": 0.05,
     "haso": 0.02,
     "hao": 0.02
@@ -2867,7 +3050,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으음",
+    "후후"
+   ],
    "third": 0.0,
    "share": {
     "hao": 0.04,
@@ -2880,10 +3066,7 @@
    "skins": {
     "1": {
      "label": "이국의 전통 체험",
-     "n": 12,
-     "interj": [
-      "후후"
-     ]
+     "n": 12
     }
    }
   },
@@ -2898,10 +3081,10 @@
    ],
    "third": 0.0,
    "share": {
-    "casual": 0.65,
-    "formal": 0.22,
+    "casual": 0.64,
+    "formal": 0.23,
     "polite": 0.04,
-    "noun": 0.07,
+    "noun": 0.06,
     "hao": 0.02
    },
    "n": 72,
@@ -2918,9 +3101,12 @@
   "Sparrot": {
    "ko": "스패럿",
    "style": "casual",
-   "addr": "교주",
+   "addr": "교장",
    "me": "이 몸",
    "interj": [
+    "요호호",
+    "야아알",
+    "큭큭",
     "후후"
    ],
    "third": 0.05,
@@ -2942,6 +3128,8 @@
    "addr": "교주님",
    "me": "스피키",
    "interj": [
+    "흐에엥",
+    "으으",
     "헤헤"
    ],
    "third": 0.17,
@@ -2967,7 +3155,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": "스피키",
-   "interj": [],
+   "interj": [
+    "헤헷",
+    "으으"
+   ],
    "third": 0.1,
    "share": {
     "casual": 0.08,
@@ -2979,17 +3170,11 @@
    "skins": {
     "1": {
      "label": "부스스한 아침",
-     "n": 11,
-     "interj": [
-      "헤헷"
-     ]
+     "n": 11
     },
     "2": {
      "label": "꼬끼옷 메이드",
-     "n": 11,
-     "interj": [
-      "헤헷"
-     ]
+     "n": 11
     }
    }
   },
@@ -2998,7 +3183,9 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으음"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.39,
@@ -3055,12 +3242,15 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "에휴",
+    "으으"
+   ],
    "third": 0.0,
    "share": {
-    "casual": 0.46,
-    "polite": 0.46,
-    "formal": 0.06,
+    "casual": 0.42,
+    "polite": 0.44,
+    "formal": 0.11,
     "noun": 0.03
    },
    "n": 44,
@@ -3071,7 +3261,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "크핫",
+    "흐흐"
+   ],
    "third": 0.06,
    "share": {
     "casual": 0.91,
@@ -3096,6 +3289,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "흐하하",
+    "크윽",
     "헤헤"
    ],
    "third": 0.04,
@@ -3123,7 +3318,10 @@
    "style": "casual",
    "addr": "교주",
    "me": "우이",
-   "interj": [],
+   "interj": [
+    "히히",
+    "헤헤"
+   ],
    "third": 0.13,
    "share": {
     "casual": 0.94,
@@ -3137,10 +3335,7 @@
     },
     "2": {
      "label": "개운한 행복",
-     "n": 12,
-     "interj": [
-      "히히"
-     ]
+     "n": 12
     },
     "3": {
      "label": "행복한 어린 왕녀",
@@ -3151,10 +3346,7 @@
     },
     "4": {
      "label": "맑은 기도의 빗방울",
-     "n": 15,
-     "interj": [
-      "헤헤"
-     ]
+     "n": 15
     },
     "5": {
      "label": "빛바랜 기억",
@@ -3167,7 +3359,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "스하핫",
+    "으음"
+   ],
    "third": 0.01,
    "share": {
     "polite": 0.52,
@@ -3200,6 +3395,8 @@
    "addr": "교주",
    "me": null,
    "interj": [
+    "히힛",
+    "아하하",
     "후후"
    ],
    "third": 0.0,
@@ -3228,7 +3425,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "흠",
+    "캬하"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.93,
@@ -3247,7 +3447,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "이히히",
+    "에헤헤"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.96,
@@ -3261,7 +3464,10 @@
    "style": "vivi",
    "addr": "교주님",
    "me": "소녀",
-   "interj": [],
+   "interj": [
+    "오호호",
+    "엣취"
+   ],
    "third": 0.03,
    "share": {
     "vivi": 0.77,
@@ -3297,7 +3503,10 @@
    "style": "polite",
    "addr": "교주님",
    "me": null,
-   "interj": [],
+   "interj": [
+    "후훗",
+    "으음"
+   ],
    "third": 0.0,
    "share": {
     "polite": 0.7,
@@ -3323,7 +3532,10 @@
    "style": "casual",
    "addr": "교주",
    "me": null,
-   "interj": [],
+   "interj": [
+    "으이익",
+    "핫"
+   ],
    "third": 0.0,
    "share": {
     "casual": 0.97,
@@ -3335,9 +3547,11 @@
   "Yumimi": {
    "ko": "유미미",
    "style": "casual",
-   "addr": "교주님",
+   "addr": "교주",
    "me": null,
    "interj": [
+    "캬",
+    "으음",
     "후후"
    ],
    "third": 0.0,
@@ -3348,6 +3562,95 @@
    },
    "n": 46,
    "skins": {}
+  },
+  "xXionx": {
+   "ko": "시온 더 다크불릿",
+   "style": "casual",
+   "addr": "교주",
+   "me": null,
+   "interj": [
+    "후후"
+   ],
+   "third": 0.01,
+   "share": {
+    "casual": 0.84,
+    "noun": 0.06,
+    "polite": 0.06,
+    "royal": 0.02,
+    "formal": 0.02
+   },
+   "n": 104,
+   "skins": {
+    "1": {
+     "label": "다크 버니",
+     "n": 11
+    },
+    "2": {
+     "label": "어둠의 알바생",
+     "n": 11
+    },
+    "3": {
+     "label": "다크 넷 거너",
+     "n": 11
+    },
+    "4": {
+     "label": "다크스타 ★ 버스트",
+     "n": 14,
+     "interj": [
+      "헤헤"
+     ]
+    },
+    "5": {
+     "label": "어비스 워커 오버로드",
+     "n": 11,
+     "interj": [
+      "후훗"
+     ]
+    }
+   }
+  },
+  "EisiaFridge": {
+   "ko": "냉장고",
+   "style": "polite",
+   "addr": "교주님",
+   "me": null,
+   "interj": [
+    "삐빗",
+    "삐삣"
+   ],
+   "third": 0.0,
+   "share": {
+    "polite": 1.0
+   },
+   "n": 0,
+   "skins": {}
+  },
+  "Renewa_alba": {
+   "ko": "리뉴아(알바)",
+   "style": "polite",
+   "addr": "교주님",
+   "me": null,
+   "interj": [
+    "후훗"
+   ],
+   "third": 0.03,
+   "share": {
+    "polite": 0.58,
+    "formal": 0.21,
+    "casual": 0.16,
+    "noun": 0.04
+   },
+   "n": 97,
+   "skins": {
+    "1": {
+     "label": "여신 강림",
+     "n": 10
+    },
+    "2": {
+     "label": "여유로운 시간",
+     "n": 10
+    }
+   }
   }
  }
 }
