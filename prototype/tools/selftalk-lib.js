@@ -134,18 +134,23 @@ function reasons(line, p, seen, corpus) {
   if (SCREEN.test(t)) out.push("화면 내용을 아는 척");
   if (!MOODS.includes(line.m)) out.push("감정 태그 이상");
   if (/[,，]\s*$/.test(t)) out.push("쉼표로 끝남");
-  const sents = t.split(/(?<=[.!?~])s+/).map(x => x.trim()).filter(Boolean);
-  if (sents.length > 2) out.push("두 문장 초과");
+  const sents = t.split(/(?<=[.!?~])\s+/).map(x => x.trim()).filter(Boolean);
+  // 감탄사·의성어("어?" "우와!" "찰칵!" "흐음.")는 문장으로 세지 않는다 — 띄어쓰기 없는 세 글자 이하.
+  // 이걸 문장으로 세면 "우와! 정말요? 저는 몰랐어요!" 가 세 문장이 되고, 감탄사에 말투 판정까지 붙는다.
+  const isInterj = (x) => !/\s/.test(x) && x.replace(/[^가-힣]/g, "").length <= 3;
+  const said = sents.filter(x => !isInterj(x));
+  const body = said.length ? said : sents;   // 감탄사뿐인 줄이면 그것이라도 본다
+  if (body.length > 2) out.push("두 문장 초과");
   // 문장마다 다 그 말투여야 한다 — 한 문장만 맞으면 뒤에 딴 말투를 붙여도 통과해 버린다
   if (SILENT.has(p.key)) { if (!GESTURE.test(t)) out.push("소리+(몸짓) 꼴이 아님"); } else {
   const allow = allowedStyles(p.key, p.style);
-  const got = sents.map(x => { const m = matches(x, p.style); return m.got ? SAMEOF(m.got) : null; });
+  const got = body.map(x => { const m = matches(x, p.style); return m.got ? SAMEOF(m.got) : null; });
   const outside = got.find(g => g && !allow.has(g));
   if (outside) out.push(`말투(${[...allow].join('/')} 아님 → ${outside})`);
   else if (got.every(g => !g)) out.push(`말투(판정불가)`);
   else if (SIGNATURE.has(SAMEOF(p.style)) && !got.includes(SAMEOF(p.style))) out.push(`말버릇 말투(${p.style})가 한 문장도 없음`);
   }
-  for (const x of sents) { const w = brokenWhy(x); if (w) { out.push(w); break; } }
+  for (const x of body) { const w = brokenWhy(x); if (w) { out.push(w); break; } }
   const nm = wrongName(t, p); if (nm) out.push(nm);
   const ad = wrongAddr(t, p); if (ad) out.push(ad);
   const n = t.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, "");
