@@ -25,11 +25,14 @@
   filter.addEventListener("input", renderSkins);
 
   let newsItems = [];
+  // 제목·작성자·오류 문자열은 유튜브와 라운지에서 온 값이다. 쿠폰 게시판처럼 아무나 글을 쓰는 곳도 있고,
+  // news.js 의 unesc 가 &lt; 를 < 로 되돌려 놓으므로 문자열로 HTML 을 조립하면 그대로 태그가 된다.
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
   const fmtDate = (d) => { const t = new Date(d); return isNaN(t) ? "" : `${t.getMonth() + 1}/${t.getDate()}`; };
   async function loadNews() {
     const r = await host.newsList(); newsItems = r.items || [];
     document.getElementById("news-state").textContent = r.unread ? `${r.unread}개 ▸` : "▸";
-    document.getElementById("sub-news").innerHTML = `<div class="item" data-act="news-check">지금 확인하기</div><div class="item" data-act="news-show">크레페한테 다시 듣기</div>` + (newsItems.length ? `<div class="group">최근 소식 (${newsItems.length})</div>` + newsItems.slice(0, 12).map(i => `<div class="item" data-news="${i.id}" title="${i.title}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${i.read ? "opacity:.6" : "font-weight:700"}">[${i.label}] ${i.title}</span><span style="color:#9a9aa8;flex:none;margin-left:6px">${fmtDate(i.date)}</span></div>`).join("") : `<div class="group">아직 새 소식 없음 (${r.status?.lastCheck ? "마지막 확인 " + new Date(r.status.lastCheck).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "확인 전"})</div>`) + (r.status?.lastError ? `<div class="group" style="color:#ff8a8a">${r.status.lastError}</div>` : "");
+    document.getElementById("sub-news").innerHTML = `<div class="item" data-act="news-check">지금 확인하기</div><div class="item" data-act="news-show">크레페한테 다시 듣기</div>` + (newsItems.length ? `<div class="group">최근 소식 (${newsItems.length})</div>` + newsItems.slice(0, 12).map(i => `<div class="item" data-news="${esc(i.id)}" title="${esc(i.title)}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${i.read ? "opacity:.6" : "font-weight:700"}">[${esc(i.label)}] ${esc(i.title)}</span><span style="color:#9a9aa8;flex:none;margin-left:6px">${fmtDate(i.date)}</span></div>`).join("") : `<div class="group">아직 새 소식 없음 (${r.status?.lastCheck ? "마지막 확인 " + new Date(r.status.lastCheck).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "확인 전"})</div>`) + (r.status?.lastError ? `<div class="group" style="color:#ff8a8a">${esc(r.status.lastError)}</div>` : "");
   }
   function render() {
     document.getElementById("menu-title").textContent = KO.skinName(S.skin, { withSkin: false });

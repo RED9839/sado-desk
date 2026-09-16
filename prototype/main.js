@@ -86,6 +86,8 @@ function loadSettings() {
   }
   s.global = deepMerge(GLOBAL_DEFAULTS, s.global || {});
   s.characters = (s.characters.length ? s.characters : [{ id: "c1" }]).map((c, i) => deepMerge({ ...CHAR_DEFAULTS, id: c.id || `c${i + 1}` }, c));
+  // talk 이 GLOBAL_KEYS 에 없던 판(v0.12.8~v0.13.2)에서는 말하기 설정이 캐릭터 밑으로 저장되고 아무도 읽지 않았다. 끌어올린다
+  for (const c of s.characters) { if (c.talk && typeof c.talk === "object") s.global.talk = deepMerge(s.global.talk, c.talk); delete c.talk; }
   for (const c of s.characters) if (["standing", "hybrid"].includes(c.mode)) c.mode = "sd"; // 옛 모드 이름 → sd ("ingame"은 v0.9.12부터 정식 형태라 그대로)
   return s;
 }
@@ -99,7 +101,7 @@ const charOf = (id) => settings.characters.find(c => c.id === id);
 // 렌더러용 뷰: 캐릭터 설정 + global(sound, display)
 const viewsAll = () => settings.characters.map(c => viewFor(c.id));
 const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, ai: { screen: !!(settings.global.ai && settings.global.ai.screen) }, count: settings.characters.length, unread: news ? news.unread : 0 }; };
-const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai"]);
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말·잡담). 렌더러(settings.js)와 같은 목록이어야 한다
 // patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각
 function updateSettings(patch, id, sourceId) {
   const prevDisp = JSON.stringify(settings.global.display);
@@ -982,6 +984,20 @@ function startMascot() {
   const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = geo.x + r.x + r.w / 2, cy = geo.y + r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
   try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
 }
+// 창은 전부 loadFile 로 우리 파일만 띄운다. 그래도 렌더러에서 한 줄이 새 나가면(원격 제목이 그대로 태그가 되는 식)
+// preload 를 그대로 물려받은 채 남의 페이지로 넘어갈 수 있다. 나갈 길을 아예 막고 바깥 주소는 기본 브라우저로 보낸다.
+app.on("web-contents-created", (_e, wc) => {
+  wc.on("will-navigate", (e, url) => {
+    if (url.startsWith("file://")) return;
+    e.preventDefault();
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+  });
+  wc.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: "deny" };
+  });
+  wc.on("will-attach-webview", (e) => e.preventDefault());
+});
 app.whenReady().then(() => {
   geo = geometry();
   if (hasAssets(ASSET_ROOT)) { buildTray(); startMascot(); }

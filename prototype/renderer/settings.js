@@ -157,11 +157,15 @@
   });
 
   // ---- 알림 탭 ----
+  // 제목·주소는 유튜브와 라운지에서 온 값이다. 쿠폰 게시판처럼 아무나 글을 쓰는 곳도 있고,
+  // news.js 의 unesc 가 &lt; 를 < 로 되돌려 놓으므로 문자열로 HTML 을 조립하면 그대로 태그가 된다.
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
+  const safeUrl = (u) => (/^https?:\/\//i.test(String(u || "")) ? String(u) : "");
   async function renderNews() {
     const r = await host.newsList();
     const st = r.status || {};
     document.getElementById("news-status").textContent = `${st.lastCheck ? "마지막 확인 " + new Date(st.lastCheck).toLocaleString("ko-KR") : "아직 확인 안 함"}${st.lastError ? " · 오류: " + st.lastError : ""} · 안 읽음 ${r.unread}`;
-    document.getElementById("news-list").innerHTML = r.items.length ? r.items.slice(0, 20).map(i => `<div style="padding:3px 0;${i.read ? "" : "font-weight:700;color:var(--text)"}"><a href="#" data-url="${i.url}" data-id="${i.id}" style="color:inherit;text-decoration:none">[${i.label}] ${i.title}</a> <span style="color:var(--muted);font-size:11px">${i.date ? new Date(i.date).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span></div>`).join("") : "아직 새 소식이 없어요. 처음 켠 시점 이후 올라오는 글부터 알립니다.";
+    document.getElementById("news-list").innerHTML = r.items.length ? r.items.slice(0, 20).map(i => `<div style="padding:3px 0;${i.read ? "" : "font-weight:700;color:var(--text)"}"><a href="#" data-url="${esc(safeUrl(i.url))}" data-id="${esc(i.id)}" style="color:inherit;text-decoration:none">[${esc(i.label)}] ${esc(i.title)}</a> <span style="color:var(--muted);font-size:11px">${i.date ? new Date(i.date).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span></div>`).join("") : "아직 새 소식이 없어요. 처음 켠 시점 이후 올라오는 글부터 알립니다.";
   }
   document.getElementById("news-list").addEventListener("click", (e) => { const a = e.target.closest("[data-url]"); if (!a) return; e.preventDefault(); host.openUrl(a.dataset.url, a.dataset.id); setTimeout(renderNews, 300); });
   // ---- AI 대화 탭 ----
