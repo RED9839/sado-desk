@@ -18,7 +18,7 @@ const META = [
   [/(게임 속|게임 안|게임에서|이 게임|과금|가챠|뽑기|결제|플레이어|유저)/, "게임 취급"],
   [/(설정상|캐릭터로서|제작진|개발자|데이터베이스|학습)/, "설정 언급"],
 ];
-const DENY = /(아니|모르|뭔 소리|뭔지|뭐야|무슨 말|무슨 소리|처음 듣|처음 들어|처음 보|들어본 적|글쎄|낯설|어색|그게 뭐|알아듣)/;
+const DENY = /(아니|모르|뭔 소리|뭔지|뭐야|무슨 말|무슨 소리|무슨 뜻|처음 듣|처음 들어|처음 보|들어본 적|글쎄|낯설|어색|그게 뭐|알아듣|외계어|암호 같)/;
 const CODE = /```|^\s*(def|for|if|while|return|print|elif|else|class|import)\b/m;
 const MD = /(\*\*|^#{1,6} |^\s*[-*] |\|\s*-{2,})/m;
 
@@ -37,9 +37,9 @@ for (const r of chat) {
   if (c) { endN++; if (c === r.style) endHit++; }
   for (const [rx, label] of META) {
     if (rx.test(r.a)) {
-      // 같은 문장 안에서 부정하면(=아니라고 하면) 통과
-      const sent = r.a.split(/(?<=[.!?~…])\s*/).find(s => rx.test(s)) || r.a;
-      if (!DENY.test(sent)) { metaN++; if (metaEx.length < 12) metaEx.push(`${r.ko} [${r.tag}] ${label}: ${sent.trim().slice(0, 56)}`); break; }
+
+      // 답 어디에도 부정·되묻기가 없을 때만 잘못이라고 본다("과금?" 처럼 되묻고 넘기는 답을 실패로 세던 버릇)
+      if (!DENY.test(r.a)) { metaN++; if (metaEx.length < 12) metaEx.push(`${r.ko} [${r.tag}] ${label}: ${r.a.trim().slice(0, 56)}`); break; }
     }
   }
   if (CODE.test(r.a)) { codeN++; if (codeEx.length < 5) codeEx.push(`${r.ko} [${r.tag}] ${r.a.slice(0, 60).replace(/\n/g, " ⏎ ")}`); }
@@ -60,7 +60,7 @@ out.push(`## 여러 턴 대화 — ${chat.length}건 (사도 ${new Set(chat.map(
 out.push("### 질문 종류별 메타 발언");
 for (const [tag, rs] of Object.entries(byTag)) {
   let n = 0;
-  for (const r of rs) for (const [rx] of META) { const sent = r.a.split(/(?<=[.!?~…])\s*/).find(s => rx.test(s)) || r.a; if (rx.test(r.a) && !DENY.test(sent)) { n++; break; } }
+  for (const r of rs) if (META.some(([rx]) => rx.test(r.a)) && !DENY.test(r.a)) n++;
   out.push(`  ${tag.padEnd(10)} ${pctl(n, rs.length)}`);
 }
 out.push("", "### 메타 발언 예", ...metaEx.map(x => "  " + x));
