@@ -27,7 +27,7 @@ function put(h, text) {
   const seen = had.map(x => x.t);
   const kept = [], dropped = [];
   for (const line of parsed) {
-    const rs = B.reasons(line, p, [...seen, ...kept.map(x => x.t)], corpus);
+    const rs = B.reasons(line, p, [...seen, ...kept.map(x => x.t)], corpus, { solo: true });
     if (rs.length && !force) { dropped.push([line.t, rs.join(", ")]); continue; }
     if (rs.length) dropped.push([line.t, rs.join(", ") + " (그래도 넣음)"]);
     kept.push(line);

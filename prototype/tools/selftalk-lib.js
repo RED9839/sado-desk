@@ -60,7 +60,9 @@ function profile(h) {
   return p;
 }
 function normalize(s) {
-  return String(s || "").replace(/^[-*\d.)\s]+/, "").replace(/^[가-힣A-Za-z]{1,8}\s*[:：]\s*/, "")
+  // 목록 번호("1. ", "- ")만 떼야 한다. 예전 규칙은 [-*\d.)\s]+ 라서
+  // "2인자 자리는…" 의 2, "210호가…" 의 210 처럼 문장 첫 숫자를 통째로 먹었다.
+  return String(s || "").replace(/^[-*\s]*\d+[.)]\s+|^[-*·•]\s+/, "").replace(/^[가-힣A-Za-z]{1,8}\s*[:：]\s*/, "")
     .replace(/^["'“”]|["'“”]$/g, "").trim();
 }
 function parse(text) {
@@ -124,8 +126,15 @@ function wrongName(t, p) {
   }
   return null;
 }
-function reasons(line, p, seen, corpus) {
+// 혼잣말에서만 막는 것 — 듣는 사람이 없는데 말을 거는 꼴.
+// 잡담·짝 대사는 앞에 상대가 있으므로 이 검사를 쓰지 않는다(opts.solo 로 켠다).
+const YOU = /(^|[^가-힣])(너|넌|널|네가|네놈|너희|당신|그대|자네|너도|너를|너한테|네게)([^가-힣]|$)/;
+const ASK = /(주세요|주십시오|주시죠|보실래요|보시죠|해 보세요|말씀해|드릴까요|봐 주|알려 주|들어 보|와 주|해 주실|하시죠)/;
+function reasons(line, p, seen, corpus, opts) {
+  const solo = opts && opts.solo;
   const t = line.t, out = [];
+  if (solo && YOU.test(t)) out.push("혼잣말인데 상대를 지목함");
+  if (solo && ASK.test(t)) out.push("혼잣말인데 상대에게 청함");
   if (t.length < 7) out.push("너무 짧음");   // 실제 대사의 최소가 8자다. 7자 미만은 "히힛." "후후." 같은 감탄사뿐이라 사도를 가리지 못한다
   // (짧은 줄의 원문 대조는 아래에서 통째로 맞춰 본다 — 정규화 4~8자면 포함 검사가 제대로 걸러진다)
   if (t.length > 70) out.push("너무 김");
