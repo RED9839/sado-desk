@@ -191,7 +191,7 @@
   function renderAbout() {
     const voices = Object.values(voiceIndex).reduce((n, h) => n + Object.values(h).reduce((m, sk) => m + Object.values(sk).reduce((q, l) => q + l.length, 0), 0), 0);
     const guessedN = (KO.names.guessed || []).length;
-    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["애니메이션 런타임", `spine-ts ${spineVersion()}`], ["캐릭터(스킨)", `${catalog.skins.length}개`], ["애니메이션", `${catalog.animations.length}개`], ["보이스", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["에셋 폴더", `<code>${catalog.assetRoot}</code>`]];
+    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["애니메이션 런타임", `spine-ts ${spineVersion()}`], ["사도(스킨)", `${catalog.skins.length}개`], ["애니메이션", `${catalog.animations.length}개`], ["보이스", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["에셋 폴더", `<code>${catalog.assetRoot}</code>`]];
     document.getElementById("about-kv").innerHTML = kv.map(([k, v]) => `<div class="k">${k}</div><div>${v}</div>`).join("");
   }
   const spineVersion = () => "4.1.56";
