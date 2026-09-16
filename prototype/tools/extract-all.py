@@ -14,8 +14,11 @@ from concurrent.futures import ProcessPoolExecutor
 
 PKG = "com.epidgames.trickcalrevive"
 BASE = f"/sdcard/Android/data/{PKG}/files/Packages"
-# 로비(SD·미니미) 대사 + 전투(인게임 형태) 대사. 나머지(affinity/growth/gacha/story _selective_ …)는 받지 않음
-LOBBY_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise", "eat", "greeting", "spawn", "line", "ticklestart", "tickleduring", "dutchrubend")
+# 로비(SD·미니미) 대사 + 전투(인게임 형태) 대사. 스토리(_selective_)와 상황 한정(growth/gacha/levelup/equipment/board…)은 받지 않음
+# 혼잣말 재료: line 은 사도당 3개뿐이라 금세 반복된다. 말이 담긴 로비 카테고리를 더 받아 사도당 28개쯤으로 늘린다
+#   affinity 호감도 대사(9) · callplayer 플레이어 호출(5) · hmm 고민(3) · yes 긍정(3) · no 부정(3) · trickcal 외침(2)
+LOBBY_CATS = ("touch", "joy", "pleasure", "anger", "sorrow", "sorry", "surprise", "eat", "greeting", "spawn", "line", "ticklestart", "tickleduring", "dutchrubend",
+              "affinity", "callplayer", "hmm", "yes", "no", "trickcal")
 BATTLE_CATS = ("shout", "hit", "ultimate", "spskill", "basicattack", "powerattack", "victory", "defeat", "die")
 VOICE_CATS = LOBBY_CATS + BATTLE_CATS
 ENV = dict(os.environ); ENV["MSYS_NO_PATHCONV"] = "1"

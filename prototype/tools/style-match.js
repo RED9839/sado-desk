@@ -16,6 +16,9 @@ const ENDS = [
 ];
 // crepe 는 해요체라 polite 로 본다(STYLE_DESC 도 그렇게 적혀 있다)
 const SAME = { crepe: "polite", robot: "noun" }; // crepe 는 해요체, 보고체는 명사형이 본체다
+// 말투별로 좁은 규칙이 놓치는 꼴 — 그 사도의 말투일 때만 본다
+const EXTRA = { hao: /(소|세|게|오|다네|ㄹ세|구려)[!?.~…⋯]*$/, haso: /(옵니다|옵고|옵소서|나이다|사옵)[!?.~…⋯]*$/ };
+const strip = s => String(s || "").replace(LAUGH, "").replace(VOC, "").trim();
 function classify(s) {
   const c = String(s || "").replace(/[\s.!?~…⋯'"]+$/, "");
   for (const [n, rx] of ENDS) if (rx.test(c)) return n;
@@ -23,13 +26,17 @@ function classify(s) {
 }
 // 문장 끝에 붙는 호칭("안녕하세요, 교주님!")은 떼고 봐야 어미가 보인다
 const VOC = /[,，]?\s*(교주님|교주|빵주|주인님|주인|마스터|사장님|선생님|손님|대장|촌장님|언니|누나|형|오빠|친구|그대|당신|자기)\s*$/;
+// 웃음·감탄이 문장 끝에 붙는 사도가 많다. 이것도 떼고 봐야 어미가 보인다
+const LAUGH = /[,，]?\s*(에헤+|헤헤+|헤헷|후후+|오~?호호+|크크+|흐흐+|하하+|히히+|히힛|푸헤헤|으흐흐|뀨+|삐빅|흥|칫|아하|우와|야호|하앗|이얍|닌닌)[~!?.…⋯]*\s*$/;
 /** 뒤에서부터 문장을 훑어 어미가 가려지는 첫 문장으로 판단한다 */
 function matches(answer, style) {
   const sents = String(answer || "").split(/[\n.!?~…⋯]/).map(x => x.trim()).filter(Boolean);
   let got = null;
-  for (let i = sents.length - 1; i >= 0 && !got; i--) got = classify(sents[i]) || classify(sents[i].replace(VOC, ""));
-  if (!got) return { got: null, ok: null };           // 가릴 수 없는 끝맺음 — 세지 않는다
+  for (let i = sents.length - 1; i >= 0 && !got; i--) got = classify(sents[i]) || classify(strip(sents[i]));
   const want = SAME[style] || style;
+  // 좁은 규칙이 못 잡는 꼴은 그 사도의 말투일 때만 너그럽게 본다(잉클: 없소·걸세·말게)
+  if (got !== want && EXTRA[want] && sents.some(s => EXTRA[want].test(strip(s)))) got = want;
+  if (!got) return { got: null, ok: null };           // 가릴 수 없는 끝맺음 — 세지 않는다
   return { got, ok: got === want };
 }
 /** 답 안에서 그 사도 말투가 한 번이라도 나왔는가 — 말풍선에서 사람이 느끼는 것은 이쪽이다 */
@@ -37,7 +44,7 @@ function matchesAny(answer, style) {
   const sents = String(answer || "").split(/[\n.!?~…⋯]/).map(x => x.trim()).filter(Boolean);
   const want = SAME[style] || style;
   const got = [];
-  for (const s of sents) { const c = classify(s) || classify(s.replace(VOC, "")); if (c) got.push(SAME[c] || c); }
+  for (const s of sents) { const c = classify(s) || classify(strip(s)) || (EXTRA[want] && EXTRA[want].test(strip(s)) ? want : null); if (c) got.push(SAME[c] || c); }
   if (!got.length) return { got: [], ok: null };
   return { got, ok: got.includes(want) };
 }
