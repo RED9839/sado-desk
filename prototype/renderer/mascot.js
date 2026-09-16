@@ -320,11 +320,8 @@
       const a = new Audio(src); a.volume = v; a.play().catch(() => {});
       if (cat === "voice") currentVoice = a;
     }
-    // 교감 대사(볼 당기기 touch1_x · 쓰다듬기 touch2_x)는 게임처럼 친밀 단계 하나만: touch1 = 1단계(<10), touch1_1 = 2단계(≥10), touch1_2 = 3단계(≥20). S.affinity 0이면 섞기, 그 단계 파일이 없으면(크레페는 1개뿐) 전부
-    const STAGE_RE = [null, /touch[12](_skin\d+)?\.ogg$/, /touch[12]_1(_skin\d+)?\.ogg$/, /touch[12]_2(_skin\d+)?\.ogg$/];
-    function byStage(c, list) { const st = S.affinity | 0; if ((c !== "cheek" && c !== "pat") || !STAGE_RE[st]) return list; const l = list.filter(f => STAGE_RE[st].test(f)); return l.length ? l : list; }
     function playVoice(...cats) {
-      for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(byStage(c, list)); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
+      for (const c of cats) { const list = voiceSet.cats[c]; if (list && list.length) { const f = pick(list); playSound("voice", f, `file:///${cfg.assetRoot}/voice/${f}`); return f; } }
       return null;
     }
     const playSfx = (name, gain = 1) => playSound("sfx", name, clips.sfx[name], gain);
@@ -968,8 +965,6 @@
           say(`zones(opal, 큰 모자 hatRatio≈8): u=${g2.u.toFixed(0)} topAboveEye=${(g2.top - g2.eyeY).toFixed(0)}px zone(eye)=${zoneAt(hx2, eyeS)} zone(eye+1.5u 머리)=${zoneAt(hx2, eyeS - 1.5 * g2.u)} zone(top-20 모자)=${zoneAt(hx2, topS + 20)} (expect cheek / head / head — 예전 방식이면 얼굴이 모자 중간까지 올라갔음)`); }
         patchSettings({ skin: "Mini_ErpinSkin1" }); await sleep(2500);
         say(`voice split: cheek=${voiceSet.cats.cheek?.length} pat=${voiceSet.cats.pat?.length} touch=${voiceSet.cats.touch?.length} (expect 3/3/6 for erpin skin1 view)`);
-        { const stages = [1, 2, 3, 0].map(st => { patchSettings({ affinity: st }); const seen = new Set(); for (let i = 0; i < 12; i++) { const f = pick(byStage("cheek", voiceSet.cats.cheek)); seen.add(f.replace(/^.*\//, "")); } return `${st}:${[...seen].sort().join("|")}`; });
-          say(`affinity stages: ${stages.join("  ")} (expect 1:touch1_skin1 2:touch1_1_skin1 3:touch1_2_skin1 0:all three)`); patchSettings({ affinity: 3 }); }
       }
       m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); say(`sd move slot=${active === mini ? "minimi" : active.family} state=${m.state} anim=${m.anim} (expect minimi Idle2_1)`); await sleep(400); S.behavior.hopChance = 45;
       patchSettings({ skin: "Mini_Dummy" }); await sleep(800);

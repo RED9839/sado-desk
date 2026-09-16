@@ -37,7 +37,6 @@ const CHAR_DEFAULTS = {
   skin: "Mini_Crepe",
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
-  affinity: 3,         // 교감 대사 친밀 단계: 1(<10) | 2(≥10) | 3(≥20) | 0 = 세 단계 섞기. 볼 당기기(touch1_x)·쓰다듬기(touch2_x) 대사가 게임처럼 단계별로 고정됨
   scale: 0.5, opacity: 1,
   behavior: {
     hop: true, jump: true, idleActs: true,
@@ -249,7 +248,7 @@ function destroyInstance(id) {
 function addCharacter(from) {
   const src = charOf(from) || settings.characters[0];
   let n = settings.characters.length + 1; while (charOf(`c${n}`)) n++;
-  const c = deepMerge({ ...CHAR_DEFAULTS, id: `c${n}` }, { skin: src.skin, mode: src.mode, scale: src.scale, opacity: src.opacity, behavior: src.behavior, affinity: src.affinity });
+  const c = deepMerge({ ...CHAR_DEFAULTS, id: `c${n}` }, { skin: src.skin, mode: src.mode, scale: src.scale, opacity: src.opacity, behavior: src.behavior });
   settings.characters.push(c); saveSettings(); createInstance(c.id); broadcast(); return c.id; // 마스코트 창은 settings 브로드캐스트로 새 캐릭터를 만든다
 }
 function removeCharacter(id) {
