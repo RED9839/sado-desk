@@ -27,3 +27,4 @@ prototype/tools/extract-ingame.py
 prototype/tools/theater-ocr.py
 prototype/tools/theater-names.py
 prototype/tools/theater-digest.py
+prototype/tools/theater-style.py
