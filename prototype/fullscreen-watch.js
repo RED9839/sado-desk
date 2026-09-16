@@ -66,7 +66,10 @@ function createFullscreenWatcher({ screen, ownPid, onChange, log = () => {} }) {
   function start() {
     if (stopped) return;
     try {
-      proc = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS.replace("__PARENT__", String(ownPid))], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      proc = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", PS.replace("__PARENT__", String(ownPid))],
+        // 작업 폴더를 앱 폴더에 두면 이 프로세스가 살아 있는 동안 설치 폴더가 잠긴다 — 앱을 끄고 곧바로
+        // 새 판을 설치하면 구판 제거 단계가 폴더를 못 지워 설치기가 멈춘다. 임시 폴더에서 돌린다
+        { windowsHide: true, stdio: ["ignore", "pipe", "pipe"], cwd: require("node:os").tmpdir() });
     } catch (e) { log("fullscreen watch spawn fail", e.message); return; }
     let buf = "";
     proc.stdout.on("data", (d) => {
