@@ -23,14 +23,23 @@ pth = os.path.join(out, f"python{short}._pth")
 open(pth, "w", encoding="utf-8").write(f"python{short}.zip\n.\nLib\\site-packages\nimport site\n")
 site = os.path.join(out, "Lib", "site-packages"); os.makedirs(site, exist_ok=True)
 
-pkgs = ["UnityPy", "Pillow", "texture2ddecoder"]
-print("install wheels for", ver)
-r = subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "--target", site, "--only-binary=:all:", "--python-version", short[0] + "." + short[1:], "--platform", "win_amd64", "--implementation", "cp", *pkgs], capture_output=True, text=True)
+REQ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pyruntime-requirements.txt")
+print("install wheels for", ver, "from", REQ)
+r = subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "--target", site, "--only-binary=:all:", "--python-version", short[0] + "." + short[1:], "--platform", "win_amd64", "--implementation", "cp", "-r", REQ], capture_output=True, text=True)
 print(r.stdout[-2000:], r.stderr[-3000:])
 if r.returncode != 0: sys.exit(r.returncode)
-# 검증
-chk = subprocess.run([os.path.join(out, "python.exe"), "-c", "import UnityPy, PIL, texture2ddecoder; print('ok', UnityPy.__version__)"], capture_output=True, text=True)
+# 검증 — 여기서 결과를 버리면 임포트가 안 되는 런타임이 그대로 설치 파일에 들어간다.
+# 그러면 모든 사용자에게서 추출이 100% 실패하는데, 앱은 "완료"라고 말한다.
+chk = subprocess.run([os.path.join(out, "python.exe"), "-c",
+    "import UnityPy, PIL, texture2ddecoder;"
+    "from UnityPy import load;"
+    "print('ok', UnityPy.__version__, PIL.__version__)"], capture_output=True, text=True)
 print(chk.stdout, chk.stderr[-1500:])
+if chk.returncode != 0:
+    sys.exit("pyruntime 검증 실패 — 임베디드 파이썬에서 임포트가 안 됩니다:\n" + chk.stderr[-2000:])
+if not chk.stdout.startswith("ok 1."):
+    sys.exit(f"UnityPy 가 1.x 가 아닙니다({chk.stdout.strip()}). extract-all.py 는 1.x API 에 기대므로 "
+             "tools/pyruntime-requirements.txt 와 추출기를 함께 손봐야 합니다.")
 
 # opusenc — 보이스 변환기. 받은 파일이 우리가 확인한 그 파일인지 해시로 확인한 뒤에만 쓴다
 OPUS_ZIP = "https://archive.mozilla.org/pub/opus/win32/opus-tools-0.2-opus-1.3.1.zip"
