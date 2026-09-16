@@ -292,6 +292,7 @@
     const f = firstMascot(); const want = f ? f.S.display.fps : "auto";
     // 60 도 60 에 묶는다. 예전엔 "매 프레임"으로 두어 144Hz 모니터에서 144 로 그렸는데, 남는 시간을 이월하는
     // 누산기가 있어 이제 어느 주사율에서도 평균 60 이 된다(60Hz 에선 매 프레임 그대로 통과)
+    if (want === "vsync") return 0;                    // 수직동기화 — rAF 가 오는 대로, 즉 모니터 주사율(144Hz 면 144)
     if (want === 60 || want === "60") return 1000 / 60;
     if (want === 30 || want === "30") return 1000 / 30;
     for (const mas of mascots.values()) if (mas.hands) return 1000 / 60;
