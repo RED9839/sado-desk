@@ -799,7 +799,7 @@ ipcMain.handle("assets:scan", () => new Promise((resolve) => {
     // 방화벽이 포트를 버리면 adb connect 가 후보마다 6초씩 물린다. 그동안 창은 "찾는 중…"에
     // 멈춘 채 다시 찾기 단추까지 잠긴다. 이게 가져오기 창을 열자마자 저절로 도는 첫 화면이다
     const timer = setTimeout(() => {
-      try { spawn("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true }); } catch { try { p.kill(); } catch {} }
+      killTree(p.pid, () => { try { p.kill(); } catch {} });
       resolve({ ok: false, error: "기기 찾기가 60초를 넘겼어요. 앱플레이어를 켠 뒤 다시 찾아 주세요.", devices: [] });
     }, 60000);
     p.on("exit", () => { clearTimeout(timer); try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
@@ -853,6 +853,12 @@ ipcMain.handle("assets:enable-ld-adb", (_e, idx) => new Promise((resolve) => { /
     p.on("exit", (code) => resolve({ ok: code === 0, out }));
   } catch (e) { resolve({ ok: false, error: e.message }); }
 }));
+// 무리째 죽인다. spawn 의 try/catch 는 동기 예외만 잡고, taskkill 을 못 찾는 경우는 비동기 'error' 로 와서
+// 받는 이가 없으면 메인이 죽는다. 그때는 부모 하나만이라도 죽이는 폴백으로
+function killTree(pid, fallback) {
+  try { const k = spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }); k.on("error", fallback); }
+  catch { fallback(); }
+}
 let extractCancelled = false;
 // kill() 은 python 하나만 죽인다. 그 밑에서 돌던 adb 와 변환 일꾼들은 살아남아 임시 폴더에 계속
 // 쓰고, extract-all.py 의 finally(임시 폴더 지우기)도 돌지 않는다. 보이스 원본만 1.6GB다
@@ -860,8 +866,7 @@ ipcMain.on("assets:cancel", () => {
   if (!extractProc) return;
   extractCancelled = true;
   const pid = extractProc.pid;
-  try { spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }); }
-  catch { try { extractProc.kill(); } catch {} }
+  killTree(pid, () => { try { if (extractProc) extractProc.kill(); } catch {} });
 });
 ipcMain.on("assets:open-setup", () => openSetup());
 ipcMain.on("assets:open-root", () => { fs.mkdirSync(ASSET_ROOT, { recursive: true }); shell.openPath(ASSET_ROOT); });
@@ -1056,6 +1061,7 @@ function applyFullscreenHide() {
   if (want === fsHidden) return;
   fsHidden = want;
   const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
+  if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", want); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
   if (want) { for (const w of wins) w.hide(); }
   else { for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
 }
@@ -1083,4 +1089,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (extractProc) { try { extractProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });

@@ -76,6 +76,7 @@ function createFullscreenWatcher({ screen, ownPid, onChange, log = () => {} }) {
       buf += d.toString("utf8"); let i;
       while ((i = buf.indexOf("\n")) >= 0) {
         const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue;
+        restarts = 0; // 한 줄이라도 받았으면 살아 있는 것 — 며칠 쓰다 누적 세 번에 포기하지 않게
         const fs = judge(line); const now = !!fs;
         if (now !== state) { state = now; onChange(now, fs || {}); }
       }
@@ -83,6 +84,7 @@ function createFullscreenWatcher({ screen, ownPid, onChange, log = () => {} }) {
     proc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) log("fullscreen watch:", t.slice(0, 200)); });
     proc.on("exit", (code) => {
       proc = null;
+      if (state) { state = false; onChange(false, {}); } // 숨긴 채로 감시가 죽으면 사도가 영영 안 보인다. 죽는 순간 되돌린다
       if (stopped) return;
       // 죽으면 다시 띄운다. 계속 죽으면 포기한다 — 이 기능 없이도 앱은 멀쩡해야 한다
       if (++restarts <= 3) setTimeout(start, 3000 * restarts); else log("fullscreen watch gave up, exit", code);

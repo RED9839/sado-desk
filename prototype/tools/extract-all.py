@@ -435,7 +435,8 @@ def step_spine_sets(kind, remote, adb_exe, dev, out, tmp):
     for b in bad[:10]: log(kind, "실패 " + b, "warn")
     # 복사는 됐는데 디코드가 전부 실패하는 일이 있다 — 게임이 업데이트되어 UnityPy 가 못 읽는 경우가 그렇다.
     # 여기서 "완료"라고 말하면 앱은 "완료! 캐릭터가 나타납니다"를 띄우고 화면에는 아무것도 없다.
-    if jobs and okn == 0:
+    # 영영 디코드가 안 되는 한두 세트만 남은 재실행이면 그건 "전부 실패"가 아니라 그 세트의 문제다. 셋 이상일 때만 판을 의심한다
+    if jobs and okn == 0 and len(jobs) >= 3:
         FAILED = True
         log(kind, f"{label}: {len(jobs)}세트가 전부 디코드에 실패했어요 — 게임이 업데이트되어 파일 구성이 바뀌었을 수 있습니다. 추출 기록을 첨부해 제보해 주세요", "error"); return
     lv = "warn" if bad and len(bad) * 10 >= len(jobs) * 3 else "ok"   # 3할 넘게 실패하면 성공이라 하지 않는다
@@ -526,10 +527,13 @@ def step_voice(adb_exe, dev, out, tmp):
     if todo and not stats:
         global FAILED; FAILED = True
         log("voice", f"보이스: {len(todo)}명 중 하나도 복사되지 않았어요 — 위 adb 오류를 확인해 주세요", "error"); return
-    if jobs and not stats.get("ok"):
+    # "skip"(이미 있음)은 실패가 아니다 — hero_done 을 영영 못 채우는 사도(전투 대사가 없는 옛 추출본 등)는
+    # 재실행마다 다시 큐에 들어와 전부 skip 이 되는데, 그걸 실패로 치면 멀쩡한 에셋에 매번 "일부만 가져왔어요"가 뜬다
+    tried = sum(v for k, v in stats.items() if k != "skip")
+    if tried and not stats.get("ok"):
         FAILED = True
-        log("voice", f"보이스: {len(jobs)}개가 하나도 변환되지 않았어요 ({stats}) — opusenc 를 실행하지 못했을 수 있습니다", "error"); return
-    lv = "warn" if stats.get("ok", 0) * 10 < sum(stats.values()) * 7 else "ok"
+        log("voice", f"보이스: 새로 시도한 {tried}개가 하나도 변환되지 않았어요 ({stats}) — opusenc 를 실행하지 못했을 수 있습니다", "error"); return
+    lv = "warn" if tried and stats.get("ok", 0) * 10 < tried * 7 else "ok"
     log("voice", f"보이스 완료 — {stats}", lv)
 
 def build_voice_index(vdir):
