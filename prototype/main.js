@@ -104,7 +104,7 @@ const RANGES = { // "점.경로": [최소, 최대]
 };
 const ENUMS = {
   mode: ["minimi", "sd", "ingame"], mood: ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"],
-  "display.fps": ["auto", "30", "60"], // 숫자 30·60 도 받아 문자열로 (렌더러 select 는 문자열, 손으로 고친 파일은 숫자)
+  "display.fps": ["auto", "30", "60", "vsync"], // vsync = 모니터 주사율대로(rAF 마다) // 숫자 30·60 도 받아 문자열로 (렌더러 select 는 문자열, 손으로 고친 파일은 숫자)
   "ai.provider": ["auto", "ollama", "gemini", "anthropic", "openai"], // ai.js chat() 이 아는 것
 };
 const STRINGS = { skin: [/^[A-Za-z0-9_]+$/, 64], "assets.root": [/^[\s\S]*$/, 1024] };
