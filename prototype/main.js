@@ -494,7 +494,7 @@ let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DAT
 let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
 let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch {} // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
 let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch {} // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
-let selfTalk = {}; try { selfTalk = (JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "self-talk.json"), "utf8")).heroes) || {}; console.log(`혼잣말 대본: ${Object.keys(selfTalk).length}명 ${Object.values(selfTalk).reduce((a, l) => a + l.length, 0)}줄`); } catch (e) { console.warn("self-talk.json 없음 — 혼잣말은 대본 대신 AI 로 돈다", e.message); }
+let selfTalk = {}, skinTalk = {}; try { const _st = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "self-talk.json"), "utf8")); selfTalk = _st.heroes || {}; skinTalk = _st.skins || {}; console.log(`혼잣말 대본: ${Object.keys(selfTalk).length}명 ${Object.values(selfTalk).reduce((a, l) => a + l.length, 0)}줄` + (Object.keys(skinTalk).length ? ` · 코스튬 ${Object.keys(skinTalk).length}벌 ${Object.values(skinTalk).reduce((a, l) => a + l.length, 0)}줄` : "")); } catch (e) { console.warn("self-talk.json 없음 — 혼잣말은 대본 대신 AI 로 돈다", e.message); }
 const koOfHero = (k) => (relations && relations[k] && relations[k].ko) || k;
 function chatProfile(id) {
   const ch = charOf(id); if (!ch) return null;
@@ -503,6 +503,8 @@ function chatProfile(id) {
   const hero = ch.skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase();
   if (talkStyle && talkStyle[hero]) prof.styleInfo = talkStyle[hero];
   prof.key = hero; prof.koOf = koOfHero;
+  // 코스튬을 입고 있으면 그 코스튬 전용 혼잣말도 쓴다 (data/self-talk.json 의 skins)
+  { const sm = /Skin([0-9]+)$/.exec(ch.skin.replace(/^Mini_/, "")); prof.skinKey = sm ? `${hero}#${sm[1]}` : ""; }
   if (relations && relations[hero]) prof.rel = relations[hero];
   if (bible[hero]) prof.bible = bible[hero];
   // 말투 예시: 손으로 지은 3줄 뒤에 혼잣말 대본을 붙인다. 혼잣말은 사도마다 12줄쯤 되고 전부 말투 검사를 통과한
@@ -617,15 +619,19 @@ function selfCtx(id) {
   if (Date.now() - lastTouchAt > 30 * 60000) tags.add("idle");
   return tags;
 }
-function pickSelfTalk(key, id) {
-  const all = selfTalk[key] || [];
+// key = 사도 키, skinKey = 입은 코스튬 키(없으면 ""). 코스튬 줄은 상황 꼬리표가 없는 평상시 줄이라
+// 기본 줄과 같은 못에 넣되 가중치를 줘서 코스튬을 입은 티가 나게 한다
+function pickSelfTalk(key, id, skinKey) {
+  const mine = selfTalk[key] || [], skin = (skinKey && skinTalk[skinKey]) || [];
+  const all = skin.length ? [...mine, ...skin] : mine;
   if (!all.length) return null;
   const ctx = id ? selfCtx(id) : new Set();
   const fits = all.filter(x => !x.w || ctx.has(x.w));   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
   const said = selfTalkSaid.get(key) || [];
   let fresh = fits.filter(x => !said.includes(x.t));
   if (!fresh.length) fresh = fits.length ? fits : all;      // 다 돌았으면 처음부터
-  const weighted = fresh.flatMap(x => x.w && ctx.has(x.w) ? [x, x, x] : [x]);
+  const isSkin = new Set(skin.map(x => x.t));
+  const weighted = fresh.flatMap(x => x.w && ctx.has(x.w) ? [x, x, x] : isSkin.has(x.t) ? [x, x] : [x]);
   const line = weighted[Math.floor(Math.random() * weighted.length)];
   const keep = Math.max(3, Math.floor(all.length / 2)); // 절반은 다시 나오지 않게
   selfTalkSaid.set(key, [...(fresh.length ? said : []), line.t].slice(-keep));
@@ -634,7 +640,7 @@ function pickSelfTalk(key, id) {
 // 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
 function saySelfTalk(id, opts = {}) {
   const prof = chatProfile(id); if (!prof) return false;
-  const line = pickSelfTalk(prof.key, id); if (!line) return false;
+  const line = pickSelfTalk(prof.key, id, prof.skinKey); if (!line) return false;
   const ttl = bubbleMs(line.t);
   const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
   showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
