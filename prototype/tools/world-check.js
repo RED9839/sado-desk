@@ -6,6 +6,9 @@
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
 const B = require(path.join(root, "tools/selftalk-lib.js"));
+// 사도별 종족(나무위키 문서에서 뽑아 둔 것). 종족 규칙은 이 표로 건다
+const RACE = fs.existsSync(path.join(root, "out/check/races.json"))
+  ? JSON.parse(fs.readFileSync(path.join(root, "out/check/races.json"), "utf8")) : {};
 
 // only: 이 사도들에게는 허용. never: 예외 없음.
 const RULES = [
@@ -87,6 +90,63 @@ const RULES = [
     re: /(우주로 나가|우주선을 타|우주 여행|달에 가|행성을 떠)/,
     only: ["orr", "elena", "sist", "kidian", "meluna", "yomi", "maestromk2"],
   },
+  // ---- 종족 규칙 (race 를 가진 규칙은 그 종족에게만 건다) ----
+  {
+    id: "용족능력",
+    why: "용족은 서양 드래건이 아니다. 변신(폴리모프)도 브레스도 없고, 태어날 때부터 인간형이다.",
+    re: /(변신|브레스|불을 뿜|용으로 변)/,
+    race: "용족", only: ["dayapureshine"],  // 퓨어샤인은 마법 소녀 변신이라 예외
+  },
+  {
+    id: "요정비행",
+    why: "요정은 날개가 있어도 날지 못한다. 나는 것은 죠안·각성 에르핀처럼 마법을 쓰는 예외뿐이다.",
+    re: /(날아올라|날아다니|훨훨|하늘을 날|날개로 날)/,
+    race: "요정", only: ["joanne", "erpinroyale"],
+  },
+  {
+    id: "유령생리",
+    why: "유령은 허기도 생리적 수면도 없다. 먹는 것은 즐거움 때문이고, 자는 것도 필요해서가 아니다.",
+    re: /(배가 고파|배고파|허기|졸려|졸음|잠이 와|자야겠|잠을 자야)/,
+    race: "유령", only: [],
+  },
+  {
+    id: "마녀입맛",
+    why: "마녀는 쓴맛·신맛을 맛있게 느끼고 단맛은 진짜로 입에 안 맞는다(벨리타만 몰래 단것을 먹는다).",
+    re: /(단것이 좋|달콤한 게 좋|설탕이 최고|케이크가 제일|디저트가 좋)/,
+    race: "마녀", only: ["belita"],
+  },
+  {
+    id: "엘프신앙",
+    why: "엘프는 세계수를 신으로 모시지 않는다. 교단 등록은 명목뿐이다.",
+    re: /(세계수님|세계수께|세계수에게 기도|세계수를 믿)/,
+    race: "엘프", only: [],
+  },
+  {
+    id: "엘프크리스마스",
+    why: "엘프에게 크리스마스와 산타는 종족 단위 트라우마다. 즐거운 소재로 쓰면 어긋난다.",
+    re: /(크리스마스|산타)/,
+    race: "엘프", only: ["rohne"],  // 로네의 "산타 할아버지" 는 지구에서 겪은 그 산타다 — 원작과 맞다
+  },
+  // ---- 스포일러 ----
+  {
+    id: "스포일러",
+    why: "사도 대부분이 모르는 진실이다(세계수의 죽음·겨우살이·니펠·의지·R41 등). 말풍선에 나오면 안 된다.",
+    re: /(겨우살이|니펠|농장의 주인|세계수가 죽|세계수는 죽|뇌사|엘드-아인|투구꽃|에버.?아이스|흑뉴아|R41|차원 소멸|영춘 동백|동동 버들)/,
+    only: [],
+  },
+  {
+    id: "영원살이",
+    why: "영원살이(세계수의 일곱 자매)의 정체는 자매들과 극소수만 아는 이야기다.",
+    re: /(영원살이|일곱 자매)/,
+    only: ["aya", "vivi", "chloe", "epica", "xxionx", "ed", "ui", "edrehab"],
+  },
+  // ---- 표기 ----
+  {
+    id: "지명표기",
+    why: "지명 표기가 틀렸다. 요정 왕국은 에르피엔, 마녀 왕국은 벨리티엔, 엘프 도시는 모나티엄, 유령 늪·정령산·불길과 물길의 터.",
+    re: /(모나티움|모나디움|모나티엄시|에르피안|에르핀랜드|벨리티안|벨리티엠|유령숲|유령의 숲|정령 산|용족 산)/,
+    only: [],
+  },
 ];
 
 function main() {
@@ -103,6 +163,7 @@ function main() {
       tot++;
       for (const r of RULES) {
         if (r.only.includes(key)) continue;
+        if (r.race && RACE[key] !== r.race) continue;
         const m = r.re.exec(l.t);
         if (m) hit.get(r.id).push(`${ko}(${key})\t«${m[0]}»\t${l.w ? "[" + B.WHEN_KO[l.w] + "] " : ""}${l.t}`);
       }
