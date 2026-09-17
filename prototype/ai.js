@@ -214,16 +214,91 @@ async function* sse(body) { // "data: {...}" 줄만
 }
 const imgPart = (img) => img ? { mime: img.mime || "image/png", data: img.data } : null; // {mime, data(base64)}
 
+// 말풍선에 들어갈 감정 — 구조적 출력(JSON 스키마)의 enum 으로도 쓴다
+const BUBBLE_EMO = ["행복", "미소", "분노", "슬픔", "놀람", "냠냠", "삐짐", "기본"];
+// 작은 모델은 "1~3문장"을 프롬프트로 막아도 셋에 둘은 넘긴다(실측 66%). 문장 경계에서 잘라 말풍선에 맞춘다
+function trimToBubble(t, maxSents = 3, maxChars = 140) {
+  const s = String(t || "").trim();
+  if (!s) return s;
+  const parts = s.split(/(?<=[.!?~…])\s+/).filter(Boolean);
+  let out = parts.slice(0, maxSents).join(" ");
+  while (out.length > maxChars) {
+    const cut = out.split(/(?<=[.!?~…])\s+/);
+    if (cut.length <= 1) break;
+    cut.pop(); out = cut.join(" ");
+  }
+  return out || parts[0] || s;
+}
+// 스트리밍 중인 JSON 에서 문자열 필드의 '지금까지' 값을 뽑는다 — 타자 효과를 유지하려고
+const UNESC = { n: "\n", t: "\t", r: "\r", '"': '"', "\\": "\\", "/": "/" };
+function partialField(acc, key) {
+  const k = '"' + key + '"';
+  let i = acc.indexOf(k);
+  if (i < 0) return null;
+  i += k.length;
+  while (i < acc.length && " \t\r\n:".includes(acc[i])) i++;
+  if (acc[i] !== '"') return null;
+  let out = "", esc = false;
+  for (let j = i + 1; j < acc.length; j++) {
+    const c = acc[j];
+    if (esc) { out += (UNESC[c] !== undefined ? UNESC[c] : c); esc = false; continue; }
+    if (c === "\\") { esc = true; continue; }
+    if (c === '"') break;
+    out += c;
+  }
+  return out;
+}
+
+// 말투 예시(few-shot). 혼잣말 대본의 앞 20줄은 상황 태그(아침·낮·저녁…)라 전부 시각으로 시작한다.
+// 그것만 예시로 주면 모델이 답마다 시각을 읊는다 — 태그 없는 일반 줄을 먼저 쓰고 모자라면 태그 줄로 채운다
+function sampleLinesFor(own, lines, max = 12) {
+  own = own || []; lines = lines || [];
+  const seen = new Set(own), pick = [];
+  for (const l of lines) if (!l.w && !seen.has(l.t)) { seen.add(l.t); pick.push(l.t); }
+  if (pick.length < max) for (const l of lines) { if (pick.length >= max) break; if (l.w && !seen.has(l.t)) { seen.add(l.t); pick.push(l.t); } }
+  return [...own, ...pick.slice(0, max)];
+}
+
 async function chatOllama(cfg, system, messages, onToken, signal) {
   const hasImg = messages.some(m => m.image);
   if (hasImg && !cfg.visionModel) throw new Error("Ollama에 화면을 볼 수 있는 모델이 없어요 — 설정 → AI 대화 → Ollama '화면 보기 모델'에 qwen2.5vl 같은 비전 모델을 넣고 내려받아 주세요");
   const msgs = [{ role: "system", content: system }, ...messages.map(m => ({ role: m.role, content: m.text, ...(m.image ? { images: [m.image.data] } : {}) }))];
-  const r = await fetch(`${cfg.url}/api/chat`, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ model: hasImg ? cfg.visionModel : cfg.model, messages: msgs, stream: true, keep_alive: cfg.keepAlive || "5m", options: { temperature: cfg.temperature != null ? +cfg.temperature : 0.9, num_predict: cfg.numPredict != null ? +cfg.numPredict : 300 } }) });
+  // 구조적 출력 — 작은 모델이 프롬프트만으로는 못 지키던 것을 문법으로 막는다.
+  // 감정 태그 누락·오탈자(17% 실측)가 0이 되고, 이모지·마크다운·머리말이 애초에 나올 자리가 없다
+  const format = { type: "object", properties: { reply: { type: "string" }, emotion: { type: "string", enum: BUBBLE_EMO } }, required: ["reply", "emotion"] };
+  const r = await fetch(`${cfg.url}/api/chat`, {
+    method: "POST", signal, headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      model: hasImg ? cfg.visionModel : cfg.model, messages: msgs, stream: true, format,
+      keep_alive: cfg.keepAlive || "5m",
+      options: { temperature: cfg.temperature != null ? +cfg.temperature : 0.9, num_predict: cfg.numPredict != null ? +cfg.numPredict : 180 },
+    }),
+  });
   if (!r.ok) throw new Error(`Ollama ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  let out = "";
-  for await (const line of ndjson(r.body)) { let j; try { j = JSON.parse(line); } catch { continue; } if (j.error) throw new Error("Ollama: " + j.error); const t = j.message?.content || ""; if (t) { out += t; onToken(t); } if (j.done) break; }
-  return out;
+  let acc = "", shown = 0;
+  for await (const line of ndjson(r.body)) {
+    let j; try { j = JSON.parse(line); } catch { continue; }
+    if (j.error) throw new Error("Ollama: " + j.error);
+    const t = j.message?.content || "";
+    if (t) {
+      acc += t;
+      // 원문은 JSON 이므로 그대로 흘리면 말풍선에 중괄호가 보인다 — reply 필드만 자라는 만큼 내보낸다
+      const cur = partialField(acc, "reply");
+      if (cur != null && cur.length > shown) { onToken(cur.slice(shown)); shown = cur.length; }
+    }
+    if (j.done) break;
+  }
+  // 스키마를 지킨 응답이면 그대로, num_predict 에 잘려 JSON 이 닫히지 않았으면 조각에서 건져낸다.
+  // (건지지 않으면 말풍선에 {"reply": ... 가 그대로 보인다 — 실측 12/98)
+  let reply = null, emo = "";
+  try { const o = JSON.parse(acc); if (o && typeof o.reply === "string") { reply = o.reply; emo = o.emotion; } } catch {}
+  if (reply == null) { const partial = partialField(acc, "reply"); if (partial) { reply = partial; const e = /"emotion"\s*:\s*"([^"]+)"/.exec(acc); emo = e ? e[1] : ""; } }
+  if (reply == null) return acc; // 스키마를 통째로 무시한 모델 — 예전 길로 (parseEmotion 이 본문에서 찾는다)
+  const text = trimToBubble(reply);
+  // 잘라낸 경우 스트리밍으로 이미 보인 글이 더 길 수 있으나, 렌더러가 chat:done 의 최종 텍스트로 말풍선을 통째로 바꾼다
+  return `${text}\n[감정:${BUBBLE_EMO.includes(emo) ? emo : "기본"}]`;
 }
+
 async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg = false, attempt = 0, relaxed = false) {
   const contents = messages.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [...(m.image ? [{ inline_data: { mime_type: m.image.mime || "image/png", data: m.image.data } }] : []), { text: m.text }] }));
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:streamGenerateContent?alt=sse`;
@@ -367,4 +442,4 @@ function bibleBrief(b, o = {}) {
     !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
-module.exports = { bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+module.exports = { sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };

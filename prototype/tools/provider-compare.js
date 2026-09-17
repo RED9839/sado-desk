@@ -10,6 +10,7 @@ app.setPath("userData", path.join(process.env.APPDATA, "사도 데스크"));
 const root = path.join(__dirname, "..");
 const ai = require(path.join(root, "ai.js"));
 const J = f => JSON.parse(fs.readFileSync(path.join(root, "data", f), "utf8"));
+const selfTalk = J("self-talk.json").heroes;  // 앱은 혼잣말 대본을 말투 예시로 빌려 쓴다 — 측정도 같아야 한다
 const talk = J("talk-ko.json"), theaters = J("theaters.json").items, bible = J("bible.json"),
       rel = J("relations.json"), style = J("talk-style.json"), vs = J("voice-samples.json");
 const keyOf = h => Object.keys(talk.heroes).find(k => k.toLowerCase() === h);
@@ -17,7 +18,8 @@ const koOf = k => (talk.heroes[keyOf(k)] || {}).ko || k;
 function prof(hero) {
   const p = Object.assign({}, talk.heroes[keyOf(hero)]);
   p.key = hero; p.koOf = koOf; p.styleInfo = style[hero]; p.rel = rel[hero]; p.bible = bible[hero];
-  p.sampleLines = vs[hero];
+  { const own = vs[hero] || [], tk = selfTalk[hero] || [];
+    if (own.length || tk.length) p.sampleLines = ai.sampleLinesFor(own, tk, 12); }
   p.theaters = theaters.filter(t => (t.castKeys || []).includes(hero)).sort((a, b) => b.season - a.season);
   return p;
 }
