@@ -16,6 +16,9 @@ const keyOf = h => Object.keys(talk.heroes).find(k => k.toLowerCase() === h);
 const META = { note: "사도 혼잣말 대본. 우리가 쓴 글이며 게임 대사 원문이 아니다.", fields: "t=말풍선 문장 · m=감정(8종) · a=동작(애니 접두어)" };
 const MOODS = ["", "happy", "smile", "anger", "sad", "surprise", "eat", "sulky"];
 const TAG2MOOD = { 행복: "happy", 미소: "smile", 분노: "anger", 슬픔: "sad", 놀람: "surprise", 냠냠: "eat", 삐짐: "sulky", 기본: "" };
+// 상황 꼬리표 — 줄 앞에 [밤] 처럼 붙는다. 없으면 언제나 나올 수 있는 줄
+const WHEN = { 아침: "morning", 낮: "day", 저녁: "evening", 밤: "night", 심야: "late", 주말: "weekend", 던진뒤: "thrown", 쓰다듬은뒤: "petted", 꿀밤뒤: "poked", 오래방치: "idle" };
+const WHEN_KO = Object.fromEntries(Object.entries(WHEN).map(([k, v]) => [v, k]));
 const BAN = /(AI|인공지능|언어모델|챗봇|게임 속|이 게임|과금|가챠|플레이어|유저|설정상|캐릭터로서|개발자|프롬프트)/i;
 const SCREEN = /(화면에 (보이|뭐)|뭐 보고 있|무슨 작업|코딩|유튜브|영상 보|게임 하고 있)/;
 const MD = /[*_`#|]|```|[\u{1F300}-\u{1FAFF}\u{2600}-\u27BF\u{FE0F}]/u;
@@ -28,6 +31,7 @@ const BROKEN = [
   [/\[[^\]]{1,8}\]/, "대괄호 꼬리표가 남음"],
   [/[A-Za-z]{3,}/, "영어 낱말"],
   [/(니다|습니다|어요|아요)\s*비[!?.]?\s*$/, "어미 겹침(…다비 아님)"],
+  [/(겟|졋|괜찬|됫|햇는|갓다|앗어)/, "맞춤법(겠·졌·괜찮)"],   // 손으로 쓸 때 자꾸 나오던 오타. 말풍선에 그대로 뜬다
 ];
 // 모모의 '~닷' — 앞 글자 받침이 ㅂ 일 때만 바른 꼴이다(입니닷·습니닷·립니닷·겁니닷 ○, 설렘니닷·거얌니닷 ×)
 function badDat(t) {
@@ -74,9 +78,12 @@ function parse(text) {
     const l = normalize(raw); if (!l) continue;
     const m = /^(.*?)\s*[\[(（]\s*([^\])）]{1,6})\s*[\])）]\s*$/.exec(l);
     if (!m) continue;
-    const t = normalize(m[1]), tag = m[2].replace(/^감정\s*[:：]?\s*/, "").trim();
+    let body = m[1], w;
+    const wm = /^[\[(（]\s*([가-힣]{1,5})\s*[\])）]\s*(.*)$/.exec(body.trim()); // 앞의 [상황]
+    if (wm && wm[1] in WHEN) { w = WHEN[wm[1]]; body = wm[2]; }
+    const t = normalize(body), tag = m[2].replace(/^감정\s*[:：]?\s*/, "").trim();
     if (!t || !(tag in TAG2MOOD)) continue;
-    out.push({ t, m: TAG2MOOD[tag] });
+    out.push(w ? { t, m: TAG2MOOD[tag], w } : { t, m: TAG2MOOD[tag] });
   }
   return out;
 }
@@ -169,8 +176,12 @@ function reasons(line, p, seen, corpus, opts) {
   const n = t.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, "");
   for (let i = 0; i + 18 <= n.length; i++) if (corpus.has(n.slice(i, i + 18))) { out.push("위키 원문과 겹침"); break; }
   const rn = (REF[p.key] || []).map(x => x.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, ""));
-  if (n.length < 10) { if (rn.some(r => r.includes(n))) out.push("실제 대사를 베낌"); }   // 짧은 줄은 샹글이 한 번도 안 돌아 빠져나갔다
-  else for (let i = 0; i + 10 <= n.length; i++) { const g = n.slice(i, i + 10); if (rn.some(r => r.includes(g))) { out.push("실제 대사를 베낌"); break; } }
+  // 원문 대조는 두 방향이다. 8자로 내렸다 — 10자였을 때 "건드리다니→던지다니" 처럼 한 마디만 바꾼 줄이 통과했다
+  const CP = 8;
+  let copied = n.length < CP ? rn.some(r => r.includes(n)) : false;
+  if (!copied) for (let i = 0; i + CP <= n.length; i++) { const g = n.slice(i, i + CP); if (rn.some(r => r.includes(g))) { copied = true; break; } }
+  if (!copied) copied = rn.some(r => r.length >= 6 && n.includes(r));   // 원문이 짧으면(기억해두겠습니다) 통째로 품고도 8-gram 을 피해 갔다
+  if (copied) out.push("실제 대사를 베낌");
   const W = wordSet(t), head = t.split(/\s+/).slice(0, 2).join(" ");
   for (const s of seen) {
     const S = wordSet(s), inter = [...W].filter(x => S.has(x)).length;
@@ -233,4 +244,4 @@ function RULES(n, opt) {
   ].join("\n");
 }
 
-module.exports = { RULES, otherName, XTRA, META, MOODS, TAG2MOOD, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
+module.exports = { RULES, otherName, XTRA, META, MOODS, TAG2MOOD, WHEN, WHEN_KO, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };

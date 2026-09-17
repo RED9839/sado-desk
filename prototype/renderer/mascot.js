@@ -813,7 +813,7 @@
           if (m.y <= floorY) {
             m.y = floorY;
             if (Math.abs(m.vy) < 250) {
-              m.vx = m.vy = 0; m.rot = 0; if (isSD()) useSlot(slotForRest()); applyFacing(); playOnce(firstOf(active.A.land || "", "Angry_1", "Idle_1", "Idle1_1"), "land");
+              m.vx = m.vy = 0; m.rot = 0; if (isSD()) useSlot(slotForRest()); applyFacing(); if (host.event) host.event("thrown", id); playOnce(firstOf(active.A.land || "", "Angry_1", "Idle_1", "Idle1_1"), "land");
               if (S.sound.landSfx) playSfx("jump02");
               if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoice("surprise", "hit", "sorry", "anger"); } // ticklestart(간지럼 웃음)는 여기 쓸 것이 아니다
             } else { // 튕김: 세게 떨어질 때만, 세기에 비례해 작게 (작은 튕김은 무음)
@@ -966,11 +966,11 @@
         if (Math.abs(m.vx) < 30 && Math.abs(m.vy) < 30) { m.vx = 0; m.vy = 0; }
         if (Math.abs(m.vx) > 30) { facing = m.vx > 0 ? 1 : -1; applyFacing(); }
       } else if (m.state === "pat") {          // 쓰다듬기 끝 → touch2_x ("그래 그래 더 쓰다듬으라고")
-        playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoiceOwn("pat", "pleasure", "joy");
+        playOnce(active.A.patEnd || active.A.hold, "react"); if (S.sound.clickVoice) playVoiceOwn("pat", "pleasure", "joy"); if (host.event) host.event("petted", id); // 혼잣말이 "아까 쓰다듬어 준 거"를 안다
       } else if (m.state === "tickle") {       // 간지럽히기 끝 → Tickle_End. 웃음은 좀 간지럽혔을 때만(톡 치고 뗀 건 시작 웃음 하나로)
-        playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoiceOwn("tickleduring", "ticklestart", "joy");
+        if (host.event) host.event("petted", id); playOnce(active.A.tickleEnd || active.A.hold, "react"); if (S.sound.clickVoice && tickleT > 0.6) playVoiceOwn("tickleduring", "ticklestart", "joy");
       } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
-        smashHit();
+        if (host.event) host.event("poked", id); smashHit();
       } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd && Math.hypot(grab.dx, grab.dy) >= TAP_PX) { // 볼을 끌었을 때만 → touch1_x ("당기지 마!")
         playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoiceOwn("cheek", "touch");
       } else if (m.state === "thrown") { /* 공중에서 톡 — 잡아 끌지 않았으면 그대로 떨어지게 둔다(react 로 바꾸면 중력이 멈춰 공중에 선다) */
