@@ -30,6 +30,10 @@ const DEFAULTS = {
   keys: { gemini: "", anthropic: "", openai: "" }, // 암호문
   proactive: true, proactiveMin: 40, memory: true, maxTurns: 12,
   screen: false, // 화면 보기(스크린샷을 AI에 보냄) — 명시적 동의가 필요해 기본 꺼짐
+  // 무엇을 보낼까: "windows" = 아래 목록에 넣은 창만(기본), "display" = 사도가 선 모니터 전체.
+  // 모니터를 통째로 보내면 메신저·메일까지 같이 나간다. 고른 창만 보내는 쪽을 기본으로 둔다
+  screenScope: "windows",
+  screenWindows: [], // 허용한 창 — 창 이름에서 뽑은 앱 이름표("Chrome", "MapleStory" …)
   screenProactive: 30, // 먼저 말 걸 때 화면을 함께 보는 비율(%)
   chatAutoCloseSec: 30, // 사도가 먼저 말을 건 대화창: 이 시간 동안 아무 입력 없으면 스스로 닫힘 (0 = 안 닫음)
 };
