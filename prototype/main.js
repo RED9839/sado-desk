@@ -418,7 +418,7 @@ function openSettings(tab, forId) {
   settingsWin.webContents.on("console-message", (ev) => console.log(`[settings:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
   { const w = settingsWin; w.once("ready-to-show", () => { if (settingsWin === w && !w.isDestroyed()) { w.show(); tell(); } }); }
   if (argHas("--shot-settings")) {
-    const tabs = ["character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
+    const tabs = ["guide", "character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
     const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
     setTimeout(shoot, 5000);
   }

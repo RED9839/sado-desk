@@ -32,7 +32,7 @@
   // ---- 캐릭터(인스턴스) 선택 바 ----
   const chipsEl = document.getElementById("char-chips");
   function renderCharBar() {
-    chipsEl.innerHTML = FULL.characters.map((c, i) => `<span class="chip ${c.id === cur ? "on" : ""}" data-char="${c.id}"><span class="n">${i + 1}</span>${KO.skinName(c.skin, { withSkin: false })}${c.mode === "sd" ? " · SD" : ""}</span>`).join("");
+    chipsEl.innerHTML = FULL.characters.map((c, i) => `<span class="chip ${c.id === cur ? "on" : ""}" data-char="${c.id}"><span class="n">${i + 1}</span>${KO.skinName(c.skin, { withSkin: false })}${c.mode === "sd" ? " · 스탠딩" : ""}</span>`).join("");
     const rm = document.getElementById("char-remove"); if (FULL.characters.length > 1) rm.removeAttribute("disabled"); else rm.setAttribute("disabled", "");
   }
   chipsEl.addEventListener("click", (e) => { const t = e.target.closest("[data-char]"); if (!t) return; selectChar(t.dataset.char); });
@@ -50,7 +50,7 @@
     const note = document.getElementById("charbar-note"); if (!note) return;
     note.textContent = bulk
       ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 들어갑니다 (사도 모습만은 각자 그대로).`
-      : "사도·행동·크기·불투명도는 선택한 사도에만 적용되고, 사운드·화면 동작은 전체 공통입니다.";
+      : "사도·행동·크기·불투명도는 선택한 사도에만 적용되고, 사운드·화면 설정은 전체 공통입니다.";
     const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 ? "" : "none";
   }
 
@@ -105,8 +105,8 @@
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
-      mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 인게임 SD 데이터가 없어 스탠딩 SD로 표시됩니다 (에셋 가져오기 → '인게임 SD' 체크)` : `※ ${KO.skinName(S.skin)}은(는) SD 데이터가 없어 미니미로 표시됩니다`)
-        : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 인게임 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) SD 데이터가 없어 미니미로 표시됩니다`; }
+      mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 인게임 SD 데이터가 없어 스탠딩 SD로 표시됩니다 (에셋 가져오기 → '인게임 SD' 체크)` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·인게임 데이터가 모두 없어 미니미로 표시됩니다`)
+        : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 인게임 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·인게임 데이터가 모두 없어 미니미로 표시됩니다`; }
     const nv = document.getElementById("nav-ver"); if (nv) nv.textContent = "v" + (catalog.version || "");
     document.title = `사도 데스크 설정 — ${KO.skinName(S.skin)}${FULL.characters.length > 1 ? ` (${FULL.characters.findIndex(c => c.id === cur) + 1}/${FULL.characters.length})` : ""}`;
     renderCharBar();
@@ -252,7 +252,7 @@
   function renderAbout() {
     const voices = Object.values(voiceIndex).reduce((n, h) => n + Object.values(h).reduce((m, sk) => m + Object.values(sk).reduce((q, l) => q + l.length, 0), 0), 0);
     const guessedN = (KO.names.guessed || []).length;
-    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["애니메이션 런타임", `spine-ts ${spineVersion()}`], ["사도(스킨)", `${catalog.skins.length}개`], ["애니메이션", `${catalog.animations.length}개`], ["보이스", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["에셋 폴더", `<code>${catalog.assetRoot}</code>`]];
+    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["모션 런타임", `spine-ts ${spineVersion()}`], ["사도 · 사복/스킨", `${catalog.skins.length}벌`], ["모션", `${catalog.animations.length}개`], ["보이스", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["에셋 폴더", `<code>${catalog.assetRoot}</code>`]];
     document.getElementById("about-kv").innerHTML = kv.map(([k, v]) => `<div class="k">${k}</div><div>${v}</div>`).join("");
   }
   const spineVersion = () => "4.1.56";
