@@ -412,7 +412,9 @@ async function status(ai) {
     gemini: { key: !!decKey(cfg.keys.gemini) }, anthropic: { key: !!decKey(cfg.keys.anthropic) }, openai: { key: !!decKey(cfg.keys.openai), base: cfg.openai.base },
     plainKeys: Object.values(cfg.keys || {}).some(k => typeof k === "string" && k.startsWith("raw:")), // 설정 창이 '암호화되지 않음'을 알릴 수 있게
   };
-  try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {}
+  // 사양 읽기(nvidia-smi 실행)는 Ollama 가 실제로 돌고 있을 때만 한다 —
+  // 로컬 AI 를 안 쓰는 사람의 PC 에서 프로세스를 띄울 이유가 없다
+  if (tags !== null) { try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {} }
   s.resolved = resolve(cfg, s);
   return s;
 }
