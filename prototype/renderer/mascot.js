@@ -128,7 +128,7 @@
   let geoD = [];
   function setGeo(g) {
     W = g.w; H = g.h; canvas.width = W; canvas.height = H;
-    geoD = g.displays.map(d => ({ x0: d.x, x1: d.x + d.w, floor: H - d.floor, top: H - d.top, primary: d.primary }));
+    geoD = g.displays.map(d => ({ id: d.id, x0: d.x, x1: d.x + d.w, floor: H - d.floor, top: H - d.top, primary: d.primary }));
     for (const mas of mascots.values()) mas.onGeo();
   }
   function dispAt(x) { let best = null, bd = 1e9; for (const d of geoD) { const dd = x < d.x0 ? d.x0 - x : x > d.x1 ? x - d.x1 : 0; if (dd < bd) { bd = dd; best = d; } } return best; }
@@ -385,6 +385,13 @@
       else if (prev.scale !== S.scale) applyScale();
       applyOpacity();
       hud.style.display = S.display.debug ? "block" : "none";
+      // 가둘 모니터가 바뀌면 그 자리로 옮겨 세운다 — 안 그러면 다음 이동 때까지 딴 모니터에 서 있다
+      if (prev && prev.monitor !== S.monitor && m.state !== "boot" && m.state !== "drag") {
+        const d = myDisp();
+        if (d && (m.x < d.x0 || m.x > d.x1)) m.x = (d.x0 + d.x1) / 2;
+        m.x = clampX(m.x); m.targetX = m.x;
+        if (m.state !== "thrown") { m.vx = m.vy = 0; m.y = floorAt(m.x); }
+      }
       // 기분 변경: 대기·이동 중이면 바로, 반응·표정(AI 대답 pose) 중이면 끝난 뒤 — restThenDecide 가 moodOn() 을 보고 decideIdle 로 넘긴다. 대답 중 표정이 잘려 딴 얼굴이 됐었다
       if (prev && prev.mood !== S.mood && canInterrupt("moodChange")) { if (m.state === "hop") { m.vx = m.vy = 0; m.y = floorAt(m.x); } decideIdle(); }
     }
@@ -491,7 +498,7 @@
       makeChar(mini, miniData);
       if (!miniData.findSkin(S.skin)) { S.skin = "Mini_Crepe"; host.setSettings({ skin: S.skin }, id); } // 메인에도 알린다 — 설정창은 여전히 없는 스킨을 가리키고 있었다
       setSkin(S.skin, false);
-      { const p = geoD.find(d => d.primary) || geoD[0]; m.x = p ? (p.x0 + p.x1) / 2 + (Math.random() - 0.5) * (p.x1 - p.x0) * 0.4 : W / 2; }
+      { const p = myDisp() || geoD.find(d => d.primary) || geoD[0]; m.x = p ? (p.x0 + p.x1) / 2 + (Math.random() - 0.5) * (p.x1 - p.x0) * 0.4 : W / 2; }
       await activateMode(true);
     }
     // activating++ 로 진행 중인 activateMode 를 무효화한다 — 캐릭터를 지우는 도중 SD 로드가 끝나면 내려놓은 슬롯에 다시 채워 넣고(텍스처 누수) spawn() 이 죽은 미니미 스켈레톤을 건드렸다
@@ -750,7 +757,7 @@
         if (isSD()) useSlot(slotForMove());
         const A = active.A;
         m.state = "hop"; m.hopT = 0;
-        const cur = dispAt(m.x), others = geoD.filter(d => d !== cur);
+        const cur = dispAt(m.x), others = myDisp() ? [] : geoD.filter(d => d !== cur);   // 가둬 둔 사도는 원정 가지 않는다
         if (others.length && Math.random() < 0.2) { const d = pick(others); m.targetX = clampX(d.x0 + m.w / 2 + WALL_MARGIN + Math.random() * Math.max(1, d.x1 - d.x0 - m.w - WALL_MARGIN * 2)); } // 다른 모니터로 원정
         else m.targetX = clampX(m.x + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * Math.max(0, B.hopRange - 80)));
         facing = m.targetX < m.x ? -1 : 1; applyFacing(); play(A.move && has(A.move) ? A.move : A.hold, true);
@@ -767,7 +774,14 @@
         else { play(a, false); m.timer = 0; m.state = "react"; motionVoice(a); }
       }
     }
-    function clampX(x) { return Math.max(WALL_MARGIN + m.w / 2, Math.min(W - WALL_MARGIN - m.w / 2, x)); } // 창 = 모니터 합집합
+    // 이 사도를 가둘 모니터. 0(또는 뽑아 버린 모니터)이면 null — 예전처럼 창 전체를 쓴다
+    function myDisp() { const id = +S.monitor || 0; return id ? (geoD.find(d => d.id === id) || null) : null; }   // 옛 설정에 문자열이 남아 있어도 견딘다
+    function clampX(x) {
+      const d = myDisp();
+      const lo = (d ? d.x0 : 0) + WALL_MARGIN + m.w / 2;
+      const hi = (d ? d.x1 : W) - WALL_MARGIN - m.w / 2;
+      return hi < lo ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, x));   // 모니터가 사도보다 좁으면 가운데
+    }
 
     // ---- 프레임 ----
     let logT = 0;

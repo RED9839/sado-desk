@@ -16,7 +16,15 @@
   const getPath = (obj, p) => p.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
   const patchOf = (p, v) => p.split(".").reverse().reduce((acc, k) => ({ [k]: acc }), v);
   const fmt = (v, f) => f === "%" ? Math.round(v) + "%" : f === "px" ? Math.round(v) + "px" : f === "s" ? (+v).toFixed(1) + "s" : f === "s0" ? Math.round(v) + "초" : f === "min" ? Math.round(v) + "분" : v;
-  const set = (p, v) => { setLocal(p, v); host.setSettings(patchOf(p, v), cur); };
+  // 통합 편집: 켜면 사도별 값이 모든 사도에게 함께 들어간다(스킨만은 메인에서 제외 — 다 같은 모습이 되니까).
+  // 전역 설정(sound·display·ai…)은 원래 하나뿐이라 이 토글과 무관하다
+  let bulk = false;
+  const set = (p, v) => {
+    setLocal(p, v);
+    const target = (bulk && !GLOBAL_KEYS.has(p.split(".")[0])) ? "*" : cur;
+    host.setSettings(patchOf(p, v), target);
+    if (target === "*") for (const c of FULL.characters) { const ks = p.split("."); let o = c; for (const k of ks.slice(0, -1)) o = o[k] || (o[k] = {}); if (ks[0] !== "skin") o[ks[ks.length - 1]] = v; }
+  };
   function setLocal(p, v) { const ks = p.split("."); let o = GLOBAL_KEYS.has(ks[0]) ? FULL.global : charOf(cur); for (const k of ks.slice(0, -1)) o = o[k] || (o[k] = {}); o[ks[ks.length - 1]] = v; S = view(); } // 옛 설정 파일엔 news·ai·talk 이 없어 중간 객체가 비면 여기서 죽었다
 
   // ---- 캐릭터(인스턴스) 선택 바 ----
@@ -29,6 +37,29 @@
   document.getElementById("char-add").addEventListener("click", () => host.addCharacter(cur));
   document.getElementById("char-remove").addEventListener("click", () => { if (FULL.characters.length > 1) host.removeCharacter(cur); });
   function selectChar(id) { if (!charOf(id)) return; cur = id; S = view(); renderControls(); markCurrent(); }
+
+  // ---- 통합 편집 토글 ----
+  const bulkEl = document.getElementById("bulk");
+  if (bulkEl) bulkEl.addEventListener("change", () => { bulk = bulkEl.checked; document.getElementById("bulk-wrap").classList.toggle("on", bulk); updateBulkNote(); });
+  function updateBulkNote() {
+    const note = document.getElementById("charbar-note"); if (!note) return;
+    note.textContent = bulk
+      ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 들어갑니다 (사도 모습만은 각자 그대로).`
+      : "사도·행동·크기·불투명도는 선택한 사도에만 적용되고, 사운드·화면 동작은 전체 공통입니다.";
+    const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 ? "" : "none";
+  }
+
+  // ---- 머무를 모니터 목록 ----
+  function renderMonitors() {
+    const sel = document.getElementById("char-monitor"); if (!sel) return;
+    const ds = catalog.displays || [];
+    const want = String(getPath(S, "monitor") ?? 0);
+    sel.innerHTML = ['<option value="0">모든 모니터</option>']
+      .concat(ds.map(d => `<option value="${d.id}">${d.i}번 모니터 (${d.w}×${d.h}${d.primary ? " · 주모니터" : ""})</option>`)).join("");
+    // 뽑아 버린 모니터가 설정에 남아 있으면 그것도 보여 준다 — 말없이 '모든 모니터'로 보이면 왜 안 가두는지 알 수 없다
+    if (want !== "0" && !ds.some(d => String(d.id) === want)) sel.insertAdjacentHTML("beforeend", `<option value="${want}">지금 없는 모니터 (연결되면 다시 적용)</option>`);
+    sel.value = want;
+  }
   host.on("select", (id) => selectChar(id));
 
   // ---- 탭 ----
@@ -51,7 +82,7 @@
         el.addEventListener("input", () => { const v = el.value / mul; setLocal(p, v); if (val) val.textContent = fmt(el.value, val.dataset.fmt); });
         el.addEventListener("change", () => set(p, el.value / mul));
       }
-      else if (el.tagName === "SELECT") el.addEventListener("change", () => set(p, el.value));
+      else if (el.tagName === "SELECT") el.addEventListener("change", () => set(p, el.dataset.num ? +el.value : el.value));   // 모니터 id 는 숫자다 — 문자열로 보내면 비교가 안 맞는다
       else if (el.type === "text") el.addEventListener("change", () => set(p, el.value.trim()));
     }
     // 글자 입력은 change(포커스가 떠날 때)에만 저장된다 — 타이핑하고 곧장 창을 닫으면 change 가 안 와 적은 것이 사라졌다
@@ -74,6 +105,7 @@
     const nv = document.getElementById("nav-ver"); if (nv) nv.textContent = "v" + (catalog.version || "");
     document.title = `사도 데스크 설정 — ${KO.skinName(S.skin)}${FULL.characters.length > 1 ? ` (${FULL.characters.findIndex(c => c.id === cur) + 1}/${FULL.characters.length})` : ""}`;
     renderCharBar();
+    renderMonitors(); updateBulkNote();
     const note = document.getElementById("name-note");
     if (note) note.textContent = KO.isGuessed(S.skin) ? `※ "${KO.heroName(KO.parse(S.skin).hero)}"는 공식 표기가 확인되지 않은 추정 이름입니다 (assets/names-ko.json 에서 수정 가능)` : "";
   }
