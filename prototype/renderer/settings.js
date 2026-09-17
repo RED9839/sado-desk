@@ -237,6 +237,10 @@
       const names = { ollama: "Ollama", gemini: "Gemini", anthropic: "Claude", openai: "OpenAI 호환" };
       document.getElementById("ai-resolved").textContent = st.resolved ? `→ 지금 쓰는 것: ${names[st.resolved]}` : "→ 쓸 수 있는 제공자가 없어요 (아래에서 하나를 준비해 주세요)";
       const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "실행 중 아님 — Ollama를 설치·실행해 주세요 (설치하면 자동으로 켜져 있음)" : o.hasModel ? `실행 중 · 모델 있음 (${o.models.length}개 설치됨)` : `실행 중 · 모델 없음 → '내려받기' (설치된 것: ${o.models.join(", ") || "-"})`;
+      // ①②③ 단계 표시 — Ollama 가 뭔지 모르는 사람이 지금 어디까지 왔는지 보게. 끝난 단계는 ✓, 지금 할 단계는 →
+      { const s1 = document.getElementById("ai-step1-state"), s2 = document.getElementById("ai-step2-state");
+        if (s1) { s1.textContent = o.running ? "✓ 설치됨 · 돌아가는 중" : "→ 아직 설치되지 않았어요 (설치 뒤 이 탭을 다시 열면 확인됩니다)"; s1.style.color = o.running ? "var(--ok, #7bd88f)" : ""; }
+        if (s2) { s2.textContent = !o.running ? "①을 먼저" : o.hasModel ? `✓ 모델 있음 (${o.models.join(", ")})` : "→ 아래 '내 PC에 맞추기' 다음 '내려받기'"; s2.style.color = o.running && o.hasModel ? "var(--ok, #7bd88f)" : ""; } }
       for (const k of ["gemini", "anthropic", "openai"]) document.getElementById(`ai-key-${k}-state`).textContent = st[k].key ? "저장됨 ✓" : "없음";
       // PC 사양과 그에 맞는 모델 — 지금 고른 것이 사양에 안 맞으면 눈에 띄게 알린다
       const spec = document.getElementById("ai-ollama-spec");
