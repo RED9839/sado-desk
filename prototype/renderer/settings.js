@@ -206,7 +206,32 @@
   document.getElementById("news-list").addEventListener("click", (e) => { const a = e.target.closest("[data-url]"); if (!a) return; e.preventDefault(); host.openUrl(a.dataset.url, a.dataset.id); setTimeout(renderNews, 300); });
   // ---- AI 대화 탭 ----
   let aiTimer = null;
+  // ---- 화면 보기: 사도가 볼 창 고르기 ----
+  // 창 제목은 열어 둔 문서에 따라 매번 달라지므로 앱 이름표(맨 뒤 토막)만 기억한다.
+  // 지금 안 열려 있어도 이미 켜 둔 것은 목록에 남긴다 — 안 그러면 끌 방법이 없다
+  const allowedWins = () => (getPath(FULL.global, "ai.screenWindows") || []).slice();
+  function toggleWin(label, on) {
+    const cur = allowedWins(), i = cur.indexOf(label);
+    if (on && i < 0) cur.push(label); else if (!on && i >= 0) cur.splice(i, 1); else return;
+    set("ai.screenWindows", cur);
+  }
+  async function renderWindows() {
+    const box = document.getElementById("ai-win-list"); if (!box) return;
+    const wrap = document.getElementById("ai-win-wrap");
+    if (wrap) wrap.style.display = (getPath(FULL.global, "ai.screenScope") || "windows") === "windows" ? "" : "none";
+    const open = (await host.aiWindows()) || [];
+    const on = allowedWins();
+    const rows = open.map(w => ({ label: w.label, title: w.title, open: true }));
+    for (const l of on) if (!rows.some(r => r.label === l)) rows.push({ label: l, title: "지금 열려 있지 않음", open: false });
+    box.innerHTML = rows.length
+      ? rows.map(r => `<label class="toggle" style="display:flex;gap:8px;padding:3px 0;${r.open ? "" : "opacity:.55"}"><input type="checkbox" data-win="${esc(r.label)}"${on.includes(r.label) ? " checked" : ""}><span><b>${esc(r.label)}</b> <span style="color:var(--muted);font-size:11px">${esc(r.title)}</span></span></label>`).join("")
+      : "고를 수 있는 창이 없어요.";
+    for (const el of box.querySelectorAll("[data-win]")) el.addEventListener("change", () => { toggleWin(el.dataset.win, el.checked); renderWindows(); });
+  }
+  { const b = document.getElementById("ai-win-refresh"); if (b) b.addEventListener("click", () => renderWindows()); }
+
   async function refreshAi() {
+    renderWindows();
     clearTimeout(aiTimer); aiTimer = setTimeout(async () => {
       const st = await host.aiStatus(); if (!st) return;
       const names = { ollama: "Ollama", gemini: "Gemini", anthropic: "Claude", openai: "OpenAI 호환" };

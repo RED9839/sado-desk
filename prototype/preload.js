@@ -70,6 +70,7 @@ contextBridge.exposeInMainWorld("host", {
   aiSetKey: (provider, key) => ipcRenderer.invoke("ai:set-key", provider, key),
   aiTest: (provider) => ipcRenderer.invoke("ai:test", provider),
   aiPull: (model) => ipcRenderer.invoke("ai:pull", model),
+  aiWindows: () => ipcRenderer.invoke("ai:windows"),   // 화면 보기에서 고를 수 있는 창 목록
   aiOpenUrl: (which) => ipcRenderer.send("ai:open-url", which),
   bubbleClose: () => ipcRenderer.send("bubble:close"),
   on: (ch, fn) => ipcRenderer.on(ch, (_e, ...args) => fn(...args)),

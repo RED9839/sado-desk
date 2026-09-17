@@ -111,10 +111,14 @@ const ENUMS = {
   mode: ["minimi", "sd", "ingame"], mood: ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"],
   "display.fps": ["auto", "30", "60", "vsync"], // vsync = 모니터 주사율대로(rAF 마다) // 숫자 30·60 도 받아 문자열로 (렌더러 select 는 문자열, 손으로 고친 파일은 숫자)
   "ai.provider": ["auto", "ollama", "gemini", "anthropic", "openai"], // ai.js chat() 이 아는 것
+  "ai.screenScope": ["windows", "display"], // 고른 창만 / 모니터 전체
 };
 const STRINGS = { skin: [/^[A-Za-z0-9_]+$/, 64], "assets.root": [/^[\s\S]*$/, 1024] };
+// 배열로 오는 값 — 문자열만 남기고 개수·길이를 자른다 (창 이름은 무엇이든 올 수 있다)
+const LISTS = { "ai.screenWindows": [40, 80] };  // [최대 개수, 이름 최대 길이]
 // 값 하나. undefined 를 돌려주면 버린다(deepMerge 가 undefined 를 건너뛴다). fixed 에 고친 내역이 쌓인다
 function checkValue(key, v, fixed) {
+  if (LISTS[key]) { const [n, len] = LISTS[key]; return Array.isArray(v) ? [...new Set(v.filter(x => typeof x === "string" && x.trim()).map(x => x.trim().slice(0, len)))].slice(0, n) : undefined; }
   // 손으로 고친 파일의 "0.7" 같은 숫자 문자열은 받아 준다 (ai.js 가 + 로 받던 값이다)
   if (RANGES[key]) { if (typeof v === "string" && v.trim() !== "" && Number.isFinite(+v)) v = +v; if (typeof v !== "number" || !Number.isFinite(v)) return undefined; const c = Math.min(RANGES[key][1], Math.max(RANGES[key][0], v)); if (c !== v) fixed.push(`${key} ${v}→${c}`); return c; }
   if (ENUMS[key]) { const s = String(v); return ENUMS[key].includes(s) ? s : undefined; }
@@ -124,7 +128,7 @@ function checkValue(key, v, fixed) {
 function sanitizeTree(obj, prefix, fixed) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
-    const key = prefix + k, leaf = RANGES[key] || ENUMS[key] || STRINGS[key];
+    const key = prefix + k, leaf = RANGES[key] || ENUMS[key] || STRINGS[key] || LISTS[key];
     const r = leaf ? checkValue(key, v, fixed) : isObj(v) ? sanitizeTree(v, key + ".", fixed) : v; // {scale:{}} 같은 것은 leaf 검사에서 걸러진다
     if (r !== undefined) out[k] = r;
   }
@@ -137,7 +141,7 @@ function sanitizePatch(patch, { forChar = true, fixed = null } = {}) {
   for (const [k, v] of Object.entries(patch || {})) {
     const known = forChar === "only" ? CHAR_KEYS.has(k) : GLOBAL_KEYS.has(k) || (forChar && CHAR_KEYS.has(k));
     if (!known) { if (fixed) fixed.push(`모르는 키 ${k} 버림`); else console.warn("settings: 모르는 키", k); continue; }
-    const leaf = RANGES[k] || ENUMS[k] || STRINGS[k];
+    const leaf = RANGES[k] || ENUMS[k] || STRINGS[k] || LISTS[k];
     const r = leaf ? checkValue(k, v, log) : isObj(v) ? sanitizeTree(v, k + ".", log) : v;
     if (r !== undefined) out[k] = r;
   }
@@ -419,7 +423,13 @@ function openSettings(tab, forId) {
   { const w = settingsWin; w.once("ready-to-show", () => { if (settingsWin === w && !w.isDestroyed()) { w.show(); tell(); } }); }
   if (argHas("--shot-settings")) {
     const tabs = ["guide", "character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
-    const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => { const img = await settingsWin.webContents.capturePage(); fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `settings-${tabs[i]}.png`), img.toPNG()); console.log("SHOT", tabs[i]); i++; shoot(); }, 700); };
+    // 탭마다 위쪽 한 장 + 아래로 끝까지 내린 한 장. AI 탭처럼 긴 탭은 위만 찍으면 절반을 못 본다
+    const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => {
+      const dir = path.join(__dirname, "out"); fs.mkdirSync(dir, { recursive: true });
+      const top = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}.png`), top.toPNG());
+      const more = await settingsWin.webContents.executeJavaScript("(()=>{const m=document.querySelector('main');const can=m.scrollHeight>m.clientHeight+8;m.scrollTop=m.scrollHeight;return can})()");
+      if (more) { await new Promise(r => setTimeout(r, 400)); const bot = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}-bottom.png`), bot.toPNG()); await settingsWin.webContents.executeJavaScript("document.querySelector('main').scrollTop=0"); }
+      console.log("SHOT", tabs[i], more ? "(위+아래)" : ""); i++; shoot(); }, 1800); };  // 창 목록처럼 IPC 로 채우는 칸이 있어 넉넉히
     setTimeout(shoot, 5000);
   }
   const w = settingsWin; trackBounds(w);
@@ -589,16 +599,62 @@ async function chatTurn(id, userText, opts = {}) {
   } finally { clearTimeout(timer); if (chatAbort === ctl) { chatBusy = false; chatAbort = null; } lastChatAt = Date.now(); } // 이 턴의 것일 때만 내린다
 }
 // ---- 화면 보기: 캐릭터가 서 있는 모니터를 캡처해(축소 JPEG) AI에 첨부. 설정 ai.screen 이 켜져 있을 때만 ----
+// 창 이름에서 앱 이름표를 뽑는다: "Flasso - YouTube - Chrome" → "Chrome", "MapleStory" → "MapleStory".
+// 제목은 열어 둔 문서에 따라 매번 달라지므로 맨 뒤 토막(대개 앱 이름)만 기억해 둔다
+function appLabelOf(name) {
+  const n = String(name || "").trim();
+  const parts = n.split(/\s+[-—–|]\s+/).filter(Boolean);
+  const last = parts.length > 1 ? parts[parts.length - 1].trim() : "";
+  return (last && last.length <= 30) ? last : n.slice(0, 80);
+}
+// 사도 데스크 자신의 창은 목록에 넣지 않는다 — 제 얼굴을 찍어 보내 봐야 소용없다
+const ownWindowIds = () => new Set(BrowserWindow.getAllWindows().map(w => { try { return w.getMediaSourceId(); } catch { return ""; } }).filter(Boolean));
+async function listCapturableWindows() {
+  const own = ownWindowIds();
+  const src = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: 0, height: 0 } }); // 썸네일 없이 — 이름만 필요하다(1x1 은 3초, 0x0 은 0.3초)
+  const seen = new Set(), out = [];
+  for (const s of src) {
+    if (own.has(s.id) || !s.name || !s.name.trim() || /^사도 데스크/.test(s.name)) continue; // 다른 인스턴스의 창(개발 실행 중 설치판 등)도 이름으로 걸러 둔다
+    const label = appLabelOf(s.name);
+    if (seen.has(label)) continue; seen.add(label);
+    out.push({ label, title: s.name });
+  }
+  return out;
+}
 async function captureScreenFor(id) {
+  const ai = settings.global.ai || {};
+  const maxW = 1280;
+  // 고른 창만 보내기 — 허용 목록에 있는 창 중 가장 앞의 것. 하나도 안 열려 있으면 화면을 보내지 않는다
+  if ((ai.screenScope || "windows") === "windows") {
+    const allow = (ai.screenWindows || []).map(x => String(x).toLowerCase());
+    if (!allow.length) throw new Error("사도가 볼 창을 아직 안 고르셨어요. 설정 → AI 대화 → '화면 보기'에서 보여 줄 창을 켜 주세요.");
+    const own = ownWindowIds();
+    const wins = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: maxW, height: maxW } });
+    const hit = wins.find(w => !own.has(w.id) && w.name && !/^사도 데스크/.test(w.name) && allow.includes(appLabelOf(w.name).toLowerCase()));
+    if (!hit) throw new Error(`고르신 창이 지금 하나도 안 열려 있어요 (${(ai.screenWindows || []).join(", ")}).`);
+    if (hit.thumbnail.isEmpty()) throw new Error("그 창을 캡처하지 못했어요 (최소화돼 있으면 안 보입니다)");
+    return { mime: "image/jpeg", data: hit.thumbnail.toJPEG(60).toString("base64"), window: appLabelOf(hit.name) };
+  }
   const inst = instances.get(id); const r = inst && inst.rect;
   const pt = r && geo ? { x: Math.round(geo.x + r.x + r.w / 2), y: Math.round(geo.y + r.y + r.h / 2) } : screen.getCursorScreenPoint();
   const disp = screen.getDisplayNearestPoint(pt);
-  const maxW = 1280, scale = Math.min(1, maxW / disp.size.width);
+  const scale = Math.min(1, maxW / disp.size.width);
   const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: Math.round(disp.size.width * scale), height: Math.round(disp.size.height * scale) } });
   const src = sources.find(s => String(s.display_id) === String(disp.id)) || sources[0];
   if (!src || src.thumbnail.isEmpty()) throw new Error("화면을 캡처하지 못했어요");
   return { mime: "image/jpeg", data: src.thumbnail.toJPEG(60).toString("base64"), display: disp.id };
 }
+// 먼저 말 걸 때 화면을 붙일 수 있는 상태인가 — '고른 창만' 인데 그 창이 하나도 안 열려 있으면 false.
+// 여기서 걸러야 사도가 스스로 대화창을 열고 "창을 안 고르셨어요" 라고 40분마다 잔소리하는 일이 없다.
+// 사용자가 직접 누른 '내 화면 보고 한마디' 는 screenTalk 이 그 말을 그대로 보여 준다
+async function screenReady() {
+  const ai = settings.global.ai || {};
+  if (!screenAllowed()) return false;
+  if ((ai.screenScope || "windows") !== "windows") return true;
+  const allow = (ai.screenWindows || []).map(x => String(x).toLowerCase()); if (!allow.length) return false;
+  try { return (await listCapturableWindows()).some(w => allow.includes(w.label.toLowerCase())); } catch { return false; }
+}
+ipcMain.handle("ai:windows", () => listCapturableWindows().catch((e) => { console.warn("ai:windows 실패", e.message); return []; }));
 const screenAllowed = () => !!(settings.global.ai && settings.global.ai.screen);
 // 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
 async function screenTalk(id, userText) {
@@ -606,7 +662,8 @@ async function screenTalk(id, userText) {
   if (!screenAllowed()) { if (!chatOpen) openChat(id); setTimeout(() => chatSend("chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
   if (!chatOpen) openChat(id, { quiet: !userText });
   sendMascot(id, "emote", { mood: "", role: "listen", pose: 4000, hold: 12000 }); // 화면을 살피는 포즈
-  let image; try { image = await captureScreenFor(id); } catch (e) { chatSend("chat:done", { error: e.message }); return; }
+  // 창을 막 열었으면 렌더러가 뜨기 전이라 바로 보낸 오류는 사라진다 — 위의 '꺼져 있어요' 와 같은 간격을 둔다
+  let image; try { image = await captureScreenFor(id); } catch (e) { setTimeout(() => chatSend("chat:done", { error: e.message }), chatOpen ? 0 : 1200); return; }
   await chatTurn(id, userText || "", { image, say: !userText, extra: "사용자의 화면 스크린샷을 첨부했다. 지금 사용자가 무엇을 하고 있는지 알아보고, 네 성격대로 한두 문장으로 반응하라(감상·놀림·응원·질문 등)." });
 }
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
@@ -700,7 +757,7 @@ setInterval(async () => {
   // AI 를 쓰는 길은 제 간격(기본 40분)을 따로 지킨다 — 대본보다 훨씬 드물게
   const aiTurn = ai.proactive && gapMin >= (ai.proactiveMin || 40);
   // 화면을 보고 말 거는 것 — AI 필요. 설정에서 켠 만큼만, 제공자가 실제로 잡힐 때만
-  if (aiTurn && screenAllowed() && Math.random() * 100 < (+ai.screenProactive || 0)) {
+  if (aiTurn && Math.random() * 100 < (+ai.screenProactive || 0) && await screenReady()) {
     const st = await Ai.status(ai);
     if (st.resolved) { lastChatAt = Date.now(); screenTalk(id, ""); return; }
   }
@@ -987,7 +1044,6 @@ if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말�
   }
   console.log("PERSONA done");
 }, 5000);
-if (argHas("--screen-test")) setTimeout(async () => { const id = settings.characters[0].id; try { const img = await captureScreenFor(id); fs.writeFileSync(path.join(__dirname, "out", "screen-cap.jpg"), Buffer.from(img.data, "base64")); console.log("SCREENTEST captured", img.data.length, "b64 chars display", img.display); } catch (e) { console.log("SCREENTEST capture error", e.message); } await screenTalk(id, argVal("--screen-msg", "") || ""); setTimeout(() => console.log("SCREENTEST history", JSON.stringify(Ai.loadHistory(app.getPath("userData"), id).slice(-2))), 1500); }, 7000);
 // 혼잣말 대본 시험: 사도 하나가 여덟 번 중얼거린다 (되풀이·모션·말풍선 확인)
 if (argHas("--selftalk-test")) setTimeout(async () => {
   const id = settings.characters[0].id, prof = chatProfile(id);
@@ -1002,6 +1058,22 @@ if (argHas("--chat-test")) setTimeout(async () => {
   const id = settings.characters[0].id; openChat(id);
   setTimeout(async () => { const st = await Ai.status(settings.global.ai); console.log("CHATTEST status", JSON.stringify(st)); for (const q of (argVal("--chat-msgs", "") || "안녕! 오늘 뭐 했어?").split("|")) { await chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(q)}; document.getElementById("send").click();`); for (let i = 0; i < 20 && !chatBusy; i++) await new Promise(r => setTimeout(r, 100)); for (let i = 0; i < 400 && chatBusy; i++) await new Promise(r => setTimeout(r, 250)); await new Promise(r => setTimeout(r, 800)); } const r = Ai.loadHistory(app.getPath("userData"), id); console.log("CHATTEST history", JSON.stringify(r)); console.log("CHATTEST ui", await chatWin.webContents.executeJavaScript(`JSON.stringify({sendDisabled: document.getElementById("send").disabled, inDisabled: document.getElementById("in").disabled, bg: getComputedStyle(document.getElementById("send")).backgroundColor})`)); setTimeout(async () => { if (chatWin && !app.isPackaged) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat.png"), img.toPNG()); console.log("CHAT shot", img.getSize(), JSON.stringify(chatWin.getBounds())); } }, 1200); }, 2500);
 }, 5000);
+if (argHas("--screen-test")) setTimeout(async () => {
+  const id = settings.characters[0].id;
+  const origCap = captureScreenFor;
+  let picked = null; captureScreenFor = async (i) => { const r = await origCap(i); picked = r.window || ("모니터 " + r.display); console.log("SCREENTEST 캡처:", picked, `${(r.data.length / 1024).toFixed(0)}KB`); return r; };
+  if (argHas("--dry")) { // 캡처까지만 — AI 에 보내지 않는다. 어느 창이 찍히는지, 막힐 때 무슨 말이 나오는지만 본다
+    try { await captureScreenFor(id); } catch (e) { console.log("SCREENTEST 막힘:", e.message); }
+    app.quit(); return;
+  }
+  await screenTalk(id, argVal("--screen-msg", "") || "");
+  for (let i = 0; i < 400 && chatBusy; i++) await new Promise(r => setTimeout(r, 250));
+  await new Promise(r => setTimeout(r, 1500));
+  if (chatWin && !chatWin.isDestroyed()) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat-screen.png"), img.toPNG()); console.log("SCREENTEST 대화창 캡처", img.getSize()); }
+  const h = Ai.loadHistory(app.getPath("userData"), id).slice(-1)[0];
+  console.log("SCREENTEST 답:", h ? JSON.stringify(h.text) : "(기록 없음 — 오류 말풍선만 떴을 것)");
+  app.quit();
+}, 6000);
 if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize());
   const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); }
   // --menu-click='선택자|선택자' — 메뉴 항목을 순서대로 눌러 본다. 누른 뒤 사도들 설정을 찍어 통합 편집이 먹는지 본다
