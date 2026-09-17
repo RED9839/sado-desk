@@ -496,20 +496,24 @@ let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "b
 let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch {} // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
 let selfTalk = {}, skinTalk = {}; try { const _st = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "self-talk.json"), "utf8")); selfTalk = _st.heroes || {}; skinTalk = _st.skins || {}; console.log(`혼잣말 대본: ${Object.keys(selfTalk).length}명 ${Object.values(selfTalk).reduce((a, l) => a + l.length, 0)}줄` + (Object.keys(skinTalk).length ? ` · 코스튬 ${Object.keys(skinTalk).length}벌 ${Object.values(skinTalk).reduce((a, l) => a + l.length, 0)}줄` : "")); } catch (e) { console.warn("self-talk.json 없음 — 혼잣말은 대본 대신 AI 로 돈다", e.message); }
 const koOfHero = (k) => (relations && relations[k] && relations[k].ko) || k;
+const KIN = { renewa: "renewaawaken" };   // 자료를 물려받을 같은 인물 — tools/selftalk-lib.js 의 ALIAS 와 짝
 function chatProfile(id) {
   const ch = charOf(id); if (!ch) return null;
   const p = talkData ? Talk.profileFor(talkData, ch.skin) : null;
   const prof = p || { ko: koSkin(ch.skin), style: "polite", addr: "교주", lines: [] };
   const hero = ch.skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase();
-  if (talkStyle && talkStyle[hero]) prof.styleInfo = talkStyle[hero];
+  // 같은 인물인데 미니미가 따로 있는 경우 — 인물 사전·관계·말투 예시는 본판 것을 같이 쓴다.
+  // 리뉴아는 프론티어 시절(Mini_Renewa)과 각성판(Mini_RenewaAwaken)이 나뉘어 있는데 자료는 각성판에만 있다
+  const kin = KIN[hero] || hero;
+  if (talkStyle && talkStyle[kin]) prof.styleInfo = talkStyle[kin];
   prof.key = hero; prof.koOf = koOfHero;
   // 코스튬을 입고 있으면 그 코스튬 전용 혼잣말도 쓴다 (data/self-talk.json 의 skins)
   { const sm = /Skin([0-9]+)$/.exec(ch.skin.replace(/^Mini_/, "")); prof.skinKey = sm ? `${hero}#${sm[1]}` : ""; }
-  if (relations && relations[hero]) prof.rel = relations[hero];
-  if (bible[hero]) prof.bible = bible[hero];
+  if (relations && relations[kin]) prof.rel = relations[kin];
+  if (bible[kin]) prof.bible = bible[kin];
   // 말투 예시: 손으로 지은 3줄 뒤에 혼잣말 대본을 붙인다. 혼잣말은 사도마다 12줄쯤 되고 전부 말투 검사를 통과한
   // 지은 문장이라, 모델이 어미·자칭·말버릇을 붙잡을 표본이 셋에서 열다섯으로 는다. 게임 대사는 아니다(원칙)
-  const own = vsamples[hero] || [], talk = selfTalk[hero] || [];
+  const own = vsamples[kin] || [], talk = selfTalk[hero] || [];
   if (own.length || talk.length) prof.sampleLines = Ai.sampleLinesFor(own, talk, 12);
   prof.theaters = theaters.filter(t => (t.castKeys || []).includes(hero)).sort((x, y) => y.season - x.season);
   return prof;
