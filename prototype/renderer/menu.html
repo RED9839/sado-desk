@@ -11,6 +11,9 @@
   #menu .item:hover{background:#363642}
   #menu .item > span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:var(--muted);font-size:12px}
   #menu .item.danger{color:var(--danger)}
+  #menu .item.on{background:var(--accent);color:#fff;font-weight:600}
+  #menu .item.on:hover{background:var(--accent);filter:brightness(1.12)}
+  #menu .item.on > span{color:#dfe6ff}
   #menu .item.danger:hover{background:#4a2a2a}
   #menu .item .key{font-size:10.5px;color:#7d7d8c;background:#1f1f25;border:1px solid var(--line);border-radius:4px;padding:0 5px}
   #menu .item .arrow{color:#7d7d8c;font-size:11px}
@@ -44,6 +47,7 @@
   <div class="item" data-toggle="skins">사도 바꾸기 <span id="skin-cur"></span></div>
   <div class="sub" id="sub-skins"><input type="text" id="skin-filter" placeholder="이름 검색 (한글/영문)"><div id="skin-list"></div></div>
   <div class="sep"></div>
+  <div class="item" data-act="bulk" id="bulk-item" title="켜면 아래 형태·크기·표정이 불러 둔 사도 전부에게 함께 들어갑니다. 사도 바꾸기는 각자 그대로입니다">모든 사도에 함께 <span id="bulk-state"></span></div>
   <div class="head" id="mode-item" title="미니미 = 로비 스틱 SD · SD = 사도 상세 화면 스탠딩 · 인게임 = 전투/마이홈 모델">형태 <span id="mode-state"></span></div>
   <div class="chips" id="mode-chips"></div>
   <div class="head">크기</div>

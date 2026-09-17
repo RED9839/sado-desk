@@ -62,7 +62,10 @@ const GLOBAL_DEFAULTS = {
     clickVoice: true, landVoice: true, landSfx: true, spawnVoice: true, greetOnSkin: true,
     motionVoice: true, motionVoiceChance: 30, motionVoiceCooldown: 15, emoteVoiceChance: 85,
   },
-  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  // bulkEdit: 사도별 값(형태·크기·불투명도·표정·행동)을 바꿀 때 모든 사도에 함께 넣는다.
+  // 설정 창과 우클릭 메뉴가 같은 값을 본다 — 메뉴 창은 열 때마다 새로 만들어지므로 껐다 켤 때마다
+  // 다시 체크하게 두면 쓸모가 없어서 설정에 남긴다. 사도 바꾸기(skin)만은 함께 가지 않는다
+  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아
@@ -202,7 +205,10 @@ const viewsAll = () => settings.characters.map(c => viewFor(c.id));
 const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return { ...c, sound: settings.global.sound, display: settings.global.display, news: settings.global.news, ai: { screen: !!(settings.global.ai && settings.global.ai.screen) }, count: settings.characters.length, unread: news ? news.unread : 0 }; };
 // patch: {skin, mode, scale, opacity, behavior} → 캐릭터 id / {sound, display} → global. 양쪽이 섞여 있으면 각각 (GLOBAL_KEYS 는 설정 검사 쪽에)
 function updateSettings(patch, id, sourceId) {
-  const prevDisp = JSON.stringify(settings.global.display);
+  // 창 기하·자동시작·전체화면 숨김을 다시 걸지 말지 볼 때, 화면과 무관한 표시용 값은 빼고 본다.
+  // 안 빼면 '모든 사도에 함께' 를 누를 때마다 setLoginItemSettings 가 레지스트리를 건드린다
+  const dispSig = () => { const { bulkEdit, guideShown, ...d } = settings.global.display || {}; return JSON.stringify(d); };
+  const prevDisp = dispSig();
   const g = {}, c = {};
   for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;
   if (Object.keys(g).length) settings.global = deepMerge(settings.global, g);
@@ -212,7 +218,7 @@ function updateSettings(patch, id, sourceId) {
     if (Object.keys(rest).length) for (const ch of settings.characters) Object.assign(ch, deepMerge(ch, rest));
   } else if (Object.keys(c).length && id) { const ch = charOf(id); if (ch) Object.assign(ch, deepMerge(ch, c)); }
   saveSettings();
-  if (JSON.stringify(settings.global.display) !== prevDisp) { applyGeometry(); applyAutoStart(); applyFullscreenHide(); }
+  if (dispSig() !== prevDisp) { applyGeometry(); applyAutoStart(); applyFullscreenHide(); }
   if (g.news && news) news.start(); // 주기·게시판 변경 → 감시 재시작
   broadcast(sourceId);
 }
@@ -997,7 +1003,10 @@ if (argHas("--chat-test")) setTimeout(async () => {
   setTimeout(async () => { const st = await Ai.status(settings.global.ai); console.log("CHATTEST status", JSON.stringify(st)); for (const q of (argVal("--chat-msgs", "") || "안녕! 오늘 뭐 했어?").split("|")) { await chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(q)}; document.getElementById("send").click();`); for (let i = 0; i < 60 && chatBusy; i++) await new Promise(r => setTimeout(r, 250)); await new Promise(r => setTimeout(r, 600)); } const r = Ai.loadHistory(app.getPath("userData"), id); console.log("CHATTEST history", JSON.stringify(r)); console.log("CHATTEST ui", await chatWin.webContents.executeJavaScript(`JSON.stringify({sendDisabled: document.getElementById("send").disabled, inDisabled: document.getElementById("in").disabled, bg: getComputedStyle(document.getElementById("send")).backgroundColor})`)); setTimeout(async () => { if (chatWin && !app.isPackaged) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat.png"), img.toPNG()); console.log("CHAT shot", img.getSize(), JSON.stringify(chatWin.getBounds())); } }, 1200); }, 2500);
 }, 5000);
 if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize());
-  const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); } } }, 1500); }, 5000);
+  const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); }
+  // --menu-click='선택자|선택자' — 메뉴 항목을 순서대로 눌러 본다. 누른 뒤 사도들 설정을 찍어 통합 편집이 먹는지 본다
+  for (const sel of (argVal("--menu-click", "") || "").split("|").filter(Boolean)) { await menuWin.webContents.executeJavaScript(`document.querySelector(${JSON.stringify(sel)}).click()`); await new Promise(r => setTimeout(r, 700)); console.log(`MENU click ${sel} → ${JSON.stringify(settings.characters.map(c => [c.id, c.scale, c.mode, c.skin]))} bulkEdit=${!!settings.global.display.bulkEdit}`); }
+  } }, 1500); }, 5000);
 if (argHas("--multi-test")) setTimeout(() => {
   const dump = (tag) => console.log(`MULTI ${tag} chars=${JSON.stringify(settings.characters.map(c => [c.id, c.skin, c.mode, c.scale]))} rects=${[...instances.keys()].join(",")} windows=${BrowserWindow.getAllWindows().length} hitFor=${hitFor} shown=${hitShown} rects=${[...instances.values()].map(i => i.rect ? JSON.stringify(screenRect(i.rect)) : "-").join(" ")}`);
   dump("start");

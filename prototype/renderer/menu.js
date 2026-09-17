@@ -5,7 +5,10 @@
   const catalog = await host.getCatalog();
   KO.load(catalog.dataRoot || catalog.assetRoot);
   const menuEl = document.getElementById("menu");
-  const set = (patch) => { S = deepMerge(S, patch); host.setSettings(patch); render(); };
+  // '모든 사도에 함께' 가 켜져 있고 둘 이상 불러 뒀으면 사도별 값은 "*"(전원)으로 보낸다.
+  // 사도 바꾸기(skin)와 전역 설정(sound·display)은 그대로 — 전역은 id 를 봐도 달라지는 게 없다
+  const bulkOn = () => !!(S.display && S.display.bulkEdit) && (S.count || 1) > 1;
+  const set = (patch, all) => { S = deepMerge(S, patch); host.setSettings(patch, all ? "*" : undefined); render(); };
   const MOODS = [["", "기본"], ["smile", "미소"], ["anger", "분노"], ["sad", "슬픔"], ["happy", "행복"], ["eat", "냠냠"], ["sulky", "삐짐"], ["surprise", "놀람"]];
   const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
   const deepMerge = (b, p) => { const o = { ...b }; for (const [k, v] of Object.entries(p || {})) o[k] = isObj(v) && isObj(b[k]) ? deepMerge(b[k], v) : v; return o; };
@@ -49,6 +52,12 @@
     for (const row of menuEl.querySelectorAll("[data-vol]")) { const k = row.dataset.vol, v = Math.round(S.sound[k] * 100); row.querySelector("input").value = v; row.querySelector(".val").textContent = v + "%"; row.classList.toggle("off", S.sound.muted); }
     document.getElementById("debug-state").textContent = S.display.debug ? "켜짐" : "꺼짐";
     document.getElementById("remove-item").style.display = (S.count || 1) > 1 ? "" : "none";
+    { // '모든 사도에 함께' — 혼자면 의미가 없으니 숨긴다
+      const it = document.getElementById("bulk-item"), on = bulkOn();
+      it.style.display = (S.count || 1) > 1 ? "" : "none";
+      it.classList.toggle("on", on);
+      document.getElementById("bulk-state").textContent = on ? `켜짐 · ${S.count}명` : "꺼짐";
+    }
     document.getElementById("screen-state").textContent = S.ai && S.ai.screen ? "" : "꺼짐";
     renderSkins(); loadNews().then(resize); resize();
   }
@@ -59,15 +68,16 @@
   }
   menuEl.addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle],[data-act],[data-anim],[data-skin],[data-scale],[data-news],[data-mood],[data-mode]"); if (!t) return;
-    if (t.dataset.mode) { if (!t.classList.contains("off")) set({ mode: t.dataset.mode }); return; }
-    if (t.dataset.mood !== undefined) { set(t.dataset.mood && S.mode !== "sd" ? { mood: t.dataset.mood, mode: "sd" } : { mood: t.dataset.mood }); return; }
+    if (t.dataset.mode) { if (!t.classList.contains("off")) set({ mode: t.dataset.mode }, bulkOn()); return; }
+    if (t.dataset.mood !== undefined) { set(t.dataset.mood && S.mode !== "sd" ? { mood: t.dataset.mood, mode: "sd" } : { mood: t.dataset.mood }, bulkOn()); return; }
     if (t.dataset.news) { const it = newsItems.find(i => i.id === t.dataset.news); if (it) host.openUrl(it.url, it.id); host.menuClose(); return; }
     if (t.dataset.toggle) { const sub = document.getElementById("sub-" + t.dataset.toggle); const was = sub.classList.contains("open"); for (const el of menuEl.querySelectorAll(".sub.open")) el.classList.remove("open"); if (!was) sub.classList.add("open"); if (t.dataset.toggle === "skins" && !was) setTimeout(() => filter.focus(), 0); resize(); return; }
     if (t.dataset.anim) { host.mascot("play", t.dataset.anim); return; }
     if (t.dataset.skin) { set({ skin: t.dataset.skin }); return; }
-    if (t.dataset.scale) { set({ scale: +t.dataset.scale }); return; }
+    if (t.dataset.scale) { set({ scale: +t.dataset.scale }, bulkOn()); return; }
     switch (t.dataset.act) {
 
+      case "bulk": set({ display: { bulkEdit: !(S.display && S.display.bulkEdit) } }); break;
       case "mute": set({ sound: { muted: !S.sound.muted } }); break;
       case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;

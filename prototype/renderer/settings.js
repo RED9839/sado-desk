@@ -18,10 +18,12 @@
   const fmt = (v, f) => f === "%" ? Math.round(v) + "%" : f === "px" ? Math.round(v) + "px" : f === "s" ? (+v).toFixed(1) + "s" : f === "s0" ? Math.round(v) + "초" : f === "min" ? Math.round(v) + "분" : v;
   // 통합 편집: 켜면 사도별 값이 모든 사도에게 함께 들어간다(스킨만은 메인에서 제외 — 다 같은 모습이 되니까).
   // 전역 설정(sound·display·ai…)은 원래 하나뿐이라 이 토글과 무관하다
-  let bulk = false;
+  // 설정에 남는 값이라 우클릭 메뉴와 같은 토글을 본다 — 메뉴 창은 열 때마다 새로 만들어져서
+  // 창 안에만 두면 껐다 켤 때마다 다시 체크해야 했다
+  const bulkNow = () => !!(FULL.global.display && FULL.global.display.bulkEdit);
   const set = (p, v) => {
     setLocal(p, v);
-    const target = (bulk && !GLOBAL_KEYS.has(p.split(".")[0])) ? "*" : cur;
+    const target = (bulkNow() && !GLOBAL_KEYS.has(p.split(".")[0])) ? "*" : cur;
     host.setSettings(patchOf(p, v), target);
     if (target === "*") for (const c of FULL.characters) { const ks = p.split("."); let o = c; for (const k of ks.slice(0, -1)) o = o[k] || (o[k] = {}); if (ks[0] !== "skin") o[ks[ks.length - 1]] = v; }
   };
@@ -40,8 +42,11 @@
 
   // ---- 통합 편집 토글 ----
   const bulkEl = document.getElementById("bulk");
-  if (bulkEl) bulkEl.addEventListener("change", () => { bulk = bulkEl.checked; document.getElementById("bulk-wrap").classList.toggle("on", bulk); updateBulkNote(); });
+  // 메인은 보낸 창에 자기 변경을 되돌려 주지 않으니(에코 방지) 안내 문구는 여기서 직접 고친다
+  if (bulkEl) bulkEl.addEventListener("change", () => { set("display.bulkEdit", bulkEl.checked); updateBulkNote(); });
   function updateBulkNote() {
+    const bulk = bulkNow();
+    if (bulkEl) { bulkEl.checked = bulk; document.getElementById("bulk-wrap").classList.toggle("on", bulk); }
     const note = document.getElementById("charbar-note"); if (!note) return;
     note.textContent = bulk
       ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 들어갑니다 (사도 모습만은 각자 그대로).`
