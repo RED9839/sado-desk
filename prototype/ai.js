@@ -362,6 +362,48 @@ async function chatOpenAI(cfg, key, system, messages, onToken, signal) {
 }
 
 // 쓸 수 있는 제공자 판정 (auto용 + 설정창 상태 표시)
+// ---- PC 사양에 맞는 로컬 모델 고르기 ----
+// 등급별 실측(tools/lab.js, N=28 · 속도는 RTX 4080 / 괄호는 CPU만):
+//   exaone3.5:2.4b 1.6GB  어미 34%  0.2초(1.0초)
+//   exaone3.5:7.8b 4.8GB  어미 80%  0.5초(2.2초)   ← 기본
+//   qwen2.5:14b    9.0GB  어미 72%  0.8초(5.5초) · 함정 실패는 37%→15% 로 가장 낮다
+const TIERS = {
+  light: { model: "exaone3.5:2.4b", ko: "경량", gb: 1.6 },
+  mid: { model: "exaone3.5:7.8b", ko: "보통", gb: 4.8 },
+  full: { model: "qwen2.5:14b", ko: "넉넉", gb: 9.0 },
+};
+let _machine = null;
+// 그래픽카드 메모리는 Win32_VideoController 가 16GB 를 4GB 로 보고하는 등 못 믿는다(32비트 넘침).
+// nvidia-smi 가 있으면 그것만 믿고, 없으면 RAM 으로 보수적으로 고른다 — 모자라게 잡는 쪽이 안전하다
+function detectMachine() {
+  if (_machine) return _machine;
+  const os = require("os"), cp = require("child_process");
+  const ramGB = +(os.totalmem() / 1073741824).toFixed(1);
+  let vramGB = null;
+  try {
+    const out = cp.execFileSync("nvidia-smi", ["--query-gpu=memory.total", "--format=csv,noheader,nounits"],
+      { timeout: 2500, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    const mib = Math.max(...out.split(/\r?\n/).map(x => parseInt(x, 10)).filter(x => x > 0));
+    if (isFinite(mib) && mib > 0) vramGB = +(mib / 1024).toFixed(1);
+  } catch {}
+  _machine = { ramGB, vramGB, cores: os.cpus().length };
+  return _machine;
+}
+/** 이 PC 에 맞는 Ollama 모델. { model, tier, why } */
+function pickOllamaModel(m) {
+  m = m || detectMachine();
+  const v = m.vramGB, r = m.ramGB;
+  if (v != null) {
+    // 모델이 그래픽카드 메모리에 통째로 올라가야 빠르다 — 넘치면 Ollama 가 CPU 로 쪼개 돌려 크게 느려진다
+    if (v >= 11) return { ...TIERS.full, tier: "full", why: `그래픽카드 메모리 ${v}GB` };
+    if (v >= 6) return { ...TIERS.mid, tier: "mid", why: `그래픽카드 메모리 ${v}GB` };
+    if (v >= 3) return { ...TIERS.light, tier: "light", why: `그래픽카드 메모리 ${v}GB` };
+  }
+  // 그래픽카드 메모리를 못 읽거나 너무 작다 → CPU 로 도는 셈 치고 한 등급 낮춘다
+  if (r >= 16) return { ...TIERS.mid, tier: "mid", why: v == null ? `RAM ${r}GB · 그래픽카드 메모리를 읽지 못함` : `RAM ${r}GB · 그래픽카드 메모리 ${v}GB 로는 부족` };
+  return { ...TIERS.light, tier: "light", why: `RAM ${r}GB` };
+}
+
 async function status(ai) {
   const cfg = merge(ai);
   const tags = await ollamaTags(cfg.ollama.url);
@@ -370,6 +412,7 @@ async function status(ai) {
     gemini: { key: !!decKey(cfg.keys.gemini) }, anthropic: { key: !!decKey(cfg.keys.anthropic) }, openai: { key: !!decKey(cfg.keys.openai), base: cfg.openai.base },
     plainKeys: Object.values(cfg.keys || {}).some(k => typeof k === "string" && k.startsWith("raw:")), // 설정 창이 '암호화되지 않음'을 알릴 수 있게
   };
+  try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {}
   s.resolved = resolve(cfg, s);
   return s;
 }
@@ -443,4 +486,4 @@ function bibleBrief(b, o = {}) {
     !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
-module.exports = { sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };
+module.exports = { detectMachine, pickOllamaModel, sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags };

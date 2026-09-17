@@ -176,6 +176,19 @@
       document.getElementById("ai-resolved").textContent = st.resolved ? `→ 지금 쓰는 것: ${names[st.resolved]}` : "→ 쓸 수 있는 제공자가 없어요 (아래에서 하나를 준비해 주세요)";
       const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "실행 중 아님 — Ollama를 설치·실행해 주세요 (설치하면 자동으로 켜져 있음)" : o.hasModel ? `실행 중 · 모델 있음 (${o.models.length}개 설치됨)` : `실행 중 · 모델 없음 → '내려받기' (설치된 것: ${o.models.join(", ") || "-"})`;
       for (const k of ["gemini", "anthropic", "openai"]) document.getElementById(`ai-key-${k}-state`).textContent = st[k].key ? "저장됨 ✓" : "없음";
+      // PC 사양과 그에 맞는 모델 — 지금 고른 것이 사양에 안 맞으면 눈에 띄게 알린다
+      const spec = document.getElementById("ai-ollama-spec");
+      if (spec) {
+        if (!st.machine || !st.recommend) spec.textContent = "사양을 읽지 못했어요";
+        else {
+          const mc = st.machine, rc = st.recommend;
+          const hw = `RAM ${mc.ramGB}GB` + (mc.vramGB != null ? ` · 그래픽카드 메모리 ${mc.vramGB}GB` : " · 그래픽카드 메모리 못 읽음");
+          const cur = (document.querySelector('[data-s="ai.ollama.model"]') || {}).value || "";
+          const same = cur && (cur === rc.model || cur.split(":")[0] === rc.model.split(":")[0]);
+          spec.textContent = (same || !cur) ? `${hw} → ${rc.model} (${rc.ko}) 권장` : `${hw} → ${rc.model} (${rc.ko}) 권장 · 지금은 ${cur}`;
+          spec.style.color = (same || !cur) ? "" : "#c60";
+        }
+      }
     }, 50);
   }
   for (const b of document.querySelectorAll("[data-savekey]")) b.addEventListener("click", async () => { const k = b.dataset.savekey, inp = document.getElementById(`ai-key-${k}`); await host.aiSetKey(k, inp.value); inp.value = ""; refreshAi(); });
