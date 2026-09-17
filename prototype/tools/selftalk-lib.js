@@ -11,6 +11,11 @@ const REF = fs.existsSync(REFP) ? JSON.parse(fs.readFileSync(REFP, "utf8")) : {}
 // 코스튬(스킨) 실제 대사 — tools/build-skin-ref.js 가 만든다. 키는 "사도키#스킨번호"
 const SKINREFP = path.join(root, "out", "_ref-skins.json");
 if (fs.existsSync(SKINREFP)) Object.assign(REF, JSON.parse(fs.readFileSync(SKINREFP, "utf8")));
+// 같은 인물의 다른 미니미는 참고 대사를 같이 쓴다 — 리뉴아는 프론티어 시절(Mini_Renewa)과
+// 각성판(Mini_RenewaAwaken)이 따로 있는데 대사표는 각성판 하나뿐이다. 이걸 이어 주지 않으면
+// 원형 쪽은 허용 말투가 시그니처 하나로 좁아지고, 원문 베끼기 검사도 아예 돌지 않는다
+const ALIAS = { renewa: "renewaawaken" };
+for (const [k, from] of Object.entries(ALIAS)) if (!REF[k] && REF[from]) REF[k] = REF[from];
 // 위키에서 더 뽑은 것 — 개요·연회장 음식·생활 스킬 (tools/build-hero-extra.py, 로컬 전용)
 const XP = path.join(root, "out", "_hero-extra.json");
 const XTRA = fs.existsSync(XP) ? JSON.parse(fs.readFileSync(XP, "utf8")) : {};
@@ -56,6 +61,9 @@ const _allowed = {};
 function allowedStyles(h, st) {
   if (_allowed[h]) return _allowed[h];
   const set = new Set([SAMEOF(st)]);
+  // 코스튬 키는 그 사도가 평소 쓰는 말투를 그대로 물려받는다. 코스튬 참고 대사가 없으면
+  // 여기가 시그니처 하나로 쪼그라들어, 모모의 '~것입니다' 같은 평소 어미까지 막혔다
+  if (h.includes("#")) for (const s of allowedStyles(h.split("#")[0], st)) set.add(s);
   const L = REF[h] || [], c = {}; let n = 0;
   for (const x of L) { const g = classify(x.split(/[.!?~…⋯]/).filter(Boolean).pop() || x); if (g) { const s = SAMEOF(g); c[s] = (c[s] || 0) + 1; n++; } }
   // 문턱 15% 는 인물 사전이 명시한 말투까지 막았다 — 버터는 자료에 "코미에겐 반말" 이라고
