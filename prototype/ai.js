@@ -324,16 +324,21 @@ async function chatGemini(cfg, key, system, messages, onToken, signal, noThinkCf
   }
   let out = "", finish = "";
   for await (const d of sse(r.body)) { let j; try { j = JSON.parse(d); } catch { continue; } const c = j.candidates?.[0]; const t = (c?.content?.parts || []).map(p => p.text || "").join(""); if (t) { out += t; onToken(t); } if (c?.finishReason) { finish = c.finishReason; if (finish !== "STOP") console.log("[ai] gemini candidate", JSON.stringify({ finish, ratings: c.safetyRatings, pf: j.promptFeedback, usage: j.usageMetadata }).slice(0, 600)); } if (j.promptFeedback?.blockReason) finish = "PROMPT_" + j.promptFeedback.blockReason; }
+  // 끝 이벤트(finishReason) 없이 스트림이 닫히는 일이 있다 — 실측 셋에 하나꼴. 그대로 두면 "…꽃밭을 돌면서 달"
+  // 처럼 낱말 중간에서 끊긴 조각이 완성된 답으로 저장된다. 아래 '잘린 답' 처리로 넘긴다
+  if (!finish) finish = "NO_FINISH";
   if (finish && !/^(STOP|MAX_TOKENS)$/.test(finish)) { // 필터에 걸려 중간에 끊긴 답은 말풍선에 반쪽만 뜬다
     // 길이가 아니라 '문장이 끝났는가'로 본다 — 34자여도 말끝이 잘렸으면 그대로 내보내면 안 된다
     const done = /[.!?~…⋯"'」』)\]]\s*$/.test(out.trim()) || /(다|요|죠|까|군|네|야|어|지)\s*$/.test(out.trim());
     if (!done || out.trim().length < 12) {
+      if (finish === "NO_FINISH" && attempt < 1) { console.log("[ai] gemini 끝 이벤트 없이 끊김 → 재시도", JSON.stringify(out.slice(-30))); return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt + 1, relaxed); }
       if (!relaxed && finish === "SAFETY") return chatGemini(cfg, key, system, messages, onToken, signal, noThinkCfg, attempt, true); // 필터를 낮춰 한 번 더
       const cut = out.replace(/[^.!?~…⋯]*$/, "").trim(); // 재시도도 잘렸으면 마지막 완결 문장까지만
       if (cut.length >= 8) { console.log("[ai] gemini", finish, "→ 완결 문장까지만", JSON.stringify(cut.slice(-40))); return cut; }
-      throw new Error(`Gemini 필터로 답이 차단됨 (${finish})`);
+      throw new Error(finish === "NO_FINISH" ? "Gemini 응답이 중간에 끊겼어요. 다시 말 걸어 주세요." : `Gemini 필터로 답이 차단됨 (${finish})`);
     }
-    console.log("[ai] gemini finishReason", finish, "→ 잘린 답", JSON.stringify(out.slice(-60)));
+    // 끝 이벤트가 없었어도 문장이 제대로 맺혔으면 그냥 쓴다 — 굳이 알릴 것이 없다
+    if (finish !== "NO_FINISH") console.log("[ai] gemini finishReason", finish, "→ 잘린 답", JSON.stringify(out.slice(-60)));
   }
   return out;
 }
