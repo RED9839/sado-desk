@@ -428,7 +428,13 @@ function openSettings(tab, forId) {
       const dir = path.join(__dirname, "out"); fs.mkdirSync(dir, { recursive: true });
       const top = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}.png`), top.toPNG());
       const more = await settingsWin.webContents.executeJavaScript("(()=>{const m=document.querySelector('main');const can=m.scrollHeight>m.clientHeight+8;m.scrollTop=m.scrollHeight;return can})()");
-      if (more) { await new Promise(r => setTimeout(r, 400)); const bot = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}-bottom.png`), bot.toPNG()); await settingsWin.webContents.executeJavaScript("document.querySelector('main').scrollTop=0"); }
+      if (more) { // 긴 탭은 가운데·아래도 한 장씩 — AI 탭은 세 화면 분량이다
+        await new Promise(r => setTimeout(r, 400)); const bot = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}-bottom.png`), bot.toPNG());
+        await settingsWin.webContents.executeJavaScript("(()=>{const m=document.querySelector('main');m.scrollTop=(m.scrollHeight-m.clientHeight)/2})()"); await new Promise(r => setTimeout(r, 400));
+        const mid = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}-mid.png`), mid.toPNG());
+        await settingsWin.webContents.executeJavaScript("document.querySelector('main').scrollTop=0"); }
+      // --shot-focus '#ai-step1' — 그 요소가 보이게 내려서 한 장 더 (특정 카드를 확인할 때)
+      const focus = argVal("--shot-focus", ""); if (focus) { const ok = await settingsWin.webContents.executeJavaScript(`(()=>{const e=document.querySelector(${JSON.stringify(focus)});if(!e||!e.offsetParent)return false;e.scrollIntoView({block:"start"});return true})()`); if (ok) { await new Promise(r => setTimeout(r, 400)); const img = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}-focus.png`), img.toPNG()); } }
       console.log("SHOT", tabs[i], more ? "(위+아래)" : ""); i++; shoot(); }, 1800); };  // 창 목록처럼 IPC 로 채우는 칸이 있어 넉넉히
     setTimeout(shoot, 5000);
   }

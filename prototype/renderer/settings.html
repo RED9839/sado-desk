@@ -262,22 +262,27 @@
       <div class="hint" id="ai-resolved" style="margin:-2px 0 6px"></div>
       <div class="row"><button class="btn" id="ai-test">지금 설정으로 한 마디 시켜보기</button><span class="hint" id="ai-test-out"></span></div>
     </div>
+    <div class="card"><h3>Google Gemini (무료 등급)</h3>
+      <div class="hint"><b>가장 쉬운 길 — 설치할 것이 없습니다.</b> <a href="#" data-ai-url="gemini">Google AI Studio</a>에 구글 계정으로 들어가 "Create API key" 를 누르고 나온 키를 아래에 붙여 넣으면 끝입니다 (Flash 계열 무료 등급: 분당 10~15회, 하루 250~1000회 정도). 키는 이 PC에 암호화 저장됩니다.</div>
+      <div class="row" style="margin-top:6px"><label>API 키</label><input type="password" id="ai-key-gemini" placeholder="AIza…" style="width:260px"><button class="btn" data-savekey="gemini">저장</button><span class="hint" id="ai-key-gemini-state"></span></div>
+      <div class="row"><label>모델</label><input type="text" data-s="ai.gemini.model" style="width:220px"><span class="hint">gemini-flash-latest(권장 별칭) · gemini-flash-lite-latest · gemini-3.6-flash …</span></div>
+    </div>
     <div class="card"><h3>Ollama (무료 · 로컬)</h3>
-      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이, 대화가 PC 밖으로 나가지 않고 한도도 없습니다. <b>PC 사양에 맞춰 고르세요</b> — 아래 속도는 RTX 4080 기준이고, 괄호 안은 그래픽카드 없이 CPU만 쓸 때입니다.<br>
+      <div class="hint">내 PC 에서 돌아가는 무료 AI 입니다. 키도 요금도 없고 대화가 PC 밖으로 나가지 않습니다. 대신 <b>5GB 안팎을 내려받고</b>, 그래픽카드가 없으면 답이 몇 초씩 걸립니다. <b>잘 모르겠으면 위의 Gemini 무료 키가 더 쉽습니다</b> — 설치할 것이 없습니다.</div>
+      <div class="row" id="ai-step1"><label><b>① Ollama 설치</b><span class="hint">설치 파일을 받아 실행하면 끝입니다. 따로 켤 필요 없이 뒤에서 늘 돌아갑니다. 설치가 끝나면 이 줄이 ✓ 로 바뀝니다.</span></label><button class="btn" data-ai-url="ollama">Ollama 내려받기 페이지 열기</button><span class="hint" id="ai-step1-state"></span></div>
+      <div class="row" id="ai-step2"><label><b>② 한국어 모델 내려받기</b><span class="hint">아래 '내 PC에 맞추기' 를 누르면 그래픽카드에 맞는 모델 이름이 들어갑니다. 그다음 '내려받기'. 한 번만 하면 됩니다.</span></label><span class="hint" id="ai-step2-state"></span></div>
+      <details class="hint" style="margin:4px 0 8px"><summary>모델 셋 비교 (실측)</summary>
+        아래 속도는 RTX 4080 기준이고, 괄호 안은 그래픽카드 없이 CPU만 쓸 때입니다.<br>
         · <code>exaone3.5:2.4b</code> 1.6GB — 가장 가볍습니다. 답 0.2초(1.0초). 다만 사도 고유 어미(~다비·~입니닷)를 자주 놓쳐요(재현 34%).<br>
         · <code>exaone3.5:7.8b</code> 4.8GB — <b>기본값</b>. 답 0.5초(2.2초). 어미 재현 80%로 말투가 가장 낫습니다.<br>
         · <code>qwen2.5:14b</code> 9GB — 그래픽카드 메모리가 10GB 넘을 때. 답 0.8초(5.5초). 어미는 72%로 조금 낮지만 "이 게임 재밌어?" 같은 말에 사도 말투가 깨지는 일이 훨씬 적습니다.<br>
-        <b>품질은 Gemini/Claude보다 낮습니다.</b> 그래픽카드가 없거나 RAM이 8GB뿐인 PC라면 9GB짜리는 아예 올라가지 않으니 2.4b를 쓰세요.</div>
+        <b>품질은 Gemini/Claude보다 낮습니다.</b> 그래픽카드가 없거나 RAM이 8GB뿐인 PC라면 9GB짜리는 아예 올라가지 않으니 2.4b를 쓰세요.
+      </details>
       <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
       <div class="row"><label>내 PC</label><span id="ai-ollama-spec" class="hint">확인 중…</span><button class="btn" id="ai-fit" style="display:none">내 PC에 맞추기</button></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
       <div class="row"><label>모델을 메모리에 두는 시간<span class="hint">답한 뒤 이 시간 동안 모델이 그래픽카드 메모리(VRAM)에 남아 있습니다. 7.8b 모델이 <b>약 5GB</b>를 차지해요. <b>게임을 하신다면 '답할 때만'</b>으로 두세요 — 답이 끝나면 바로 비우고, 대신 부를 때마다 1.7초쯤 더 걸립니다.</span></label><select data-s="ai.ollama.keepAlive"><option value="5m">5분 (기본 · 빠름)</option><option value="30m">30분</option><option value="0">답할 때만 (게임할 때)</option><option value="-1">계속 (가장 빠름)</option></select></div>
-    </div>
-    <div class="card"><h3>Google Gemini (무료 등급)</h3>
-      <div class="hint"><a href="#" data-ai-url="gemini">Google AI Studio</a>에서 무료 API 키를 만들 수 있어요 (Flash 계열 무료 등급: 분당 10~15회, 하루 250~1000회 정도). 키는 이 PC에 암호화 저장됩니다.</div>
-      <div class="row" style="margin-top:6px"><label>API 키</label><input type="password" id="ai-key-gemini" placeholder="AIza…" style="width:260px"><button class="btn" data-savekey="gemini">저장</button><span class="hint" id="ai-key-gemini-state"></span></div>
-      <div class="row"><label>모델</label><input type="text" data-s="ai.gemini.model" style="width:220px"><span class="hint">gemini-flash-latest(권장 별칭) · gemini-flash-lite-latest · gemini-3.6-flash …</span></div>
     </div>
     <div class="card"><h3>Anthropic Claude (유료)</h3>
       <div class="hint"><a href="#" data-ai-url="anthropic">Anthropic Console</a>에서 키 발급. 말투·유머·상황 파악이 가장 좋습니다. 대화 한 번에 약 ₩10~15(Opus 5), ₩4~6(Sonnet 5), ₩2~3(Haiku 4.5) — 페르소나는 프롬프트 캐시로 절약.</div>
