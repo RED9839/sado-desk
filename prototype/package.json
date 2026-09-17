@@ -1,6 +1,6 @@
 {
   "name": "sado-desk",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "private": true,
   "description": "사도 데스크 — 트릭컬 리바이브 사도 데스크탑 마스코트 (비공식 팬 프로젝트, Electron + spine-ts 4.1)",
   "main": "main.js",
