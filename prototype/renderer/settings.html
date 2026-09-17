@@ -262,7 +262,11 @@
       <div class="row"><button class="btn" id="ai-test">지금 설정으로 한 마디 시켜보기</button><span class="hint" id="ai-test-out"></span></div>
     </div>
     <div class="card"><h3>Ollama (무료 · 로컬)</h3>
-      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이, 대화가 PC 밖으로 나가지 않고 한도도 없습니다. 모델 <code>exaone3.5:7.8b</code>(LG, 약 4.8GB · GPU 또는 RAM 8GB 이상) — 가벼운 PC는 <code>exaone3.5:2.4b</code>(1.6GB). <b>품질은 Gemini/Claude보다 낮습니다</b>: 한국어는 자연스럽지만 사도 고유 어미(~다비·~그마·~입니닷)를 자주 놓치고 개성 표현이 옅어요(RTX 4080에서 답 6~8초).</div>
+      <div class="hint">PC에 <a href="#" data-ai-url="ollama">Ollama</a>를 설치하고 한국어 모델을 내려받으면 키·비용 없이, 대화가 PC 밖으로 나가지 않고 한도도 없습니다. <b>PC 사양에 맞춰 고르세요</b> — 아래 속도는 RTX 4080 기준이고, 괄호 안은 그래픽카드 없이 CPU만 쓸 때입니다.<br>
+        · <code>exaone3.5:2.4b</code> 1.6GB — 가장 가볍습니다. 답 0.2초(1.0초). 다만 사도 고유 어미(~다비·~입니닷)를 자주 놓쳐요(재현 34%).<br>
+        · <code>exaone3.5:7.8b</code> 4.8GB — <b>기본값</b>. 답 0.5초(2.2초). 어미 재현 80%로 말투가 가장 낫습니다.<br>
+        · <code>qwen2.5:14b</code> 9GB — 그래픽카드 메모리가 10GB 넘을 때. 답 0.8초(5.5초). 어미는 72%로 조금 낮지만 "이 게임 재밌어?" 같은 말에 캐릭터가 깨지는 일이 훨씬 적습니다.<br>
+        <b>품질은 Gemini/Claude보다 낮습니다.</b> 그래픽카드가 없거나 RAM이 8GB뿐인 PC라면 9GB짜리는 아예 올라가지 않으니 2.4b를 쓰세요.</div>
       <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
