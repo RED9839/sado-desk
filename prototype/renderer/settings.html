@@ -268,7 +268,7 @@
         · <code>qwen2.5:14b</code> 9GB — 그래픽카드 메모리가 10GB 넘을 때. 답 0.8초(5.5초). 어미는 72%로 조금 낮지만 "이 게임 재밌어?" 같은 말에 캐릭터가 깨지는 일이 훨씬 적습니다.<br>
         <b>품질은 Gemini/Claude보다 낮습니다.</b> 그래픽카드가 없거나 RAM이 8GB뿐인 PC라면 9GB짜리는 아예 올라가지 않으니 2.4b를 쓰세요.</div>
       <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
-      <div class="row"><label>내 PC</label><span id="ai-ollama-spec" class="hint">확인 중…</span></div>
+      <div class="row"><label>내 PC</label><span id="ai-ollama-spec" class="hint">확인 중…</span><button class="btn" id="ai-fit" style="display:none">내 PC에 맞추기</button></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
       <div class="row"><label>모델을 메모리에 두는 시간<span class="hint">답한 뒤 이 시간 동안 모델이 그래픽카드 메모리(VRAM)에 남아 있습니다. 7.8b 모델이 <b>약 5GB</b>를 차지해요. <b>게임을 하신다면 '답할 때만'</b>으로 두세요 — 답이 끝나면 바로 비우고, 대신 부를 때마다 1.7초쯤 더 걸립니다.</span></label><select data-s="ai.ollama.keepAlive"><option value="5m">5분 (기본 · 빠름)</option><option value="30m">30분</option><option value="0">답할 때만 (게임할 때)</option><option value="-1">계속 (가장 빠름)</option></select></div>

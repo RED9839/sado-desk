@@ -178,20 +178,6 @@ function loadSettings() {
 }
 let settings = loadSettings();
 let saveTimer = null;
-// 첫 실행에 이 PC 사양으로 로컬 모델 등급을 정한다 — 기본값(7.8b·4.8GB)은 보급형 기준이라
-// 낮은 사양에서는 버겁고, 그래픽카드가 넉넉하면 더 나은 것을 쓸 수 있다.
-// 사용자가 한 번이라도 모델을 고른 적이 있으면 건드리지 않는다(빈 값일 때만).
-function autoPickOllamaModel() {
-  try {
-    const ai = settings.global.ai || (settings.global.ai = {});
-    const o = ai.ollama || (ai.ollama = {});
-    if (o.model) return;                       // 이미 정해져 있다 — 사용자의 선택이 우선
-    const rec = Ai.pickOllamaModel();
-    o.model = rec.model;
-    console.log(`ollama 모델 자동 선택: ${rec.model} (${rec.ko} · ${rec.gb}GB) — ${rec.why}`);
-    saveSettings();
-  } catch (e) { console.log("ollama 모델 자동 선택 실패:", e.message); }
-}
 
 function saveSettings() {
   clearTimeout(saveTimer);
@@ -1111,7 +1097,6 @@ app.on("web-contents-created", (_e, wc) => {
 });
 app.whenReady().then(() => {
   geo = geometry();
-  autoPickOllamaModel();   // 첫 실행에 PC 사양으로 로컬 모델 등급 정하기(이미 정해져 있으면 그대로)
   if (hasAssets(ASSET_ROOT)) { buildTray(); startMascot(); }
   else { console.log("에셋 없음 → 가져오기 창을 첫 화면으로"); openSetup(); buildTray(); }
   applyAutoStart();

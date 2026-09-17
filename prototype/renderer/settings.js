@@ -187,6 +187,9 @@
           const same = cur && (cur === rc.model || cur.split(":")[0] === rc.model.split(":")[0]);
           spec.textContent = (same || !cur) ? `${hw} → ${rc.model} (${rc.ko}) 권장` : `${hw} → ${rc.model} (${rc.ko}) 권장 · 지금은 ${cur}`;
           spec.style.color = (same || !cur) ? "" : "#c60";
+          // 권장과 다를 때만 버튼을 보인다 — 누르기 전에는 설정을 건드리지 않는다
+          const fit = document.getElementById("ai-fit");
+          if (fit) { fit.style.display = (same || !cur) ? "none" : ""; fit.dataset.model = rc.model; }
         }
       }
     }, 50);
@@ -196,6 +199,14 @@
   document.getElementById("ai-test").addEventListener("click", async (e) => { const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "생각 중…"; const r = await host.aiTest(); e.target.disabled = false; out.textContent = r.ok ? `[${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `실패: ${r.error}`; });
   document.getElementById("ai-pull").addEventListener("click", async (e) => { const model = getPath(FULL.global, "ai.ollama.model"); const out = document.getElementById("ai-pull-out"); e.target.disabled = true; out.textContent = `${model} 내려받는 중…`; const r = await host.aiPull(model); e.target.disabled = false; out.textContent = r.ok ? "완료 ✓" : `실패: ${r.error}`; refreshAi(); });
   host.on("ai:pull-progress", (t) => { document.getElementById("ai-pull-out").textContent = t; });
+  // 사용자가 눌렀을 때만 모델 이름을 바꾼다. 내려받기는 여전히 따로 눌러야 한다
+  document.getElementById("ai-fit").addEventListener("click", (e) => {
+    const m = e.target.dataset.model; if (!m) return;
+    const input = document.querySelector('[data-s="ai.ollama.model"]');
+    if (!input) return;
+    input.value = m; input.dispatchEvent(new Event("change", { bubbles: true }));
+    e.target.style.display = "none"; refreshAi();
+  });
   document.getElementById("news-check").addEventListener("click", async (e) => { e.target.textContent = "확인 중…"; const r = await host.newsCheck(); e.target.textContent = "지금 확인"; document.getElementById("news-status").textContent = r.added.length ? `새 소식 ${r.added.length}개!` : (r.errors?.length ? "확인 실패: " + r.errors.join(" / ") : "새 소식 없음"); setTimeout(renderNews, 500); });
   document.getElementById("news-test").addEventListener("click", () => { host.newsTest(); setTimeout(renderNews, 500); });
   document.getElementById("news-read").addEventListener("click", () => { host.newsReadAll(); setTimeout(renderNews, 300); });
