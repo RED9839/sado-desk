@@ -1,6 +1,7 @@
 /* AI 대화 — 사도가 자기 말투로 대답한다. 메인 프로세스 전용.
  * 제공자(provider):
- *   ollama    로컬 무료 (http://localhost:11434). 기본 모델 exaone3.5:7.8b(LG, 한국어 강함) — 사용자 PC에서 돌아가므로 키·비용 없음
+ *   ollama    로컬 무료 (http://localhost:11434). 기본 모델 qwen2.5:14b — 사용자 PC에서 돌아가므로 키·비용 없음.
+ *             한국어 특화 exaone3.5:7.8b 보다 어미 재현은 8pp 낮지만, 캐릭터가 깨지는 함정(게임·과금·코딩) 실패를 37%→15% 로 줄인다(tools/lab.js, N=28)
  *   gemini    Google AI Studio 무료 등급 키 (Flash 계열, 분당 10~15회/일 250~1000회 제한)
  *   anthropic Anthropic API 키 (유료, 말투 재현 최상). 공식 SDK(@anthropic-ai/sdk)
  *   openai    OpenAI 호환 엔드포인트 (Groq·OpenRouter·LM Studio 등) — base URL + 키 + 모델
@@ -22,7 +23,7 @@ const EMOTIONS = { "행복": "happy", "기쁨": "happy", "즐거움": "happy", "
   "공상": "", "생각": "", "고민": "", "무심": "" };
 const DEFAULTS = {
   provider: "auto",
-  ollama: { url: "http://localhost:11434", model: "exaone3.5:7.8b", visionModel: "qwen2.5vl:7b", keepAlive: "5m" }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
+  ollama: { url: "http://localhost:11434", model: "qwen2.5:14b", visionModel: "qwen2.5vl:7b", keepAlive: "5m", temperature: 0.6 }, // visionModel: 화면 보기용(이미지 입력 가능 모델). 비우면 화면 보기 불가
   gemini: { model: "gemini-flash-latest" }, // 별칭 — 구글이 최신 Flash로 연결(2.5-flash는 신규 사용자에게 막힘)
   anthropic: { model: "claude-opus-5" },
   openai: { base: "https://api.groq.com/openai/v1", model: "llama-3.3-70b-versatile" },
