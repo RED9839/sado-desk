@@ -593,16 +593,33 @@ async function screenTalk(id, userText) {
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
 const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).bubbleSec) || 4) * 1000) + Math.min(80, t.length) * 100);
 // ---- 혼잣말 (대본) ----
-// data/self-talk.json 1,738줄. LLM 을 부르지 않는다 — AI 를 켜지 않은 사람도 사도가 중얼거린다.
+// data/self-talk.json 4,498줄(그중 2,760줄은 상황 꼬리표가 달렸다). LLM 을 부르지 않는다 — AI 를 켜지 않은 사람도 사도가 중얼거린다.
 // 줄마다 {t: 문장, m: 감정, a: 동작 접두어} 라 말풍선과 모션을 그대로 태울 수 있다.
 const selfTalkSaid = new Map(); // 사도키 → 최근에 말한 줄 (되풀이 방지)
-function pickSelfTalk(key) {
+// 혼잣말의 상황 꼬리표(w). 아침이든 밤이든 방금 던져졌든 같은 풀에서 뽑던 것을, 그 때에 맞는 줄이 먼저 나오게 한다.
+// 꼬리표 없는 줄은 언제나 후보. 꼬리표가 지금 상황과 맞으면 세 배 무게 — 그래야 맞는 때에 실제로 나온다
+const SELF_TAGS = ["morning", "day", "evening", "night", "late", "weekend", "thrown", "petted", "poked", "idle"];
+const lastEvent = new Map(); // 인스턴스 id → { kind, at } 렌더러가 알려 준 마지막 교감 (던져짐·쓰다듬음·꿀밤)
+let lastTouchAt = Date.now(); // 마지막으로 손이 닿은 시각 — 30분 넘으면 "오래 가만히 둠"
+ipcMain.on("mascot:event", (e, id, kind) => { const me = typeof id === "string" ? id : instanceOf(e.sender); if (!me || typeof kind !== "string") return; lastEvent.set(me, { kind, at: Date.now() }); lastTouchAt = Date.now(); });
+function selfCtx(id) {
+  const now = new Date(), h = now.getHours(), tags = new Set();
+  tags.add(h < 6 ? "late" : h < 11 ? "morning" : h < 17 ? "day" : h < 21 ? "evening" : "night");
+  if (now.getDay() === 0 || now.getDay() === 6) tags.add("weekend");
+  const ev = lastEvent.get(id); if (ev && Date.now() - ev.at < 90000) tags.add(ev.kind); // 던져진 지 90초 안이면 "아까 던진 거"
+  if (Date.now() - lastTouchAt > 30 * 60000) tags.add("idle");
+  return tags;
+}
+function pickSelfTalk(key, id) {
   const all = selfTalk[key] || [];
   if (!all.length) return null;
+  const ctx = id ? selfCtx(id) : new Set();
+  const fits = all.filter(x => !x.w || ctx.has(x.w));   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
   const said = selfTalkSaid.get(key) || [];
-  const fresh = all.filter(x => !said.includes(x.t));
-  const pool = fresh.length ? fresh : all;          // 다 돌았으면 처음부터
-  const line = pool[Math.floor(Math.random() * pool.length)];
+  let fresh = fits.filter(x => !said.includes(x.t));
+  if (!fresh.length) fresh = fits.length ? fits : all;      // 다 돌았으면 처음부터
+  const weighted = fresh.flatMap(x => x.w && ctx.has(x.w) ? [x, x, x] : [x]);
+  const line = weighted[Math.floor(Math.random() * weighted.length)];
   const keep = Math.max(3, Math.floor(all.length / 2)); // 절반은 다시 나오지 않게
   selfTalkSaid.set(key, [...(fresh.length ? said : []), line.t].slice(-keep));
   return line;
@@ -610,7 +627,7 @@ function pickSelfTalk(key) {
 // 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
 function saySelfTalk(id, opts = {}) {
   const prof = chatProfile(id); if (!prof) return false;
-  const line = pickSelfTalk(prof.key); if (!line) return false;
+  const line = pickSelfTalk(prof.key, id); if (!line) return false;
   const ttl = bubbleMs(line.t);
   const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
   showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
@@ -907,6 +924,7 @@ ipcMain.on("hit-rect", (e, r, id) => {
   // (말풍선은 띄울 때 자리를 잡고 고정 — 캐릭터를 따라다니지 않음)
 });
 ipcMain.on("hit-ev", (e, ev) => {
+  if (ev && ev.type === "mousedown") lastTouchAt = Date.now(); // 손이 닿았다 — "오래 방치" 꼬리표를 푼다
   const id = ev.instance || hitFor; // 실제 히트 창 이벤트는 현재 대상 캐릭터에게. (테스트는 instance를 직접 지정)
   if (!id || !instances.has(id) || !geo || !mascotWin || mascotWin.isDestroyed()) return;
   if (ev.type === "mousedown") hitDown = true; else if (ev.type === "mouseup") hitDown = false;

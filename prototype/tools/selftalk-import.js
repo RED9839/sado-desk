@@ -3,6 +3,8 @@
  *   node tools/selftalk-import.js jubee out/답.txt          (사도 하나)
  *   node tools/selftalk-import.js --multi out/답-01.txt      ("### <사도키>" 로 나뉜 여러 사도)
  *   ... --force    (버린 줄도 이유만 보고 넣기)
+ *   ... --check    (넣지 않고 검사만 — 줄마다 걸린 이유를 찍는다)
+ *   ... --when     (상황 꼬리표 [밤] 같은 것이 없는 줄은 버린다 — 상황 대본 넣을 때)
  */
 const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
@@ -12,6 +14,7 @@ const args = process.argv.slice(2);
 const force = args.includes("--force");
 const multi = args.includes("--multi");
 const replace = args.includes("--replace");   // 기본은 합치기 — 이미 있는 줄을 지우지 않는다
+const check = args.includes("--check"), when = args.includes("--when");
 const rest = args.filter(a => !a.startsWith("--"));
 if (!rest.length) { console.error("쓰기: node tools/selftalk-import.js <사도키> <파일>  |  --multi <파일>"); process.exit(1); }
 
@@ -28,11 +31,14 @@ function put(h, text) {
   const kept = [], dropped = [];
   for (const line of parsed) {
     const rs = B.reasons(line, p, [...seen, ...kept.map(x => x.t)], corpus, { solo: true });
+    if (when && !line.w) rs.push("상황 꼬리표 없음");
     if (rs.length && !force) { dropped.push([line.t, rs.join(", ")]); continue; }
     if (rs.length) dropped.push([line.t, rs.join(", ") + " (그래도 넣음)"]);
     kept.push(line);
   }
-  db.heroes[h] = [...had, ...kept];
+  total += parsed.length; kept0 += kept.length;
+  if (!check) db.heroes[h] = [...had, ...kept];
+  if (check) { for (const [t, why] of dropped) console.log(`  x [${why}] ${t}`); console.log(`${p.ko.padEnd(14)} 통과 ${kept.length}/${parsed.length}` + (kept.length < 18 ? "  <- 18줄 못 채움" : "")); return; }
   console.log(`${p.ko.padEnd(14)} +${kept.length}/${parsed.length}줄 → ${db.heroes[h].length}줄` + (dropped.length ? `  버림: ${[...new Set(dropped.map(d => d[1]))].slice(0, 4).join(", ")}` : ""));
   if (process.env.VERBOSE) for (const [t, why] of dropped) console.log(`    [${why}] ${t}`);
 }
@@ -48,6 +54,7 @@ if (multi) {
   }
 } else put(rest[0].toLowerCase(), fs.readFileSync(rest[1], "utf8"));
 
+if (check) { console.log(`검사만: 통과 ${kept0}/${total}줄 (넣지 않음)`); process.exit(kept0 === total ? 0 : 1); }
 fs.writeFileSync(OUT, JSON.stringify(db, null, 1), "utf8");
 console.log(`\n합계 ${kept0}/${total}줄 → data/self-talk.json`);
 console.log("동작 붙이기: node tools/selftalk-act.js");

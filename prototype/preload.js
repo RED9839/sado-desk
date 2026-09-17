@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("host", {
   readBytes: (p) => new Uint8Array(fs.readFileSync(guard(p))),
   readText: (p) => fs.readFileSync(guard(p), "utf8"),
   // 마스코트 창
+  event: (kind, id) => ipcRenderer.send("mascot:event", id === undefined ? INSTANCE : id, kind), // 던져져 착지·쓰다듬음·꿀밤 — 혼잣말이 상황을 안다
   hitRect: (r, id) => ipcRenderer.send("hit-rect", r, id === undefined ? INSTANCE : id),
   openMenu: (x, y, id) => ipcRenderer.send("menu:open", { x, y }, id === undefined ? INSTANCE : id),
   sdAnims: (id, list) => ipcRenderer.send("sd-anims", id, list),
