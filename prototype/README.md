@@ -48,12 +48,10 @@ run.cmd --multi-test # 캐릭터 추가 → 개별 설정 → 2번 캐릭터 메
 ## GIF 추출 (스탠딩 Spine → 투명 GIF)
 ```
 electron tools/render-gif.js -- <skel> <atlas> <out.gif> [--anim Idle_1] [--skin Normal] [--fps 24] [--size 512] [--list] [--all-anims]
-python tools/law-download.py assets/standing-hd            # lootandwaifus.com 의 고해상도 스탠딩 에셋(133명, 스킨 포함) 다운로드
 python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] [--only alice,crepe] [--all-anims]
 ```
 - `renderer/gif.html`이 spine-webgl로 프레임을 뽑고(`canvas.toDataURL`), `tools/render-gif.js`가 ffmpeg(imageio-ffmpeg 내장 바이너리) palettegen/paletteuse로 투명 GIF 인코딩
-- 출력: `out/gif/<한글이름>/<스킨>_<애니>.gif`. 크레페는 사이트에 없어 게임 추출본(`assets/standing/`)으로 렌더
-- 사이트 에셋은 2048px 무손실(pma:false), 게임 모바일 추출본은 ASTC 1024px(pma:true) — 둘 다 지원
+- 입력은 본인 게임에서 추출한 `assets/standing/` 이다. 출력: `out/gif/<한글이름>/<스킨>_<애니>.gif`
 
 ## 설정 저장
 `%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display}, characters:[{id, skin, mode, scale, opacity, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 sound/display는 global에, 나머지는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값은 `main.js`의 `CHAR_DEFAULTS`/`GLOBAL_DEFAULTS`. v1 파일은 자동 이관.
@@ -67,5 +65,4 @@ renderer/index.html
 renderer/hit.html, hit-preload.js  캐릭터를 따라다니는 투명 히트 창 (mousedown/up/move를 화면 좌표로 메인에 전달)
 renderer/menu.html, menu.js  우클릭 메뉴 (별도 작은 창, 검색·슬라이더가 실제 입력으로 동작)
 renderer/settings.html, settings.js  설정창 (탭 5개, 아틀라스에서 미니미 썸네일 직접 크롭)
-tools/analyze-minimi.mjs  spine-core로 skel 애니 77개 길이/이동량/변형 범위 표 → out/minimi-anims.json
 ```
