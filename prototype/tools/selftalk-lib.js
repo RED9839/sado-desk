@@ -38,9 +38,10 @@ const BROKEN = [
 ];
 // 모모의 '~닷' — 앞 글자 받침이 ㅂ 일 때만 바른 꼴이다(입니닷·습니닷·립니닷·겁니닷 ○, 설렘니닷·거얌니닷 ×)
 function badDat(t) {
-  const m = /([가-힣])니닷/.exec(t);
-  if (/닷/.test(t) && !m) return true;                       // 니닷 꼴이 아예 아님
-  if (!m) return false;
+  // 낱말 속 '닷'(바닷물·바닷가·바닷바람)은 어미가 아니다 — 뒤에 한글이 이어지면 넘긴다
+  if (!/닷(?![가-힣])/.test(t)) return false;
+  const m = /([가-힣])니닷(?![가-힣])/.exec(t);
+  if (!m) return true;                                       // 니닷 꼴이 아예 아님
   const jong = (m[1].charCodeAt(0) - 0xac00) % 28;           // 받침 번호 (ㅂ = 17)
   return jong !== 17;
 }
@@ -187,7 +188,9 @@ function reasons(line, p, seen, corpus, opts) {
   const ad = wrongAddr(t, p); if (ad) out.push(ad);
   const n = t.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, "");
   for (let i = 0; i + 18 <= n.length; i++) if (corpus.has(n.slice(i, i + 18))) { out.push("위키 원문과 겹침"); break; }
-  const rn = (REF[p.key] || []).map(x => x.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, ""));
+  // 코스튬 키("alice#1")면 기본 차림의 대사와도 대조한다 — 평소 게임 대사를 베끼는 것도 막아야 한다
+  const refKeys = p.key.includes("#") ? [p.key, p.key.split("#")[0]] : [p.key];
+  const rn = refKeys.flatMap(k => REF[k] || []).map(x => x.replace(/[^\uac00-\ud7a3a-zA-Z0-9]+/g, ""));
   // 원문 대조는 두 방향이다. 8자로 내렸다 — 10자였을 때 "건드리다니→던지다니" 처럼 한 마디만 바꾼 줄이 통과했다
   const CP = 8;
   let copied = n.length < CP ? rn.some(r => r.includes(n)) : false;
