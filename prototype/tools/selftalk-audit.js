@@ -9,7 +9,7 @@ const B = require(path.join(root, "tools/selftalk-lib.js"));
 const args = process.argv.slice(2);
 const only = (args.find(a => !a.startsWith("--")) || "").split(",").filter(Boolean);
 const wantTagged = args.includes("--tagged"), wantPlain = args.includes("--plain");
-const db = JSON.parse(fs.readFileSync(path.join(root, "data/self-talk.json"), "utf8")).heroes;
+const db = (() => { const j = JSON.parse(fs.readFileSync(path.join(root, "data/self-talk.json"), "utf8")); return { ...j.heroes, ...(j.skins || {}) }; })();
 const corpus = B.loadCorpus();
 let bad = 0, tot = 0;
 for (const key of Object.keys(db)) {
