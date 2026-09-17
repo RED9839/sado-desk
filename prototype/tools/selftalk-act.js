@@ -26,7 +26,7 @@ const BY_MOOD = { happy: "Happy", smile: "Smile", anger: "Angry", sad: "Sad", su
 const OUT = path.join(DATA, "self-talk.json");
 const db = JSON.parse(fs.readFileSync(OUT, "utf8"));
 // 혼잣말은 사도마다 줄 배열
-const groups = Object.values(db.heroes);
+const groups = [...Object.values(db.heroes), ...Object.values(db.skins || {})];   // 코스튬 줄에도 동작을 붙인다
 let n = 0, byAct = {};
 for (const lines of groups) for (const l of lines) {
   // 감정이 뚜렷하면(화남·슬픔·놀람) 그것이 먼저다. 낱말 규칙을 먼저 보면 꿀·꽃꿀이 화제인 사도가 전부 Eat 으로 쏠린다

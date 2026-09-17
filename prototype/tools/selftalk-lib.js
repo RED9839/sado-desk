@@ -8,6 +8,9 @@ const J = f => JSON.parse(fs.readFileSync(path.join(root, "data", f), "utf8"));
 const talk = J("talk-ko.json"), bible = J("bible.json"), style = J("talk-style.json"), vs = J("voice-samples.json");
 const REFP = path.join(root, "out", "_ref-lines.json");
 const REF = fs.existsSync(REFP) ? JSON.parse(fs.readFileSync(REFP, "utf8")) : {};
+// 코스튬(스킨) 실제 대사 — tools/build-skin-ref.js 가 만든다. 키는 "사도키#스킨번호"
+const SKINREFP = path.join(root, "out", "_ref-skins.json");
+if (fs.existsSync(SKINREFP)) Object.assign(REF, JSON.parse(fs.readFileSync(SKINREFP, "utf8")));
 // 위키에서 더 뽑은 것 — 개요·연회장 음식·생활 스킬 (tools/build-hero-extra.py, 로컬 전용)
 const XP = path.join(root, "out", "_hero-extra.json");
 const XTRA = fs.existsSync(XP) ? JSON.parse(fs.readFileSync(XP, "utf8")) : {};
@@ -61,9 +64,18 @@ function allowedStyles(h, st) {
   return (_allowed[h] = set);
 }
 
+// h 가 "alice#1" 꼴이면 그 코스튬의 프로필 — 기본 사도 위에 스킨 보정(호칭·말투·감탄사)을 얹는다
 function profile(h) {
-  const k = keyOf(h); if (!k) return null;
-  const p = Object.assign({}, talk.heroes[k]); p.key = h; p.styleInfo = style[h]; p.bible = bible[h];
+  const [hero, skinNo] = String(h).split("#");
+  const k = keyOf(hero); if (!k) return null;
+  const p = Object.assign({}, talk.heroes[k]); p.key = h; p.styleInfo = style[hero]; p.bible = bible[hero];
+  if (skinNo) {
+    const sk = (talk.heroes[k].skins || {})[skinNo]; if (!sk) return null;
+    p.skinLabel = sk.label;
+    if (sk.style) p.style = sk.style;
+    if (sk.addr) p.addr = sk.addr;
+    if (sk.interj && sk.interj.length) p.interj = sk.interj;
+  }
   return p;
 }
 function normalize(s) {
