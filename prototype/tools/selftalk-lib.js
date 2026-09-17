@@ -175,7 +175,7 @@ function reasons(line, p, seen, corpus, opts) {
   const body = said.length ? said : sents;   // 감탄사뿐인 줄이면 그것이라도 본다
   if (body.length > 2) out.push("두 문장 초과");
   // 문장마다 다 그 말투여야 한다 — 한 문장만 맞으면 뒤에 딴 말투를 붙여도 통과해 버린다
-  if (SILENT.has(p.key)) { if (!GESTURE.test(t)) out.push("소리+(몸짓) 꼴이 아님"); } else {
+  if (SILENT.has(p.key.split("#")[0])) { if (!GESTURE.test(t)) out.push("소리+(몸짓) 꼴이 아님"); } else {
   const allow = allowedStyles(p.key, p.style);
   const got = body.map(x => { const m = matches(x, p.style); return m.got ? SAMEOF(m.got) : null; });
   const outside = got.find(g => g && !allow.has(g));

@@ -40,7 +40,7 @@ const RULES = [
     id: "바깥세상",
     why: "엘리아스 밖(안개·황무지·바다)은 아무나 드나들지 못한다. 바다·해적·글레이시아·볼케니카는 바깥 출신이나 빵주를 탄 사도의 몫이다.",
     re: /(해적|바닷가|바다로|항해|갑판|선장|빙하|글레이시아|볼케니카|안개 너머|황무지)/,
-    only: ["guin", "delia", "sparrot", "aragnia", "ayla", "aurora", "haley", "haleysane", "snorky", "orr", "elena", "makasha", "uros", "tighero", "shoupan", "kommyswim", "ronnie", "skea"],
+    only: ["guin", "delia", "sparrot", "aragnia", "ayla", "aurora", "haley", "haleysane", "snorky", "orr", "elena", "makasha", "uros", "tighero", "shoupan", "kommyswim", "ronnie", "skea", "mayocool#1", "yomi#2"],
   },
   {
     id: "지구·현실",
@@ -76,7 +76,7 @@ const RULES = [
     id: "현실천체",
     why: "엘리아스의 밤하늘 별자리는 지구와 다르다(키디언 사도 스토리). 지구의 별자리·행성 이름이 나올 수 없다.",
     re: /(북두칠성|오리온|카시오페아|백조자리|전갈자리|은하수|화성|금성|목성|토성|명왕성|안드로메다)/,
-    only: [],
+    only: ["kidian#2"],
   },
   {
     id: "현실인물·브랜드",
@@ -166,7 +166,7 @@ function main() {
     for (const r of RULES) console.log(`\n[${r.id}] ${r.why}\n  예외: ${r.only.length ? r.only.join(", ") : "없음"}`);
     return;
   }
-  const db = JSON.parse(fs.readFileSync(path.join(root, "data/self-talk.json"), "utf8")).heroes;
+  const db = (() => { const j = JSON.parse(fs.readFileSync(path.join(root, "data/self-talk.json"), "utf8")); return { ...j.heroes, ...(j.skins || {}) }; })();
   const hit = new Map(RULES.map(r => [r.id, []]));
   let tot = 0;
   for (const key of Object.keys(db)) {
@@ -174,8 +174,9 @@ function main() {
     for (const l of db[key]) {
       tot++;
       for (const r of RULES) {
-        if (r.only.includes(key)) continue;
-        if (r.race && RACE[key] !== r.race) continue;
+        const base = key.split("#")[0];   // 코스튬 키는 본체 사도의 예외·종족을 물려받는다
+        if (r.only.includes(key) || r.only.includes(base)) continue;
+        if (r.race && RACE[base] !== r.race) continue;
         const m = r.re.exec(l.t);
         if (m) hit.get(r.id).push(`${ko}(${key})\t«${m[0]}»\t${l.w ? "[" + B.WHEN_KO[l.w] + "] " : ""}${l.t}`);
       }
