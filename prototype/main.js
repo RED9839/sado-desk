@@ -49,6 +49,7 @@ const CHAR_DEFAULTS = {
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
   scale: 0.5, opacity: 1,
+  monitor: 0,          // 이 사도를 가둘 모니터 id. 0 = 가두지 않음(모니터 전체를 오간다). 없어진 모니터면 자동으로 0 취급
   behavior: {
     hop: true, jump: true, idleActs: true,
     hopChance: 45, jumpChance: 10, hopSpeed: 100, hopRange: 350,
@@ -144,6 +145,7 @@ function clampSettings(s) {
   const fixed = [];
   s.global = sanitizePatch(s.global, { forChar: false, fixed });
   s.characters = s.characters.map(({ id, ...c }) => ({ id, ...sanitizePatch(c, { forChar: "only", fixed }) }));
+  for (const c of s.characters) if (c.monitor !== undefined) c.monitor = +c.monitor || 0;   // 모니터 id 는 숫자 — 손으로 고친 파일이 문자열을 들고 있어도 맞춘다
   if (fixed.length) { console.log(`settings: 읽으면서 고침 — ${fixed.join(", ")}`); process.nextTick(saveSettings); } // 고친 값을 파일에도 남긴다. nextTick — 지금은 settings·saveTimer 가 아직 선언 전이다
   return s;
 }
@@ -204,7 +206,11 @@ function updateSettings(patch, id, sourceId) {
   const g = {}, c = {};
   for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;
   if (Object.keys(g).length) settings.global = deepMerge(settings.global, g);
-  if (Object.keys(c).length && id) { const ch = charOf(id); if (ch) Object.assign(ch, deepMerge(ch, c)); }
+  if (Object.keys(c).length && id === "*") {
+    // 통합 편집 — 스킨은 사도의 정체라 함께 바꾸지 않는다(모두 같은 모습이 되어 버린다)
+    const { skin, ...rest } = c;
+    if (Object.keys(rest).length) for (const ch of settings.characters) Object.assign(ch, deepMerge(ch, rest));
+  } else if (Object.keys(c).length && id) { const ch = charOf(id); if (ch) Object.assign(ch, deepMerge(ch, c)); }
   saveSettings();
   if (JSON.stringify(settings.global.display) !== prevDisp) { applyGeometry(); applyAutoStart(); applyFullscreenHide(); }
   if (g.news && news) news.start(); // 주기·게시판 변경 → 감시 재시작
@@ -779,7 +785,15 @@ ipcMain.on("settings:set", (e, patch, id) => {
 ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
 ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
 ipcMain.on("settings:open", (e, tab, id) => openSettings(tab, id || menuFor || instanceOf(e.sender)));
-ipcMain.handle("catalog:get", (e) => catalogPayload(instanceOf(e.sender) || menuFor));
+ipcMain.handle("catalog:get", (e) => {
+  const p = catalogPayload(instanceOf(e.sender) || menuFor);
+  // 설정 창의 모니터 고르기용 — 이름은 붙지 않으므로 순번·해상도·주모니터 여부로 알아보게 한다
+  try {
+    const prim = screen.getPrimaryDisplay();
+    p.displays = screen.getAllDisplays().map((d, i) => ({ id: d.id, i: i + 1, w: d.bounds.width, h: d.bounds.height, x: d.bounds.x, primary: d.id === prim.id }));
+  } catch { p.displays = []; }
+  return p;
+});
 ipcMain.on("mascot", (e, cmd, arg, id) => sendMascot(id || instanceOf(e.sender) || menuFor || settings.characters[0].id, cmd, arg));
 // ---- 에셋 가져오기(추출) 창 ----
 const { dialog } = require("electron");
