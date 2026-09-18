@@ -15,13 +15,13 @@ run.cmd --settings  # 시작하면서 설정창도 열기 (--shot-settings: 탭�
 run.cmd --news-test  # 4초 뒤 실제 최신 소식 말풍선 미리보기 (--news-test-fake: 가짜 2건 주입)
 run.cmd --multi-test # 캐릭터 추가 → 개별 설정 → 2번 캐릭터 메뉴 → 제거 자동 검증 (콘솔에 MULTI 줄)
 ```
-에셋(`assets/`)은 저장소·설치판에 포함하지 않음. 개발 중엔 `prototype/assets/`(있으면 우선), 설치판은 `%APPDATA%\사도 데스크ssets`(앱의 '에셋 가져오기'가 `tools/extract-all.py`로 사용자 PC의 뮤뮤 트릭컬에서 추출). 우선순위: 설정 `assets.root` → 개발 폴더 → userData. 한글 이름표·말투 프로필은 앱 안 `data/`.
+에셋(`assets/`)은 저장소·설치판에 포함하지 않음. 개발 중엔 `prototype/assets/`(있으면 우선), 설치판은 `%APPDATA%\사도 데스크\assets`(앱의 '에셋 가져오기'가 `tools/extract-all.py`로 사용자 PC의 뮤뮤 트릭컬에서 추출). 우선순위: 설정 `assets.root` → 개발 폴더 → userData. 한글 이름표·말투 프로필은 앱 안 `data/`.
 
 ## 사도 형태 3종 (설정 → 사도 → 형태 / 우클릭 메뉴 '형태' / 트레이)
 - **미니미 (스틱)**: 공용 미니미 스켈레톤 + 외형 418벌(사도 139명). 폴짝 이동·큰 점프·등장 낙하 등 게임 원본 애니 77개
 - **스탠딩** (`mode: "sd"`): 대기·클릭·드래그·착지 = 스탠딩(사도 상세 화면 Spine). **이동 = 미니미 폴짝**(게임 로비처럼), 멈추면 스탠딩 복귀. 미니미 높이는 스탠딩의 0.78배. 스탠딩에 Move가 있는 사도(크레페)는 스탠딩이 직접 걷음. 스탠딩이 없는 사도는 인게임 SD로 대체, 둘 다 없으면 미니미.
 - **인게임** (`mode: "ingame"`): 전투 모델(Idle · Move · Spawn · Victory · 공격) 그대로. Move로 걷고 Spawn으로 등장하며 표정·교감 모션은 없음. 에셋 가져오기에서 '인게임 SD' 단계가 필요.
-- (스탠딩 옛 설명) 대기·클릭·드래그·착지 = **스탠딩**(사도 상세 화면, 표정·상호작용 애니 풍부; `assets/standing-hd/` 사이트 HD 101명+스킨 → `assets/standing/` 게임 추출 33명), 이동·등장 = **인게임 SD**(전투·마이홈, `assets/ingame/` 416세트, 414세트에 `Move`). 둘 중 하나만 있으면 그것만 사용, 둘 다 없으면 미니미. 크기는 두 스켈레톤이 같은 단위(에르핀 Head 본 y=429 동일)라 단위 고정 배율(`SD_UNIT=0.8 × scale`) + 발→Head 높이 캐릭터별 보정(`hybridFix`). 바닥 그림자 슬롯(`CommonShadow`)은 숨김. 애니는 캐릭터별 구성이 달라 접두어로 자동 분류(`sdPools`/`ingamePools`). 설정 파일의 옛 값 `standing/ingame/hybrid`는 `sd`로 이관
+- 스탠딩·인게임 공통 구현 메모: 두 스켈레톤이 같은 단위(에르핀 Head 본 y=429 동일)라 단위 고정 배율(`SD_UNIT=0.8 × scale`) + 발→Head 높이 캐릭터별 보정(`hybridFix`). 바닥 그림자 슬롯(`CommonShadow`)은 숨김. 애니는 캐릭터별 구성이 달라 접두어로 자동 분류(`sdPools`/`ingamePools`). 에셋 폴더: `assets/standing/`(게임 추출 스탠딩) · `assets/ingame/`(인게임 SD). 설정 파일의 옛 값 `standing/ingame/hybrid`는 `sd`로 이관
 
 ## 조작
 - 좌클릭(SD) — 게임 교감 4종과 동일: **탭 = 볼 당기기**(누르는 동안 Touch_Idle, 떼면 Touch_End + "당기지 마!" 대사), **머리 드래그 = 쓰다듬기**(Pat_Idle → Pat_End + "더 쓰다듬으라고"), **머리 탭 = 꿀밤**(Smash_End + "머리 때리지 마!"), **몸을 0.5초 누르고 있기 = 간지럽히기**(Tickle_Idle + 웃음 → Tickle_End), 몸 드래그 = 들어서 던지기. 미니미: 반응 애니 + 모션에 맞는 대사
@@ -56,12 +56,13 @@ python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] 
 - 입력은 본인 게임에서 추출한 `assets/standing/` 이다. 출력: `out/gif/<한글이름>/<스킨>_<애니>.gif`
 
 ## 설정 저장
-`%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display, talk, news, ai, assets}, characters:[{id, skin, mode, mood, scale, opacity, monitor, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 sound/display는 global에, 나머지는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값·범위 검사·병합은 `settings-schema.js`의 `CHAR_DEFAULTS`/`GLOBAL_DEFAULTS`/`sanitizePatch`(Electron 없이 `npm test`가 그대로 부른다). v1 파일은 자동 이관.
+`%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display, talk, news, ai, assets}, characters:[{id, skin, mode, mood, scale, opacity, monitor, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 `sanitizePatch`로 걸러(모르는 키는 버리고 범위 밖 수치는 범위 안으로, `ai.keys`는 여기로 못 들어옴) → `GLOBAL_KEYS`(sound·display·talk·news·ai·assets)에 든 키는 global, 나머지(`CHAR_KEYS` = `CHAR_DEFAULTS`의 키)는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값·분류·범위는 모두 `settings-schema.js`(Electron 없이 `npm test`가 그대로 부른다). 저장은 `.tmp`에 쓴 뒤 이름 바꾸기(쓰는 도중 전원이 나가도 반쪽 파일이 안 남게), 깨진 파일은 `settings.json.bad`로 옆에 두고 기본값으로 시작, '초기화'는 AI 설정(제공자·키)만 남기고 나머지를 기본값으로. v1 파일은 자동 이관.
 
 ## 테스트
 ```
 npm test          # 순수 로직 38개 — 설정 검사·AI 파서(Gemini 끊김 재시도)·혼잣말 검사기·데이터 짝. Node 내장 node --test, 의존성 없음
-npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 대화 상태 경쟁 4가지(대상 전환·기록 지우기·연속 열기)를 모의 AI(SADO_AI_MOCK)로 재현, PASS/FAIL 자동 판정 (약 20초)
+npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 시나리오 셋을 돌린다 (약 50초). chat: 대화 상태 경쟁 11가지(대상 전환·기록 지우기·연속 열기·캡처 중 닫기/전환/끄기·답하는 중 닫기·재열기)를 모의 AI(SADO_AI_MOCK)로 · extract: 가짜 추출기(test/fake-extract.js)로 실패·재시도·취소(손자 프로세스까지 죽는지) · settings: 깨진 설정 파일 복구·저장 걸러내기·초기화. `node test/flow.js chat` 처럼 하나만도 됨
+npm run test:first-run # 설치판 첫 실행 — 빌드된 exe(dist/win-unpacked 또는 설치본)를 빈 프로필로 띄워 '가져오기' 창이 첫 화면으로 뜨는지 (먼저 npm run pack 또는 npm run dist)
 ```
 그 밖의 수동 훅은 `test-hooks.js` (`--selftalk-test`, `--menu-test --menu-click`, `--screen-test --dry`, `--memdump` …).
 
@@ -72,6 +73,7 @@ settings-schema.js 설정 기본값·병합·범위 검사 (순수, 테스트가
 setup-window.js    에셋 가져오기 창 · 파이썬 추출기 실행
 selftalk.js        혼잣말 대본 적재·상황 고르기·말풍선
 screen-capture.js  화면 보기 — 허용 창 목록·캡처
+chat.js            AI 대화 창 — 창·대상·요청 번호(chatSeq)·턴(스트림→저장)·화면 보고 한마디·chat:* IPC
 updater.js         깃허브 릴리스 확인·알림
 test-hooks.js      --selftalk-test 같은 시험 훅 (제품 코드 아님)
 ai.js              AI 제공자 4종(Gemini·Claude·Ollama·OpenAI 호환) + 모의 제공자(SADO_AI_MOCK)

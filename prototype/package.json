@@ -8,6 +8,8 @@
     "start": "electron .",
     "test": "node --test \"test/*.test.js\"",
     "test:flow": "node test/flow.js",
+    "test:first-run": "node test/first-run.js",
+    "pack": "electron-builder --win dir --x64",
     "dist": "electron-builder --win nsis --x64",
     "dist:dir": "electron-builder --win dir --x64",
     "pyruntime": "python tools/make-pyruntime.py"
@@ -40,6 +42,7 @@
       "test-hooks.js",
       "selftalk.js",
       "screen-capture.js",
+      "chat.js",
       "updater.js",
       "fullscreen-watch.js",
       "renderer/**/*",

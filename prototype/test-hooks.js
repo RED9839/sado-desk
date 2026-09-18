@@ -118,6 +118,9 @@ module.exports = function installTestHooks(ctx) {
   //   ② 정상 턴 → 기록 2줄
   //   ③ 답하는 중 '기록 지우기' → 턴이 끊기고 기록 0줄 (고치기 전엔 옛 기록이 되살아나 4줄)
   //   ④ A 를 열고 곧장 B 를 열기 → 초기화(Ai.status 대기)가 늦게 끝나도 창의 이름은 B (고치기 전엔 A 가 덮어썼다)
+  //   ⑤ 화면 캡처 중 창 닫기 · ⑥ 캡처 중 다른 사도로 · ⑦ 캡처 중 '화면 보기' 끄기 → AI 요청이 시작되지 않는다 (⑧ 은 캡처가 그대로 끝나면 턴이 도는 대조군)
+  //   ⑨ 답하는 중 창 닫고 다시 열기 → 끊긴 턴은 저장되지 않고, 새 창은 입력이 열려 있다
+  //   ⑩ A→B→A 연속 열기 → 대상·이름 A  ·  ⑪ 같은 사도의 답이 오는 중 다시 열기 → 답이 끊기지 않고 창에 남는다
   if (argHas("--chat-race-test")) setTimeout(async () => {
     const [a, b] = ctx.settings.characters.map(c => c.id); const ud = app.getPath("userData");
     const fails = [], ok = (cond, msg) => { console.log(`RACETEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
@@ -148,7 +151,127 @@ module.exports = function installTestHooks(ctx) {
     ok(ctx.chatFor === b && (await who()) === koOf(b), `④ A→B 연속 열기 뒤 대상=${ctx.chatFor} 창 이름=${await who()} (${koOf(b)})`);
     Ai._test.setMockStatusDelay(900); ctx.openChat(b); ctx.openChat(a); await sleep(2500);
     ok(ctx.chatFor === a && (await who()) === koOf(a), `④' B→A 연속 열기 뒤 창 이름=${await who()} (${koOf(a)})`);
+    // ⑤~⑧ 화면 캡처 경쟁 — 캡처를 0.8초 걸리는 가짜로 바꾼다. '요청이 시작됐다' 는 chatBusy 가 한 번이라도 true 였는지로 본다
+    ctx.updateSettings({ ai: { screen: true } });
+    const realCap = ctx.captureScreenFor; ctx.captureScreenFor = async () => { await sleep(800); return { mime: "image/png", data: "iVBORw0KGgo=" }; };
+    const sawBusy = async (ms) => { for (let i = 0; i < ms / 50; i++) { if (ctx.chatBusy) return true; await sleep(50); } return false; };
+    ctx.chatWin.close(); await sleep(300); Ai.clearHistory(ud, a); Ai.clearHistory(ud, b);
+    ctx.screenTalk(a, "이거 봐"); await sleep(300); ctx.chatWin.close();   // 캡처(0.8초)가 도는 중에 닫기 — 창은 아직 뜨는 중이어도 된다
+    ok(!(await sawBusy(1500)) && Ai.loadHistory(ud, a).length === 0, `⑤ 캡처 중 창을 닫음 → 요청 없음 (busy=${ctx.chatBusy} 기록 ${Ai.loadHistory(ud, a).length})`);
+    ctx.screenTalk(a, "이거 봐"); await sleep(300); ctx.openChat(b); const sw = await sawBusy(1500);
+    ok(!sw && ctx.chatFor === b && Ai.loadHistory(ud, a).length === 0, `⑥ 캡처 중 다른 사도로 → 요청 없음 (busy=${sw} 대상=${ctx.chatFor})`);
+    ctx.chatWin.close(); await sleep(300);
+    ctx.screenTalk(a, "이거 봐"); await sleep(300); ctx.updateSettings({ ai: { screen: false } }); const sw7 = await sawBusy(1500);
+    ok(!sw7 && Ai.loadHistory(ud, a).length === 0, `⑦ 캡처 중 화면 보기 끔 → 요청 없음 (busy=${sw7})`);
+    ctx.updateSettings({ ai: { screen: true } });
+    ctx.screenTalk(a, "이거 봐"); const sw8 = await sawBusy(2500); await wait(); await sleep(300);
+    ok(sw8 && Ai.loadHistory(ud, a).length === 2, `⑧ 대조군: 캡처가 끝나면 턴이 돈다 (busy=${sw8} 기록 ${Ai.loadHistory(ud, a).length}줄, 2)`);
+    ctx.captureScreenFor = realCap; ctx.updateSettings({ ai: { screen: false } });
+    // ⑨ 답하는 중 닫고 다시 열기
+    Ai.clearHistory(ud, a); ctx.openChat(a); await sleep(1500); await sendIn("잠깐만"); await sleep(400);
+    const busyAtClose = ctx.chatBusy; ctx.chatWin.close(); await wait(); await sleep(300);
+    ctx.openChat(a); await sleep(1500);
+    const inOpen = await ctx.chatWin.webContents.executeJavaScript(`!document.getElementById("in").disabled`);
+    ok(busyAtClose && !ctx.chatBusy && Ai.loadHistory(ud, a).length === 0 && inOpen && (await who()) === koOf(a), `⑨ 답하는 중 닫고 다시 열기 → 저장 ${Ai.loadHistory(ud, a).length}줄(0) · 입력 ${inOpen ? "열림" : "잠김"} · 이름=${await who()}`);
+    // ⑩ A→B→A
+    Ai._test.setMockStatusDelay(900); ctx.openChat(a); ctx.openChat(b); ctx.openChat(a); await sleep(2800);
+    ok(ctx.chatFor === a && (await who()) === koOf(a), `⑩ A→B→A 연속 열기 뒤 대상=${ctx.chatFor} 이름=${await who()} (${koOf(a)})`);
+    // ⑪ 같은 사도의 답이 오는 중 다시 열기(단축키)
+    await sendIn("계속 말해 줘"); await sleep(400); ctx.openChat(a); await sleep(200); const stillBusy = ctx.chatBusy; await wait(); await sleep(300);
+    const bots = await ctx.chatWin.webContents.executeJavaScript(`[...document.querySelectorAll("#log .msg.bot")].filter(d => d.textContent).length`);
+    ok(stillBusy && Ai.loadHistory(ud, a).length === 2 && bots >= 1 && await ctx.chatWin.webContents.executeJavaScript(`!document.getElementById("in").disabled`), `⑪ 답하는 중 다시 열기 → 안 끊김(busy=${stillBusy}) · 기록 ${Ai.loadHistory(ud, a).length}줄(2) · 창에 답 ${bots}개 · 입력 열림`);
     console.log(`RACETEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 6000);
+
+  // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
+  // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
+  if (argHas("--first-run-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`FIRSTRUN ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const w = ctx.setup.setupWin;
+    ok(!ctx.hasAssets(ctx.assetRoot), `에셋 없음 (root=${ctx.assetRoot})`);
+    ok(!ctx.mascotWin, "마스코트 창은 아직 없다");
+    ok(!!ctx.tray, "트레이 아이콘이 있다");
+    ok(w && !w.isDestroyed() && w.isVisible(), `가져오기 창이 보인다 (${w ? (w.isVisible() ? "visible" : "hidden") : "없음"})`);
+    if (w && !w.isDestroyed()) {
+      const b = w.getBounds(), d = screen.getDisplayMatching(b).workArea;
+      ok(b.x >= d.x - 8 && b.y >= d.y - 8 && b.x + b.width <= d.x + d.width + 8 && b.y + b.height <= d.y + d.height + 8, `창이 화면 안에 있다 ${JSON.stringify(b)}`);
+      const page = await w.webContents.executeJavaScript(`({ title: document.title, start: !!document.getElementById("start"), scan: !!document.getElementById("scan"), status: (document.getElementById("status") || {}).textContent || "" })`).catch(e => ({ err: e.message }));
+      ok(page.start && page.scan, `가져오기 화면이 그려졌다 (title=${page.title} status=${JSON.stringify((page.status || "").slice(0, 40))})`);
+    }
+    ok(app.isPackaged ? /resources/.test(process.resourcesPath) : true, `packaged=${app.isPackaged} exe=${process.execPath}`);
+    console.log(`FIRSTRUN ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
+  // --settings-test — 설정 파일의 복구·저장·초기화. test/flow.js(settings) 가 깨진 settings.json 을 미리 둔 프로필로 띄운다
+  //   ① 깨진 파일 → 기본값으로 뜨고 원본은 settings.json.bad 로 남는다 (덮어쓰지 않는다)
+  //   ② settings:set 으로 넣은 값이 파일에 남고, 범위 밖은 잘리고 모르는 키는 버린다  ③ settings:reset → 표시·소리는 기본값, AI 설정은 유지, 사도 하나
+  if (argHas("--settings-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`SETTINGSTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const ud = app.getPath("userData"), file = path.join(ud, "settings.json");
+    const onDisk = () => { ctx.flushSettings(); return JSON.parse(fs.readFileSync(file, "utf8")); };
+    const { GLOBAL_DEFAULTS } = require("./settings-schema.js");
+    const S = () => ctx.settings, c1 = () => S().characters[0].id;
+    // ①
+    ok(fs.existsSync(file + ".bad") && /^\{\{\{/.test(fs.readFileSync(file + ".bad", "utf8")), "① 깨진 원본이 settings.json.bad 로 남았다");
+    ok(S().version === 2 && S().characters.length >= 1 && S().global.sound.master === GLOBAL_DEFAULTS.sound.master, `① 기본값으로 떴다 (사도 ${S().characters.length}, master=${S().global.sound.master})`);
+    ok(onDisk().version === 2, "① 새 설정 파일이 정상 JSON 으로 쓰였다");
+    // ② 저장·걸러내기 — settings:set 은 설정 창이 보내는 그 IPC. sender.id 0 은 어느 창도 아니다
+    const fakeEvent = { sender: { id: 0 } };
+    ipcMain.emit("settings:set", fakeEvent, { sound: { master: 0.3 }, ai: { screen: true, screenScope: "display" } });
+    ipcMain.emit("settings:set", fakeEvent, { scale: 99, opacity: 0.5, nonsense: { a: 1 }, behavior: { hopChance: -5 } }, c1());
+    let d = onDisk(); const ch = d.characters.find(c => c.id === c1());
+    ok(d.global.sound.master === 0.3 && d.global.ai.screen === true && d.global.ai.screenScope === "display", `② 전역 값이 파일에 남았다 (master=${d.global.sound.master} screen=${d.global.ai.screen} scope=${d.global.ai.screenScope})`);
+    ok(ch.opacity === 0.5 && ch.scale === S().characters[0].scale && ch.scale <= 3 && ch.scale !== 99, `② 범위 밖 scale=99 는 범위 안으로 잘리고 opacity=0.5 는 남았다 (scale=${ch.scale})`);
+    ok(!("nonsense" in ch) && !("nonsense" in d.global) && (ch.behavior || {}).hopChance !== -5, `② 모르는 키는 파일에 없고 hopChance=-5 는 범위 안으로 (hopChance=${(ch.behavior || {}).hopChance})`);
+    ipcMain.emit("settings:set", fakeEvent, { ai: { keys: { gemini: "x" } } });
+    ok(!(onDisk().global.ai.keys || {}).gemini, "② settings:set 으로 온 ai.keys 는 버린다 (키는 ai:set-key 로만)");
+    // ③ 초기화 — 하나 더 부르고 나서
+    await ctx.addCharacter(); await new Promise(r => setTimeout(r, 500));
+    const before = S().characters.length;
+    ipcMain.emit("settings:reset"); d = onDisk();
+    ok(before >= 2 && d.characters.length === 1 && d.characters[0].id === c1(), `③ 초기화 뒤 사도 ${before} → ${d.characters.length} (첫 사도 ${c1()} 유지)`);
+    ok(d.global.sound.master === GLOBAL_DEFAULTS.sound.master && (d.characters[0].opacity === undefined || d.characters[0].opacity === 1), `③ 소리·표시는 기본값 (master=${d.global.sound.master} opacity=${d.characters[0].opacity})`);
+    ok(d.global.ai.screen === true && d.global.ai.screenScope === "display", `③ AI 설정은 유지 (screen=${d.global.ai.screen} scope=${d.global.ai.screenScope})`);
+    ok(!ctx.hasAssets(ctx.assetRoot) || ctx.instances.size === 1, `③ 화면의 사도도 하나 (${ctx.instances.size}${ctx.hasAssets(ctx.assetRoot) ? "" : " — 에셋 없는 환경, 건너뜀"})`);
+    console.log(`SETTINGSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
+  // --extract-test — 에셋 추출기의 실패·취소·재시도. 진짜 파이썬 대신 SADO_EXTRACTOR 로 끼운 가짜(test/fake-extract.js)가
+  // --steps 값을 시나리오로 읽는다: fail(오류 한 줄 뒤 종료 3) · hang(손자 프로세스를 하나 띄우고 멈춤) · ok(진행 몇 줄 뒤 종료 0)
+  //   ① fail → 끝난 뒤 running=false, 로그에 [exit 3]  ② 곧바로 다시 시작할 수 있다(재시도)  ③ 도는 중 다시 시작 → "이미 추출 중"
+  //   ④ hang 을 취소 → 파이썬뿐 아니라 그 밑의 손자 프로세스도 죽는다 (kill() 만 쓰면 adb·변환 일꾼이 남았다)  ⑤ 취소 뒤 재시도
+  if (argHas("--extract-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`EXTRACTTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const logFile = path.join(app.getPath("userData"), "extract.log"), log = () => { try { return fs.readFileSync(logFile, "utf8"); } catch { return ""; } };
+    const tail = () => JSON.stringify(log().trim().split("\n").pop());
+    const until = async (f, ms = 8000) => { for (let i = 0; i < ms / 50; i++) { if (f()) return true; await sleep(50); } return f(); };
+    const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+    if (!process.env.SADO_EXTRACTOR) { console.log("EXTRACTTEST FAIL SADO_EXTRACTOR 가 없다 — npm run test:flow 로 돌린다"); app.exit(1); return; }
+    const S = ctx.setup;
+    // ①② 실패 뒤 재시도
+    let r = S.startExtract({ steps: ["fail"] }); ok(r.ok, `① 시작 ${JSON.stringify(r)}`);
+    ok(await until(() => !S.extractPid && /\[exit 3\]/.test(log())), `① 실패로 끝남 — running=${!!S.extractPid} 로그 끝=${tail()}`);
+    ok(/치명적 오류 시나리오/.test(log()), "① 추출기의 오류 줄이 로그에 남았다");
+    r = S.startExtract({ steps: ["ok"] }); ok(r.ok, `② 실패 직후 재시도 ${JSON.stringify(r)}`);
+    ok(await until(() => !S.extractPid && /\[exit 0\]/.test(log())), `② 재시도가 정상 종료 — 로그 끝=${tail()}`);
+    // ③④ 멈춘 추출기 취소 → 손자까지
+    r = S.startExtract({ steps: ["hang"] }); ok(r.ok, `③ hang 시작 ${JSON.stringify(r)}`);
+    const pyPid = S.extractPid;
+    ok(await until(() => /"child":\d+/.test(log())), "④ 가짜 추출기가 손자 프로세스를 띄웠다(시험 전제)");
+    const child = +(log().match(/"child":(\d+)/) || [])[1];
+    ok(child && alive(child) && alive(pyPid), `④ 취소 전 — 추출기 ${pyPid} 손자 ${child} 살아 있음`);
+    r = S.startExtract({ steps: ["ok"] }); ok(!r.ok && /이미/.test(r.error), `③ 도는 중 다시 시작 → ${JSON.stringify(r)}`);
+    ipcMain.emit("assets:cancel");
+    ok(await until(() => !S.extractPid, 10000), "④ 취소 뒤 running=false");
+    ok(await until(() => !alive(pyPid) && !alive(child), 5000), `④ 취소 뒤 추출기 ${alive(pyPid) ? "살아 있음 ✗" : "죽음"} · 손자 ${alive(child) ? "살아 있음 ✗" : "죽음"}`);
+    // ⑤ 취소 뒤 재시도
+    r = S.startExtract({ steps: ["ok"] }); ok(r.ok, `⑤ 취소 뒤 재시도 ${JSON.stringify(r)}`);
+    ok(await until(() => !S.extractPid && /\[exit 0\]/.test(log())), "⑤ 정상 종료");
+    console.log(`EXTRACTTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 3000);
 };
