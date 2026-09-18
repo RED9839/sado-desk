@@ -61,13 +61,16 @@ const GESTURE = /^[가-힣~!?.…⋯\s]{1,12}[(（][^)）]{4,40}[)）][!?.…⋯
 // 참고 대사가 없는 환경(CI, 다른 PC)에서는 이걸 읽어 같은 판정을 낸다. tools/build-style-allowed.js 가 새로 쓴다
 const ALLOWEDP = path.join(root, "tools", "style-allowed.json");
 const ALLOWED = fs.existsSync(ALLOWEDP) ? JSON.parse(fs.readFileSync(ALLOWEDP, "utf8")) : {};
+const skinStyleOf = (h) => { const [hero, n] = h.split("#"); const k = keyOf(hero); const sk = k && n && (talk.heroes[k].skins || {})[n]; return (sk && sk.style) || null; };
 const _allowed = {};
 function allowedStyles(h, st) {
   if (_allowed[h]) return _allowed[h];
   const set = new Set([SAMEOF(st)]);
   // 코스튬 키는 그 사도가 평소 쓰는 말투를 그대로 물려받는다. 코스튬 참고 대사가 없으면
   // 여기가 시그니처 하나로 쪼그라들어, 모모의 '~것입니다' 같은 평소 어미까지 막혔다
-  if (h.includes("#")) for (const s of allowedStyles(h.split("#")[0], st)) set.add(s);
+  // 다만 talk-ko 의 그 코스튬에 style 이 따로 적혀 있으면(말투가 바뀌는 코스튬 — 한가닥 네르의 사투리 반말, 체육관 실비아의 어린 반말)
+  // 본편 말투를 물려받지 않는다. 물려받으면 옷만 험하게 입은 평소 네르가 통과했다(코드 리뷰)
+  if (h.includes("#") && !skinStyleOf(h)) for (const s of allowedStyles(h.split("#")[0], st)) set.add(s);
   if (!REF[h] && ALLOWED[h]) { for (const s of ALLOWED[h]) set.add(s); return (_allowed[h] = set); }
   const L = REF[h] || [], c = {}; let n = 0;
   for (const x of L) { const g = classify(x.split(/[.!?~…⋯]/).filter(Boolean).pop() || x); if (g) { const s = SAMEOF(g); c[s] = (c[s] || 0) + 1; n++; } }

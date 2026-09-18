@@ -139,7 +139,7 @@
     const m = skinName.match(/Skin(\d+)$/), sk = m && p.skins && p.skins[m[1]];
     if (!sk) return { ...p, hero, addrBase: p.addr };
     // 테마 사복(스킨) 보정: 위키 대사표에서 그 스킨만 다르게 나온 호칭·감탄사·어미 + 스킨 전용 대사 인용 우선
-    return { ...p, hero, addrBase: p.addr, skin: sk.label, addr: sk.addr || p.addr, style: sk.style || p.style, interj: [...(sk.interj || []), ...(p.interj || [])].slice(0, 6), lines: [...(sk.lines || []), ...(sk.lines || []), ...(p.lines || [])] };
+    return { ...p, hero, addrBase: p.addr, styleBase: p.style, skin: sk.label, addr: sk.addr || p.addr, style: sk.style || p.style, interj: [...(sk.interj || []), ...(p.interj || [])].slice(0, 6), lines: [...(sk.lines || []), ...(sk.lines || []), ...(p.lines || [])] };
   }
   const api = { announce, profileFor, STYLES: S, CREPE, BODY, fill };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.Talk = api;
