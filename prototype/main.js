@@ -412,7 +412,9 @@ let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DAT
 let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
 let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch {} // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
 let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch {} // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
-let selfTalk = {}, skinTalk = {}; try { const _st = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "self-talk.json"), "utf8")); selfTalk = _st.heroes || {}; skinTalk = _st.skins || {}; console.log(`혼잣말 대본: ${Object.keys(selfTalk).length}명 ${Object.values(selfTalk).reduce((a, l) => a + l.length, 0)}줄` + (Object.keys(skinTalk).length ? ` · 코스튬 ${Object.keys(skinTalk).length}벌 ${Object.values(skinTalk).reduce((a, l) => a + l.length, 0)}줄` : "")); } catch (e) { console.warn("self-talk.json 없음 — 혼잣말은 대본 대신 AI 로 돈다", e.message); }
+// 혼잣말(대본)은 selftalk.js — 데이터 적재·상황 고르기·말풍선 내보내기. bubbleMs 는 아래에서 정의되므로 getter 로
+const ST = require("./selftalk.js")({ dataRoot: DATA_ROOT, get bubbleMs() { return bubbleMs; }, chatProfile: (id) => chatProfile(id), instanceOf: (wc) => instanceOf(wc), sendMascot: (id, cmd, arg) => sendMascot(id, cmd, arg), showBubble: (id, p) => showBubble(id, p) });
+const selfTalk = ST.lines, skinTalk = ST.skins, saySelfTalk = ST.saySelfTalk, selfTalkSaid = ST.selfTalkSaid;
 const koOfHero = (k) => (relations && relations[k] && relations[k].ko) || k;
 const KIN = { renewa: "renewaawaken" };   // 자료를 물려받을 같은 인물 — tools/selftalk-lib.js 의 ALIAS 와 짝
 function chatProfile(id) {
@@ -501,63 +503,10 @@ async function chatTurn(id, userText, opts = {}) {
   } finally { clearTimeout(timer); if (chatAbort === ctl) { chatBusy = false; chatAbort = null; } lastChatAt = Date.now(); } // 이 턴의 것일 때만 내린다
 }
 // ---- 화면 보기: 캐릭터가 서 있는 모니터를 캡처해(축소 JPEG) AI에 첨부. 설정 ai.screen 이 켜져 있을 때만 ----
-// 창 이름에서 앱 이름표를 뽑는다: "Flasso - YouTube - Chrome" → "Chrome", "MapleStory" → "MapleStory".
-// 제목은 열어 둔 문서에 따라 매번 달라지므로 맨 뒤 토막(대개 앱 이름)만 기억해 둔다
-function appLabelOf(name) {
-  const n = String(name || "").trim();
-  const parts = n.split(/\s+[-—–|]\s+/).filter(Boolean);
-  const last = parts.length > 1 ? parts[parts.length - 1].trim() : "";
-  return (last && last.length <= 30) ? last : n.slice(0, 80);
-}
-// 사도 데스크 자신의 창은 목록에 넣지 않는다 — 제 얼굴을 찍어 보내 봐야 소용없다
-const ownWindowIds = () => new Set(BrowserWindow.getAllWindows().map(w => { try { return w.getMediaSourceId(); } catch { return ""; } }).filter(Boolean));
-async function listCapturableWindows() {
-  const own = ownWindowIds();
-  const src = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: 0, height: 0 } }); // 썸네일 없이 — 이름만 필요하다(1x1 은 3초, 0x0 은 0.3초)
-  const seen = new Set(), out = [];
-  for (const s of src) {
-    if (own.has(s.id) || !s.name || !s.name.trim() || /^사도 데스크/.test(s.name)) continue; // 다른 인스턴스의 창(개발 실행 중 설치판 등)도 이름으로 걸러 둔다
-    const label = appLabelOf(s.name);
-    if (seen.has(label)) continue; seen.add(label);
-    out.push({ label, title: s.name });
-  }
-  return out;
-}
-async function captureScreenFor(id) {
-  const ai = settings.global.ai || {};
-  const maxW = 1280;
-  // 고른 창만 보내기 — 허용 목록에 있는 창 중 가장 앞의 것. 하나도 안 열려 있으면 화면을 보내지 않는다
-  if ((ai.screenScope || "windows") === "windows") {
-    const allow = (ai.screenWindows || []).map(x => String(x).toLowerCase());
-    if (!allow.length) throw new Error("사도가 볼 창을 아직 안 고르셨어요. 설정 → AI 대화 → '화면 보기'에서 보여 줄 창을 켜 주세요.");
-    const own = ownWindowIds();
-    const wins = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: maxW, height: maxW } });
-    const hit = wins.find(w => !own.has(w.id) && w.name && !/^사도 데스크/.test(w.name) && allow.includes(appLabelOf(w.name).toLowerCase()));
-    if (!hit) throw new Error(`고르신 창이 지금 하나도 안 열려 있어요 (${(ai.screenWindows || []).join(", ")}).`);
-    if (hit.thumbnail.isEmpty()) throw new Error("그 창을 캡처하지 못했어요 (최소화돼 있으면 안 보입니다)");
-    return { mime: "image/jpeg", data: hit.thumbnail.toJPEG(60).toString("base64"), window: appLabelOf(hit.name) };
-  }
-  const inst = instances.get(id); const r = inst && inst.rect;
-  const pt = r && geo ? { x: Math.round(geo.x + r.x + r.w / 2), y: Math.round(geo.y + r.y + r.h / 2) } : screen.getCursorScreenPoint();
-  const disp = screen.getDisplayNearestPoint(pt);
-  const scale = Math.min(1, maxW / disp.size.width);
-  const sources = await desktopCapturer.getSources({ types: ["screen"], thumbnailSize: { width: Math.round(disp.size.width * scale), height: Math.round(disp.size.height * scale) } });
-  const src = sources.find(s => String(s.display_id) === String(disp.id)) || sources[0];
-  if (!src || src.thumbnail.isEmpty()) throw new Error("화면을 캡처하지 못했어요");
-  return { mime: "image/jpeg", data: src.thumbnail.toJPEG(60).toString("base64"), display: disp.id };
-}
-// 먼저 말 걸 때 화면을 붙일 수 있는 상태인가 — '고른 창만' 인데 그 창이 하나도 안 열려 있으면 false.
-// 여기서 걸러야 사도가 스스로 대화창을 열고 "창을 안 고르셨어요" 라고 40분마다 잔소리하는 일이 없다.
-// 사용자가 직접 누른 '내 화면 보고 한마디' 는 screenTalk 이 그 말을 그대로 보여 준다
-async function screenReady() {
-  const ai = settings.global.ai || {};
-  if (!screenAllowed()) return false;
-  if ((ai.screenScope || "windows") !== "windows") return true;
-  const allow = (ai.screenWindows || []).map(x => String(x).toLowerCase()); if (!allow.length) return false;
-  try { return (await listCapturableWindows()).some(w => allow.includes(w.label.toLowerCase())); } catch { return false; }
-}
-ipcMain.handle("ai:windows", () => listCapturableWindows().catch((e) => { console.warn("ai:windows 실패", e.message); return []; }));
-const screenAllowed = () => !!(settings.global.ai && settings.global.ai.screen);
+// 화면 캡처는 screen-capture.js — 허용 창 고르기·모니터 캡처·먼저 말 걸 때 붙일 수 있는지. 상태는 getter 로
+const SC = require("./screen-capture.js")({ get settings() { return settings; }, get geo() { return geo; }, get instances() { return instances; } });
+let captureScreenFor = SC.captureScreenFor;   // let — 화면 시험 훅이 감싸서 갈아 끼운다
+const screenAllowed = SC.screenAllowed, screenReady = SC.screenReady;
 // 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
 async function screenTalk(id, userText) {
   const chatOpen = chatWin && !chatWin.isDestroyed() && chatFor === id;
@@ -570,54 +519,6 @@ async function screenTalk(id, userText) {
 }
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
 const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).bubbleSec) || 4) * 1000) + Math.min(80, t.length) * 100);
-// ---- 혼잣말 (대본) ----
-// data/self-talk.json 4,498줄(그중 2,760줄은 상황 꼬리표가 달렸다). LLM 을 부르지 않는다 — AI 를 켜지 않은 사람도 사도가 중얼거린다.
-// 줄마다 {t: 문장, m: 감정, a: 동작 접두어} 라 말풍선과 모션을 그대로 태울 수 있다.
-const selfTalkSaid = new Map(); // 사도키 → 최근에 말한 줄 (되풀이 방지)
-// 혼잣말의 상황 꼬리표(w). 아침이든 밤이든 방금 던져졌든 같은 풀에서 뽑던 것을, 그 때에 맞는 줄이 먼저 나오게 한다.
-// 꼬리표 없는 줄은 언제나 후보. 꼬리표가 지금 상황과 맞으면 세 배 무게 — 그래야 맞는 때에 실제로 나온다
-const SELF_TAGS = ["morning", "day", "evening", "night", "late", "weekend", "thrown", "petted", "poked", "idle"];
-const lastEvent = new Map(); // 인스턴스 id → { kind, at } 렌더러가 알려 준 마지막 교감 (던져짐·쓰다듬음·꿀밤)
-let lastTouchAt = Date.now(); // 마지막으로 손이 닿은 시각 — 30분 넘으면 "오래 가만히 둠"
-ipcMain.on("mascot:event", (e, id, kind) => { const me = typeof id === "string" ? id : instanceOf(e.sender); if (!me || typeof kind !== "string") return; lastEvent.set(me, { kind, at: Date.now() }); lastTouchAt = Date.now(); });
-function selfCtx(id) {
-  const now = new Date(), h = now.getHours(), tags = new Set();
-  tags.add(h < 6 ? "late" : h < 11 ? "morning" : h < 17 ? "day" : h < 21 ? "evening" : "night");
-  if (now.getDay() === 0 || now.getDay() === 6) tags.add("weekend");
-  const ev = lastEvent.get(id); if (ev && Date.now() - ev.at < 90000) tags.add(ev.kind); // 던져진 지 90초 안이면 "아까 던진 거"
-  if (Date.now() - lastTouchAt > 30 * 60000) tags.add("idle");
-  return tags;
-}
-// key = 사도 키, skinKey = 입은 코스튬 키(없으면 ""). 코스튬 줄은 상황 꼬리표가 없는 평상시 줄이라
-// 기본 줄과 같은 못에 넣되 가중치를 줘서 코스튬을 입은 티가 나게 한다
-function pickSelfTalk(key, id, skinKey) {
-  const mine = selfTalk[key] || [], skin = (skinKey && skinTalk[skinKey]) || [];
-  const all = skin.length ? [...mine, ...skin] : mine;
-  if (!all.length) return null;
-  const ctx = id ? selfCtx(id) : new Set();
-  const fits = all.filter(x => !x.w || ctx.has(x.w));   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
-  const said = selfTalkSaid.get(key) || [];
-  let fresh = fits.filter(x => !said.includes(x.t));
-  if (!fresh.length) fresh = fits.length ? fits : all;      // 다 돌았으면 처음부터
-  const isSkin = new Set(skin.map(x => x.t));
-  const weighted = fresh.flatMap(x => x.w && ctx.has(x.w) ? [x, x, x] : isSkin.has(x.t) ? [x, x] : [x]);
-  const line = weighted[Math.floor(Math.random() * weighted.length)];
-  const keep = Math.max(3, Math.floor(all.length / 2)); // 절반은 다시 나오지 않게
-  selfTalkSaid.set(key, [...(fresh.length ? said : []), line.t].slice(-keep));
-  return line;
-}
-// 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
-function saySelfTalk(id, opts = {}) {
-  const prof = chatProfile(id); if (!prof) return false;
-  const line = pickSelfTalk(prof.key, id, prof.skinKey); if (!line) return false;
-  const ttl = bubbleMs(line.t);
-  const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
-  showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
-  sendMascot(id, "emote", { mood: line.m, act: line.a, role: "speak", pose: ttl, hold: ttl + 3000 });
-  if (!opts.quiet) console.log(`혼잣말[${id}] ${prof.ko}: ${line.t} [${line.m || "기본"}/${line.a}]`);
-  return true;
-}
-ipcMain.on("selftalk:say", (e, id) => { const me = id || instanceOf(e.sender); if (me) saySelfTalk(me); });
 ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
 ipcMain.on("chat:close", () => closeChat());
@@ -770,125 +671,11 @@ ipcMain.handle("catalog:get", (e) => {
   return p;
 });
 ipcMain.on("mascot", (e, cmd, arg, id) => sendMascot(id || instanceOf(e.sender) || menuFor || settings.characters[0].id, cmd, arg));
-// ---- 에셋 가져오기(추출) 창 ----
-const { dialog } = require("electron");
-const { spawn } = require("node:child_process");
-let setupWin = null, extractProc = null;
-function toolsDir() { return app.isPackaged ? path.join(process.resourcesPath, "tools") : path.join(__dirname, "tools"); }
-function pythonExe() {
-  const bundled = path.join(process.resourcesPath || "", "pyruntime", "python.exe");
-  if (app.isPackaged && fs.existsSync(bundled)) return { exe: bundled, args: [] };
-  const dev = path.join(__dirname, "pyruntime", "python.exe");
-  if (fs.existsSync(dev)) return { exe: dev, args: [] };
-  return { exe: "python", args: [] }; // 개발: PATH의 python (UnityPy 설치되어 있어야 함)
-}
-function openSetup() {
-  if (setupWin && !setupWin.isDestroyed()) { setupWin.show(); setupWin.focus(); return; }
-  setupWin = new BrowserWindow({
-    width: 720, height: 640, minWidth: 600, minHeight: 480, title: "사도 데스크 — 에셋 가져오기", show: false,
-    backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
-    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
-  });
-  setupWin.loadFile(path.join(__dirname, "renderer", "setup.html"));
-  setupWin.webContents.on("console-message", (ev) => console.log(`[setup:${ev.level}] ${ev.message}`));
-  // 첫 실행(에셋 없음)엔 이 창이 사용자가 보는 첫 화면이라 다른 창 뒤로 숨지 않게 앞으로 끌어온다. ready-to-show가 안 오는 경우 대비 1.5초 뒤 강제 표시
-  const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
-  setupWin.once("ready-to-show", reveal); setTimeout(reveal, 1500);
-  const w = setupWin; trackBounds(w);
-  w.on("closed", () => { if (setupWin === w) setupWin = null; });
-}
-const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };
-// preload 가 파일 읽기를 허용할 폴더(앱 폴더·에셋 폴더·userData). 동기여야 preload 초기화 때 쓸 수 있다
-ipcMain.on("roots:get", (e) => { e.returnValue = [__dirname, ASSET_ROOT, path.join(app.getPath("userData"), "assets"), DATA_ROOT].filter(Boolean); });
-ipcMain.handle("assets:status", () => ({ root: ASSET_ROOT, hasAssets: hasAssets(ASSET_ROOT), userDataRoot: toSlash(path.join(app.getPath("userData"), "assets")), running: !!extractProc, python: pythonExe().exe, standing: Object.keys(STANDING.game).length, ingame: Object.keys(STANDING.ingame).length, voice: fs.existsSync(path.join(ASSET_ROOT, "voice", "index.json")), packaged: app.isPackaged }));
-ipcMain.handle("assets:pick-folder", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "에셋 폴더 선택 (minimi/ 폴더가 들어 있는 곳)" }); return r.canceled ? null : r.filePaths[0]; });
-ipcMain.handle("assets:pick-mumu", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "뮤뮤 앱플레이어 설치 폴더 (MuMuManager.exe·adb.exe가 있는 nx_main)" }); return r.canceled ? null : r.filePaths[0]; });
-ipcMain.handle("assets:use-folder", (_e, folder) => {
-  if (!hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel 이 없어요. 추출된 에셋 폴더(assets)를 골라 주세요." };
-  updateSettings({ assets: { root: toSlash(folder) } }); rescanAssets(); startMascot(); if (tray) buildTray(); return { ok: true, root: ASSET_ROOT };
-});
-ipcMain.handle("assets:scan", () => new Promise((resolve) => {
-  const py = pythonExe(); const args = [...py.args, path.join(toolsDir(), "extract-all.py"), "--list-devices", "--json"];
-  let out = "", err = "";
-  try {
-    const p = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } });
-    p.stdout.on("data", (d) => out += d.toString("utf8")); p.stderr.on("data", (d) => err += d.toString("utf8"));
-    p.on("error", (e) => resolve({ ok: false, error: "python 실행 실패: " + e.message, devices: [] }));
-    // 방화벽이 포트를 버리면 adb connect 가 후보마다 6초씩 물린다. 그동안 창은 "찾는 중…"에
-    // 멈춘 채 다시 찾기 단추까지 잠긴다. 이게 가져오기 창을 열자마자 저절로 도는 첫 화면이다
-    const timer = setTimeout(() => {
-      killTree(p.pid, () => { try { p.kill(); } catch {} });
-      resolve({ ok: false, error: "기기 찾기가 60초를 넘겼어요. 앱플레이어를 켠 뒤 다시 찾아 주세요.", devices: [] });
-    }, 60000);
-    p.on("exit", () => { clearTimeout(timer); try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
-  } catch (e) { resolve({ ok: false, error: e.message, devices: [] }); }
-}));
-ipcMain.handle("assets:extract", (_e, opt) => startExtract(opt));
-function startExtract(opt) {
-  if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
-  const out = path.join(app.getPath("userData"), "assets");
-  try { fs.mkdirSync(out, { recursive: true }); }
-  catch (e) { return { ok: false, error: `에셋 폴더를 만들 수 없어요 (${out}): ${e.message}` }; }
-  const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
-  const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
-  if (opt.mumu) args.push("--mumu", opt.mumu);
-  if (opt.force) args.push("--force");
-  args.push("--cache", path.join(app.getPath("userData"), "tools-cache")); // platform-tools adb 등 (구버전 adb만 있는 PC용)
-  if (opt.adb) args.push("--adb", opt.adb);
-  if (opt.serial) args.push("--serial", opt.serial);
-  console.log("extract:", py.exe, args.join(" "));
-  try { extractProc = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } }); }
-  catch (e) { return { ok: false, error: "python 실행 실패: " + e.message }; }
-  let buf = "";
-  const logFile = path.join(app.getPath("userData"), "extract.log"); // 진단용: 마지막 추출의 전체 로그
-  try { fs.writeFileSync(logFile, `[${new Date().toISOString()}] ${py.exe} ${args.join(" ")}\n`); } catch {}
-  const flog = (t) => { try { fs.appendFileSync(logFile, t + "\n"); } catch {} };
-  extractProc.stdout.on("data", (d) => { buf += d.toString("utf8"); let i; while ((i = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (!line) continue; flog(line); let o; try { o = JSON.parse(line); } catch { o = { step: "log", msg: line, level: "info" }; } if (o.level === "error" || o.level === "warn") console.log("extract:", o.step, o.msg); setupSend("extract:progress", o); } });
-  extractProc.stderr.on("data", (d) => { const t = d.toString("utf8").trim(); if (t) { flog("[stderr] " + t); console.log("extract stderr:", t.slice(0, 300)); setupSend("extract:progress", { step: "stderr", msg: t.slice(0, 400), level: "warn" }); } });
-  extractProc.on("error", (e) => { setupSend("extract:progress", { step: "error", msg: `python을 실행할 수 없어요 (${e.message}). Python 3.10+ 와 'pip install UnityPy Pillow' 가 필요해요.`, level: "error" }); extractProc = null; setupSend("extract:done", { ok: false }); });
-  extractProc.on("exit", (code) => {
-    extractProc = null; flog(`[exit ${code}]`);
-    // 보이스에서 걸려도 미니미는 이미 받아 놓은 경우가 흔하다. 예전에는 code 0 일 때만 다시 훑어서
-    // 에셋이 멀쩡히 있는데도 "에셋 없음"이 남고 사도가 안 떴다. 종료 코드와 무관하게 훑고 나서 판정한다
-    if (code === 0) updateSettings({ assets: { root: "" } });
-    rescanAssets();
-    const got = hasAssets(ASSET_ROOT);
-    if (got) { startMascot(); if (tray) buildTray(); }
-    const cancelled = extractCancelled; extractCancelled = false;
-    setupSend("extract:done", { ok: code === 0, cancelled, partial: code !== 0 && got, code, root: ASSET_ROOT, hasAssets: got });
-    if (argHas("--setup-test")) console.log("SETUPTEST exit", code, "hasAssets", hasAssets(ASSET_ROOT), "root", ASSET_ROOT, "mascotStarted", mascotStarted);
-  });
-  return { ok: true };
-}
-if (argHas("--setup-test")) setTimeout(async () => { if (setupWin && !app.isPackaged) { try { const img = await setupWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "setup.png"), img.toPNG()); } catch {} } const steps = (argVal("--setup-steps", "minimi,sfx") || "minimi,sfx").split(","); console.log("SETUPTEST start extract", steps.join(",")); startExtract({ steps }); }, 4000);
-ipcMain.handle("assets:enable-ld-adb", (_e, idx) => new Promise((resolve) => { // LD플레이어 인스턴스의 ADB 디버깅 켜고 재시작 (extract-all.py --enable-ld-adb N)
-  const py = pythonExe(); const args = [...py.args, path.join(toolsDir(), "extract-all.py"), "--enable-ld-adb", String(idx), "--json"];
-  let out = "";
-  try {
-    const p = spawn(py.exe, args, { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" } });
-    p.stdout.on("data", (d) => { out += d.toString("utf8"); for (const line of d.toString("utf8").split("\n")) { if (!line.trim()) continue; let o; try { o = JSON.parse(line); } catch { o = { step: "ld", msg: line, level: "info" }; } setupSend("extract:progress", o); } });
-    p.on("error", (e) => resolve({ ok: false, error: e.message }));
-    p.on("exit", (code) => resolve({ ok: code === 0, out }));
-  } catch (e) { resolve({ ok: false, error: e.message }); }
-}));
-// 무리째 죽인다. spawn 의 try/catch 는 동기 예외만 잡고, taskkill 을 못 찾는 경우는 비동기 'error' 로 와서
-// 받는 이가 없으면 메인이 죽는다. 그때는 부모 하나만이라도 죽이는 폴백으로
-function killTree(pid, fallback) {
-  try { const k = spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { windowsHide: true }); k.on("error", fallback); }
-  catch { fallback(); }
-}
-let extractCancelled = false;
-// kill() 은 python 하나만 죽인다. 그 밑에서 돌던 adb 와 변환 일꾼들은 살아남아 임시 폴더에 계속
-// 쓰고, extract-all.py 의 finally(임시 폴더 지우기)도 돌지 않는다. 보이스 원본만 1.6GB다
-ipcMain.on("assets:cancel", () => {
-  if (!extractProc) return;
-  extractCancelled = true;
-  const pid = extractProc.pid;
-  killTree(pid, () => { try { if (extractProc) extractProc.kill(); } catch {} });
-});
-ipcMain.on("assets:open-setup", () => openSetup());
-ipcMain.on("assets:open-root", () => { try { fs.mkdirSync(ASSET_ROOT, { recursive: true }); } catch (e) { console.warn("assets root mkdir", e.message); } shell.openPath(ASSET_ROOT); }); // 설정에 적힌 폴더가 없는 드라이브(빠진 USB)면 mkdir 이 던진다
-ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });
+// ---- 에셋 가져오기(추출) 창 — setup-window.js ----
+// 바깥 상태는 getter 로 넘긴다: ASSET_ROOT 는 '폴더 사용'에서 바뀌고, STANDING 은 다시 훑을 때 바뀐다
+const setup = require("./setup-window.js")({ get assetRoot() { return ASSET_ROOT; }, get dataRoot() { return DATA_ROOT; }, get standing() { return STANDING; }, get mascotStarted() { return mascotStarted; },
+  hasAssets, toSlash, updateSettings, rescanAssets, startMascot, refreshTray: () => { if (tray) buildTray(); }, trackBounds, argHas, argVal });
+const openSetup = setup.openSetup;
 
 // 새 소식
 ipcMain.handle("news:list", () => ({ items: news ? news.items : [], unread: news ? news.unread : 0, status: news ? news.status : null }));
@@ -914,7 +701,7 @@ ipcMain.on("hit-rect", (e, r, id) => {
   // (말풍선은 띄울 때 자리를 잡고 고정 — 캐릭터를 따라다니지 않음)
 });
 ipcMain.on("hit-ev", (e, ev) => {
-  if (ev && ev.type === "mousedown") lastTouchAt = Date.now(); // 손이 닿았다 — "오래 방치" 꼬리표를 푼다
+  if (ev && ev.type === "mousedown") ST.touch(); // 손이 닿았다 — "오래 방치" 꼬리표를 푼다
   const id = ev.instance || hitFor; // 실제 히트 창 이벤트는 현재 대상 캐릭터에게. (테스트는 instance를 직접 지정)
   if (!id || !instances.has(id) || !geo || !mascotWin || mascotWin.isDestroyed()) return;
   if (ev.type === "mousedown") hitDown = true; else if (ev.type === "mouseup") hitDown = false;
@@ -925,83 +712,9 @@ ipcMain.on("menu:close", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.
 ipcMain.on("menu:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (menuWin && !menuWin.isDestroyed()) { const b = menuWin.getBounds(); const d = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea; const nh = Math.min(h, d.height); menuWin.setBounds({ x: b.x, y: Math.min(b.y, d.y + d.height - nh), width: MENU_W, height: nh }); } });
 function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsOf.get(id)) || catalog.sdAnimations || [], standing: STANDING, assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, hasAssets: hasAssets(ASSET_ROOT), settingsFile: SETTINGS_FILE, version: app.getVersion(), electron: process.versions.electron }; }
 
-if (argHas("--hit-test")) setTimeout(() => {
-  const id = settings.characters[0].id, inst = instances.get(id); const b = screenRect(inst.rect); const sx = b.x + b.width / 2, sy = b.y + b.height / 2;
-  updateHitTarget(sx - geo.x, sy - geo.y);
-  const ev = (type, button) => ipcMain.emit("hit-ev", null, { type, sx, sy, button, buttons: 0 }); // instance 없이 → hitFor 로 라우팅되는지
-  console.log("HITTEST rect", JSON.stringify(b), "hitFor", hitFor, "shown", hitShown, "hitWin", hitWin ? JSON.stringify(hitWin.getBounds()) : null);
-  ev("mousedown", 0); setTimeout(() => ev("mouseup", 0), 60);
-  setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", menuWin ? JSON.stringify(menuWin.getBounds()) : null), 1500); }, 1500);
-}, 6000);
-
-if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말투 확인: 스킨마다 같은 질문 → 답 로그
-  const skins = (argVal("--persona-test", "") || "Mini_Crepe").split(","); const q = argVal("--persona-q", "") || "안녕! 오늘 뭐 하고 있었어?";
-  for (const skin of skins) {
-    const p = talkData ? Talk.profileFor(talkData, skin) : null; if (!p) { console.log("PERSONA", skin, "프로필 없음"); continue; }
-    const hero = skin.replace(/^Mini_/, "").replace(/Skin\d+$/, "").toLowerCase(); if (talkStyle && talkStyle[hero]) p.styleInfo = talkStyle[hero]; if (vsamples[hero]) p.sampleLines = vsamples[hero];
-    p.key = hero; p.koOf = koOfHero; if (relations && relations[hero]) p.rel = relations[hero]; if (bible[hero]) p.bible = bible[hero]; p.theaters = theaters.filter(t => (t.castKeys || []).includes(hero));
-    try { const r = await Ai.chat(settings.global.ai, p, [{ role: "user", text: q }], () => {}, {}); console.log(`PERSONA ${skin} [${p.style}/${p.addr}] → ${r.text.replace(/\n/g, " ")} {${r.raw}}`); }
-    catch (e) { console.log(`PERSONA ${skin} ERROR ${e.message}`); }
-    await new Promise(r => setTimeout(r, +argVal("--persona-gap", "7000") || 7000));
-  }
-  console.log("PERSONA done");
-}, 5000);
-// 혼잣말 대본 시험: 사도 하나가 여덟 번 중얼거린다 (되풀이·모션·말풍선 확인)
-if (argHas("--selftalk-test")) setTimeout(async () => {
-  const id = settings.characters[0].id, prof = chatProfile(id);
-  console.log(`SELFTALKTEST hero=${prof && prof.ko}(${prof && prof.key}) 대본 ${((selfTalk[prof && prof.key]) || []).length}줄`);
-  for (let i = 0; i < 8; i++) { const ok = saySelfTalk(id); console.log(`SELFTALKTEST ${i + 1}/8 ${ok ? "말함" : "대본 없음"}`); await new Promise(r => setTimeout(r, 2500)); }
-  const said = selfTalkSaid.get(prof.key) || [];
-  console.log(`SELFTALKTEST 서로 다른 줄 ${new Set(said).size}/${said.length} (8번에 겹침 없어야 정상)`);
-  app.quit();
-}, 6000);
-if (argHas("--gemini-models")) setTimeout(async () => { const key = Ai.decKey(Ai.merge(settings.global.ai).keys.gemini); const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } }); const j = await r.json(); console.log("GEMINI MODELS", r.status, JSON.stringify((j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/", "")))); app.quit(); }, 3000);
-if (argHas("--chat-test")) setTimeout(async () => {
-  const id = settings.characters[0].id; openChat(id);
-  setTimeout(async () => { const st = await Ai.status(settings.global.ai); console.log("CHATTEST status", JSON.stringify(st)); for (const q of (argVal("--chat-msgs", "") || "안녕! 오늘 뭐 했어?").split("|")) { await chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(q)}; document.getElementById("send").click();`); for (let i = 0; i < 20 && !chatBusy; i++) await new Promise(r => setTimeout(r, 100)); for (let i = 0; i < 400 && chatBusy; i++) await new Promise(r => setTimeout(r, 250)); await new Promise(r => setTimeout(r, 800)); } const r = Ai.loadHistory(app.getPath("userData"), id); console.log("CHATTEST history", JSON.stringify(r)); console.log("CHATTEST ui", await chatWin.webContents.executeJavaScript(`JSON.stringify({sendDisabled: document.getElementById("send").disabled, inDisabled: document.getElementById("in").disabled, bg: getComputedStyle(document.getElementById("send")).backgroundColor})`)); setTimeout(async () => { if (chatWin && !app.isPackaged) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat.png"), img.toPNG()); console.log("CHAT shot", img.getSize(), JSON.stringify(chatWin.getBounds())); } }, 1200); }, 2500);
-}, 5000);
-if (argHas("--screen-test")) setTimeout(async () => {
-  const id = settings.characters[0].id;
-  const origCap = captureScreenFor;
-  let picked = null; captureScreenFor = async (i) => { const r = await origCap(i); picked = r.window || ("모니터 " + r.display); console.log("SCREENTEST 캡처:", picked, `${(r.data.length / 1024).toFixed(0)}KB`); return r; };
-  if (argHas("--dry")) { // 캡처까지만 — AI 에 보내지 않는다. 어느 창이 찍히는지, 막힐 때 무슨 말이 나오는지만 본다
-    try { await captureScreenFor(id); } catch (e) { console.log("SCREENTEST 막힘:", e.message); }
-    app.quit(); return;
-  }
-  await screenTalk(id, argVal("--screen-msg", "") || "");
-  for (let i = 0; i < 400 && chatBusy; i++) await new Promise(r => setTimeout(r, 250));
-  await new Promise(r => setTimeout(r, 1500));
-  if (chatWin && !chatWin.isDestroyed()) { const img = await chatWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "chat-screen.png"), img.toPNG()); console.log("SCREENTEST 대화창 캡처", img.getSize()); }
-  const h = Ai.loadHistory(app.getPath("userData"), id).slice(-1)[0];
-  console.log("SCREENTEST 답:", h ? JSON.stringify(h.text) : "(기록 없음 — 오류 말풍선만 떴을 것)");
-  app.quit();
-}, 6000);
-if (argHas("--menu-test")) setTimeout(async () => { const id = settings.characters[0].id; openMenu(id, geo.x + 400, geo.y + 300); setTimeout(async () => { if (menuWin) { const img = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu.png"), img.toPNG()); console.log("MENU shot", img.getSize());
-  const sub = argVal("--menu-sub", ""); if (sub) { await menuWin.webContents.executeJavaScript(`document.querySelector('[data-toggle=${sub}]').click()`); await new Promise(r => setTimeout(r, 800)); const b = menuWin.getBounds(); const info = await menuWin.webContents.executeJavaScript("({sh: document.getElementById('menu').scrollHeight, ch: document.getElementById('menu').clientHeight, quitY: document.querySelector('[data-act=quit]').getBoundingClientRect().bottom})"); console.log("MENU sub", sub, JSON.stringify(b), JSON.stringify(info)); const img2 = await menuWin.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "menu-sub.png"), img2.toPNG()); }
-  // --menu-click='선택자|선택자' — 메뉴 항목을 순서대로 눌러 본다. 누른 뒤 사도들 설정을 찍어 통합 편집이 먹는지 본다
-  for (const sel of (argVal("--menu-click", "") || "").split("|").filter(Boolean)) { await menuWin.webContents.executeJavaScript(`document.querySelector(${JSON.stringify(sel)}).click()`); await new Promise(r => setTimeout(r, 700)); console.log(`MENU click ${sel} → ${JSON.stringify(settings.characters.map(c => [c.id, c.scale, c.mode, c.skin]))} bulkEdit=${!!settings.global.display.bulkEdit}`); }
-  } }, 1500); }, 5000);
-if (argHas("--multi-test")) setTimeout(() => {
-  const dump = (tag) => console.log(`MULTI ${tag} chars=${JSON.stringify(settings.characters.map(c => [c.id, c.skin, c.mode, c.scale]))} rects=${[...instances.keys()].join(",")} windows=${BrowserWindow.getAllWindows().length} hitFor=${hitFor} shown=${hitShown} rects=${[...instances.values()].map(i => i.rect ? JSON.stringify(screenRect(i.rect)) : "-").join(" ")}`);
-  dump("start");
-  const id2 = addCharacter(settings.characters[0].id);
-  setTimeout(() => {
-    dump("added");
-    updateSettings({ skin: "Mini_Erpin", scale: 0.8 }, id2);            // 개별 설정: 2번만 바뀌어야 함
-    updateSettings({ sound: { master: 0.3 } }, settings.characters[0].id); // 공통 설정
-    setTimeout(() => {
-      dump("patched"); console.log("MULTI global.sound.master=", settings.global.sound.master, "view(c1).skin=", viewFor(settings.characters[0].id).skin, "view(id2)=", viewFor(id2).skin, viewFor(id2).scale, "count", viewFor(id2).count);
-      const inst = instances.get(id2); const hb = screenRect(inst.rect); updateHitTarget(hb.x + hb.width / 2 - geo.x, hb.y + hb.height / 2 - geo.y); console.log("MULTI hover c2 → hitFor=", hitFor, "hitWin=", hitWin ? JSON.stringify(hitWin.getBounds()) : null);
-      ipcMain.emit("hit-ev", null, { instance: id2, type: "mousedown", sx: hb.x + hb.width / 2, sy: hb.y + hb.height / 2, button: 2, buttons: 0 });
-      setTimeout(() => {
-        console.log("MULTI menuFor=", menuFor, "menuWin=", menuWin ? JSON.stringify(menuWin.getBounds()) : null);
-        if (menuWin && !menuWin.isDestroyed()) menuWin.close();
-        removeCharacter(id2);
-        setTimeout(() => { dump("removed"); console.log("MULTI DONE"); app.quit(); }, 1500);
-      }, 2500);
-    }, 4000);
-  }, 6000);
-}, 5000);
+// ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
+// 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
+require("./test-hooks.js")({ get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -1017,7 +730,7 @@ function buildTray() {
     { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
     { type: "separator" },
     { label: "말 걸기 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
-    ...(updateInfo ? [{ label: `새 버전 ${updateInfo.tag} 받기...`, click: () => shell.openExternal(updateInfo.url) }] : []),
+    ...(UP.info ? [{ label: `새 버전 ${UP.info.tag} 받기...`, click: () => shell.openExternal(UP.info.url) }] : []),
     { label: "설정...", click: () => openSettings() },
     { label: hasAssets(ASSET_ROOT) ? "에셋 다시 가져오기..." : "에셋 가져오기...", click: () => openSetup() },
     { label: "사운드 음소거", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
@@ -1033,26 +746,9 @@ function buildTray() {
 }
 
 if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (!hasAssets(ASSET_ROOT)) { openSetup(); return; } if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
-// ---- 업데이트 확인: 깃허브 최신 릴리스 태그가 이 버전보다 높으면 알림(클릭 → 릴리스 페이지) + 트레이 메뉴에 '새 버전 받기'. 같은 버전은 한 번만 알림 ----
-const UPDATE_REPO = "RED9839/sado-desk";
-let updateInfo = null, updateNotified = "";
-const semver = (v) => String(v || "").replace(/^v/, "").split(".").map(n => parseInt(n, 10) || 0);
-const newerThan = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
-async function checkUpdate() {
-  try {
-    const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { "User-Agent": `sado-desk/${app.getVersion()}`, Accept: "application/vnd.github+json" } });
-    if (!r.ok) { console.log("update check", r.status); return; }
-    const j = await r.json(); const tag = j.tag_name || "";
-    if (!newerThan(tag, app.getVersion())) { updateInfo = null; return; }
-    updateInfo = { tag, url: j.html_url || `https://github.com/${UPDATE_REPO}/releases/latest`, asset: (j.assets || []).find(a => /\.exe$/i.test(a.name))?.browser_download_url };
-    if (tray) buildTray();
-    if (updateNotified === tag) return; updateNotified = tag;
-    const { Notification } = require("electron");
-    if (Notification.isSupported()) { const n = new Notification({ title: `사도 데스크 ${tag} 업데이트가 나왔어요`, body: `지금 ${app.getVersion()} → ${tag.replace(/^v/, "")}. 클릭하면 다운로드 페이지가 열려요. (트레이 메뉴에서도 받을 수 있어요)`, silent: true }); n.on("click", () => shell.openExternal(updateInfo.url)); n.show(); }
-    console.log(`update: ${app.getVersion()} → ${tag}`);
-  } catch (e) { console.log("update check 실패", e.message); }
-}
-if (argHas("--update-test")) setTimeout(async () => { await checkUpdate(); console.log("UPDATETEST", app.getVersion(), JSON.stringify(updateInfo), "newer(v9.9.9,cur)=", newerThan("v9.9.9", app.getVersion()), "newer(v0.1.0,cur)=", newerThan("v0.1.0", app.getVersion())); app.quit(); }, 2000);
+// ---- 업데이트 확인 — updater.js ----
+const UP = require("./updater.js")({ refreshTray: () => { if (tray) buildTray(); } });
+const checkUpdate = UP.checkUpdate;
 let mascotStarted = false;
 function startMascot() {
   if (mascotStarted) { if (mascotWin && !mascotWin.isDestroyed()) { mascotLoaded = false; mascotWin.reload(); } return; } // 재추출 뒤: 창 다시 로드 (did-finish-load에서 config 재전송)
@@ -1123,4 +819,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
