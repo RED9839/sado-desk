@@ -111,4 +111,22 @@ module.exports = function installTestHooks(ctx) {
 
   // --shot-mascot — 8초 뒤 마스코트 창을 그대로 찍는다(out/mascot.png). 렌더 옵션을 바꿨을 때 눈으로 확인용
   if (argHas("--shot-mascot")) setTimeout(async () => { const w = ctx.mascotWin; if (w && !w.isDestroyed()) { const img = await w.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "mascot.png"), img.toPNG()); console.log("MASCOT shot", img.getSize()); } app.quit(); }, 8000);
+
+  // --chat-race-test — 답을 만드는 중에 ① 다른 사도로 대화창을 옮기고 ② 기록을 지운다. 앞 사도의 답이 새 창에 섞이지 않고,
+  // 지운 기록이 되살아나지 않아야 한다(코드 리뷰 P2 두 건). 느린 로컬 모델(Ollama)로 돌려야 중간에 끼어들 틈이 있다
+  if (argHas("--chat-race-test")) setTimeout(async () => {
+    const [a, b] = ctx.settings.characters.map(c => c.id); const ud = app.getPath("userData");
+    const wait = async () => { for (let i = 0; i < 400 && ctx.chatBusy; i++) await new Promise(r => setTimeout(r, 100)); };
+    const sendIn = async (text) => { await ctx.chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(text)}; document.getElementById("send").click();`); for (let i = 0; i < 30 && !ctx.chatBusy; i++) await new Promise(r => setTimeout(r, 100)); };
+    ctx.openChat(a); await new Promise(r => setTimeout(r, 2500));
+    await sendIn("안녕! 오늘 뭐 했어?"); await new Promise(r => setTimeout(r, 1500));
+    ctx.openChat(b); console.log("RACETEST ① 옮김: chatFor=" + ctx.chatFor + " busy=" + ctx.chatBusy); await wait();
+    console.log("RACETEST ① 끝: a 기록 " + Ai.loadHistory(ud, a).length + "줄, b 기록 " + Ai.loadHistory(ud, b).length + "줄 (a 는 끊겨서 0, b 는 0 이어야)");
+    ctx.openChat(a); await new Promise(r => setTimeout(r, 1500));
+    await sendIn("꿀은 어디서 나?"); await wait(); console.log("RACETEST ② 정상 턴 뒤 a 기록 " + Ai.loadHistory(ud, a).length + "줄 (2 이어야) 마지막=" + JSON.stringify((Ai.loadHistory(ud, a).slice(-1)[0] || {}).text));
+    await sendIn("하나 더 물을게"); await new Promise(r => setTimeout(r, 250));
+    ipcMain.emit("chat:clear"); console.log("RACETEST ② 지움: busy=" + ctx.chatBusy); await wait(); await new Promise(r => setTimeout(r, 500));
+    console.log("RACETEST ② 끝: a 기록 " + Ai.loadHistory(ud, a).length + "줄 (0 이어야 — 되살아나면 4)");
+    app.quit();
+  }, 6000);
 };
