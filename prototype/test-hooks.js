@@ -212,6 +212,34 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 5000);
 
+  // --monitor-test — '놓아둔 모니터'(monitor -1): 서 있는 모니터 안에서만 폴짝, 옆 모니터로 끌어다 놓으면 그곳에 머문다. 모니터 둘·에셋 필요(로컬)
+  if (argHas("--monitor-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`MONTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const a = ctx.settings.characters[0].id, D = ctx.geo.displays;
+    if (D.length < 2) { console.log("MONTEST FAIL 모니터가 둘 이상이어야 한다"); app.exit(1); return; }
+    const R = () => (ctx.instances.get(a) || {}).rect, cx = () => R() && R().x + R().w / 2;
+    const dispOf = (x) => D.findIndex(d => x >= d.x && x < d.x + d.w);
+    ctx.updateSettings({ monitor: -1, behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
+    await sleep(3000); const d0 = dispOf(cx());
+    // 히트 창이 보내는 마우스 이벤트를 흉내내 끌어다 놓는다 (화면 좌표)
+    const ev = (type, x, y) => ipcMain.emit("hit-ev", { sender: { id: 0 } }, { instance: a, type, sx: x, sy: y, button: 0, buttons: type === "mouseup" ? 0 : 1 });
+    const dragTo = async (tx, ty) => { const r0 = R(), sx = ctx.geo.x + r0.x + r0.w / 2, sy = ctx.geo.y + r0.y + r0.h / 2; ev("mousedown", sx, sy); await sleep(80); for (let i = 1; i <= 30; i++) { ev("mousemove", sx + (tx - sx) * i / 30, sy + (ty - sy) * i / 30); await sleep(30); } ev("mouseup", tx, ty); await sleep(2500); };
+    // ① 모니터 경계 바로 앞(100px)에 세워 두고 900px 폴짝을 30초 — 가두지 않으면 첫 오른쪽 폴짝에 넘어간다
+    const here = D[d0], nb = D[(d0 + 1) % D.length], right = nb.x > here.x;
+    await dragTo(ctx.geo.x + (right ? here.x + here.w - 100 : here.x + 100), ctx.geo.y + here.floor - 200);
+    const seen = new Set();
+    for (let i = 0; i < 60; i++) { await sleep(500); seen.add(dispOf(cx())); }
+    ok(seen.size === 1 && seen.has(d0), `① 경계 앞에서 30초 폴짝하는 동안 머문 모니터 ${[...seen].join(",")} (${d0} 하나여야)`);
+    // ② 옆 모니터로 끌어다 놓는다
+    await dragTo(ctx.geo.x + nb.x + nb.w / 2, ctx.geo.y + nb.floor - 200);
+    const d1 = dispOf(cx()); ok(d1 === (d0 + 1) % D.length, `② 끌어다 놓은 뒤 모니터 ${d1} (목표 ${(d0 + 1) % D.length})`);
+    const seen2 = new Set(); for (let i = 0; i < 60; i++) { await sleep(500); seen2.add(dispOf(cx())); }
+    ok(seen2.size === 1 && seen2.has(d1), `③ 옮긴 뒤 30초 동안 머문 모니터 ${[...seen2].join(",")} (${d1} 하나여야)`);
+    console.log(`MONTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 5000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {

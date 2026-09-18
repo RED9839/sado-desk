@@ -199,7 +199,7 @@
     <div class="card"><h3>선택한 사도</h3>
       <div class="row"><label>크기</label><input type="range" min="20" max="150" step="5" data-s="scale" data-scale="100"><span class="val" data-fmt="%"></span></div>
       <div class="row"><label>불투명도</label><input type="range" min="20" max="100" step="5" data-s="opacity" data-scale="100"><span class="val" data-fmt="%"></span></div>
-      <div class="row"><label>머무를 모니터<span class="hint">이 사도를 한 모니터에만 가둡니다. '모든 모니터'면 지금처럼 옆 화면으로도 넘어가요. 사도마다 따로 정할 수 있습니다(예: 1번엔 크레페, 2번엔 쥬비)</span></label><select data-s="monitor" id="char-monitor" data-num="1"><option value="0">모든 모니터</option></select></div>
+      <div class="row"><label>머무를 모니터<span class="hint">'놓아둔 모니터'면 지금 서 있는 모니터 안에서만 돌아다니고, 끌어다 다른 모니터에 놓으면 그곳에 머물러요. '모든 모니터'면 옆 화면으로 저절로 넘어가기도 해요. 번호를 고르면 그 모니터에만. 사도마다 따로(예: 1번엔 크레페, 2번엔 쥬비)</span></label><select data-s="monitor" id="char-monitor" data-num="1"><option value="-1">놓아둔 모니터</option><option value="0">모든 모니터</option></select></div>
     </div>
     <div class="card"><h3>전체 공통</h3>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.multiMonitor">모든 모니터로 이동<span class="hint">켜면 옆 모니터로 넘어가고(가끔 원정), 모니터마다 작업표시줄 높이에 맞춰 바닥이 바뀜. 끄면 주모니터만 씁니다 — 사도를 하나씩 다른 모니터에 두고 싶으면 이걸 켠 채 화면 위쪽 '머무를 모니터'를 쓰세요</span></label></div>
