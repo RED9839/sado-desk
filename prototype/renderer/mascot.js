@@ -223,7 +223,10 @@
 
   async function init() {
     setGeo(cfg.geo);
-    ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true, premultipliedAlpha: true, antialias: true });
+    // antialias·depth·stencil 을 끈다. 캔버스가 모니터 합집합(6000x1440 이면 한 장 34.6MB) 크기라 MSAA 색·깊이
+    // 렌더 타깃만 428MB 였다(memory-infra 실측, webgl/drawing_buffer). 스파인은 텍스처 사각형만 그려서 MSAA 로
+    // 좋아지는 가장자리가 없고 깊이도 안 쓴다. 끄고 재니 전체 1,086 → 839MB (사도 1명, 3회 평균)
+    ctx = new spine.ManagedWebGLRenderingContext(canvas, { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false });
     renderer = new spine.SceneRenderer(canvas, ctx, true);
     // spine 이 생성자에서 먼저 등록했으니 같은 이벤트에서 우리 것은 그 뒤에 돈다 — 복구 순서(spine 재업로드 → PMA 재업로드)가 여기에 걸려 있다
     canvas.addEventListener("webglcontextlost", () => { glLost = true; for (const mas of mascots.values()) mas.hideHit(); }, false); // 안 보이는 사도가 클릭을 먹지 않게
