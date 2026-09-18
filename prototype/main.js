@@ -65,7 +65,7 @@ const GLOBAL_DEFAULTS = {
   // bulkEdit: 사도별 값(형태·크기·불투명도·표정·행동)을 바꿀 때 모든 사도에 함께 넣는다.
   // 설정 창과 우클릭 메뉴가 같은 값을 본다 — 메뉴 창은 열 때마다 새로 만들어지므로 껐다 켤 때마다
   // 다시 체크하게 두면 쓸모가 없어서 설정에 남긴다. 사도 바꾸기(skin)만은 함께 가지 않는다
-  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아
@@ -211,7 +211,7 @@ const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return
 function updateSettings(patch, id, sourceId) {
   // 창 기하·자동시작·전체화면 숨김을 다시 걸지 말지 볼 때, 화면과 무관한 표시용 값은 빼고 본다.
   // 안 빼면 '모든 사도에 함께' 를 누를 때마다 setLoginItemSettings 가 레지스트리를 건드린다
-  const dispSig = () => { const { bulkEdit, guideShown, ...d } = settings.global.display || {}; return JSON.stringify(d); };
+  const dispSig = () => { const { bulkEdit, guideShown, keepOnTop, ...d } = settings.global.display || {}; return JSON.stringify(d); };
   const prevDisp = dispSig();
   const g = {}, c = {};
   for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;
@@ -1192,6 +1192,17 @@ function applyFullscreenHide() {
   if (want) { for (const w of wins) w.hide(); }
   else { for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
 }
+// ---- 맨 위로 올리기 ----
+// 최상위(screen-saver) 창끼리는 나중에 최상위를 잡은 쪽이 위다. 게임·오버레이가 켜지면 사도가 그 밑에 깔린다.
+// 이 옵션을 켜면 2초마다 사도·말풍선·히트 창을 다시 맨 위로 올린다. 포커스는 건드리지 않는다.
+// 전체화면 숨김으로 내려가 있을 때는 하지 않는다 — 숨긴 창을 올려 봐야 소용없고, 숨김의 뜻과도 어긋난다
+setInterval(() => {
+  if (!(settings.global.display || {}).keepOnTop || fsHidden) return;
+  for (const w of [mascotWin, bubbleWin, hitShown ? hitWin : null]) {
+    if (!w || w.isDestroyed() || !w.isVisible()) continue;
+    try { w.setAlwaysOnTop(true, "screen-saver"); w.moveTop(); } catch {}
+  }
+}, 2000);
 // 창은 전부 loadFile 로 우리 파일만 띄운다. 그래도 렌더러에서 한 줄이 새 나가면(원격 제목이 그대로 태그가 되는 식)
 // preload 를 그대로 물려받은 채 남의 페이지로 넘어갈 수 있다. 나갈 길을 아예 막고 바깥 주소는 기본 브라우저로 보낸다.
 app.on("web-contents-created", (_e, wc) => {
