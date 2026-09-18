@@ -164,7 +164,7 @@ function applyAutoStart() {
 function geometry() {
   const all = screen.getAllDisplays(), prim = screen.getPrimaryDisplay();
   const disp = (settings.global && settings.global.display) || GLOBAL_DEFAULTS.display;   // 설정이 깨져 있어도 창은 떠야 한다
-  const use = disp.multiMonitor ? all : [prim];
+  const use = all;   // 창은 모니터 전부를 덮는다 — 사도마다 놓아둔 모니터에 머물고, 끌어서 옮긴다 ('모든 모니터로 이동' 토글은 v0.24.2 에서 뺐다)
   const rect = (d) => disp.overTaskbar ? d.bounds : d.workArea;
   const x0 = Math.min(...use.map(d => rect(d).x)), y0 = Math.min(...use.map(d => rect(d).y));
   const x1 = Math.max(...use.map(d => rect(d).x + rect(d).width)), y1 = Math.max(...use.map(d => rect(d).y + rect(d).height));
