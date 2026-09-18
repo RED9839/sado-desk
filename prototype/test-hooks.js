@@ -88,4 +88,27 @@ module.exports = function installTestHooks(ctx) {
     }, 6000);
   }, 5000);
 
+
+  // --memdump — 40초 뒤 Chromium memory-infra 를 12초 기록해 GPU 프로세스의 할당자별 크기를 찍는다.
+  // "GPU 프로세스가 700MB" 가 텍스처인지 스킨 캐시인지 공유 이미지인지를 이걸로 가른다
+  if (argHas("--memdump")) setTimeout(async () => {
+    const { contentTracing } = require("electron");
+    await contentTracing.startRecording({ included_categories: ["disabled-by-default-memory-infra"], memory_dump_config: { triggers: [{ mode: "detailed", periodic_interval_ms: 3000 }] } });
+    await new Promise(r => setTimeout(r, 12000));
+    const file = await contentTracing.stopRecording();
+    const j = JSON.parse(fs.readFileSync(file, "utf8")); const ev = j.traceEvents || j;
+    const pidName = {}; for (const e of ev) if (e.ph === "M" && e.name === "process_name") pidName[e.pid] = e.args.name;
+    const dumps = ev.filter(e => e.ph === "v" && e.args && e.args.dumps && e.args.dumps.allocators);
+    const last = {}; for (const d of dumps) last[d.pid] = d; // 프로세스별 마지막 덤프
+    for (const [pid, d] of Object.entries(last)) {
+      const rows = [];
+      for (const [name, a] of Object.entries(d.args.dumps.allocators)) { const sz = a.attrs && a.attrs.size; if (!sz) continue; const v = parseInt(sz.value, 16); if (name.split("/").length <= 3 && v > 2 * 1024 * 1024) rows.push([name, v]); }
+      rows.sort((x, y) => y[1] - x[1]);
+      console.log(`MEMDUMP ${pidName[pid] || "?"} pid ${pid}`); for (const [n, v] of rows.slice(0, 24)) console.log(`MEMDUMP   ${(v / 1048576).toFixed(0).padStart(5)} MB  ${n}`);
+    }
+    console.log("MEMDUMP file", file); app.quit();
+  }, 40000);
+
+  // --shot-mascot — 8초 뒤 마스코트 창을 그대로 찍는다(out/mascot.png). 렌더 옵션을 바꿨을 때 눈으로 확인용
+  if (argHas("--shot-mascot")) setTimeout(async () => { const w = ctx.mascotWin; if (w && !w.isDestroyed()) { const img = await w.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "mascot.png"), img.toPNG()); console.log("MASCOT shot", img.getSize()); } app.quit(); }, 8000);
 };
