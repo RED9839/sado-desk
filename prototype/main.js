@@ -396,6 +396,8 @@ function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.cl
 
 // ---- AI 대화 창 (ai.js) ----
 let chatWin = null, chatFor = null, chatBounds = null, chatAnchor = null, chatBusy = false, chatAbort = null, lastChatAt = 0;
+const chatReady = new WeakSet(); // did-finish-load 를 지난 대화창
+let chatSeq = 0; // 대화창을 열거나 대상을 바꿀 때마다 +1. 초기화(Ai.status 대기)가 늦게 끝나면 그 사이 대상이 바뀌었는지 이 번호로 안다
 const CHAT_W = 332;
 function chatPlace(id) {
   if (!chatWin || chatWin.isDestroyed() || !geo) return;
@@ -449,7 +451,16 @@ function openChat(id, opt = {}) {
   // 다른 사도에게로 옮기는데 앞 사도의 답이 아직 오는 중이면 끊는다 — 안 끊으면 그 답이 새 사도의 말처럼 창에 찍혔다(코드 리뷰 P2)
   if (chatFor && chatFor !== id && chatBusy && chatAbort) chatAbort.abort();
   chatFor = id; chatBounds = null; chatAnchor = null;
-  const send = async () => { if (chatWin && !chatWin.isDestroyed()) { chatWin.webContents.send("chat:init", await chatInitPayload(id)); chatPlace(id); if (opt.quiet) chatWin.showInactive(); else { chatWin.show(); chatWin.focus(); } } };
+  const seq = ++chatSeq;
+  // 초기화 정보(제공자 상태·기록)는 Ai.status 를 기다린다. A 를 열고 곧장 B 를 열면 A 의 것이 늦게 도착해 이름·기록은 A,
+  // 실제 대상은 B 가 되던 문제(코드 리뷰) — 기다린 뒤 아직 같은 요청인지 본다
+  const send = async () => {
+    const w0 = chatWin; if (!w0 || w0.isDestroyed()) return;
+    if (!chatReady.has(w0)) await new Promise(r => w0.webContents.once("did-finish-load", r));   // 창이 아직 뜨는 중이면 기다린다 — 로드 전에 보낸 메시지는 사라진다 (isLoading 은 loadFile 직후 잠깐 false 일 수 있어 우리 표시로 본다)
+    const payload = await chatInitPayload(id);
+    if (seq !== chatSeq || chatFor !== id || chatWin !== w0 || w0.isDestroyed()) return;   // 기다리는 동안 대상이 바뀌었거나 창이 바뀌었다
+    w0.webContents.send("chat:init", payload); chatPlace(id); if (opt.quiet) w0.showInactive(); else { w0.show(); w0.focus(); }
+  };
   if (chatWin && !chatWin.isDestroyed()) { send(); return; }
   chatWin = new BrowserWindow({
     x: 0, y: 0, width: CHAT_W, height: 220, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
@@ -463,7 +474,8 @@ function openChat(id, opt = {}) {
   // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
   w.on("closed", () => { if (chatWin !== w) return; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
   w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
-  w.webContents.once("did-finish-load", send);
+  w.webContents.once("did-finish-load", () => chatReady.add(w));
+  send();   // 로드를 기다리는 건 send 안에서 한다
 }
 function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
 const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };

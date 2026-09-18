@@ -414,6 +414,7 @@ function pickOllamaModel(m) {
 }
 
 async function status(ai) {
+  if (MOCK && mockStatusDelay) { const d = mockStatusDelay; mockStatusDelay = 0; await new Promise(r => setTimeout(r, d)); }
   const cfg = merge(ai);
   const tags = await ollamaTags(cfg.ollama.url);
   const s = {
@@ -428,7 +429,24 @@ async function status(ai) {
   return s;
 }
 // auto: 키가 있는 클라우드(품질·고유 어미 재현이 낫음) → 로컬 Ollama → OpenAI 호환. Ollama를 우선하려면 제공자를 명시
+// 흐름 테스트용 모의 제공자 — 환경변수 SADO_AI_MOCK 이 있으면 네트워크 없이 정해진 답을 천천히 흘려 준다.
+// 대화창 열기·전환·취소·기록 지우기 같은 경쟁을 외부 AI 없이 재현하려면 "느리고 예측 가능한" 제공자가 필요하다
+const MOCK = !!process.env.SADO_AI_MOCK;
+let mockStatusDelay = 0; // 다음 status() 한 번을 이만큼 늦춘다 — '먼저 연 쪽의 초기화가 늦게 끝나는' 경쟁을 만들 때(테스트 전용)
+async function chatMock(messages, onToken, signal) {
+  const last = [...messages].reverse().find(m => m.role === "user");
+  const words = `모의 답이다비. 방금 "${(last && last.text || "").slice(0, 12)}" 라고 했지. 이건 시험용 대답이라 뜻은 없다비.`.split(" ");
+  const gap = +process.env.SADO_AI_MOCK_MS || 150;   // 토큰 간격(ms) — 기본 150ms × 14토큰 ≈ 2초
+  let out = "";
+  for (const w of words) {
+    await new Promise((res, rej) => { const t = setTimeout(res, gap); if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(Object.assign(new Error("This operation was aborted"), { name: "AbortError" })); }, { once: true }); });
+    if (signal && signal.aborted) throw Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
+    const piece = (out ? " " : "") + w; out += piece; onToken(piece);
+  }
+  return out + "\n[감정:미소]";
+}
 function resolve(cfg, s) {
+  if (MOCK) return "mock";
   if (cfg.provider !== "auto") return cfg.provider;
   if (s.gemini.key) return "gemini";
   if (s.anthropic.key) return "anthropic";
@@ -467,7 +485,8 @@ async function chat(ai, prof, messages, onToken, opts = {}) {
   const system = buildSystem(prof, { extra: opts.extra, image: messages.some(m => m.image) });
   const signal = opts.signal;
   let text;
-  if (provider === "ollama") { if (!s.ollama.running) throw new Error("Ollama가 실행 중이 아니에요"); text = await chatOllama(cfg.ollama, system, messages, onToken, signal); }
+  if (provider === "mock") text = await chatMock(messages, onToken, signal);
+  else if (provider === "ollama") { if (!s.ollama.running) throw new Error("Ollama가 실행 중이 아니에요"); text = await chatOllama(cfg.ollama, system, messages, onToken, signal); }
   else if (provider === "gemini") text = await chatGemini(cfg.gemini, decKey(cfg.keys.gemini), system, messages, onToken, signal);
   else if (provider === "anthropic") text = await chatAnthropic(cfg.anthropic, decKey(cfg.keys.anthropic), system, messages, onToken, signal);
   else if (provider === "openai") text = await chatOpenAI(cfg.openai, decKey(cfg.keys.openai), system, messages, onToken, signal);
@@ -499,4 +518,4 @@ function bibleBrief(b, o = {}) {
 }
 module.exports = { detectMachine, pickOllamaModel, sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags,
   // 테스트용 — 스트림 파서와 제공자 함수. 앱 코드는 위의 것만 쓴다
-  _test: { stripNoise, partialField, ndjson, sse, chatGemini } };
+  _test: { stripNoise, partialField, ndjson, sse, chatGemini, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };

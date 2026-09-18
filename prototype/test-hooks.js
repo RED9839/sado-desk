@@ -112,21 +112,43 @@ module.exports = function installTestHooks(ctx) {
   // --shot-mascot — 8초 뒤 마스코트 창을 그대로 찍는다(out/mascot.png). 렌더 옵션을 바꿨을 때 눈으로 확인용
   if (argHas("--shot-mascot")) setTimeout(async () => { const w = ctx.mascotWin; if (w && !w.isDestroyed()) { const img = await w.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "mascot.png"), img.toPNG()); console.log("MASCOT shot", img.getSize()); } app.quit(); }, 8000);
 
-  // --chat-race-test — 답을 만드는 중에 ① 다른 사도로 대화창을 옮기고 ② 기록을 지운다. 앞 사도의 답이 새 창에 섞이지 않고,
-  // 지운 기록이 되살아나지 않아야 한다(코드 리뷰 P2 두 건). 느린 로컬 모델(Ollama)로 돌려야 중간에 끼어들 틈이 있다
+  // --chat-race-test — 대화 상태의 경쟁 네 가지를 재현하고 스스로 판정한다. 외부 AI 없이 돌리려면 SADO_AI_MOCK=1
+  // (ai.js 의 모의 제공자: 150ms 마다 토큰, 취소 가능). npm run test:flow 가 이걸 새 프로필로 띄워 FAIL 이 있으면 실패로 끝낸다.
+  //   ① 답하는 중 다른 사도로 옮김 → 앞 턴이 끊기고 어느 쪽에도 기록이 남지 않는다
+  //   ② 정상 턴 → 기록 2줄
+  //   ③ 답하는 중 '기록 지우기' → 턴이 끊기고 기록 0줄 (고치기 전엔 옛 기록이 되살아나 4줄)
+  //   ④ A 를 열고 곧장 B 를 열기 → 초기화(Ai.status 대기)가 늦게 끝나도 창의 이름은 B (고치기 전엔 A 가 덮어썼다)
   if (argHas("--chat-race-test")) setTimeout(async () => {
     const [a, b] = ctx.settings.characters.map(c => c.id); const ud = app.getPath("userData");
-    const wait = async () => { for (let i = 0; i < 400 && ctx.chatBusy; i++) await new Promise(r => setTimeout(r, 100)); };
-    const sendIn = async (text) => { await ctx.chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(text)}; document.getElementById("send").click();`); for (let i = 0; i < 30 && !ctx.chatBusy; i++) await new Promise(r => setTimeout(r, 100)); };
-    ctx.openChat(a); await new Promise(r => setTimeout(r, 2500));
-    await sendIn("안녕! 오늘 뭐 했어?"); await new Promise(r => setTimeout(r, 1500));
-    ctx.openChat(b); console.log("RACETEST ① 옮김: chatFor=" + ctx.chatFor + " busy=" + ctx.chatBusy); await wait();
-    console.log("RACETEST ① 끝: a 기록 " + Ai.loadHistory(ud, a).length + "줄, b 기록 " + Ai.loadHistory(ud, b).length + "줄 (a 는 끊겨서 0, b 는 0 이어야)");
-    ctx.openChat(a); await new Promise(r => setTimeout(r, 1500));
-    await sendIn("꿀은 어디서 나?"); await wait(); console.log("RACETEST ② 정상 턴 뒤 a 기록 " + Ai.loadHistory(ud, a).length + "줄 (2 이어야) 마지막=" + JSON.stringify((Ai.loadHistory(ud, a).slice(-1)[0] || {}).text));
-    await sendIn("하나 더 물을게"); await new Promise(r => setTimeout(r, 250));
-    ipcMain.emit("chat:clear"); console.log("RACETEST ② 지움: busy=" + ctx.chatBusy); await wait(); await new Promise(r => setTimeout(r, 500));
-    console.log("RACETEST ② 끝: a 기록 " + Ai.loadHistory(ud, a).length + "줄 (0 이어야 — 되살아나면 4)");
-    app.quit();
+    const fails = [], ok = (cond, msg) => { console.log(`RACETEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const wait = async () => { for (let i = 0; i < 400 && ctx.chatBusy; i++) await sleep(100); };
+    const sendIn = async (text) => { await ctx.chatWin.webContents.executeJavaScript(`document.getElementById("in").value = ${JSON.stringify(text)}; document.getElementById("send").click();`); for (let i = 0; i < 30 && !ctx.chatBusy; i++) await sleep(100); };
+    const who = () => ctx.chatWin.webContents.executeJavaScript(`document.getElementById("who").textContent`);
+    const koOf = (id) => { const p = ctx.chatProfile(id); return p ? p.ko : id; };
+    Ai.clearHistory(ud, a); Ai.clearHistory(ud, b);
+    ctx.openChat(a); await sleep(2500);
+    // ①
+    await sendIn("안녕! 오늘 뭐 했어?"); await sleep(600);
+    ctx.openChat(b); const busyAtSwitch = ctx.chatBusy; await wait(); await sleep(300);
+    ok(busyAtSwitch, "① 옮길 때 앞 사도가 답하는 중이었다(시험 전제)");
+    ok(Ai.loadHistory(ud, a).length === 0 && Ai.loadHistory(ud, b).length === 0, `① 옮긴 뒤 기록 a=${Ai.loadHistory(ud, a).length} b=${Ai.loadHistory(ud, b).length} (둘 다 0)`);
+    ok((await who()) === koOf(b), `① 창 이름=${await who()} (${koOf(b)} 이어야)`);
+    // ②
+    ctx.openChat(a); await sleep(1500);
+    await sendIn("꿀은 어디서 나?"); await wait(); await sleep(200);
+    ok(Ai.loadHistory(ud, a).length === 2, `② 정상 턴 뒤 기록 ${Ai.loadHistory(ud, a).length}줄 (2)`);
+    // ③
+    await sendIn("하나 더 물을게"); await sleep(400);
+    const busyAtClear = ctx.chatBusy; ipcMain.emit("chat:clear"); await wait(); await sleep(400);
+    ok(busyAtClear, "③ 지울 때 답하는 중이었다(시험 전제)");
+    ok(Ai.loadHistory(ud, a).length === 0, `③ 지운 뒤 기록 ${Ai.loadHistory(ud, a).length}줄 (0 — 되살아나면 4)`);
+    // ④ 초기화 경쟁 — A 열고 곧장 B
+    Ai._test.setMockStatusDelay(900); ctx.openChat(a); ctx.openChat(b); await sleep(2500);   // A 의 초기화(status)만 0.9초 늦춘다 — B 가 먼저 끝나고 A 가 나중에 도착
+    ok(ctx.chatFor === b && (await who()) === koOf(b), `④ A→B 연속 열기 뒤 대상=${ctx.chatFor} 창 이름=${await who()} (${koOf(b)})`);
+    Ai._test.setMockStatusDelay(900); ctx.openChat(b); ctx.openChat(a); await sleep(2500);
+    ok(ctx.chatFor === a && (await who()) === koOf(a), `④' B→A 연속 열기 뒤 창 이름=${await who()} (${koOf(a)})`);
+    console.log(`RACETEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
   }, 6000);
 };
