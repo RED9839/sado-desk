@@ -206,6 +206,26 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 6000);
 
+  // --stay-test — 대화창이 열려 있는 동안 그 사도가 제자리에 있는지(폴짝·점프 없음), 닫으면 다시 돌아다니는지. 에셋 필요(로컬)
+  if (argHas("--stay-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`STAYTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const a = ctx.settings.characters[0].id, R = () => (ctx.instances.get(a) || {}).rect, x = () => R() && R().x + R().w / 2, y = () => R() && R().y + R().h;   // 발 위치(가운데·아래) — 대기 애니로 바운딩 박스가 흔들려도 덜 움직인다
+    ctx.updateSettings({ behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.5, idleMax: 1 } }, a);   // 쉬는 시간마다 반드시 폴짝
+    await sleep(3000); if (x() === undefined) { console.log("STAYTEST FAIL 사도 위치가 없다(에셋 없음?)"); app.exit(1); return; }
+    ctx.openChat(a);
+    for (let i = 0, px = x(); i < 40; i++) { await sleep(500); if (Math.abs(x() - px) < 2) { if (++i >= 3) break; } else i = 0; px = x(); }   // 열 때 하던 폴짝은 끝까지 간다 — 1.5초 멈춘 뒤부터 잰다
+    const x0 = x(), y0 = y(); let dx = 0, dy = 0;
+    for (let i = 0; i < 40; i++) { await sleep(500); dx = Math.max(dx, Math.abs(x() - x0)); dy = Math.max(dy, Math.abs(y() - y0)); }
+    ok(dx < 50 && dy < 50, `대화창 열린 20초 동안 이동 x ${dx.toFixed(0)}px y ${dy.toFixed(0)}px (폴짝은 80px 이상 — 대기 애니로 바운딩 박스만 흔들림)`);
+    ctx.chatWin.close(); await sleep(300);
+    const x1 = x(); let moved = 0;
+    for (let i = 0; i < 40 && moved < 30; i++) { await sleep(500); moved = Math.max(moved, Math.abs(x() - x1)); }
+    ok(moved >= 30, `닫은 뒤 20초 안에 다시 폴짝 (${moved.toFixed(0)}px)`);
+    console.log(`STAYTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 5000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {
