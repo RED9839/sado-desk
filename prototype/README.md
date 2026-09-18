@@ -17,9 +17,11 @@ run.cmd --multi-test # 캐릭터 추가 → 개별 설정 → 2번 캐릭터 메
 ```
 에셋(`assets/`)은 저장소·설치판에 포함하지 않음. 개발 중엔 `prototype/assets/`(있으면 우선), 설치판은 `%APPDATA%\사도 데스크ssets`(앱의 '에셋 가져오기'가 `tools/extract-all.py`로 사용자 PC의 뮤뮤 트릭컬에서 추출). 우선순위: 설정 `assets.root` → 개발 폴더 → userData. 한글 이름표·말투 프로필은 앱 안 `data/`.
 
-## 캐릭터 형태 2종 (설정 → 캐릭터 → 형태 / 우클릭 메뉴 '형태' 토글 / 트레이)
+## 사도 형태 3종 (설정 → 사도 → 형태 / 우클릭 메뉴 '형태' / 트레이)
 - **미니미 (스틱)**: 공용 미니미 스켈레톤 + 외형 418벌(사도 139명). 폴짝 이동·큰 점프·등장 낙하 등 게임 원본 애니 77개
-- **SD**: 대기·클릭·드래그·착지 = 스탠딩. **이동 = 미니미(스틱) 폴짝**(게임 로비처럼), 멈추면 스탠딩 복귀. 미니미 높이는 스탠딩의 0.78배. 스탠딩에 Move가 있는 캐릭터(크레페)는 스탠딩이 직접 걷음. (인게임 SD는 스탠딩이 없는 캐릭터의 대체용) 대기·클릭·드래그·착지 = **스탠딩**(사도 상세 화면, 표정·상호작용 애니 풍부; `assets/standing-hd/` 사이트 HD 101명+스킨 → `assets/standing/` 게임 추출 33명), 이동·등장 = **인게임 SD**(전투·마이홈, `assets/ingame/` 416세트, 414세트에 `Move`). 둘 중 하나만 있으면 그것만 사용, 둘 다 없으면 미니미. 크기는 두 스켈레톤이 같은 단위(에르핀 Head 본 y=429 동일)라 단위 고정 배율(`SD_UNIT=0.8 × scale`) + 발→Head 높이 캐릭터별 보정(`hybridFix`). 바닥 그림자 슬롯(`CommonShadow`)은 숨김. 애니는 캐릭터별 구성이 달라 접두어로 자동 분류(`sdPools`/`ingamePools`). 설정 파일의 옛 값 `standing/ingame/hybrid`는 `sd`로 이관
+- **스탠딩** (`mode: "sd"`): 대기·클릭·드래그·착지 = 스탠딩(사도 상세 화면 Spine). **이동 = 미니미 폴짝**(게임 로비처럼), 멈추면 스탠딩 복귀. 미니미 높이는 스탠딩의 0.78배. 스탠딩에 Move가 있는 사도(크레페)는 스탠딩이 직접 걷음. 스탠딩이 없는 사도는 인게임 SD로 대체, 둘 다 없으면 미니미.
+- **인게임** (`mode: "ingame"`): 전투 모델(Idle · Move · Spawn · Victory · 공격) 그대로. Move로 걷고 Spawn으로 등장하며 표정·교감 모션은 없음. 에셋 가져오기에서 '인게임 SD' 단계가 필요.
+- (스탠딩 옛 설명) 대기·클릭·드래그·착지 = **스탠딩**(사도 상세 화면, 표정·상호작용 애니 풍부; `assets/standing-hd/` 사이트 HD 101명+스킨 → `assets/standing/` 게임 추출 33명), 이동·등장 = **인게임 SD**(전투·마이홈, `assets/ingame/` 416세트, 414세트에 `Move`). 둘 중 하나만 있으면 그것만 사용, 둘 다 없으면 미니미. 크기는 두 스켈레톤이 같은 단위(에르핀 Head 본 y=429 동일)라 단위 고정 배율(`SD_UNIT=0.8 × scale`) + 발→Head 높이 캐릭터별 보정(`hybridFix`). 바닥 그림자 슬롯(`CommonShadow`)은 숨김. 애니는 캐릭터별 구성이 달라 접두어로 자동 분류(`sdPools`/`ingamePools`). 설정 파일의 옛 값 `standing/ingame/hybrid`는 `sd`로 이관
 
 ## 조작
 - 좌클릭(SD) — 게임 교감 4종과 동일: **탭 = 볼 당기기**(누르는 동안 Touch_Idle, 떼면 Touch_End + "당기지 마!" 대사), **머리 드래그 = 쓰다듬기**(Pat_Idle → Pat_End + "더 쓰다듬으라고"), **머리 탭 = 꿀밤**(Smash_End + "머리 때리지 마!"), **몸을 0.5초 누르고 있기 = 간지럽히기**(Tickle_Idle + 웃음 → Tickle_End), 몸 드래그 = 들어서 던지기. 미니미: 반응 애니 + 모션에 맞는 대사
@@ -54,15 +56,29 @@ python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] 
 - 입력은 본인 게임에서 추출한 `assets/standing/` 이다. 출력: `out/gif/<한글이름>/<스킨>_<애니>.gif`
 
 ## 설정 저장
-`%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display}, characters:[{id, skin, mode, scale, opacity, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 sound/display는 global에, 나머지는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값은 `main.js`의 `CHAR_DEFAULTS`/`GLOBAL_DEFAULTS`. v1 파일은 자동 이관.
+`%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display, talk, news, ai, assets}, characters:[{id, skin, mode, mood, scale, opacity, monitor, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 sound/display는 global에, 나머지는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값·범위 검사·병합은 `settings-schema.js`의 `CHAR_DEFAULTS`/`GLOBAL_DEFAULTS`/`sanitizePatch`(Electron 없이 `npm test`가 그대로 부른다). v1 파일은 자동 이관.
+
+## 테스트
+```
+npm test          # 순수 로직 38개 — 설정 검사·AI 파서(Gemini 끊김 재시도)·혼잣말 검사기·데이터 짝. Node 내장 node --test, 의존성 없음
+npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 대화 상태 경쟁 4가지(대상 전환·기록 지우기·연속 열기)를 모의 AI(SADO_AI_MOCK)로 재현, PASS/FAIL 자동 판정 (약 20초)
+```
+그 밖의 수동 훅은 `test-hooks.js` (`--selftalk-test`, `--menu-test --menu-click`, `--screen-test --dry`, `--memdump` …).
 
 ## 구조
 ```
-main.js            투명·최상위·포커스불가 마스코트 창 **하나**(모든 모니터 합집합, 항상 클릭 통과, 캐릭터 전부를 여기 그림) + 히트 창 **하나**(커서가 올라간 캐릭터 크기로 옮겨 보임, 실제 입력 수신→해당 캐릭터에 중계) + 메뉴 창 + 설정 저장·브로드캐스트 + 설정창 + 트레이
+main.js            마스코트 창 **하나**(모든 모니터 합집합, 투명·최상위·항상 클릭 통과, 사도 전부를 여기 그림 — 모니터마다 창을 나누는 건 창 하나당 고정 비용 190MB 라 접었다, docs/04) + 히트 창 **하나**(커서가 올라간 사도 크기로 옮겨 보임, 실제 입력 수신→해당 사도에 중계) + 메뉴·말풍선·대화 창 + 설정 저장·방송 + 트레이 + AI 턴
+settings-schema.js 설정 기본값·병합·범위 검사 (순수, 테스트가 부른다)
+setup-window.js    에셋 가져오기 창 · 파이썬 추출기 실행
+selftalk.js        혼잣말 대본 적재·상황 고르기·말풍선
+screen-capture.js  화면 보기 — 허용 창 목록·캡처
+updater.js         깃허브 릴리스 확인·알림
+test-hooks.js      --selftalk-test 같은 시험 훅 (제품 코드 아님)
+ai.js              AI 제공자 4종(Gemini·Claude·Ollama·OpenAI 호환) + 모의 제공자(SADO_AI_MOCK)
 preload.js         fs 읽기 · IPC 브리지
 renderer/mascot.js Spine 로드/렌더, 상태머신(spawn→idle⇄hop/jump/react, drag→thrown→land), HTML 메뉴, 셀프테스트
 renderer/index.html
 renderer/hit.html, hit-preload.js  캐릭터를 따라다니는 투명 히트 창 (mousedown/up/move를 화면 좌표로 메인에 전달)
 renderer/menu.html, menu.js  우클릭 메뉴 (별도 작은 창, 검색·슬라이더가 실제 입력으로 동작)
-renderer/settings.html, settings.js  설정창 (탭 5개, 아틀라스에서 미니미 썸네일 직접 크롭)
+renderer/settings.html, settings.js  설정창 (탭 8개: 조작법·사도·행동·사운드·화면·알림·AI 대화·정보, 아틀라스에서 미니미 썸네일 직접 크롭)
 ```
