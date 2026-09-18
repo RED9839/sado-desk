@@ -15,12 +15,19 @@ module.exports = function createChat(ctx) {
   let chatSeq = 0;
   const chatLive = (seq) => chatSeq === seq && chatWin && !chatWin.isDestroyed();
   const CHAT_W = 332;
+  // 창은 사도의 머리 위에 붙어 사도를 따라다닌다(hit-rect 가 올 때마다 main 이 place 를 부른다). 사용자가 창을 끌어 옮기면
+  // 그 차이(chatOffset)를 기억해 사도 기준 그 자리를 유지한다. 대기 애니의 들썩임(몇 px)에 창이 떨리지 않게 8px 안의 변화는 무시
+  let chatOffset = { dx: 0, dy: 0 };
   function chatPlace(id) {
     if (!chatWin || chatWin.isDestroyed() || !ctx.geo) return;
     const inst = ctx.instances.get(id); const r = inst && inst.rect;
-    if (!chatAnchor || chatAnchor.id !== id) { if (!r) return; chatAnchor = { id, cx: Math.round(ctx.geo.x + r.x + r.w / 2), top: Math.round(ctx.geo.y + r.y) }; }
+    if (r) {
+      const cx = Math.round(ctx.geo.x + r.x + r.w / 2), top = Math.round(ctx.geo.y + r.y);
+      if (!chatAnchor || chatAnchor.id !== id || Math.abs(cx - chatAnchor.cx) >= 8 || Math.abs(top - chatAnchor.top) >= 8) chatAnchor = { id, cx, top };
+    }
+    if (!chatAnchor || chatAnchor.id !== id) return;   // 아직 사도의 위치를 모른다 — 다음 hit-rect 에서
     const h = chatBounds ? chatBounds.height : 220;
-    const sx = chatAnchor.cx - Math.round(CHAT_W / 2), sy = chatAnchor.top - h + 6;
+    const sx = chatAnchor.cx - Math.round(CHAT_W / 2) + chatOffset.dx, sy = chatAnchor.top - h + 6 + chatOffset.dy;
     const d = screen.getDisplayNearestPoint({ x: sx + CHAT_W / 2, y: sy + h / 2 }).workArea;
     const b = { x: Math.min(Math.max(sx, d.x), d.x + d.width - CHAT_W), y: Math.max(d.y, sy), width: CHAT_W, height: h };
     if (!chatBounds || b.x !== chatBounds.x || b.y !== chatBounds.y || b.height !== chatBounds.height) { chatWin.setBounds(b); chatBounds = b; }
@@ -38,7 +45,7 @@ module.exports = function createChat(ctx) {
     if (same && chatBusy) { if (!opt.quiet) { chatWin.show(); chatWin.focus(); } return; }
     // 다른 사도에게로 옮기는데 앞 사도의 답이 아직 오는 중이면 끊는다 — 안 끊으면 그 답이 새 사도의 말처럼 창에 찍혔다(코드 리뷰 P2)
     if (chatFor && chatFor !== id && chatBusy && chatAbort) chatAbort.abort();
-    chatFor = id; chatBounds = null; chatAnchor = null;
+    chatFor = id; chatBounds = null; chatAnchor = null; chatOffset = { dx: 0, dy: 0 };
     const seq = same ? chatSeq : ++chatSeq;   // 같은 사도면 요청 번호를 그대로 — 진행 중인 화면 캡처가 살아 있게
     // 초기화 정보(제공자 상태·기록)는 Ai.status 를 기다린다. A 를 열고 곧장 B 를 열면 A 의 것이 늦게 도착해 이름·기록은 A,
     // 실제 대상은 B 가 되던 문제(코드 리뷰) — 기다린 뒤 아직 같은 요청인지 본다
@@ -59,6 +66,8 @@ module.exports = function createChat(ctx) {
     chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
     chatWin.webContents.on("console-message", (ev) => console.log(`[chat:${ev.level}] ${ev.message}`));
     const w = chatWin; ctx.trackBounds(w);
+    // 사용자가 끌어 옮긴 것(우리가 setBounds 한 자리와 다르면) → 사도 기준 차이로 기억
+    w.on("moved", () => { if (chatWin !== w || w.isDestroyed() || !chatBounds) return; const b = w.getBounds(); if (b.x === chatBounds.x && b.y === chatBounds.y) return; chatOffset = { dx: chatOffset.dx + b.x - chatBounds.x, dy: chatOffset.dy + b.y - chatBounds.y }; chatBounds = { ...chatBounds, x: b.x, y: b.y }; });
     // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
     w.on("closed", () => { if (chatWin !== w) return; chatSeq++; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
     w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
@@ -130,7 +139,7 @@ module.exports = function createChat(ctx) {
   ipcMain.on("chat:open", (e, id) => openChat(id || ctx.instanceOf(e.sender) || ctx.settings.characters[0].id));
 
   return {
-    openChat, closeChat, chatTurn, screenTalk,
+    openChat, closeChat, chatTurn, screenTalk, place: chatPlace,
     get win() { return chatWin; }, get for() { return chatFor; }, get busy() { return chatBusy; },
     get lastAt() { return lastChatAt; }, set lastAt(v) { lastChatAt = v; }, touch() { lastChatAt = Date.now(); },
   };
