@@ -189,6 +189,14 @@ module.exports = function installTestHooks(ctx) {
       ipcMain.emit("hit-rect", ev, rect(700, 500), a); await sleep(150); const b2 = ctx.chatWin.getBounds();
       ipcMain.emit("hit-rect", ev, rect(703, 503), a); await sleep(150); const b3 = ctx.chatWin.getBounds();   // 3px 들썩임은 무시
       ok(b2.x - b1.x === 400 && b3.x === b2.x && b3.y === b2.y, `⑫ 사도가 400px 옮기면 창도 400px (${b2.x - b1.x}), 3px 들썩임은 무시(${b3.x - b2.x})`);
+      // 점프: 0.3초 동안 위로 150px 갔다가 제자리 — 창의 세로는 그대로여야 한다
+      for (const y of [450, 400, 350, 400, 450, 500]) { ipcMain.emit("hit-rect", ev, rect(700, y), a); await sleep(50); }
+      const bj = ctx.chatWin.getBounds(); await sleep(500); const bj2 = ctx.chatWin.getBounds();
+      ok(bj.y === b2.y && bj2.y === b2.y, `⑫ 점프 중·후 창의 세로가 그대로 (${bj.y - b2.y}, ${bj2.y - b2.y})`);
+      // 다른 높이에 내려놓고 머무르면 0.4초 뒤 따라간다
+      ipcMain.emit("hit-rect", ev, rect(700, 300), a); await sleep(150); const bq = ctx.chatWin.getBounds(); await sleep(500); const bq2 = ctx.chatWin.getBounds();
+      ok(bq.y === b2.y && bq2.y === b2.y - 200, `⑫ 새 높이는 바로 말고 머문 뒤에 (바로 ${bq.y - b2.y}, 0.65초 뒤 ${bq2.y - b2.y}, −200)`);
+      ipcMain.emit("hit-rect", ev, rect(700, 500), a); await sleep(600); const b2b = ctx.chatWin.getBounds(); ok(b2b.y === b2.y, "⑫ 원래 높이로 돌아옴");
       ctx.chatWin.setBounds({ x: b2.x + 50, y: b2.y - 30 }); ctx.chatWin.emit("moved"); await sleep(150);
       ipcMain.emit("hit-rect", ev, rect(900, 500), a); await sleep(150); const b4 = ctx.chatWin.getBounds();
       ok(b4.x - b2.x === 200 + 50 && b4.y - b2.y === -30, `⑫ 끌어 옮긴 차이(+50,−30)를 사도 기준으로 유지 (${b4.x - b2.x}, ${b4.y - b2.y})`);
