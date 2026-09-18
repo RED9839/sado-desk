@@ -104,3 +104,23 @@ test("chatGemini — 재시도도 끊기면 마지막 완결 문장까지만 내
   try { assert.equal(await chatGemini(cfg, "k", "sys", msgs, silent, undefined), "첫 문장은 끝났다비."); }
   finally { globalThis.fetch = orig; }
 });
+
+test("appLabelOf — 창 제목에서 앱 이름표만 (문서 제목은 매번 바뀐다)", () => {
+  const { appLabelOf } = require("../screen-capture.js");
+  assert.equal(appLabelOf("Flasso - YouTube - Chrome"), "Chrome");
+  assert.equal(appLabelOf("#채팅 | SSAP - Discord"), "Discord");
+  assert.equal(appLabelOf("트릭컬 게임 정보 - 사도 데스크 - Visual Studio Code"), "Visual Studio Code");
+  assert.equal(appLabelOf("MapleStory"), "MapleStory");                 // 구분자 없으면 제목 전체
+  assert.equal(appLabelOf("귀렘 - 파일 탐색기"), "파일 탐색기");
+  assert.equal(appLabelOf("a - " + "x".repeat(40)), ("a - " + "x".repeat(40)).slice(0, 80)); // 뒤 토막이 너무 길면(30자 초과) 제목 전체
+  assert.equal(appLabelOf(""), "");
+});
+
+test("updater.newerThan — 태그 비교 (v 접두어·세 자리·자릿수 다름)", () => {
+  const UP = require("../updater.js")({ refreshTray() {} });
+  assert.equal(UP.newerThan("v0.23.1", "0.14.1"), true);
+  assert.equal(UP.newerThan("v0.14.1", "0.14.1"), false);
+  assert.equal(UP.newerThan("v0.9.9", "0.10.0"), false);      // 문자열 비교였다면 참이 됐을 것
+  assert.equal(UP.newerThan("v1.0", "0.99.99"), true);
+  assert.deepEqual(UP.semver("v1.2"), [1, 2]);
+});
