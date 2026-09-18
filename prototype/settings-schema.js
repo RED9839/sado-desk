@@ -22,7 +22,7 @@ const GLOBAL_DEFAULTS = {
   // bulkEdit: 사도별 값(형태·크기·불투명도·표정·행동)을 바꿀 때 모든 사도에 함께 넣는다.
   // 설정 창과 우클릭 메뉴가 같은 값을 본다 — 메뉴 창은 열 때마다 새로 만들어지므로 껐다 켤 때마다
   // 다시 체크하게 두면 쓸모가 없어서 설정에 남긴다. 사도 바꾸기(skin)만은 함께 가지 않는다
-  display: { debug: false, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  display: { debug: false, confineMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아

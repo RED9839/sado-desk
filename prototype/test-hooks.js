@@ -200,7 +200,7 @@ module.exports = function installTestHooks(ctx) {
     ctx.updateSettings({ behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.5, idleMax: 1 } }, a);   // 쉬는 시간마다 반드시 폴짝
     await sleep(3000); if (x() === undefined) { console.log("STAYTEST FAIL 사도 위치가 없다(에셋 없음?)"); app.exit(1); return; }
     ctx.openChat(a);
-    for (let i = 0, px = x(); i < 40; i++) { await sleep(500); if (Math.abs(x() - px) < 2) { if (++i >= 3) break; } else i = 0; px = x(); }   // 열 때 하던 폴짝은 끝까지 간다 — 1.5초 멈춘 뒤부터 잰다
+    for (let t = 0, still = 0, px = x(); t < 40 && still < 3; t++) { await sleep(500); still = Math.abs(x() - px) < 2 ? still + 1 : 0; px = x(); }   // 열 때 하던 폴짝은 끝까지 간다 — 1.5초 멈춘 뒤부터 잰다(최대 20초)
     const x0 = x(), y0 = y(); let dx = 0, dy = 0;
     for (let i = 0; i < 40; i++) { await sleep(500); dx = Math.max(dx, Math.abs(x() - x0)); dy = Math.max(dy, Math.abs(y() - y0)); }
     ok(dx < 50 && dy < 50, `대화창 열린 20초 동안 이동 x ${dx.toFixed(0)}px y ${dy.toFixed(0)}px (폴짝은 80px 이상 — 대기 애니로 바운딩 박스만 흔들림)`);
@@ -213,19 +213,24 @@ module.exports = function installTestHooks(ctx) {
   }, 5000);
 
   // --monitor-test — 사도는 서 있는 모니터 안에서만 폴짝하고, 옆 모니터로 끌어다 놓으면 그곳에 머물며 그 모니터 id 가 설정에 남는다. 모니터 둘·에셋 필요(로컬)
-  if (argHas("--monitor-test")) setTimeout(async () => {
+  if (argHas("--monitor-test")) setTimeout(async () => { try { await monitorTest(); } catch (e) { console.log("MONTEST FAIL 예외:", e.stack || e); app.exit(1); } }, 5000);
+  async function monitorTest() {
     const fails = [], ok = (cond, msg) => { console.log(`MONTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     const a = ctx.settings.characters[0].id, D = ctx.geo.displays;
     if (D.length < 2) { console.log("MONTEST FAIL 모니터가 둘 이상이어야 한다"); app.exit(1); return; }
-    const R = () => (ctx.instances.get(a) || {}).rect, cx = () => R() && R().x + R().w / 2;
+    const R = () => (ctx.instances.get(a) || {}).rect, cx = () => { const r = R(); return r ? r.x + r.w / 2 : NaN; };   // 공중에 떠 있는 순간엔 히트 사각형이 없다(null)
     const dispOf = (x) => D.findIndex(d => x >= d.x && x < d.x + d.w);
     ctx.updateSettings({ behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
+    ctx.updateSettings({ display: { confineMonitor: !argHas("--roam") } });   // --roam 은 대조군: '모니터 가두기' 를 끄면 ① 이 떨어져야 한다. 프로필이 재사용되니 켜는 쪽도 명시
     await sleep(3000); const d0 = dispOf(cx());
     { const want = D.findIndex(d => d.id === +ctx.settings.characters[0].monitor); if (want >= 0) ok(d0 === want, `⓪ 설정에 적힌 모니터에서 시작 (${d0} = ${want})`); else console.log(`MONTEST PASS ⓪ 설정에 모니터가 없어 ${d0}번에서 시작 (건너뜀)`); }
     // 히트 창이 보내는 마우스 이벤트를 흉내내 끌어다 놓는다 (화면 좌표)
     const ev = (type, x, y) => ipcMain.emit("hit-ev", { sender: { id: 0 } }, { instance: a, type, sx: x, sy: y, button: 0, buttons: type === "mouseup" ? 0 : 1 });
-    const dragTo = async (tx, ty) => { const r0 = R(), sx = ctx.geo.x + r0.x + r0.w / 2, sy = ctx.geo.y + r0.y + r0.h / 2; ev("mousedown", sx, sy); await sleep(80); for (let i = 1; i <= 30; i++) { ev("mousemove", sx + (tx - sx) * i / 30, sy + (ty - sy) * i / 30); await sleep(30); } ev("mouseup", tx, ty); await sleep(2500); };
+    const dragTo = async (tx, ty) => { for (let t = 0, still = 0, px = cx(); t < 50 && still < 2; t++) { await sleep(200); still = R() && Math.abs(cx() - px) < 2 ? still + 1 : 0; px = cx(); }   // 폴짝 중이면 잡기를 놓친다 — 멈출 때까지(최대 10초)
+      const r0 = R(); if (!r0) { ok(false, "끌 사도의 히트 사각형이 없다"); return; }
+      ctx.mascotWin.webContents.send("mascot", a, "logstate", "drag-before"); console.log(`MONTEST · 끌기 시작 rect=${JSON.stringify(r0)} → (${tx.toFixed(0)}, ${ty.toFixed(0)})`);
+      const sx = ctx.geo.x + r0.x + r0.w / 2, sy = ctx.geo.y + r0.y + r0.h / 2; ev("mousedown", sx, sy); await sleep(80); for (let i = 1; i <= 30; i++) { ev("mousemove", sx + (tx - sx) * i / 30, sy + (ty - sy) * i / 30); await sleep(30); } ev("mouseup", tx, ty); await sleep(2500); };
     // ① 모니터 경계 바로 앞(100px)에 세워 두고 900px 폴짝을 30초 — 가두지 않으면 첫 오른쪽 폴짝에 넘어간다
     const here = D[d0], nb = D[(d0 + 1) % D.length], right = nb.x > here.x;
     await dragTo(ctx.geo.x + (right ? here.x + here.w - 100 : here.x + 100), ctx.geo.y + here.floor - 200);
@@ -240,7 +245,7 @@ module.exports = function installTestHooks(ctx) {
     ok(+ctx.settings.characters[0].monitor === D[d1].id, `④ 놓아둔 모니터 id 가 설정에 남았다 (${ctx.settings.characters[0].monitor} = ${D[d1].id}) — 다음 시작도 거기서`);
     console.log(`MONTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
-  }, 5000);
+  }
 
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)

@@ -107,7 +107,7 @@ const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return
 function updateSettings(patch, id, sourceId) {
   // 창 기하·자동시작·전체화면 숨김을 다시 걸지 말지 볼 때, 화면과 무관한 표시용 값은 빼고 본다.
   // 안 빼면 '모든 사도에 함께' 를 누를 때마다 setLoginItemSettings 가 레지스트리를 건드린다
-  const dispSig = () => { const { bulkEdit, guideShown, keepOnTop, ...d } = settings.global.display || {}; return JSON.stringify(d); };
+  const dispSig = () => { const { bulkEdit, guideShown, keepOnTop, confineMonitor, ...d } = settings.global.display || {}; return JSON.stringify(d); };
   const prevDisp = dispSig();
   const g = {}, c = {};
   for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;

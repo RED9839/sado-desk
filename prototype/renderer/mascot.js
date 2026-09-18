@@ -781,7 +781,8 @@
     }
     // 이 사도의 집 모니터. S.monitor 는 마지막으로 놓아둔 모니터 id(놓을 때 저장) — 그 안에서만 폴짝하고 원정을 가지 않는다.
     // 0 이거나 뽑아 버린 모니터면 지금 서 있는 모니터. 끌어다 다른 모니터에 놓으면 그곳이 새 집이고, 다음 시작도 그곳에서
-    function myDisp() { const id = +S.monitor || 0; return (id && geoD.find(d => d.id === id)) || dispAt(m.x); }   // 옛 설정에 문자열이 남아 있어도 견딘다
+    // display.confineMonitor 가 꺼져 있으면 null — 창 전체를 오가고 가끔 원정도 간다 ('모든 모니터 이동')
+    function myDisp() { if (S.display && S.display.confineMonitor === false) return null; const id = +S.monitor || 0; return (id && geoD.find(d => d.id === id)) || dispAt(m.x); }   // 옛 설정에 문자열이 남아 있어도 견딘다
     function clampX(x, d = myDisp()) {
       const lo = (d ? d.x0 : 0) + WALL_MARGIN + m.w / 2;
       const hi = (d ? d.x1 : W) - WALL_MARGIN - m.w / 2;
