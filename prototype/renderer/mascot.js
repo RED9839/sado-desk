@@ -125,10 +125,11 @@
   const disposeTex = (t) => { pmaFix.delete(t); try { t.dispose(); } catch {} };
   // ---- 모니터 기하 (창 기준, 월드 y는 위로 증가) ----
   // geoD: [{x0,x1, floor(월드y), top(월드y)}] — floor = 작업표시줄 위, top = 모니터 상단. 창이 작업표시줄까지 덮으면 floor 아래 영역은 작업표시줄 위에 그려진다.
-  let geoD = [];
+  let geoD = [], neighbors = [];   // neighbors: 이 창 밖으로 걸어 나가면 닿는 모니터들 [{id, side:"left"|"right", dy, floor, h}] — 창 하나가 모니터 하나를 맡는다(v0.24.0)
   function setGeo(g) {
     W = g.w; H = g.h; canvas.width = W; canvas.height = H;
     geoD = g.displays.map(d => ({ id: d.id, x0: d.x, x1: d.x + d.w, floor: H - d.floor, top: H - d.top, primary: d.primary }));
+    neighbors = g.neighbors || [];
     for (const mas of mascots.values()) mas.onGeo();
   }
   function dispAt(x) { let best = null, bd = 1e9; for (const d of geoD) { const dd = x < d.x0 ? d.x0 - x : x > d.x1 ? x - d.x1 : 0; if (dd < bd) { bd = dd; best = d; } } return best; }
@@ -206,7 +207,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { if (cfg && cfg.selftest) return; /* 셀프테스트 중엔 진짜 마우스가 캐릭터 위에 있으면 합성 입력과 섞여 드래그로 튐 */ const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "logstate") mas.logState(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "cross") mas.crossNow(arg); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "logstate") mas.logState(arg); });
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -504,10 +505,32 @@
       { const p = myDisp() || geoD.find(d => d.primary) || geoD[0]; m.x = p ? (p.x0 + p.x1) / 2 + (Math.random() - 0.5) * (p.x1 - p.x0) * 0.4 : W / 2; }
       await activateMode(true);
     }
+    // 옆 창에서 건너온 사도 — 위에서 떨어지는 등장 대신, 들어온 가장자리 밖에서 걸어 들어온다(또는 잡힌 채 따라온다)
+    function arrive(a) {
+      const fromLeft = a.side === "left";
+      m.x = fromLeft ? -m.w / 2 : W + m.w / 2; m.y = floorAt(clampX(m.x)) + (+a.yOff || 0); m.vx = m.vy = 0; m.rot = 0;
+      if (currentVoice) { currentVoice.pause(); }
+      if (a.state === "drag") { m.state = "drag"; mouse.down = true; mouse.dragging = true; mouse.hist = []; mouse.offX = 0; mouse.offY = +a.yOff || 0; mouse.gx = m.x; mouse.gy = m.y; play(active.A.hold, true); } // 히트 창은 메인이 그대로 들고 있어 mousemove 가 이 창으로 이어 들어온다
+      else { m.state = "hop"; m.hopT = 0; m.crossTo = null; m.targetX = clampX(fromLeft ? m.w + 80 + Math.random() * 200 : W - m.w - 80 - Math.random() * 200); facing = fromLeft ? 1 : -1; applyFacing(); if (isSD()) useSlot(slotForMove()); const A = active.A; play(A.move && has(A.move) ? A.move : A.hold, true); }
+      S.arrive = null;
+    }
     // activating++ 로 진행 중인 activateMode 를 무효화한다 — 캐릭터를 지우는 도중 SD 로드가 끝나면 내려놓은 슬롯에 다시 채워 넣고(텍스처 누수) spawn() 이 죽은 미니미 스켈레톤을 건드렸다
     function dispose() { disposed = true; activating++; clearTimeout(announceTimer); unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); hideHit(); }
     function hideHit() { lastHit = null; host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); } // lastHit 을 비워야 다음 pushHitRect 가 같은 자리라도 다시 보낸다
     function onGeo() { if (m.state !== "boot") { m.x = clampX(m.x); if (m.state !== "thrown" && m.state !== "drag") m.y = floorAt(m.x); } }
+    // 지금 바로 옆 모니터로 걸어 나간다 (시험용 mascot 명령 "cross": arg = "left"|"right"|undefined)
+    function crossNow(side) {
+      const n = neighbors.find(k => !side || k.side === side) || neighbors[0]; if (!n || myDisp()) return;
+      if (isSD()) useSlot(slotForMove());
+      m.state = "hop"; m.hopT = 0; m.crossTo = n; m.targetX = n.side === "right" ? W + m.w : -m.w; facing = n.side === "right" ? 1 : -1; applyFacing();
+      const A = active.A; play(A.move && has(A.move) ? A.move : A.hold, true);
+    }
+    // 옆 모니터 창으로 넘긴다. 메인이 소속을 옮기고 새 목록을 보내면 이 창은 이 사도를 지운다(sync). 그때까지는 그리지 않는다
+    function crossOver(n, how) {
+      if (m.state === "gone") return;
+      const info = { side: n.side === "right" ? "left" : "right", yOff: Math.max(0, m.y - floorAt(m.x)), state: how };
+      m.state = "gone"; m.crossTo = null; mouse.down = false; mouse.dragging = false; hideHit(); host.handoff(id, n.id, info);
+    }
 
     async function loadSlot(slot, r) {
       if (!r) { slot.want = null; unloadSlot(slot); return false; }
@@ -559,7 +582,7 @@
         active = ok ? sd : mini;
       } else { active = mini; unloadSlot(sdI); }
       applyScale();
-      if (first) spawn(); else { m.y = floorAt(m.x); m.rot = 0; decideIdle(); }
+      if (first && S.arrive) arrive(S.arrive); else if (first) spawn(); else { m.y = floorAt(m.x); m.rot = 0; decideIdle(); }   // 옆 창에서 건너온 사도는 등장 대신 걸어 들어온다
       host.sdAnims(id, sdAnimations());
     }
     const sdAnimations = () => sd.data ? sd.data.animations.map(a => a.name) : [];
@@ -760,8 +783,9 @@
         if (isSD()) useSlot(slotForMove());
         const A = active.A;
         m.state = "hop"; m.hopT = 0;
-        const cur = dispAt(m.x), others = myDisp() ? [] : geoD.filter(d => d !== cur);   // 가둬 둔 사도는 원정 가지 않는다
-        if (others.length && Math.random() < 0.2) { const d = pick(others); m.targetX = clampX(d.x0 + m.w / 2 + WALL_MARGIN + Math.random() * Math.max(1, d.x1 - d.x0 - m.w - WALL_MARGIN * 2)); } // 다른 모니터로 원정
+        m.crossTo = null;
+        const others = myDisp() ? [] : neighbors;   // 가둬 둔 사도는 원정 가지 않는다
+        if (others.length && Math.random() < 0.2) { const n = pick(others); m.crossTo = n; m.targetX = n.side === "right" ? W + m.w : -m.w; } // 옆 모니터로 원정 — 가장자리 밖까지 걸어 나가면 handoff
         else m.targetX = clampX(m.x + (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * Math.max(0, B.hopRange - 80)));
         facing = m.targetX < m.x ? -1 : 1; applyFacing(); play(A.move && has(A.move) ? A.move : A.hold, true);
         return;
@@ -810,7 +834,8 @@
             const hh = gentle ? 7 : active.A.hopHeight;
             m.y = floorY + Math.abs(Math.sin(ph * Math.PI)) * hh * scale() * 2; m.rot = Math.sin(ph * Math.PI * 2) * (gentle ? 2 : 4) * -dir;
           }
-          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; restThenDecide(); }
+          if (m.crossTo && ((m.crossTo.side === "right" && m.x - m.w / 2 >= W) || (m.crossTo.side === "left" && m.x + m.w / 2 <= 0))) { crossOver(m.crossTo, "hop"); break; } // 몸이 다 나갔다 — 옆 창으로
+          if ((dir > 0 && m.x >= m.targetX) || (dir < 0 && m.x <= m.targetX) || dir === 0) { m.x = m.targetX; m.crossTo = null; restThenDecide(); }
           break;
         }
         case "touch": case "pat": case "tickle": // 누르고 있는 동안 — 바닥에 서서 해당 루프 애니
@@ -818,6 +843,7 @@
           if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoiceOwn("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
+          { const n = myDisp() ? null : neighbors.find(k => (k.side === "right" && mouse.gx > W) || (k.side === "left" && mouse.gx < 0)); if (n) { crossOver(n, "drag"); break; } } // 옆 모니터로 끌고 나갔다 — 그 창이 이어받아 잡고 있는다
           m.x = clampX(mouse.gx); m.y = mouse.gy; // 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다
           m.rot = spine.MathUtils.clamp(-m.vx * 0.02, -25, 25);
           break;
@@ -854,7 +880,7 @@
     const bo = new spine.Vector2(), bs = new spine.Vector2();
     let lastHit = null, hitT = 0, hitBox = null;
     function pushHitRect(dt) {
-      hitT += dt; if (hitT < 1 / 30 || !active.skeleton) return; hitT = 0; // 30Hz
+      hitT += dt; if (hitT < 1 / 30 || !active.skeleton || m.state === "gone") return; hitT = 0; // 30Hz. gone(옆 창으로 넘긴 뒤)은 히트 창을 잡지 않는다
       active.skeleton.getBounds(bo, bs, bTmp);
       hitBox = { x: bo.x, y: H - (bo.y + bs.y), w: bs.x, h: bs.y }; // 창 기준(y 아래로) — hit() 가 돌려 쓴다
       const pad = 10;
@@ -1156,7 +1182,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, crossNow, playCmd, preview, announce, emote, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();

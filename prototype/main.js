@@ -125,7 +125,7 @@ function updateSettings(patch, id, sourceId) {
 // 설정 창에 주는 원본 — API 키 암호문은 뺀다. 설정 창은 키를 읽지 않고(저장됨/없음은 ai:status 로 보고) 키는 ai:set-key 로만 들어온다
 const settingsPublic = () => ({ ...settings, global: { ...settings.global, ai: { ...(settings.global.ai || {}), keys: undefined } } });
 function broadcast(sourceId) {
-  if (mascotWin && !mascotWin.isDestroyed() && mascotLoaded && mascotWin.webContents.id !== sourceId) mascotWin.webContents.send("settings", viewsAll()); // 자기 패치의 에코는 안 보냄(연속 패치 때 옛 값으로 되돌아가는 문제)
+  eachMascotWin((w, did) => { if (loadedWins.has(did) && w.webContents.id !== sourceId) w.webContents.send("settings", viewsFor(did)); }); // 자기 패치의 에코는 안 보냄(연속 패치 때 옛 값으로 되돌아가는 문제)
   for (const w of [settingsWin, menuWin]) if (w && !w.isDestroyed() && w.webContents.id !== sourceId) w.webContents.send("settings", w === settingsWin ? settingsPublic() : viewFor(menuFor));
   if (tray) buildTray();
 }
@@ -168,13 +168,21 @@ function geometry() {
   const rect = (d) => disp.overTaskbar ? d.bounds : d.workArea;
   const x0 = Math.min(...use.map(d => rect(d).x)), y0 = Math.min(...use.map(d => rect(d).y));
   const x1 = Math.max(...use.map(d => rect(d).x + rect(d).width)), y1 = Math.max(...use.map(d => rect(d).y + rect(d).height));
-  const displays = use.map(d => ({ id: d.id, primary: d.id === prim.id, x: rect(d).x - x0, w: rect(d).width, top: rect(d).y - y0, floor: d.workArea.y + d.workArea.height - y0, bottom: rect(d).y + rect(d).height - y0, scale: d.scaleFactor }));
+  // 모니터마다 창 하나(v0.24.0). x·y 는 화면 좌표(창 원점), floor·top·bottom 은 그 창 기준 px.
+  // 옛 판은 합집합 크기 창 하나였다 — 6000x1440 이면 합성 버퍼만 수백 MB 고, 모니터 사이 빈 공간까지 셌다
+  const displays = use.map(d => { const r = rect(d); return { id: d.id, primary: d.id === prim.id, x: r.x, y: r.y, w: r.width, h: r.height, top: 0, floor: d.workArea.y + d.workArea.height - r.y, bottom: r.height, scale: d.scaleFactor }; });
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, displays };
+}
+// 창 하나가 받는 기하: 자기 모니터 하나만(x=0 부터) + 이웃 모니터(어느 쪽 가장자리로 나가면 어디로 가는가)
+function geoFor(d) {
+  const neighbors = geo.displays.filter(o => o.id !== d.id).map(o => ({ id: o.id, side: o.x >= d.x + d.w ? "right" : o.x + o.w <= d.x ? "left" : (o.x + o.w / 2 < d.x + d.w / 2 ? "left" : "right"), dy: o.y - d.y, floor: o.floor, h: o.h }));
+  return { x: d.x, y: d.y, w: d.w, h: d.h, displays: [{ ...d, x: 0, y: 0 }], neighbors };
 }
 let geo = null;
 function applyGeometry() {
   geo = geometry();
-  if (mascotWin && !mascotWin.isDestroyed()) { mascotWin.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); mascotWin.webContents.send("geo", geo); }
+  if (mascotStarted) syncMascotWindows();   // 모니터가 늘거나 줄면 창을 만들거나 닫고, 그 위의 사도를 옮긴다
+  for (const [did, mw] of mascotWins) { const d = dispById(did); if (!d || mw.isDestroyed()) continue; mw.setBounds({ x: d.x, y: d.y, width: d.w, height: d.h }); if (loadedWins.has(did)) mw.webContents.send("geo", geoFor(d)); }
   lastCursor = null;
 }
 
@@ -182,10 +190,26 @@ let settingsWin = null, menuWin = null, menuFor = null, tray = null;
 let catalog = { animations: [], skins: [] };
 const sdAnimsOf = new Map(); // 캐릭터별 SD 애니 목록 (스킨마다 다름)
 
-// ---- 마스코트 창(하나) + 캐릭터별 히트 창 ----
-// 마스코트 창은 모니터 합집합 크기의 투명 창 하나에 캐릭터 전부를 그린다. 캐릭터마다 창을 띄우면 투명 창 합성 비용이 창 수에 비례해 두 명부터 렉 → 창 하나로.
-// 히트 창(캐릭터 크기, 실제 입력 수신)은 캐릭터마다 하나씩.
-let mascotWin = null, mascotLoaded = false;
+// ---- 마스코트 창(모니터마다 하나) + 히트 창(전체에 하나) ----
+// 모니터마다 투명 창 하나에 그 모니터 위의 사도들을 그린다. 옛 판은 모니터 합집합 크기 창 하나였다 — 6000x1440 이면
+// 합성 버퍼(gpu/shared_images)만 233MB, 모니터 사이 빈 공간도 셌다. 창이 자기 모니터 크기만 갖게 하면 그 비용이 화면
+// 넓이대로만 든다. 사도가 가장자리로 걸어 나가면 렌더러가 handoff 를 보내고 메인이 옆 창으로 옮긴다(소속 = assign).
+// 캐릭터마다 창을 띄우는 건 여전히 안 한다 — 투명 창 합성 비용이 창 수에 비례해 두 명부터 렉이었다(v0.6.1).
+const mascotWins = new Map();   // 모니터 id → BrowserWindow
+const loadedWins = new Set();   // config 를 보낼 수 있는(did-finish-load 지난) 모니터 id
+const assign = new Map();       // 사도 id → 그 사도가 서 있는 모니터 id
+const pendingArrive = new Map(); // 사도 id → 옆 창에 도착할 때 쓸 정보 {side, yOff, state} — 한 번 보내고 지운다
+let mascotLoaded = false;        // 창이 하나라도 떠서 catalog 를 받았는가 (설정 창·트레이가 본다)
+const dispById = (id) => geo && geo.displays.find(d => d.id === id);
+const primaryDisp = () => geo && (geo.displays.find(d => d.primary) || geo.displays[0]);
+// 이 사도가 있어야 할 모니터: '머무를 모니터'가 살아 있으면 그곳, 아니면 지금 소속, 그것도 없으면 주모니터
+function wantDisp(c) { const want = +c.monitor || 0; if (want && dispById(want)) return want; const cur = assign.get(c.id); if (cur && dispById(cur)) return cur; const p = primaryDisp(); return p ? p.id : null; }
+function reconcileAssign() { for (const c of settings.characters) { const d = wantDisp(c); if (d && assign.get(c.id) !== d) assign.set(c.id, d); } }
+const winOf = (charId) => { const w = mascotWins.get(assign.get(charId)); return w && !w.isDestroyed() ? w : null; };
+const dispOfChar = (charId) => dispById(assign.get(charId));
+const dispOfSender = (wc) => { for (const [did, w] of mascotWins) if (!w.isDestroyed() && w.webContents.id === wc.id) return dispById(did); return null; };
+const eachMascotWin = (fn) => { for (const [did, w] of mascotWins) if (!w.isDestroyed()) fn(w, did); };
+const anyMascotWin = () => { for (const w of mascotWins.values()) if (!w.isDestroyed()) return w; return null; };
 const instances = new Map(); // id → { rect } (렌더러가 30Hz로 보내는 캐릭터 바운딩, 창 기준 px)
 // 히트 창은 전체에 하나. 커서가 어느 캐릭터 위(근처)에 있을 때만 그 캐릭터 크기로 옮겨 보이고, 아니면 숨김.
 // (v0.6.1: 캐릭터마다 히트 창 = 렌더러 프로세스 하나씩 + 30Hz setBounds가 캐릭터 수만큼 → 추가할 때마다 무거워짐)
@@ -205,7 +229,7 @@ function createHitWindow() {
   // 렌더러가 죽으면 창은 남는데 입력을 아무 데도 전하지 않는다 — 사도가 '클릭이 안 되는' 상태. 다시 띄운다
   w.webContents.on("render-process-gone", (_e, d) => { console.log("hit renderer gone:", d.reason); if (hitWin === w && !w.isDestroyed()) w.webContents.reload(); });
 }
-const screenRect = (r) => ({ x: Math.round(geo.x + r.x), y: Math.round(geo.y + r.y), width: Math.max(8, Math.round(r.w)), height: Math.max(8, Math.round(r.h)) });
+const screenRect = (r) => ({ x: Math.round(r.x), y: Math.round(r.y), width: Math.max(8, Math.round(r.w)), height: Math.max(8, Math.round(r.h)) }); // inst.rect 는 화면 좌표(hit-rect 수신 때 창 원점을 더해 둔다)
 const inRect = (r, x, y, pad) => r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
 function placeHit(id) {
   if (!hitWin || hitWin.isDestroyed() || !geo) return;
@@ -225,7 +249,7 @@ function trackBounds(w) {
   w.on("closed", () => auxBounds.delete(w));
   upd();
 }
-// 커서 위치(창 기준)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
+// 커서 위치(화면 좌표)로 히트 창 대상 정하기. 누르고 있는 동안은 대상 고정(드래그 중 캐릭터가 커서를 따라오므로)
 function cursorOverOurWindow(sx, sy) {
   for (const b of auxBounds.values()) if (b && sx >= b.x && sx < b.x + b.width && sy >= b.y && sy < b.y + b.height) return true;
   return false;
@@ -233,58 +257,68 @@ function cursorOverOurWindow(sx, sy) {
 function updateHitTarget(x, y) {
   if (hitDown && hitFor && instances.has(hitFor)) { placeHit(hitFor); return; }
   // 설정창·가져오기 창·메뉴·말풍선 위에 커서가 있으면 히트 창을 치운다 — 히트 창이 항상 최상위라 캐릭터가 창 뒤에 있으면 그 창을 못 누르던 문제
-  if (geo && cursorOverOurWindow(geo.x + x, geo.y + y)) { placeHit(null); return; }
+  if (cursorOverOurWindow(x, y)) { placeHit(null); return; }   // x·y 는 화면 좌표
   if (hitFor && inRect(instances.get(hitFor)?.rect, x, y, HIT_NEAR)) { placeHit(hitFor); return; } // 지금 대상 위면 유지(겹칠 때 깜빡임 방지)
   let best = null;
   for (const [id, inst] of instances) if (inRect(inst.rect, x, y, HIT_NEAR)) { best = id; break; }
   placeHit(best);
 }
-function mascotConfig() { return { geo, characters: viewsAll(), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test"), fpsProbe: argHas("--fps-probe") }; }
+// 창 하나가 받는 config — 그 모니터 위의 사도만. 옆 창에서 건너온 사도는 arrive 를 달아 보내 위에서 떨어지는 등장 대신 가장자리에서 걸어 들어온다
+function viewsFor(did) { reconcileAssign(); return viewsAll().filter(v => assign.get(v.id) === did).map(v => { const ar = pendingArrive.get(v.id); if (ar) { pendingArrive.delete(v.id); return { ...v, arrive: ar }; } return v; }); }
+function mascotConfig(did) { const d = dispById(did); return { geo: geoFor(d), characters: viewsFor(did), assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, standing: STANDING, logPos: argHas("--log-pos"), selftest: argHas("--selftest"), moodTest: argHas("--mood-test"), ingameTest: argHas("--ingame-test"), fpsProbe: argHas("--fps-probe") }; }
 let rendererGone = []; // 마스코트 렌더러가 죽은 시각들 — 무한 재시작을 막는다
-function createMascotWindow() {
-  if (mascotWin && !mascotWin.isDestroyed()) return;
+// 모니터 목록과 창 목록을 맞춘다: 새 모니터엔 창을 만들고, 사라진 모니터의 창은 닫고 그 위 사도는 다른 모니터로
+function syncMascotWindows() {
   if (!geo) geo = geometry();
+  for (const [did, w] of [...mascotWins]) if (!dispById(did)) { if (!w.isDestroyed()) w.destroy(); mascotWins.delete(did); loadedWins.delete(did); }
+  for (const [id, did] of [...assign]) if (!dispById(did)) assign.delete(id);   // reconcileAssign 이 주모니터로 보낸다
+  for (const d of geo.displays) if (!mascotWins.has(d.id)) createMascotWindow(d.id);
+  reconcileAssign();
+}
+function createMascotWindow(did) {
+  const d = dispById(did); if (!d) return;
   const win = new BrowserWindow({
-    x: geo.x, y: geo.y, width: geo.w, height: geo.h,
+    x: d.x, y: d.y, width: d.w, height: d.h,
     transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
     resizable: false, movable: false, hasShadow: false, focusable: false, backgroundColor: "#00000000",
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false, backgroundThrottling: false },
   });
-  mascotWin = win; mascotLoaded = false;
+  mascotWins.set(did, win);
   win.setAlwaysOnTop(true, "screen-saver");
   // 항상 클릭 통과 (끄면 Chrome이 '가려짐'으로 보고 영상을 회색으로 멈춤). forward:true는 쓰지 않는다 — 커서 폴링(아래 setInterval)과 함께 켜면
   // 같은 프로세스의 다른 창(설정창)을 제목줄로 끌어도 움직이지 않는 현상이 남(둘 중 하나만 끄면 정상). 호버는 폴링으로 처리하므로 forward가 필요 없음
   win.setIgnoreMouseEvents(true);
-  win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h }); // 생성 시 잘린 크기 재적용
+  win.setBounds({ x: d.x, y: d.y, width: d.w, height: d.h }); // 생성 시 잘린 크기 재적용
   win.loadFile(path.join(__dirname, "renderer", "index.html"));
   win.webContents.on("console-message", (ev) => {
-    console.log(`[mascot:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`);
+    console.log(`[mascot${geo.displays.length > 1 ? ":" + (geo.displays.findIndex(x => x.id === did) + 1) : ""}:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`);
     const mm = /^SHOTREQ (\S+) (-?\d+) (-?\d+) (\d+) (\d+)$/.exec(ev.message); // 테스트: 렌더러가 요청한 영역을 캡처해 out/에 저장
-    if (mm && !app.isPackaged) win.webContents.capturePage({ x: +mm[2], y: +mm[3], width: +mm[4], height: +mm[5] }).then(img => { fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `shot-${mm[1]}.png`), img.toPNG()); console.log("SHOT saved", mm[1]); }).catch(e => console.log("SHOT fail", e.message));
+    if (mm && !app.isPackaged) win.webContents.capturePage({ x: +mm[2], y: +mm[3], width: +mm[4], height: +mm[5] }).then(img => { fs.mkdirSync(path.join(__dirname, "out"), { recursive: true }); fs.writeFileSync(path.join(__dirname, "out", `${mm[1]}.png`), img.toPNG()); console.log("SHOT saved", mm[1], img.getSize()); });
   });
   if (argHas("--devtools")) win.webContents.openDevTools({ mode: "detach" });
   win.webContents.on("did-finish-load", () => {
-    win.setBounds({ x: geo.x, y: geo.y, width: geo.w, height: geo.h });
-    lastCursor = null; mascotLoaded = true;
-    win.webContents.send("config", mascotConfig());
+    const dd = dispById(did); if (!dd) return;
+    win.setBounds({ x: dd.x, y: dd.y, width: dd.w, height: dd.h });
+    lastCursor = null; loadedWins.add(did); mascotLoaded = true;
+    win.webContents.send("config", mascotConfig(did));
   });
-  win.on("closed", () => { if (mascotWin !== win) return; mascotWin = null; mascotLoaded = false; }); // 그 사이 새로 만든 창을 지우지 않게
+  win.on("closed", () => { if (mascotWins.get(did) !== win) return; mascotWins.delete(did); loadedWins.delete(did); if (!anyMascotWin()) mascotLoaded = false; });
   // 렌더러(스파인·WebGL)가 죽으면 창은 투명하게 남고 사도만 사라진다 — 트레이는 살아 있으니 사용자는 이유를 모른다.
   // 옛 바운딩은 다 지워 히트 창이 빈자리를 잡지 않게 하고, 잠시 뒤 다시 로드한다 (did-finish-load 가 config 를 다시 보낸다)
-  win.webContents.on("render-process-gone", (_e, d) => {
-    console.log("mascot renderer gone:", d.reason, d.exitCode);
-    for (const inst of instances.values()) inst.rect = null;
-    placeHit(null); mascotLoaded = false;
+  win.webContents.on("render-process-gone", (_e, dsc) => {
+    console.log("mascot renderer gone:", dsc.reason, dsc.exitCode, "display", did);
+    for (const [id, inst] of instances) if (assign.get(id) === did) inst.rect = null;
+    placeHit(null); loadedWins.delete(did);
     // 로드마다 죽는 상태(GPU·메모리)면 1초마다 영원히 다시 띄우게 된다. 5분에 세 번까지만
     const now = Date.now(); rendererGone = rendererGone.filter(t => now - t < 300000); rendererGone.push(now);
     if (rendererGone.length > 3) { console.error("mascot renderer keeps dying — giving up until restart"); return; }
-    if (d.reason !== "clean-exit") setTimeout(() => { if (mascotWin === win && !win.isDestroyed()) win.reload(); }, 1000 * rendererGone.length);
+    if (dsc.reason !== "clean-exit") setTimeout(() => { if (mascotWins.get(did) === win && !win.isDestroyed()) win.reload(); }, 1000 * rendererGone.length);
   });
 }
 function createInstance(id) { if (!instances.has(id)) instances.set(id, { rect: null }); }
 function destroyInstance(id) {
   if (!instances.has(id)) return;
-  instances.delete(id); sdAnimsOf.delete(id);
+  instances.delete(id); sdAnimsOf.delete(id); assign.delete(id); pendingArrive.delete(id);
   if (hitFor === id) { hitDown = false; placeHit(null); }
 }
 function addCharacter(from) {
@@ -303,7 +337,7 @@ function removeCharacter(id) {
 }
 // 메뉴 창은 --instance=id 로 만들어져 자기 캐릭터를 안다. 마스코트 창·설정 창은 id를 명시해서 보낸다
 const instanceOf = (webContents) => (menuWin && !menuWin.isDestroyed() && menuWin.webContents.id === webContents.id) ? menuFor : null;
-const sendMascot = (id, cmd, arg) => { if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("mascot", id, cmd, arg); };
+const sendMascot = (id, cmd, arg) => { const w = winOf(id); if (w) w.webContents.send("mascot", id, cmd, arg); };
 
 // ---- 설정 창 ----
 function openSettings(tab, forId) {
@@ -367,7 +401,7 @@ let bubbleAnchor = null; // 띄운 순간의 캐릭터 머리 위 좌표(화면)
 function bubblePlace(id) {
   if (!bubbleWin || bubbleWin.isDestroyed() || !geo) return;
   const inst = instances.get(id); const r = inst && inst.rect;
-  if (!bubbleAnchor || bubbleAnchor.id !== id) { if (!r) return; bubbleAnchor = { id, cx: Math.round(geo.x + r.x + r.w / 2), top: Math.round(geo.y + r.y) }; }
+  if (!bubbleAnchor || bubbleAnchor.id !== id) { if (!r) return; bubbleAnchor = { id, cx: Math.round(r.x + r.w / 2), top: Math.round(r.y) }; }
   const h = bubbleBounds ? bubbleBounds.height : 200;
   const sx = bubbleAnchor.cx - Math.round(BUBBLE_W / 2), sy = bubbleAnchor.top - h + 6;
   const d = screen.getDisplayNearestPoint({ x: sx + BUBBLE_W / 2, y: sy + h / 2 }).workArea;
@@ -400,7 +434,7 @@ const CHAT_W = 332;
 function chatPlace(id) {
   if (!chatWin || chatWin.isDestroyed() || !geo) return;
   const inst = instances.get(id); const r = inst && inst.rect;
-  if (!chatAnchor || chatAnchor.id !== id) { if (!r) return; chatAnchor = { id, cx: Math.round(geo.x + r.x + r.w / 2), top: Math.round(geo.y + r.y) }; }
+  if (!chatAnchor || chatAnchor.id !== id) { if (!r) return; chatAnchor = { id, cx: Math.round(r.x + r.w / 2), top: Math.round(r.y) }; }
   const h = chatBounds ? chatBounds.height : 220;
   const sx = chatAnchor.cx - Math.round(CHAT_W / 2), sy = chatAnchor.top - h + 6;
   const d = screen.getDisplayNearestPoint({ x: sx + CHAT_W / 2, y: sy + h / 2 }).workArea;
@@ -618,16 +652,16 @@ function openMenu(id, sx, sy) {
 // ---- 커서 폴링 (모든 마스코트 창에) ----
 let lastCursor = null, still = 0; // still: 커서가 같은 자리에 머문 틱 수
 setInterval(() => {
-  if (!geo || !mascotWin || mascotWin.isDestroyed()) return;
+  if (!geo || !anyMascotWin()) return;
   if (fsHidden) { if (hitFor !== null) placeHit(null); return; } // 전체화면 뒤에 숨어 있을 때 히트 창이 다시 뜨면 안 된다
   const p = screen.getCursorScreenPoint();
-  const x = p.x - geo.x, y = p.y - geo.y;
+  const x = p.x, y = p.y;   // 화면 좌표. 창마다 자기 원점을 빼서 보낸다
   // 커서가 가만히 있으면 대상 판정을 4틱(≈64ms)에 한 번만 하고 렌더러에도 알리지 않는다(같은 값이다).
   // 아예 건너뛰면 안 된다 — 서 있는 커서 밑으로 사도가 걸어 들어올 수 있고, hit-rect 는 hitFor 인 사도만 따라간다
   if (lastCursor && lastCursor.x === x && lastCursor.y === y) { if (++still % 4 === 0) updateHitTarget(x, y); return; }
   still = 0; updateHitTarget(x, y);
   lastCursor = { x, y };
-  mascotWin.webContents.send("cursor", lastCursor);
+  eachMascotWin((w, did) => { if (!loadedWins.has(did)) return; const d = dispById(did); if (d) w.webContents.send("cursor", { x: x - d.x, y: y - d.y }); });
 }, 16);
 
 // ---- IPC ----
@@ -696,25 +730,37 @@ ipcMain.on("char:remove", (e, id) => removeCharacter(id || instanceOf(e.sender))
 // 히트 창
 ipcMain.on("hit-rect", (e, r, id) => {
   const inst = instances.get(id); if (!inst) return;
-  inst.rect = (r && r.w > 0) ? r : null;
+  const d = dispOfSender(e.sender);   // 창 기준 px 로 오니 그 창의 화면 원점을 더해 둔다 — 히트 창·말풍선·메뉴가 전부 화면 좌표로 쓴다
+  inst.rect = (r && r.w > 0 && d) ? { x: r.x + d.x, y: r.y + d.y, w: r.w, h: r.h } : null;
   if (hitFor === id) placeHit(id); // 대상 캐릭터가 움직이면(드래그·이동) 히트 창도 바로 따라감
   // (말풍선은 띄울 때 자리를 잡고 고정 — 캐릭터를 따라다니지 않음)
 });
 ipcMain.on("hit-ev", (e, ev) => {
   if (ev && ev.type === "mousedown") ST.touch(); // 손이 닿았다 — "오래 방치" 꼬리표를 푼다
   const id = ev.instance || hitFor; // 실제 히트 창 이벤트는 현재 대상 캐릭터에게. (테스트는 instance를 직접 지정)
-  if (!id || !instances.has(id) || !geo || !mascotWin || mascotWin.isDestroyed()) return;
+  const w = winOf(id), d = dispOfChar(id); if (!id || !instances.has(id) || !geo || !w || !d) return;
   if (ev.type === "mousedown") hitDown = true; else if (ev.type === "mouseup") hitDown = false;
-  mascotWin.webContents.send("hit-mouse", { instance: id, type: ev.type, x: ev.sx - geo.x, y: ev.sy - geo.y, button: ev.button, buttons: ev.buttons });
+  w.webContents.send("hit-mouse", { instance: id, type: ev.type, x: ev.sx - d.x, y: ev.sy - d.y, button: ev.button, buttons: ev.buttons });
 });
-ipcMain.on("menu:open", (e, p, id) => { if (id && charOf(id) && geo) openMenu(id, geo.x + p.x, geo.y + p.y); });
+// 렌더러가 사도를 가장자리 밖으로 걸어 나가게 했다 — 옆 모니터 창으로 소속을 옮기고 양쪽에 새 목록을 보낸다.
+// 옛 창은 목록에서 빠진 사도를 지우고, 새 창은 arrive 를 보고 가장자리에서 걸어 들어오게 만든다
+ipcMain.on("mascot:handoff", (e, id, toDisp, info) => {
+  const from = dispOfSender(e.sender); const to = dispById(+toDisp);
+  if (!from || !to || !charOf(id) || assign.get(id) !== from.id) return;
+  const c = charOf(id); if (+c.monitor && +c.monitor !== to.id) return;   // 가둬 둔 사도는 안 옮긴다
+  assign.set(id, to.id); pendingArrive.set(id, { side: String(info && info.side || "left"), yOff: +(info && info.yOff) || 0, state: String(info && info.state || "hop"), gx: +(info && info.gx) || 0, gy: +(info && info.gy) || 0 });
+  const inst = instances.get(id); if (inst) inst.rect = null;
+  if (hitFor === id && !hitDown) placeHit(null);
+  broadcast();
+});
+ipcMain.on("menu:open", (e, p, id) => { const d = dispOfSender(e.sender); if (id && charOf(id) && d) openMenu(id, d.x + p.x, d.y + p.y); });
 ipcMain.on("menu:close", () => { if (menuWin && !menuWin.isDestroyed()) menuWin.close(); });
 ipcMain.on("menu:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (menuWin && !menuWin.isDestroyed()) { const b = menuWin.getBounds(); const d = screen.getDisplayNearestPoint({ x: b.x, y: b.y }).workArea; const nh = Math.min(h, d.height); menuWin.setBounds({ x: b.x, y: Math.min(b.y, d.y + d.height - nh), width: MENU_W, height: nh }); } });
 function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsOf.get(id)) || catalog.sdAnimations || [], standing: STANDING, assetRoot: ASSET_ROOT, dataRoot: DATA_ROOT, hasAssets: hasAssets(ASSET_ROOT), settingsFile: SETTINGS_FILE, version: app.getVersion(), electron: process.versions.electron }; }
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
+require("./test-hooks.js")({ assignOf: (id) => assign.get(id), mascotWinCount: () => mascotWins.size, get sendMascot() { return sendMascot; }, get mascotWin() { return anyMascotWin(); }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -751,14 +797,14 @@ const UP = require("./updater.js")({ refreshTray: () => { if (tray) buildTray();
 const checkUpdate = UP.checkUpdate;
 let mascotStarted = false;
 function startMascot() {
-  if (mascotStarted) { if (mascotWin && !mascotWin.isDestroyed()) { mascotLoaded = false; mascotWin.reload(); } return; } // 재추출 뒤: 창 다시 로드 (did-finish-load에서 config 재전송)
+  if (mascotStarted) { eachMascotWin((w, did) => { loadedWins.delete(did); w.reload(); }); return; } // 재추출 뒤: 창 다시 로드 (did-finish-load에서 config 재전송)
   mascotStarted = true;
-  createMascotWindow(); createHitWindow();
+  syncMascotWindows(); createHitWindow();   // 모니터마다 창 하나
   for (const c of settings.characters) createInstance(c.id);
   initNews();
   startFullscreenWatch();
   // 단축키: 커서에 가장 가까운 캐릭터에게 말 걸기 (여러 명일 때). 이미 열려 있고 포커스면 닫기
-  const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = geo.x + r.x + r.w / 2, cy = geo.y + r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
+  const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = r.x + r.w / 2, cy = r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
   try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
 }
 // ---- 전체화면 위에서는 숨는다 ----
@@ -779,8 +825,8 @@ function applyFullscreenHide() {
   const want = fsNow && hideFsOn();
   if (want === fsHidden) return;
   fsHidden = want;
-  const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
-  if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", want); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
+  const wins = [...mascotWins.values(), hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
+  eachMascotWin((w, did) => { if (loadedWins.has(did)) w.webContents.send("pause", want); }); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
   if (want) { for (const w of wins) w.hide(); }
   else { for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
 }
@@ -790,7 +836,7 @@ function applyFullscreenHide() {
 // 전체화면 숨김으로 내려가 있을 때는 하지 않는다 — 숨긴 창을 올려 봐야 소용없고, 숨김의 뜻과도 어긋난다
 setInterval(() => {
   if (!(settings.global.display || {}).keepOnTop || fsHidden) return;
-  for (const w of [mascotWin, bubbleWin, hitShown ? hitWin : null]) {
+  for (const w of [...mascotWins.values(), bubbleWin, hitShown ? hitWin : null]) {
     if (!w || w.isDestroyed() || !w.isVisible()) continue;
     try { w.setAlwaysOnTop(true, "screen-saver"); w.moveTop(); } catch {}
   }
@@ -819,4 +865,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); eachMascotWin((w) => w.destroy()); });
