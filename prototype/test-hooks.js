@@ -212,7 +212,7 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 5000);
 
-  // --monitor-test — '놓아둔 모니터'(monitor -1): 서 있는 모니터 안에서만 폴짝, 옆 모니터로 끌어다 놓으면 그곳에 머문다. 모니터 둘·에셋 필요(로컬)
+  // --monitor-test — 사도는 서 있는 모니터 안에서만 폴짝하고, 옆 모니터로 끌어다 놓으면 그곳에 머물며 그 모니터 id 가 설정에 남는다. 모니터 둘·에셋 필요(로컬)
   if (argHas("--monitor-test")) setTimeout(async () => {
     const fails = [], ok = (cond, msg) => { console.log(`MONTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -220,8 +220,9 @@ module.exports = function installTestHooks(ctx) {
     if (D.length < 2) { console.log("MONTEST FAIL 모니터가 둘 이상이어야 한다"); app.exit(1); return; }
     const R = () => (ctx.instances.get(a) || {}).rect, cx = () => R() && R().x + R().w / 2;
     const dispOf = (x) => D.findIndex(d => x >= d.x && x < d.x + d.w);
-    ctx.updateSettings({ monitor: -1, behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
+    ctx.updateSettings({ behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
     await sleep(3000); const d0 = dispOf(cx());
+    { const want = D.findIndex(d => d.id === +ctx.settings.characters[0].monitor); if (want >= 0) ok(d0 === want, `⓪ 설정에 적힌 모니터에서 시작 (${d0} = ${want})`); else console.log(`MONTEST PASS ⓪ 설정에 모니터가 없어 ${d0}번에서 시작 (건너뜀)`); }
     // 히트 창이 보내는 마우스 이벤트를 흉내내 끌어다 놓는다 (화면 좌표)
     const ev = (type, x, y) => ipcMain.emit("hit-ev", { sender: { id: 0 } }, { instance: a, type, sx: x, sy: y, button: 0, buttons: type === "mouseup" ? 0 : 1 });
     const dragTo = async (tx, ty) => { const r0 = R(), sx = ctx.geo.x + r0.x + r0.w / 2, sy = ctx.geo.y + r0.y + r0.h / 2; ev("mousedown", sx, sy); await sleep(80); for (let i = 1; i <= 30; i++) { ev("mousemove", sx + (tx - sx) * i / 30, sy + (ty - sy) * i / 30); await sleep(30); } ev("mouseup", tx, ty); await sleep(2500); };
@@ -236,6 +237,7 @@ module.exports = function installTestHooks(ctx) {
     const d1 = dispOf(cx()); ok(d1 === (d0 + 1) % D.length, `② 끌어다 놓은 뒤 모니터 ${d1} (목표 ${(d0 + 1) % D.length})`);
     const seen2 = new Set(); for (let i = 0; i < 60; i++) { await sleep(500); seen2.add(dispOf(cx())); }
     ok(seen2.size === 1 && seen2.has(d1), `③ 옮긴 뒤 30초 동안 머문 모니터 ${[...seen2].join(",")} (${d1} 하나여야)`);
+    ok(+ctx.settings.characters[0].monitor === D[d1].id, `④ 놓아둔 모니터 id 가 설정에 남았다 (${ctx.settings.characters[0].monitor} = ${D[d1].id}) — 다음 시작도 거기서`);
     console.log(`MONTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 5000);

@@ -779,10 +779,9 @@
         else { play(a, false); m.timer = 0; m.state = "react"; motionVoice(a); }
       }
     }
-    // 이 사도를 가둘 모니터. 0(또는 뽑아 버린 모니터)이면 null — 예전처럼 창 전체를 쓴다.
-    // -1 = '놓아둔 모니터': 지금 서 있는 모니터에 머문다. 끌어다 다른 모니터에 놓으면 그곳이 새 집 (사용자 요청 — 기본값)
-    function myDisp() { const id = +S.monitor || 0; if (id === -1) return dispAt(m.x); return id ? (geoD.find(d => d.id === id) || null) : null; }   // 옛 설정에 문자열이 남아 있어도 견딘다
-    const stayHome = () => +S.monitor === -1;
+    // 이 사도의 집 모니터. S.monitor 는 마지막으로 놓아둔 모니터 id(놓을 때 저장) — 그 안에서만 폴짝하고 원정을 가지 않는다.
+    // 0 이거나 뽑아 버린 모니터면 지금 서 있는 모니터. 끌어다 다른 모니터에 놓으면 그곳이 새 집이고, 다음 시작도 그곳에서
+    function myDisp() { const id = +S.monitor || 0; return (id && geoD.find(d => d.id === id)) || dispAt(m.x); }   // 옛 설정에 문자열이 남아 있어도 견딘다
     function clampX(x, d = myDisp()) {
       const lo = (d ? d.x0 : 0) + WALL_MARGIN + m.w / 2;
       const hi = (d ? d.x1 : W) - WALL_MARGIN - m.w / 2;
@@ -821,7 +820,7 @@
           if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoiceOwn("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
-          m.x = stayHome() ? clampX(mouse.gx, null) : clampX(mouse.gx); m.y = mouse.gy; // 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다. '놓아둔 모니터' 면 옆 모니터로 옮길 수 있게 창 전체 안에서만 막는다
+          m.x = clampX(mouse.gx, null); m.y = mouse.gy; // 끌 때는 창 전체 안에서만 막는다 — 옆 모니터로 옮길 수 있게. 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다
           m.rot = spine.MathUtils.clamp(-m.vx * 0.02, -25, 25);
           break;
         case "thrown": {
@@ -982,7 +981,8 @@
     function onUp(e) {
       if (!mouse.down) return; mouse.down = false;
       if (mouse.dragging) {
-        mouse.dragging = false; m.home = myDisp(); m.state = "thrown"; play(active.A.hold, true);   // 놓은 자리의 모니터가 집 — 던진 뒤 튕기는 벽
+        mouse.dragging = false; m.home = dispAt(m.x); m.state = "thrown"; play(active.A.hold, true);   // 놓은 자리의 모니터가 새 집 — 던진 뒤 튕기는 벽이고, 저장해 다음 시작도 거기서
+        if (m.home && +S.monitor !== m.home.id) patchSettings({ monitor: m.home.id });
         if (Math.abs(m.vx) < 30 && Math.abs(m.vy) < 30) { m.vx = 0; m.vy = 0; }
         if (Math.abs(m.vx) > 30) { facing = m.vx > 0 ? 1 : -1; applyFacing(); }
       } else if (m.state === "pat") {          // 쓰다듬기 끝 → touch2_x ("그래 그래 더 쓰다듬으라고")

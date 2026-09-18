@@ -54,17 +54,6 @@
     const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 ? "" : "none";
   }
 
-  // ---- 머무를 모니터 목록 ----
-  function renderMonitors() {
-    const sel = document.getElementById("char-monitor"); if (!sel) return;
-    const ds = catalog.displays || [];
-    const want = String(getPath(S, "monitor") ?? 0);
-    sel.innerHTML = ['<option value="-1">놓아둔 모니터 (끌어다 옮기면 그곳)</option>', '<option value="0">모든 모니터</option>']
-      .concat(ds.map(d => `<option value="${d.id}">${d.i}번 모니터 (${d.w}×${d.h}${d.primary ? " · 주모니터" : ""})</option>`)).join("");
-    // 뽑아 버린 모니터가 설정에 남아 있으면 그것도 보여 준다 — 말없이 '모든 모니터'로 보이면 왜 안 가두는지 알 수 없다
-    if (want !== "0" && want !== "-1" && !ds.some(d => String(d.id) === want)) sel.insertAdjacentHTML("beforeend", `<option value="${want}">지금 없는 모니터 (연결되면 다시 적용)</option>`);
-    sel.value = want;
-  }
   host.on("select", (id) => selectChar(id));
 
   // ---- 탭 ----
@@ -110,7 +99,7 @@
     const nv = document.getElementById("nav-ver"); if (nv) nv.textContent = "v" + (catalog.version || "");
     document.title = `사도 데스크 설정 — ${KO.skinName(S.skin)}${FULL.characters.length > 1 ? ` (${FULL.characters.findIndex(c => c.id === cur) + 1}/${FULL.characters.length})` : ""}`;
     renderCharBar();
-    renderMonitors(); updateBulkNote();
+    updateBulkNote();
     const note = document.getElementById("name-note");
     if (note) note.textContent = KO.isGuessed(S.skin) ? `※ "${KO.heroName(KO.parse(S.skin).hero)}"는 공식 표기가 확인되지 않은 추정 이름입니다 (assets/names-ko.json 에서 수정 가능)` : "";
   }

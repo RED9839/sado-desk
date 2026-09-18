@@ -6,7 +6,7 @@ const CHAR_DEFAULTS = {
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
   scale: 0.5, opacity: 1,
-  monitor: -1,         // 이 사도를 가둘 모니터 id. -1 = 놓아둔 모니터에 머문다(끌어다 옮기면 그곳, 기본). 0 = 가두지 않음(모니터 전체를 오간다). 없어진 모니터면 0 취급
+  monitor: 0,          // 이 사도가 사는 모니터 id — 끌어다 놓을 때 렌더러가 저장한다. 그 안에서만 돌아다니고 다음 시작도 거기서. 0/없어진 모니터 = 지금 서 있는 곳
   behavior: {
     hop: true, jump: true, idleActs: true,
     hopChance: 45, jumpChance: 10, hopSpeed: 100, hopRange: 350,
@@ -22,7 +22,7 @@ const GLOBAL_DEFAULTS = {
   // bulkEdit: 사도별 값(형태·크기·불투명도·표정·행동)을 바꿀 때 모든 사도에 함께 넣는다.
   // 설정 창과 우클릭 메뉴가 같은 값을 본다 — 메뉴 창은 열 때마다 새로 만들어지므로 껐다 켤 때마다
   // 다시 체크하게 두면 쓸모가 없어서 설정에 남긴다. 사도 바꾸기(skin)만은 함께 가지 않는다
-  display: { debug: false, multiMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  display: { debug: false, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아
