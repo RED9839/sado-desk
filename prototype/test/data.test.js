@@ -17,9 +17,11 @@ test("혼잣말 — 사도마다 32줄(상황 20 + 무태그 12), 감정·동작
   }
 });
 
-test("코스튬 혼잣말 — 벌마다 8줄, 키는 '사도#번호' 이고 그 사도·번호가 talk-ko 프로필에 있다", () => {
+test("코스튬 혼잣말 — 벌마다 8줄(말투가 바뀌는 코스튬은 기본 줄을 안 쓰니 12줄), 키는 '사도#번호' 이고 그 사도·번호가 talk-ko 프로필에 있다", () => {
   for (const [k, lines] of Object.entries(st.skins)) {
-    assert.equal(lines.length, 8, `${k}: ${lines.length}줄`);
+    const m0 = /^([a-z0-9_]+)#(\d+)$/.exec(k), hk = m0 && Object.keys(heroes).find(h => h.toLowerCase() === m0[1]);
+    const styled = !!(hk && heroes[hk].skins && heroes[hk].skins[m0[2]] && heroes[hk].skins[m0[2]].style);
+    assert.equal(lines.length, styled ? 12 : 8, `${k}: ${lines.length}줄 (${styled ? "말투 바뀌는 코스튬 12" : "8"})`);
     const m = /^([a-z0-9_]+)#(\d+)$/.exec(k); assert.ok(m, `${k}: 키 꼴`);
     assert.ok(st.heroes[m[1]], `${k}: 본편 사도 없음`);
     assert.ok(heroes[m[1]] && heroes[m[1]].skins && heroes[m[1]].skins[m[2]], `${k}: talk-ko 코스튬 프로필 없음`);

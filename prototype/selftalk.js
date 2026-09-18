@@ -26,10 +26,12 @@ module.exports = function createSelfTalk(ctx) {
     return tags;
   }
   // key = 사도 키, skinKey = 입은 코스튬 키(없으면 ""). 코스튬 줄은 상황 꼬리표가 없는 평상시 줄이라
-  // 기본 줄과 같은 못에 넣되 가중치를 줘서 코스튬을 입은 티가 나게 한다
-  function pickSelfTalk(key, id, skinKey) {
+  // 기본 줄과 같은 못에 넣되 가중치를 줘서 코스튬을 입은 티가 나게 한다.
+  // skinOnly — 말투가 바뀌는 코스튬(한가닥 네르의 사투리 반말, 체육관 실비아의 어린 반말): 기본 줄을 섞으면 평소 말투가 새어
+  // 나오므로 코스튬 줄만 쓴다 (talk-ko 의 그 코스튬에 style 이 따로 적힌 경우, 코드 리뷰)
+  function pickSelfTalk(key, id, skinKey, skinOnly = false) {
     const mine = selfTalk[key] || [], skin = (skinKey && skinTalk[skinKey]) || [];
-    const all = skin.length ? [...mine, ...skin] : mine;
+    const all = skin.length ? (skinOnly ? skin : [...mine, ...skin]) : mine;
     if (!all.length) return null;
     const ctx = id ? selfCtx(id) : new Set();
     const fits = all.filter(x => !x.w || ctx.has(x.w));   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
@@ -46,7 +48,7 @@ module.exports = function createSelfTalk(ctx) {
   // 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
   function saySelfTalk(id, opts = {}) {
     const prof = ctx.chatProfile(id); if (!prof) return false;
-    const line = pickSelfTalk(prof.key, id, prof.skinKey); if (!line) return false;
+    const line = pickSelfTalk(prof.key, id, prof.skinKey, !!(prof.skin && prof.styleBase && prof.style !== prof.styleBase)); if (!line) return false;
     const ttl = ctx.bubbleMs(line.t);
     const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
     ctx.showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });
