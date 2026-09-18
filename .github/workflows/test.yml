@@ -19,5 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: prototype/package-lock.json }
       - run: npm ci
+      # Electron 실행 파일을 미리 내려받는다. 두지 않으면 첫 require 가 내려받는데, 테스트 파일 넷이 동시에 시작해
+      # 같은 폴더를 함께 만들다 'already exists' 로 죽었다(첫 CI 실행)
+      - run: node node_modules/electron/install.js
       - run: npm test
       - run: npm run test:flow
