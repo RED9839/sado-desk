@@ -6,6 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
     "dist": "electron-builder --win nsis --x64",
     "dist:dir": "electron-builder --win dir --x64",
     "pyruntime": "python tools/make-pyruntime.py"
@@ -33,6 +34,7 @@
       "preload.js",
       "news.js",
       "ai.js",
+      "settings-schema.js",
       "fullscreen-watch.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
