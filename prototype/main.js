@@ -445,7 +445,10 @@ async function chatInitPayload(id) {
   return { who: prof ? prof.ko : "사도", prov, ready: !!st.resolved, history: settings.global.ai.memory !== false ? Ai.loadHistory(app.getPath("userData"), id) : [] };
 }
 function openChat(id, opt = {}) {
-  id = id || settings.characters[0].id; chatFor = id; chatBounds = null; chatAnchor = null;
+  id = id || settings.characters[0].id;
+  // 다른 사도에게로 옮기는데 앞 사도의 답이 아직 오는 중이면 끊는다 — 안 끊으면 그 답이 새 사도의 말처럼 창에 찍혔다(코드 리뷰 P2)
+  if (chatFor && chatFor !== id && chatBusy && chatAbort) chatAbort.abort();
+  chatFor = id; chatBounds = null; chatAnchor = null;
   const send = async () => { if (chatWin && !chatWin.isDestroyed()) { chatWin.webContents.send("chat:init", await chatInitPayload(id)); chatPlace(id); if (opt.quiet) chatWin.showInactive(); else { chatWin.show(); chatWin.focus(); } } };
   if (chatWin && !chatWin.isDestroyed()) { send(); return; }
   chatWin = new BrowserWindow({
@@ -464,6 +467,9 @@ function openChat(id, opt = {}) {
 }
 function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
 const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
+// 턴 안에서 쓰는 전송 — 그 턴의 사도가 지금 대화창의 주인일 때만. 대상을 바꾼 뒤 늦게 온 조각·완료가 남의 창에 찍히지 않게
+const chatSendFor = (id, ch, payload) => { if (chatFor === id) chatSend(ch, payload); };
+const historyCleared = new Map(); // 사도 id → 기록을 지운 시각. 답을 만들던 턴이 옛 기록을 다시 저장하지 않게(코드 리뷰 P2)
 // 한 턴 실행: history + user → 답변 스트리밍 → 기록 저장 → 표정/보이스
 async function chatTurn(id, userText, opts = {}) {
   if (chatBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
@@ -481,15 +487,18 @@ async function chatTurn(id, userText, opts = {}) {
       : { role: "user", text: "(사용자가 조용히 있다)" }];
   // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말이 전부 막혔다. 90초면 끊는다
   const ctl = chatAbort = new AbortController(); let timedOut = false, partial = "";
+  const clearedAt = historyCleared.get(id);   // 이 턴이 시작될 때의 '지운 시각' — 끝날 때 달라져 있으면 그 사이 지운 것
   const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 90_000);
   sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
   try {
     const now = new Date();
     const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
-    const r = await Ai.chat(ai, prof, msgs, (d) => { partial += d; chatSend("chat:token", { delta: d }); }, { extra, signal: ctl.signal });
-    const saved = [...hist, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
+    const r = await Ai.chat(ai, prof, msgs, (d) => { partial += d; chatSendFor(id, "chat:token", { delta: d }); }, { extra, signal: ctl.signal });
+    // 답을 만드는 사이 사용자가 '기록 지우기'를 눌렀으면 메모리에 든 옛 기록(hist)은 버리고 이번 한 마디만 남긴다
+    const base = historyCleared.get(id) === clearedAt ? hist : [];
+    const saved = [...base, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
     if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
-    if (opts.say) chatSend("chat:say", { text: r.text }); else chatSend("chat:done", { text: r.text, emotion: r.emotion });
+    if (opts.say) chatSendFor(id, "chat:say", { text: r.text }); else chatSendFor(id, "chat:done", { text: r.text, emotion: r.emotion });
     sendMascot(id, "emote", { mood: r.emotion, role: "speak", pose: Math.min(15000, 3000 + r.text.length * 90), hold: 15000 });
     console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
     return r;
@@ -497,7 +506,7 @@ async function chatTurn(id, userText, opts = {}) {
     const aborted = ctl.signal.aborted || e.name === "AbortError" || e.name === "TimeoutError"; // 창 닫기(사용자) 또는 90초 시한. Gemini 재시도 대기 중이면 "취소됨" Error 로 온다
     const msg = aborted ? (timedOut ? "AI 가 한참 답을 하지 않아 그만두었어요." : "") : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
     // 끊긴 턴에도 chat:done 은 보낸다 — 렌더러는 이걸 받아야 입력칸을 다시 연다. 창을 닫아 끊은 경우엔 받을 창이 없어 그냥 사라진다
-    chatSend("chat:done", msg ? { error: msg } : { text: partial });
+    chatSendFor(id, "chat:done", msg ? { error: msg } : { text: partial });
     console.log("chat error:", timedOut ? "timeout(90s)" : e.message);
     return null;
   } finally { clearTimeout(timer); if (chatAbort === ctl) { chatBusy = false; chatAbort = null; } lastChatAt = Date.now(); } // 이 턴의 것일 때만 내린다
@@ -510,11 +519,11 @@ const screenAllowed = SC.screenAllowed, screenReady = SC.screenReady;
 // 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
 async function screenTalk(id, userText) {
   const chatOpen = chatWin && !chatWin.isDestroyed() && chatFor === id;
-  if (!screenAllowed()) { if (!chatOpen) openChat(id); setTimeout(() => chatSend("chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
+  if (!screenAllowed()) { if (!chatOpen) openChat(id); setTimeout(() => chatSendFor(id, "chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
   if (!chatOpen) openChat(id, { quiet: !userText });
   sendMascot(id, "emote", { mood: "", role: "listen", pose: 4000, hold: 12000 }); // 화면을 살피는 포즈
   // 창을 막 열었으면 렌더러가 뜨기 전이라 바로 보낸 오류는 사라진다 — 위의 '꺼져 있어요' 와 같은 간격을 둔다
-  let image; try { image = await captureScreenFor(id); } catch (e) { setTimeout(() => chatSend("chat:done", { error: e.message }), chatOpen ? 0 : 1200); return; }
+  let image; try { image = await captureScreenFor(id); } catch (e) { setTimeout(() => chatSendFor(id, "chat:done", { error: e.message }), chatOpen ? 0 : 1200); return; }
   await chatTurn(id, userText || "", { image, say: !userText, extra: "사용자의 화면 스크린샷을 첨부했다. 지금 사용자가 무엇을 하고 있는지 알아보고, 네 성격대로 한두 문장으로 반응하라(감상·놀림·응원·질문 등)." });
 }
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
@@ -522,7 +531,7 @@ const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).b
 ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
 ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
 ipcMain.on("chat:close", () => closeChat());
-ipcMain.on("chat:clear", () => { if (chatFor) Ai.clearHistory(app.getPath("userData"), chatFor); });
+ipcMain.on("chat:clear", () => { if (!chatFor) return; Ai.clearHistory(app.getPath("userData"), chatFor); historyCleared.set(chatFor, Date.now()); if (chatBusy && chatAbort) chatAbort.abort(); }); // 만들던 답도 끊는다 — 그 답이 옛 기록을 끌고 다시 저장하던 문제
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
 const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
 ipcMain.on("chat:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(h, d.height) }; chatPlace(chatFor); } });
@@ -659,7 +668,7 @@ ipcMain.on("settings:set", (e, patch, id) => {
   updateSettings(sanitizePatch(p, { forChar: !!target }), target, e.sender.id); // 모르는 키·범위 밖 수치·엉뚱한 열거값은 여기서 걸러진다
 });
 ipcMain.on("sd-anims", (_e, id, list) => { sdAnimsOf.set(id, list || []); });
-ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); broadcast(); });
+ipcMain.on("settings:reset", () => { const keepAi = settings.global.ai; settings = { version: 2, global: deepMerge(GLOBAL_DEFAULTS, { ai: keepAi }), characters: [{ ...CHAR_DEFAULTS, id: settings.characters[0].id }] }; /* AI 키·제공자는 유지 */ for (const id of [...instances.keys()]) if (id !== settings.characters[0].id) destroyInstance(id); saveSettings(); applyGeometry(); applyAutoStart(); applyFullscreenHide(); if (news) news.start(); broadcast(); }); // 자동 실행 등록·전체화면 숨김·소식 감시도 기본값대로(코드 리뷰 P2 — autoStart 만 false 로 그려 놓고 등록은 남아 있었다)
 ipcMain.on("settings:open", (e, tab, id) => openSettings(tab, id || menuFor || instanceOf(e.sender)));
 ipcMain.handle("catalog:get", (e) => {
   const p = catalogPayload(instanceOf(e.sender) || menuFor);
@@ -714,7 +723,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
+require("./test-hooks.js")({ get chatFor() { return chatFor; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
 
 // ---- 트레이 ----
 function buildTray() {
