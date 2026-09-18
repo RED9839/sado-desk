@@ -57,6 +57,10 @@ const SIGNATURE = new Set(["royal", "vivi", "momo", "jubee", "ayla", "haso", "ha
 // 짧은 소리 + (몸짓 설명) 꼴이 정답이라 어미를 따질 수 없다
 const SILENT = new Set(["skea"]);
 const GESTURE = /^[가-힣~!?.…⋯\s]{1,12}[(（][^)）]{4,40}[)）][!?.…⋯]*$/;
+// 참고 대사(out/, 로컬 전용)에서 센 사도별 허용 말투의 갈무리 — 대사 자체가 아니라 말투 이름의 집합이라 저장소에 둔다.
+// 참고 대사가 없는 환경(CI, 다른 PC)에서는 이걸 읽어 같은 판정을 낸다. tools/build-style-allowed.js 가 새로 쓴다
+const ALLOWEDP = path.join(root, "tools", "style-allowed.json");
+const ALLOWED = fs.existsSync(ALLOWEDP) ? JSON.parse(fs.readFileSync(ALLOWEDP, "utf8")) : {};
 const _allowed = {};
 function allowedStyles(h, st) {
   if (_allowed[h]) return _allowed[h];
@@ -64,6 +68,7 @@ function allowedStyles(h, st) {
   // 코스튬 키는 그 사도가 평소 쓰는 말투를 그대로 물려받는다. 코스튬 참고 대사가 없으면
   // 여기가 시그니처 하나로 쪼그라들어, 모모의 '~것입니다' 같은 평소 어미까지 막혔다
   if (h.includes("#")) for (const s of allowedStyles(h.split("#")[0], st)) set.add(s);
+  if (!REF[h] && ALLOWED[h]) { for (const s of ALLOWED[h]) set.add(s); return (_allowed[h] = set); }
   const L = REF[h] || [], c = {}; let n = 0;
   for (const x of L) { const g = classify(x.split(/[.!?~…⋯]/).filter(Boolean).pop() || x); if (g) { const s = SAMEOF(g); c[s] = (c[s] || 0) + 1; n++; } }
   // 문턱 15% 는 인물 사전이 명시한 말투까지 막았다 — 버터는 자료에 "코미에겐 반말" 이라고
@@ -267,4 +272,4 @@ function RULES(n, opt) {
   ].join("\n");
 }
 
-module.exports = { RULES, otherName, XTRA, META, MOODS, TAG2MOOD, WHEN, WHEN_KO, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
+module.exports = { allowedStyles, RULES, otherName, XTRA, META, MOODS, TAG2MOOD, WHEN, WHEN_KO, profile, normalize, parse, loadCorpus, reasons, brokenWhy, REF, keyOf };
