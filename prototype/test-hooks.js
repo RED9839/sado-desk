@@ -12,7 +12,7 @@ const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? pr
 module.exports = function installTestHooks(ctx) {
   if (argHas("--hit-test")) setTimeout(() => {
     const id = ctx.settings.characters[0].id, inst = ctx.instances.get(id); const b = ctx.screenRect(inst.rect); const sx = b.x + b.width / 2, sy = b.y + b.height / 2;
-    ctx.updateHitTarget(sx - ctx.geo.x, sy - ctx.geo.y);
+    ctx.updateHitTarget(sx, sy);   // 화면 좌표(v0.24.0 부터 창 원점을 빼지 않는다)
     const ev = (type, button) => ipcMain.emit("hit-ev", null, { type, sx, sy, button, buttons: 0 }); // instance 없이 → hitFor 로 라우팅되는지
     console.log("HITTEST rect", JSON.stringify(b), "hitFor", ctx.hitFor, "shown", ctx.hitShown, "hitWin", ctx.hitWin ? JSON.stringify(ctx.hitWin.getBounds()) : null);
     ev("mousedown", 0); setTimeout(() => ev("mouseup", 0), 60);
@@ -111,4 +111,29 @@ module.exports = function installTestHooks(ctx) {
 
   // --shot-mascot — 8초 뒤 마스코트 창을 그대로 찍는다(out/mascot.png). 렌더 옵션을 바꿨을 때 눈으로 확인용
   if (argHas("--shot-mascot")) setTimeout(async () => { const w = ctx.mascotWin; if (w && !w.isDestroyed()) { const img = await w.webContents.capturePage(); fs.writeFileSync(path.join(__dirname, "out", "mascot.png"), img.toPNG()); console.log("MASCOT shot", img.getSize()); } app.quit(); }, 8000);
+
+  // --cross-test — 첫 사도를 8초 뒤 옆 모니터로 걸어 나가게 하고, 소속·창 수·히트 사각형이 어떻게 바뀌는지 찍는다
+  if (argHas("--cross-test")) setTimeout(async () => {
+    const id = ctx.settings.characters[0].id;
+    const snap = (tag) => console.log(`CROSSTEST ${tag} assign=${ctx.assignOf(id)} wins=${ctx.mascotWinCount()} rect=${JSON.stringify(ctx.instances.get(id)?.rect)}`);
+    snap("before"); ctx.sendMascot(id, "cross", argVal("--cross-side", "") || undefined);
+    for (let i = 1; i <= 30; i++) { await new Promise(r => setTimeout(r, 1000)); if (i % 3 === 0 || i > 18) snap(`t+${i}s`); }
+    app.quit();
+  }, 8000);
+
+  // --drag-test — 첫 사도를 잡아 오른쪽 모니터로 끌고 가서 놓는다. 소속이 넘어가고 계속 잡혀 따라오는지, 놓으면 그쪽에 떨어지는지
+  if (argHas("--drag-test")) setTimeout(async () => {
+    const id = ctx.settings.characters[0].id; const b = ctx.screenRect(ctx.instances.get(id).rect);
+    let sx = b.x + b.width / 2, sy = b.y + b.height / 2;
+    const disps = ctx.geo.displays; const cur = disps.find(d => sx >= d.x && sx < d.x + d.w); const right = disps.find(d => d.x >= cur.x + cur.w);
+    if (!right) { console.log("DRAGTEST 오른콝 모니터 없음"); app.quit(); return; }
+    const targetX = right.x + 300, ev = (type, x, y) => ipcMain.emit("hit-ev", null, { instance: id, type, sx: x, sy: y, button: 0, buttons: type === "mouseup" ? 0 : 1 });
+    const snap = (tag) => console.log(`DRAGTEST ${tag} cursor=${sx.toFixed(0)} assign=${ctx.assignOf(id)} rect=${JSON.stringify((ctx.instances.get(id).rect || {}).x)}`);
+    ctx.updateHitTarget(sx, sy); ev("mousedown", sx, sy); snap("down");
+    await new Promise(r => setTimeout(r, 150)); sy -= 60; ev("mousemove", sx, sy);   // 위로 들어 올려 드래그 시작
+    for (let i = 0; i < 60 && sx < targetX; i++) { await new Promise(r => setTimeout(r, 40)); sx += 40; ev("mousemove", sx, sy); if (i % 10 === 0) snap(`move${i}`); }
+    snap("at-target"); await new Promise(r => setTimeout(r, 300)); snap("held");
+    ev("mouseup", sx, sy); await new Promise(r => setTimeout(r, 2500)); snap("released+2.5s");
+    app.quit();
+  }, 8000);
 };

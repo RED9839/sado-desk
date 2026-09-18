@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld("host", {
   // 마스코트 창
   event: (kind, id) => ipcRenderer.send("mascot:event", id === undefined ? INSTANCE : id, kind), // 던져져 착지·쓰다듬음·꿀밤 — 혼잣말이 상황을 안다
   hitRect: (r, id) => ipcRenderer.send("hit-rect", r, id === undefined ? INSTANCE : id),
+  handoff: (id, toDisp, info) => ipcRenderer.send("mascot:handoff", id, toDisp, info), // 사도가 옆 모니터로 걸어 나감 — 메인이 그 창으로 옮긴다
   openMenu: (x, y, id) => ipcRenderer.send("menu:open", { x, y }, id === undefined ? INSTANCE : id),
   sdAnims: (id, list) => ipcRenderer.send("sd-anims", id, list),
   menuClose: () => ipcRenderer.send("menu:close"),
