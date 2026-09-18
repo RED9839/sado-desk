@@ -1,0 +1,510 @@
+{
+ "alice": [
+  "casual"
+ ],
+ "allet": [
+  "casual",
+  "formal",
+  "noun"
+ ],
+ "amelia": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "ameliar41": [
+  "casual",
+  "royal"
+ ],
+ "aragnia": [
+  "royal"
+ ],
+ "arco": [
+  "casual",
+  "polite"
+ ],
+ "arnet": [
+  "casual",
+  "polite"
+ ],
+ "asana": [
+  "casual",
+  "polite"
+ ],
+ "ashur": [
+  "casual",
+  "polite"
+ ],
+ "ashurmagi": [
+  "casual",
+  "polite"
+ ],
+ "aurora": [
+  "formal",
+  "polite"
+ ],
+ "aya": [
+  "casual"
+ ],
+ "ayla": [
+  "ayla",
+  "casual",
+  "formal"
+ ],
+ "bana": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "barie": [
+  "casual",
+  "polite"
+ ],
+ "barong": [
+  "casual"
+ ],
+ "belita": [
+  "casual",
+  "royal"
+ ],
+ "beni": [
+  "casual",
+  "polite"
+ ],
+ "benibeni": [
+  "casual",
+  "polite"
+ ],
+ "bigwood": [
+  "casual"
+ ],
+ "blanchet": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "butter": [
+  "casual",
+  "polite"
+ ],
+ "canna": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "canta": [
+  "casual"
+ ],
+ "carren": [
+  "casual",
+  "polite"
+ ],
+ "chloe": [
+  "casual"
+ ],
+ "chopi": [
+  "casual",
+  "polite"
+ ],
+ "crepe": [
+  "polite"
+ ],
+ "cuee": [
+  "casual",
+  "polite"
+ ],
+ "daya": [
+  "casual",
+  "royal"
+ ],
+ "dayapureshine": [
+  "casual",
+  "royal"
+ ],
+ "delia": [
+  "casual",
+  "polite"
+ ],
+ "diana": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "dianayester": [
+  "casual"
+ ],
+ "ed": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "edrehab": [
+  "polite"
+ ],
+ "eisia": [
+  "casual",
+  "polite"
+ ],
+ "elena": [
+  "casual"
+ ],
+ "epica": [
+  "casual",
+  "hao"
+ ],
+ "erpin": [
+  "casual"
+ ],
+ "erpinroyale": [
+  "casual"
+ ],
+ "espi": [
+  "casual",
+  "polite"
+ ],
+ "festa": [
+  "casual"
+ ],
+ "fricle": [
+  "casual"
+ ],
+ "gabia": [
+  "casual",
+  "noun"
+ ],
+ "goldy": [
+  "polite"
+ ],
+ "guin": [
+  "casual"
+ ],
+ "haley": [
+  "casual"
+ ],
+ "haleysane": [
+  "casual"
+ ],
+ "heidi": [
+  "casual",
+  "polite"
+ ],
+ "hilde": [
+  "casual",
+  "polite"
+ ],
+ "ifrit": [
+  "casual"
+ ],
+ "inkle": [
+  "casual",
+  "hao"
+ ],
+ "jade": [
+  "casual"
+ ],
+ "joanne": [
+  "casual",
+  "formal",
+  "polite",
+  "royal"
+ ],
+ "jubee": [
+  "jubee"
+ ],
+ "kathy": [
+  "casual",
+  "polite"
+ ],
+ "kidian": [
+  "casual"
+ ],
+ "kishya": [
+  "casual"
+ ],
+ "kommy": [
+  "casual"
+ ],
+ "kommyswim": [
+  "casual"
+ ],
+ "kyarot": [
+  "casual"
+ ],
+ "laika": [
+  "casual"
+ ],
+ "lazy": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "leets": [
+  "casual",
+  "polite"
+ ],
+ "lethe": [
+  "casual"
+ ],
+ "levi": [
+  "casual",
+  "polite"
+ ],
+ "levigraduate": [
+  "casual",
+  "polite"
+ ],
+ "lion": [
+  "polite"
+ ],
+ "maestromk2": [
+  "formal",
+  "noun"
+ ],
+ "mago": [
+  "casual",
+  "polite"
+ ],
+ "maison": [
+  "casual"
+ ],
+ "makasha": [
+  "casual"
+ ],
+ "marie": [
+  "casual",
+  "polite"
+ ],
+ "mayo": [
+  "noun"
+ ],
+ "mayocool": [
+  "noun"
+ ],
+ "meluna": [
+  "casual",
+  "polite"
+ ],
+ "miro": [
+  "casual",
+  "polite"
+ ],
+ "momo": [
+  "formal",
+  "momo"
+ ],
+ "mute": [
+  "formal",
+  "polite"
+ ],
+ "mynx": [
+  "casual",
+  "polite"
+ ],
+ "naia": [
+  "casual"
+ ],
+ "ner": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "nerrage": [
+  "polite"
+ ],
+ "neti": [
+  "polite"
+ ],
+ "nicole": [
+  "casual",
+  "polite"
+ ],
+ "opal": [
+  "casual",
+  "polite"
+ ],
+ "orr": [
+  "casual"
+ ],
+ "patula": [
+  "casual",
+  "polite"
+ ],
+ "picora": [
+  "casual",
+  "polite"
+ ],
+ "pira": [
+  "casual"
+ ],
+ "polan": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "posher": [
+  "casual"
+ ],
+ "ran": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "renewa": [
+  "formal",
+  "polite"
+ ],
+ "renewaawaken": [
+  "formal",
+  "polite"
+ ],
+ "ricota": [
+  "formal",
+  "polite"
+ ],
+ "rim": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "rimchaos": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "risty": [
+  "casual"
+ ],
+ "rohne": [
+  "casual",
+  "polite"
+ ],
+ "rohnemayor": [
+  "polite"
+ ],
+ "rollett": [
+  "casual"
+ ],
+ "ronnie": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "rude": [
+  "casual"
+ ],
+ "rufo": [
+  "casual",
+  "royal"
+ ],
+ "sari": [
+  "casual",
+  "polite"
+ ],
+ "scizor": [
+  "casual"
+ ],
+ "selline": [
+  "casual"
+ ],
+ "shady": [
+  "casual"
+ ],
+ "shadytwisted": [
+  "casual"
+ ],
+ "shasha": [
+  "casual",
+  "polite"
+ ],
+ "sherum": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "shoupan": [
+  "casual"
+ ],
+ "silphir": [
+  "casual"
+ ],
+ "silvia": [
+  "casual",
+  "haso"
+ ],
+ "sist": [
+  "casual",
+  "polite"
+ ],
+ "skea": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "snorky": [
+  "casual",
+  "formal"
+ ],
+ "sparrot": [
+  "casual"
+ ],
+ "speaki": [
+  "polite"
+ ],
+ "speakimaid": [
+  "polite"
+ ],
+ "suro": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "sylla": [
+  "casual"
+ ],
+ "taida": [
+  "casual",
+  "formal",
+  "polite"
+ ],
+ "tig": [
+  "casual"
+ ],
+ "tighero": [
+  "casual"
+ ],
+ "ui": [
+  "casual"
+ ],
+ "uros": [
+  "casual",
+  "polite"
+ ],
+ "vela": [
+  "casual"
+ ],
+ "velvet": [
+  "casual"
+ ],
+ "veroo": [
+  "casual"
+ ],
+ "vivi": [
+  "polite",
+  "vivi"
+ ],
+ "yomi": [
+  "casual",
+  "polite"
+ ],
+ "youngchun": [
+  "casual"
+ ],
+ "yumimi": [
+  "casual",
+  "polite"
+ ],
+ "xxionx": [
+  "casual",
+  "royal"
+ ]
+}
