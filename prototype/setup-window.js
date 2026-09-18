@@ -10,6 +10,8 @@ module.exports = function createSetupWindow(ctx) {
   let setupWin = null, extractProc = null;
   function toolsDir() { return app.isPackaged ? path.join(process.resourcesPath, "tools") : path.join(__dirname, "tools"); }
   function pythonExe() {
+    // 시험용 갈아 끼우기(개발 실행에서만): "실행파일|인자" — test/flow.js 가 가짜 추출기(node 스크립트)를 끼워 실패·취소·재시도를 돌린다
+    if (!app.isPackaged && process.env.SADO_EXTRACTOR) { const [exe, ...args] = process.env.SADO_EXTRACTOR.split("|"); return { exe, args }; }
     const bundled = path.join(process.resourcesPath || "", "pyruntime", "python.exe");
     if (app.isPackaged && fs.existsSync(bundled)) return { exe: bundled, args: [] };
     const dev = path.join(__dirname, "pyruntime", "python.exe");
@@ -125,5 +127,5 @@ module.exports = function createSetupWindow(ctx) {
   ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });
   // 앱을 끌 때 돌던 추출기를 정리한다 (before-quit)
   function stopExtract() { if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); }
-  return { openSetup, stopExtract };
+  return { openSetup, stopExtract, startExtract, get extractPid() { return extractProc ? extractProc.pid : 0; }, get setupWin() { return setupWin; } };
 };

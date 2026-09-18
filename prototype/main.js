@@ -297,7 +297,7 @@ function removeCharacter(id) {
   if (settings.characters.length <= 1) return false;
   settings.characters = settings.characters.filter(c => c.id !== id); saveSettings(); destroyInstance(id);
   if (menuFor === id && menuWin && !menuWin.isDestroyed()) menuWin.close();
-  if (chatFor === id) closeChat();
+  if (CH.for === id) closeChat();
   if (bubbleFor === id) closeBubble();
   broadcast(); return true;
 }
@@ -394,21 +394,7 @@ function showBubble(id, payload) {
 }
 function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.close(); }
 
-// ---- AI 대화 창 (ai.js) ----
-let chatWin = null, chatFor = null, chatBounds = null, chatAnchor = null, chatBusy = false, chatAbort = null, lastChatAt = 0;
-const chatReady = new WeakSet(); // did-finish-load 를 지난 대화창
-let chatSeq = 0; // 대화창을 열거나 대상을 바꿀 때마다 +1. 초기화(Ai.status 대기)가 늦게 끝나면 그 사이 대상이 바뀌었는지 이 번호로 안다
-const CHAT_W = 332;
-function chatPlace(id) {
-  if (!chatWin || chatWin.isDestroyed() || !geo) return;
-  const inst = instances.get(id); const r = inst && inst.rect;
-  if (!chatAnchor || chatAnchor.id !== id) { if (!r) return; chatAnchor = { id, cx: Math.round(geo.x + r.x + r.w / 2), top: Math.round(geo.y + r.y) }; }
-  const h = chatBounds ? chatBounds.height : 220;
-  const sx = chatAnchor.cx - Math.round(CHAT_W / 2), sy = chatAnchor.top - h + 6;
-  const d = screen.getDisplayNearestPoint({ x: sx + CHAT_W / 2, y: sy + h / 2 }).workArea;
-  const b = { x: Math.min(Math.max(sx, d.x), d.x + d.width - CHAT_W), y: Math.max(d.y, sy), width: CHAT_W, height: h };
-  if (!chatBounds || b.x !== chatBounds.x || b.y !== chatBounds.y || b.height !== chatBounds.height) { chatWin.setBounds(b); chatBounds = b; }
-}
+// ---- AI 대화 창 — chat.js (아래 CH). 프로필 자료는 여기서 읽어 chatProfile 로 준다 ----
 let talkStyle = null; try { talkStyle = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-style.json"), "utf8")); } catch {} // 보이스 STT 대본 분석(어미 비율·표본) — 없어도 됨
 let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "relations.json"), "utf8")); } catch {} // 사도끼리 부르는 말·함께 등장 (tools/build-relations.py)
 let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
@@ -440,114 +426,19 @@ function chatProfile(id) {
   prof.theaters = theaters.filter(t => (t.castKeys || []).includes(hero)).sort((x, y) => y.season - x.season);
   return prof;
 }
-async function chatInitPayload(id) {
-  const st = await Ai.status(settings.global.ai);
-  const prof = chatProfile(id);
-  const prov = st.resolved ? `${st.resolved}${st.resolved === "ollama" ? " · " + Ai.merge(settings.global.ai).ollama.model : ""}` : "";
-  return { who: prof ? prof.ko : "사도", prov, ready: !!st.resolved, history: settings.global.ai.memory !== false ? Ai.loadHistory(app.getPath("userData"), id) : [] };
-}
-function openChat(id, opt = {}) {
-  id = id || settings.characters[0].id;
-  // 다른 사도에게로 옮기는데 앞 사도의 답이 아직 오는 중이면 끊는다 — 안 끊으면 그 답이 새 사도의 말처럼 창에 찍혔다(코드 리뷰 P2)
-  if (chatFor && chatFor !== id && chatBusy && chatAbort) chatAbort.abort();
-  chatFor = id; chatBounds = null; chatAnchor = null;
-  const seq = ++chatSeq;
-  // 초기화 정보(제공자 상태·기록)는 Ai.status 를 기다린다. A 를 열고 곧장 B 를 열면 A 의 것이 늦게 도착해 이름·기록은 A,
-  // 실제 대상은 B 가 되던 문제(코드 리뷰) — 기다린 뒤 아직 같은 요청인지 본다
-  const send = async () => {
-    const w0 = chatWin; if (!w0 || w0.isDestroyed()) return;
-    if (!chatReady.has(w0)) await new Promise(r => w0.webContents.once("did-finish-load", r));   // 창이 아직 뜨는 중이면 기다린다 — 로드 전에 보낸 메시지는 사라진다 (isLoading 은 loadFile 직후 잠깐 false 일 수 있어 우리 표시로 본다)
-    const payload = await chatInitPayload(id);
-    if (seq !== chatSeq || chatFor !== id || chatWin !== w0 || w0.isDestroyed()) return;   // 기다리는 동안 대상이 바뀌었거나 창이 바뀌었다
-    w0.webContents.send("chat:init", payload); chatPlace(id); if (opt.quiet) w0.showInactive(); else { w0.show(); w0.focus(); }
-  };
-  if (chatWin && !chatWin.isDestroyed()) { send(); return; }
-  chatWin = new BrowserWindow({
-    x: 0, y: 0, width: CHAT_W, height: 220, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
-    resizable: false, movable: true, hasShadow: false, backgroundColor: "#00000000",
-    webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false },
-  });
-  chatWin.setAlwaysOnTop(true, "screen-saver");
-  chatWin.loadFile(path.join(__dirname, "renderer", "chat.html"));
-  chatWin.webContents.on("console-message", (ev) => console.log(`[chat:${ev.level}] ${ev.message}`));
-  const w = chatWin; trackBounds(w);
-  // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
-  w.on("closed", () => { if (chatWin !== w) return; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
-  w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
-  w.webContents.once("did-finish-load", () => chatReady.add(w));
-  send();   // 로드를 기다리는 건 send 안에서 한다
-}
-function closeChat() { if (chatWin && !chatWin.isDestroyed()) chatWin.close(); }
-const chatSend = (ch, payload) => { if (chatWin && !chatWin.isDestroyed()) chatWin.webContents.send(ch, payload); };
-// 턴 안에서 쓰는 전송 — 그 턴의 사도가 지금 대화창의 주인일 때만. 대상을 바꾼 뒤 늦게 온 조각·완료가 남의 창에 찍히지 않게
-const chatSendFor = (id, ch, payload) => { if (chatFor === id) chatSend(ch, payload); };
-const historyCleared = new Map(); // 사도 id → 기록을 지운 시각. 답을 만들던 턴이 옛 기록을 다시 저장하지 않게(코드 리뷰 P2)
-// 한 턴 실행: history + user → 답변 스트리밍 → 기록 저장 → 표정/보이스
-async function chatTurn(id, userText, opts = {}) {
-  if (chatBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
-  chatBusy = true; lastChatAt = Date.now();
-  const ud = app.getPath("userData"), ai = settings.global.ai, prof = chatProfile(id);
-  let hist = ai.memory !== false ? Ai.loadHistory(ud, id) : [];
-  // 먼저 말 걸 때는 참고할 기록을 최근 두 마디로 줄인다. 제 지난 답이 길게 쌓여 있으면 모델이 그 길이를
-  // 따라가 회차마다 답이 길어졌다(실측 1회 77자 → 3회 141자, 120자 초과 4건 → 100건)
-  if (!userText && !opts.image) hist = hist.slice(-2);
-  // 사용자가 보낸 말이 없으면(먼저 말 걸기) 침묵을 알리는 한 줄을 붙인다. 안 붙이면 기록 끝이 assistant 라
-  // normalizeMessages 가 "(계속)" 을 붙이고, 모델은 먼저 말을 거는 대신 자기 혼잣말에 이어 대답한다
-  const msgs = [...hist.map(m => ({ role: m.role, text: m.text })),
-    (userText || opts.image)
-      ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
-      : { role: "user", text: "(사용자가 조용히 있다)" }];
-  // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말이 전부 막혔다. 90초면 끊는다
-  const ctl = chatAbort = new AbortController(); let timedOut = false, partial = "";
-  const clearedAt = historyCleared.get(id);   // 이 턴이 시작될 때의 '지운 시각' — 끝날 때 달라져 있으면 그 사이 지운 것
-  const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 90_000);
-  sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
-  try {
-    const now = new Date();
-    const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
-    const r = await Ai.chat(ai, prof, msgs, (d) => { partial += d; chatSendFor(id, "chat:token", { delta: d }); }, { extra, signal: ctl.signal });
-    // 답을 만드는 사이 사용자가 '기록 지우기'를 눌렀으면 메모리에 든 옛 기록(hist)은 버리고 이번 한 마디만 남긴다
-    const base = historyCleared.get(id) === clearedAt ? hist : [];
-    const saved = [...base, ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
-    if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
-    if (opts.say) chatSendFor(id, "chat:say", { text: r.text }); else chatSendFor(id, "chat:done", { text: r.text, emotion: r.emotion });
-    sendMascot(id, "emote", { mood: r.emotion, role: "speak", pose: Math.min(15000, 3000 + r.text.length * 90), hold: 15000 });
-    console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
-    return r;
-  } catch (e) {
-    const aborted = ctl.signal.aborted || e.name === "AbortError" || e.name === "TimeoutError"; // 창 닫기(사용자) 또는 90초 시한. Gemini 재시도 대기 중이면 "취소됨" Error 로 온다
-    const msg = aborted ? (timedOut ? "AI 가 한참 답을 하지 않아 그만두었어요." : "") : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
-    // 끊긴 턴에도 chat:done 은 보낸다 — 렌더러는 이걸 받아야 입력칸을 다시 연다. 창을 닫아 끊은 경우엔 받을 창이 없어 그냥 사라진다
-    chatSendFor(id, "chat:done", msg ? { error: msg } : { text: partial });
-    console.log("chat error:", timedOut ? "timeout(90s)" : e.message);
-    return null;
-  } finally { clearTimeout(timer); if (chatAbort === ctl) { chatBusy = false; chatAbort = null; } lastChatAt = Date.now(); } // 이 턴의 것일 때만 내린다
-}
 // ---- 화면 보기: 캐릭터가 서 있는 모니터를 캡처해(축소 JPEG) AI에 첨부. 설정 ai.screen 이 켜져 있을 때만 ----
 // 화면 캡처는 screen-capture.js — 허용 창 고르기·모니터 캡처·먼저 말 걸 때 붙일 수 있는지. 상태는 getter 로
 const SC = require("./screen-capture.js")({ get settings() { return settings; }, get geo() { return geo; }, get instances() { return instances; } });
 let captureScreenFor = SC.captureScreenFor;   // let — 화면 시험 훅이 감싸서 갈아 끼운다
 const screenAllowed = SC.screenAllowed, screenReady = SC.screenReady;
-// 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
-async function screenTalk(id, userText) {
-  const chatOpen = chatWin && !chatWin.isDestroyed() && chatFor === id;
-  if (!screenAllowed()) { if (!chatOpen) openChat(id); setTimeout(() => chatSendFor(id, "chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
-  if (!chatOpen) openChat(id, { quiet: !userText });
-  sendMascot(id, "emote", { mood: "", role: "listen", pose: 4000, hold: 12000 }); // 화면을 살피는 포즈
-  // 창을 막 열었으면 렌더러가 뜨기 전이라 바로 보낸 오류는 사라진다 — 위의 '꺼져 있어요' 와 같은 간격을 둔다
-  let image; try { image = await captureScreenFor(id); } catch (e) { setTimeout(() => chatSendFor(id, "chat:done", { error: e.message }), chatOpen ? 0 : 1200); return; }
-  await chatTurn(id, userText || "", { image, say: !userText, extra: "사용자의 화면 스크린샷을 첨부했다. 지금 사용자가 무엇을 하고 있는지 알아보고, 네 성격대로 한두 문장으로 반응하라(감상·놀림·응원·질문 등)." });
-}
+// 대화 창·턴·화면 보고 한마디는 chat.js — 상태는 getter 로. captureScreenFor 는 화면 시험 훅이 갈아 끼우므로 매번 읽는다
+const CH = require("./chat.js")({ get settings() { return settings; }, get geo() { return geo; }, get instances() { return instances; }, get captureScreenFor() { return captureScreenFor; },
+  chatProfile: (id) => chatProfile(id), sendMascot: (id, cmd, arg) => sendMascot(id, cmd, arg), trackBounds: (w) => trackBounds(w), instanceOf: (wc) => instanceOf(wc), screenAllowed, heightOf: (h, lo) => heightOf(h, lo) });
+const openChat = CH.openChat, closeChat = CH.closeChat, chatTurn = CH.chatTurn, screenTalk = CH.screenTalk;
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
 const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).bubbleSec) || 4) * 1000) + Math.min(80, t.length) * 100);
-ipcMain.on("chat:send", (_e, text, withScreen) => { if (!chatFor || typeof text !== "string" || !text.trim()) return; if (withScreen) screenTalk(chatFor, text.trim().slice(0, 2000)); else chatTurn(chatFor, text.trim().slice(0, 2000)); });
-ipcMain.on("chat:screen", (e, id) => screenTalk(id || instanceOf(e.sender) || settings.characters[0].id));
-ipcMain.on("chat:close", () => closeChat());
-ipcMain.on("chat:clear", () => { if (!chatFor) return; Ai.clearHistory(app.getPath("userData"), chatFor); historyCleared.set(chatFor, Date.now()); if (chatBusy && chatAbort) chatAbort.abort(); }); // 만들던 답도 끊는다 — 그 답이 옛 기록을 끌고 다시 저장하던 문제
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
 const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
-ipcMain.on("chat:resize", (_e, h) => { h = heightOf(h, 40); if (h === null) return; if (chatWin && !chatWin.isDestroyed()) { const d = screen.getDisplayNearestPoint(chatBounds ? { x: chatBounds.x, y: chatBounds.y } : screen.getCursorScreenPoint()).workArea; chatBounds = { ...(chatBounds || { x: 0, y: 0, width: CHAT_W }), height: Math.min(h, d.height) }; chatPlace(chatFor); } });
-ipcMain.on("chat:open", (e, id) => openChat(id || instanceOf(e.sender) || settings.characters[0].id));
 // 설정창용
 ipcMain.handle("ai:status", () => Ai.status(settings.global.ai));
 ipcMain.handle("ai:set-key", (_e, provider, key) => { if (!["gemini", "anthropic", "openai"].includes(provider)) return false; updateSettings({ ai: { keys: { [provider]: Ai.encKey(String(key || "").trim()) } } }); return true; });
@@ -572,31 +463,31 @@ ipcMain.on("ai:open-url", (_e, which) => { const u = { ollama: "https://ollama.c
 let proactiveBusy = false; // Ai.status()를 기다리는 동안 다음 타이머가 겹쳐 들어오면 사도가 둘 연달아 말을 건다
 setInterval(async () => {
   const ai = settings.global.ai || {}, T = settings.global.talk || {};
-  if (chatBusy || proactiveBusy || !mascotStarted || fsHidden) return;
-  const gapMin = (Date.now() - Math.max(lastChatAt, app._startedAt || 0)) / 60000;
+  if (CH.busy || proactiveBusy || !mascotStarted || fsHidden) return;
+  const gapMin = (Date.now() - Math.max(CH.lastAt, app._startedAt || 0)) / 60000;
   if (gapMin < (T.minMin || 8) || Math.random() > 0.25) return;
   proactiveBusy = true;
   try {
-  const id = settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이
+  const id = CH.for || settings.characters[Math.floor(Math.random() * settings.characters.length)].id; // 여러 명이면 아무나 한 명이. 대화창이 열려 있으면 그 사도 — 남의 창을 가로채지 않게
   // AI 를 쓰는 길은 제 간격(기본 40분)을 따로 지킨다 — 대본보다 훨씬 드물게
   const aiTurn = ai.proactive && gapMin >= (ai.proactiveMin || 40);
   // 화면을 보고 말 거는 것 — AI 필요. 설정에서 켠 만큼만, 제공자가 실제로 잡힐 때만
   if (aiTurn && Math.random() * 100 < (+ai.screenProactive || 0) && await screenReady()) {
     const st = await Ai.status(ai);
-    if (st.resolved) { lastChatAt = Date.now(); screenTalk(id, ""); return; }
+    if (st.resolved) { CH.touch(); screenTalk(id, ""); return; }
   }
   // 혼잣말 — 대본. AI 를 켜지 않았어도 여기까지 온다
-  if (T.selfTalk !== false && saySelfTalk(id)) { lastChatAt = Date.now(); return; }
+  if (T.selfTalk !== false && saySelfTalk(id)) { CH.touch(); return; }
   // 대본이 없는 사도만 AI 로 물러선다
   if (!aiTurn) return;
   const st2 = await Ai.status(ai); if (!st2.resolved) return;
-  lastChatAt = Date.now();
+  CH.touch();
   openChat(id, { quiet: true });
   setTimeout(async () => {
     await chatTurn(id, "", { say: true, extra: "사용자가 한동안 아무 말도 하지 않았다. 네가 먼저 한두 문장(60자 안팎)으로 짧게 말을 걸어라 — 안부, 시간대에 맞는 인사, 가벼운 질문이나 혼잣말 중 하나. 대답을 강요하지 말 것. 문장은 두 개까지." });
     const sec = +settings.global.ai.chatAutoCloseSec; if (!(sec > 0)) return;
-    const opened = lastChatAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
-    setTimeout(() => { if (chatWin && !chatWin.isDestroyed() && !chatWin.isFocused() && !chatBusy && lastChatAt === opened) closeChat(); }, sec * 1000);
+    const opened = CH.lastAt; // 사용자가 그 사이 입력하면(lastChatAt 갱신) 닫지 않음
+    setTimeout(() => { const w = CH.win; if (w && !w.isDestroyed() && !w.isFocused() && !CH.busy && CH.lastAt === opened) closeChat(); }, sec * 1000);
   }, 900);
   } catch (e) { console.log("proactive error:", e.message); } // setInterval 의 async 콜백에서 던지면 unhandledRejection 으로 새 나가 분마다 오류가 쌓인다
   finally { proactiveBusy = false; }
@@ -735,7 +626,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get chatFor() { return chatFor; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return chatBusy; }, get chatProfile() { return chatProfile; }, get chatWin() { return chatWin; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; } });
+require("./test-hooks.js")({ get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -780,7 +671,7 @@ function startMascot() {
   startFullscreenWatch();
   // 단축키: 커서에 가장 가까운 캐릭터에게 말 걸기 (여러 명일 때). 이미 열려 있고 포커스면 닫기
   const nearestChar = () => { const p = screen.getCursorScreenPoint(); let best = settings.characters[0].id, bd = Infinity; for (const [id, inst] of instances) { const r = inst.rect; if (!r || !geo) continue; const cx = geo.x + r.x + r.w / 2, cy = geo.y + r.y + r.h / 2, d = Math.hypot(cx - p.x, cy - p.y); if (d < bd) { bd = d; best = id; } } return best; };
-  try { globalShortcut.register("CommandOrControl+Shift+Space", () => { if (chatWin && !chatWin.isDestroyed() && chatWin.isVisible() && chatWin.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
+  try { globalShortcut.register("CommandOrControl+Shift+Space", () => { const w = CH.win; if (w && !w.isDestroyed() && w.isVisible() && w.isFocused()) closeChat(); else openChat(nearestChar()); }); } catch (e) { console.warn("단축키 등록 실패", e.message); }
 }
 // ---- 전체화면 위에서는 숨는다 ----
 // 마스코트 창은 최상위(screen-saver) 라 전체화면 유튜브·게임 위에도 그대로 뜬다. 대상 사용자가 게이머인데

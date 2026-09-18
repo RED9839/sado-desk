@@ -1,0 +1,23 @@
+# 테스트 자동화 — main 에 밀거나 PR 을 열면 돈다. 게임 에셋·AI 키·파이썬 런타임이 필요 없는 것만:
+#   npm test          순수 로직 (설정 검사·AI 파서·혼잣말 검사기·데이터 짝)
+#   npm run test:flow Electron 을 새 프로필로 띄우는 사용 흐름 (대화 경쟁·추출기 제어·설정 복구) — 모의 AI, 가짜 추출기
+# 설치판 첫 실행(test:first-run)은 빌드가 필요해 여기서 돌리지 않는다 — 릴리스 전에 손으로 npm run pack && npm run test:first-run
+name: test
+on:
+  push:
+    branches: [main]
+    paths: ["prototype/**", ".github/workflows/test.yml"]
+  pull_request:
+    paths: ["prototype/**", ".github/workflows/test.yml"]
+jobs:
+  test:
+    runs-on: windows-latest   # 설치판과 같은 OS. Electron 창을 실제로 띄우므로 데스크톱이 있는 러너여야 한다
+    timeout-minutes: 20
+    defaults: { run: { working-directory: prototype } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: prototype/package-lock.json }
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:flow
