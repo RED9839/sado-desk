@@ -779,10 +779,11 @@
         else { play(a, false); m.timer = 0; m.state = "react"; motionVoice(a); }
       }
     }
-    // 이 사도를 가둘 모니터. 0(또는 뽑아 버린 모니터)이면 null — 예전처럼 창 전체를 쓴다
-    function myDisp() { const id = +S.monitor || 0; return id ? (geoD.find(d => d.id === id) || null) : null; }   // 옛 설정에 문자열이 남아 있어도 견딘다
-    function clampX(x) {
-      const d = myDisp();
+    // 이 사도를 가둘 모니터. 0(또는 뽑아 버린 모니터)이면 null — 예전처럼 창 전체를 쓴다.
+    // -1 = '놓아둔 모니터': 지금 서 있는 모니터에 머문다. 끌어다 다른 모니터에 놓으면 그곳이 새 집 (사용자 요청 — 기본값)
+    function myDisp() { const id = +S.monitor || 0; if (id === -1) return dispAt(m.x); return id ? (geoD.find(d => d.id === id) || null) : null; }   // 옛 설정에 문자열이 남아 있어도 견딘다
+    const stayHome = () => +S.monitor === -1;
+    function clampX(x, d = myDisp()) {
       const lo = (d ? d.x0 : 0) + WALL_MARGIN + m.w / 2;
       const hi = (d ? d.x1 : W) - WALL_MARGIN - m.w / 2;
       return hi < lo ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, x));   // 모니터가 사도보다 좁으면 가운데
@@ -820,13 +821,13 @@
           if (m.state === "tickle") { tickleT += dt; if (tickleT > 2.5) { tickleT = 0; if (S.sound.clickVoice) playVoiceOwn("tickleduring", "ticklestart"); } } // 계속 간지럽히면 계속 웃음
           break;
         case "drag":
-          m.x = clampX(mouse.gx); m.y = mouse.gy; // 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다
+          m.x = stayHome() ? clampX(mouse.gx, null) : clampX(mouse.gx); m.y = mouse.gy; // 창 밖으로 끌고 나가면 히트 창이 따라 나가 놓을 수도 잡을 수도 없어진다. '놓아둔 모니터' 면 옆 모니터로 옮길 수 있게 창 전체 안에서만 막는다
           m.rot = spine.MathUtils.clamp(-m.vx * 0.02, -25, 25);
           break;
         case "thrown": {
           m.vy -= GRAVITY * dt; m.x += m.vx * dt; m.y += m.vy * dt; m.rot -= m.vx * 0.5 * dt;
-          const half = m.w / 2;
-          if (m.x < half) { m.x = half; m.vx *= -0.6; } else if (m.x > W - half) { m.x = W - half; m.vx *= -0.6; }
+          const half = m.w / 2, hd = m.home || null, lo = (hd ? hd.x0 : 0) + half, hi = (hd ? hd.x1 : W) - half;   // 가둔 모니터가 있으면 그 벽에서 튕긴다 — 던져서 옆 모니터로 넘어가 버렸다
+          if (m.x < lo) { m.x = lo; m.vx *= -0.6; } else if (m.x > hi) { m.x = hi; m.vx *= -0.6; }
           const topY = topAt(m.x), floorY = floorAt(m.x);
           if (m.y + m.h > topY) { m.y = topY - m.h; m.vy *= -0.4; }
           if (m.y <= floorY) {
@@ -981,7 +982,7 @@
     function onUp(e) {
       if (!mouse.down) return; mouse.down = false;
       if (mouse.dragging) {
-        mouse.dragging = false; m.state = "thrown"; play(active.A.hold, true);
+        mouse.dragging = false; m.home = myDisp(); m.state = "thrown"; play(active.A.hold, true);   // 놓은 자리의 모니터가 집 — 던진 뒤 튕기는 벽
         if (Math.abs(m.vx) < 30 && Math.abs(m.vy) < 30) { m.vx = 0; m.vy = 0; }
         if (Math.abs(m.vx) > 30) { facing = m.vx > 0 ? 1 : -1; applyFacing(); }
       } else if (m.state === "pat") {          // 쓰다듬기 끝 → touch2_x ("그래 그래 더 쓰다듬으라고")

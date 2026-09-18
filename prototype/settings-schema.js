@@ -6,7 +6,7 @@ const CHAR_DEFAULTS = {
   mode: "sd",          // "minimi"(스틱 미니미) | "sd"(스탠딩; 이동은 미니미) | "ingame"(전투·마이홈 SD: Idle/Move/Spawn/Victory/Attack…)
   mood: "",            // 표정 고정: "" | smile | anger | sad | happy | eat | sulky | surprise (SD 전용, 게임 스토리 표정 8종)
   scale: 0.5, opacity: 1,
-  monitor: 0,          // 이 사도를 가둘 모니터 id. 0 = 가두지 않음(모니터 전체를 오간다). 없어진 모니터면 자동으로 0 취급
+  monitor: -1,         // 이 사도를 가둘 모니터 id. -1 = 놓아둔 모니터에 머문다(끌어다 옮기면 그곳, 기본). 0 = 가두지 않음(모니터 전체를 오간다). 없어진 모니터면 0 취급
   behavior: {
     hop: true, jump: true, idleActs: true,
     hopChance: 45, jumpChance: 10, hopSpeed: 100, hopRange: 350,

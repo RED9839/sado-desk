@@ -59,10 +59,10 @@
     const sel = document.getElementById("char-monitor"); if (!sel) return;
     const ds = catalog.displays || [];
     const want = String(getPath(S, "monitor") ?? 0);
-    sel.innerHTML = ['<option value="0">모든 모니터</option>']
+    sel.innerHTML = ['<option value="-1">놓아둔 모니터 (끌어다 옮기면 그곳)</option>', '<option value="0">모든 모니터</option>']
       .concat(ds.map(d => `<option value="${d.id}">${d.i}번 모니터 (${d.w}×${d.h}${d.primary ? " · 주모니터" : ""})</option>`)).join("");
     // 뽑아 버린 모니터가 설정에 남아 있으면 그것도 보여 준다 — 말없이 '모든 모니터'로 보이면 왜 안 가두는지 알 수 없다
-    if (want !== "0" && !ds.some(d => String(d.id) === want)) sel.insertAdjacentHTML("beforeend", `<option value="${want}">지금 없는 모니터 (연결되면 다시 적용)</option>`);
+    if (want !== "0" && want !== "-1" && !ds.some(d => String(d.id) === want)) sel.insertAdjacentHTML("beforeend", `<option value="${want}">지금 없는 모니터 (연결되면 다시 적용)</option>`);
     sel.value = want;
   }
   host.on("select", (id) => selectChar(id));
