@@ -610,7 +610,7 @@ ipcMain.on("hit-rect", (e, r, id) => {
   const inst = instances.get(id); if (!inst) return;
   inst.rect = (r && r.w > 0) ? r : null;
   if (hitFor === id) placeHit(id); // 대상 캐릭터가 움직이면(드래그·이동) 히트 창도 바로 따라감
-  if (CH.for === id) CH.place(id);   // 대화창도 사도를 따라간다 (말풍선은 띄울 때 자리를 잡고 고정)
+  // (말풍선·대화창은 띄울 때 자리를 잡고 고정 — 캐릭터를 따라다니지 않음. 대화창이 열린 동안엔 사도가 제자리에 있다: chat.js stay)
 });
 ipcMain.on("hit-ev", (e, ev) => {
   if (ev && ev.type === "mousedown") ST.touch(); // 손이 닿았다 — "오래 방치" 꼬리표를 푼다

@@ -180,26 +180,12 @@ module.exports = function installTestHooks(ctx) {
     await sendIn("계속 말해 줘"); await sleep(400); ctx.openChat(a); await sleep(200); const stillBusy = ctx.chatBusy; await wait(); await sleep(300);
     const bots = await ctx.chatWin.webContents.executeJavaScript(`[...document.querySelectorAll("#log .msg.bot")].filter(d => d.textContent).length`);
     ok(stillBusy && Ai.loadHistory(ud, a).length === 2 && bots >= 1 && await ctx.chatWin.webContents.executeJavaScript(`!document.getElementById("in").disabled`), `⑪ 답하는 중 다시 열기 → 안 끊김(busy=${stillBusy}) · 기록 ${Ai.loadHistory(ud, a).length}줄(2) · 창에 답 ${bots}개 · 입력 열림`);
-    // ⑫ 창이 사도를 따라간다 — hit-rect 로 사도 위치가 바뀌면 창도 움직이고, 사용자가 끌어 옮긴 차이는 유지된다
-    // 진짜 사도는 렌더러가 30Hz 로 제 위치를 계속 보내 시험 값을 덮는다 — 렌더러가 없는 가짜 사도 'zz' 를 인스턴스 표에 넣고 그 창으로 본다
+    // ⑫ 창은 열 때 자리를 잡고 사도가 움직여도 그대로 — 렌더러 없는 가짜 사도 'zz' 로 (진짜 사도는 렌더러가 제 위치를 계속 보낸다)
     if (ctx.geo) {
-      ctx.instances.set("zz", { rect: null }); ctx.openChat("zz"); await sleep(1500);
-      const rect = (x, y) => ({ x, y, w: 120, h: 160 }), ev = { sender: { id: 0 } }, a = "zz";
-      ipcMain.emit("hit-rect", ev, rect(300, 500), a); await sleep(150); const b1 = ctx.chatWin.getBounds();
-      ipcMain.emit("hit-rect", ev, rect(700, 500), a); await sleep(150); const b2 = ctx.chatWin.getBounds();
-      ipcMain.emit("hit-rect", ev, rect(703, 503), a); await sleep(150); const b3 = ctx.chatWin.getBounds();   // 3px 들썩임은 무시
-      ok(b2.x - b1.x === 400 && b3.x === b2.x && b3.y === b2.y, `⑫ 사도가 400px 옮기면 창도 400px (${b2.x - b1.x}), 3px 들썩임은 무시(${b3.x - b2.x})`);
-      // 점프: 0.3초 동안 위로 150px 갔다가 제자리 — 창의 세로는 그대로여야 한다
-      for (const y of [450, 400, 350, 400, 450, 500]) { ipcMain.emit("hit-rect", ev, rect(700, y), a); await sleep(50); }
-      const bj = ctx.chatWin.getBounds(); await sleep(500); const bj2 = ctx.chatWin.getBounds();
-      ok(bj.y === b2.y && bj2.y === b2.y, `⑫ 점프 중·후 창의 세로가 그대로 (${bj.y - b2.y}, ${bj2.y - b2.y})`);
-      // 다른 높이에 내려놓고 머무르면 0.4초 뒤 따라간다
-      ipcMain.emit("hit-rect", ev, rect(700, 300), a); await sleep(150); const bq = ctx.chatWin.getBounds(); await sleep(500); const bq2 = ctx.chatWin.getBounds();
-      ok(bq.y === b2.y && bq2.y === b2.y - 200, `⑫ 새 높이는 바로 말고 머문 뒤에 (바로 ${bq.y - b2.y}, 0.65초 뒤 ${bq2.y - b2.y}, −200)`);
-      ipcMain.emit("hit-rect", ev, rect(700, 500), a); await sleep(600); const b2b = ctx.chatWin.getBounds(); ok(b2b.y === b2.y, "⑫ 원래 높이로 돌아옴");
-      ctx.chatWin.setBounds({ x: b2.x + 50, y: b2.y - 30 }); ctx.chatWin.emit("moved"); await sleep(150);
-      ipcMain.emit("hit-rect", ev, rect(900, 500), a); await sleep(150); const b4 = ctx.chatWin.getBounds();
-      ok(b4.x - b2.x === 200 + 50 && b4.y - b2.y === -30, `⑫ 끌어 옮긴 차이(+50,−30)를 사도 기준으로 유지 (${b4.x - b2.x}, ${b4.y - b2.y})`);
+      ctx.instances.set("zz", { rect: { x: 300, y: 500, w: 120, h: 160 } }); ctx.openChat("zz"); await sleep(1500);
+      const ev = { sender: { id: 0 } }, b1 = ctx.chatWin.getBounds();
+      ipcMain.emit("hit-rect", ev, { x: 700, y: 300, w: 120, h: 160 }, "zz"); await sleep(200); const b2 = ctx.chatWin.getBounds();
+      ok(b1.x === b2.x && b1.y === b2.y, `⑫ 사도가 (400, −200) 옮겨도 창은 그대로 (${b2.x - b1.x}, ${b2.y - b1.y})`);
       ctx.chatWin.close(); ctx.instances.delete("zz");
     }
     console.log(`RACETEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
