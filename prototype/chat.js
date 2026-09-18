@@ -53,6 +53,9 @@ module.exports = function createChat(ctx) {
     if (same && chatBusy) { if (!opt.quiet) { chatWin.show(); chatWin.focus(); } return; }
     // 다른 사도에게로 옮기는데 앞 사도의 답이 아직 오는 중이면 끊는다 — 안 끊으면 그 답이 새 사도의 말처럼 창에 찍혔다(코드 리뷰 P2)
     if (chatFor && chatFor !== id && chatBusy && chatAbort) chatAbort.abort();
+    // 대화창이 열려 있는 동안 그 사도는 제자리에 (폴짝·점프 안 함). 창이 사도를 따라다니게도 해 봤지만 어지럽다고 해서
+    if (chatFor && chatFor !== id) ctx.sendMascot(chatFor, "stay", false);
+    ctx.sendMascot(id, "stay", true);
     chatFor = id; chatBounds = null; chatAnchor = null; chatOffset = { dx: 0, dy: 0 }; topCand = null; clearTimeout(topTimer);
     const seq = same ? chatSeq : ++chatSeq;   // 같은 사도면 요청 번호를 그대로 — 진행 중인 화면 캡처가 살아 있게
     // 초기화 정보(제공자 상태·기록)는 Ai.status 를 기다린다. A 를 열고 곧장 B 를 열면 A 의 것이 늦게 도착해 이름·기록은 A,
@@ -77,7 +80,7 @@ module.exports = function createChat(ctx) {
     // 사용자가 끌어 옮긴 것(우리가 setBounds 한 자리와 다르면) → 사도 기준 차이로 기억
     w.on("moved", () => { if (chatWin !== w || w.isDestroyed() || !chatBounds) return; const b = w.getBounds(); if (b.x === chatBounds.x && b.y === chatBounds.y) return; chatOffset = { dx: chatOffset.dx + b.x - chatBounds.x, dy: chatOffset.dy + b.y - chatBounds.y }; chatBounds = { ...chatBounds, x: b.x, y: b.y }; });
     // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
-    w.on("closed", () => { if (chatWin !== w) return; chatSeq++; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
+    w.on("closed", () => { if (chatWin !== w) return; if (chatFor) ctx.sendMascot(chatFor, "stay", false); chatSeq++; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
     w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
     w.webContents.once("did-finish-load", () => chatReady.add(w));
     send();   // 로드를 기다리는 건 send 안에서 한다

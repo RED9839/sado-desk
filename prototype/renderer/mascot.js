@@ -206,7 +206,7 @@
   host.on("geo", (g) => setGeo(g));
   host.on("cursor", ({ x, y }) => { for (const mas of mascots.values()) mas.hover(x, y); });
   host.on("hit-mouse", (ev) => { if (cfg && cfg.selftest) return; /* 셀프테스트 중엔 진짜 마우스가 캐릭터 위에 있으면 합성 입력과 섞여 드래그로 튐 */ const mas = mascots.get(ev.instance); if (mas && ev.type !== "mouseleave") mas.onMouse(ev); });
-  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "logstate") mas.logState(arg); });
+  host.on("mascot", (id, cmd, arg) => { const mas = mascots.get(id) || firstMascot(); if (!mas) return; if (cmd === "play") mas.playCmd(arg); else if (cmd === "respawn") mas.spawn(); else if (cmd === "preview") mas.preview(arg); else if (cmd === "announce") mas.announce(arg); else if (cmd === "emote") mas.emote(arg); else if (cmd === "logstate") mas.logState(arg); else if (cmd === "stay") { const m0 = mascots.get(id); if (m0) m0.stay(arg); } });   // stay 는 그 사도가 없으면 아무에게도 (첫 사도로 넘기면 남이 굳는다)
   window.addEventListener("contextmenu", (e) => e.preventDefault());
 
   // 메인이 내려준 캐릭터 뷰 목록과 맞추기: 새 id → 생성, 없어진 id → 제거, 있는 것 → 설정 적용
@@ -572,7 +572,9 @@
     function playCmd(name) { playOnce(name, "react"); motionVoice(name, true); }
     // 새 소식 알림: 말풍선은 메인이 띄우고, 여기선 "말하는" 모션 + 인사/잡담 대사. 잡고 있거나 공중이면 건드리지 않음
     let holdUntil = 0; // 말풍선이 떠 있는 동안은 돌아다니지 않음 (말풍선은 제자리 고정이라 캐릭터가 가버리면 이상함)
-    const holding = () => performance.now() < holdUntil;
+    let stayPut = false; // 대화창이 이 사도에게 열려 있는 동안 — 폴짝도 점프도 안 한다. 창이 따라다니면 어지럽다고 해서 사도가 제자리에 있기로
+    const stay = (on) => { stayPut = !!on; };
+    const holding = () => stayPut || performance.now() < holdUntil;
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
     // AI 대답/혼잣말의 감정 → 표정 애니를 한 번 재생하고 마지막 프레임에서 멈춰(pose) 말풍선이 떠 있는 동안 그 표정을 유지.
     //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(화면을 살피는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
@@ -769,7 +771,7 @@
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const jumps = A.jump.filter(has);
-      if (B.jump && jumps.length && r < B.hopChance + B.jumpChance) { playOnce(pick(jumps), "jump"); }
+      if (B.jump && jumps.length && r < B.hopChance + B.jumpChance && !stayPut) { playOnce(pick(jumps), "jump"); }
       else {
         const pool = (B.idleActs ? A.idleActs : A.idleQuiet).filter(has);
         const a = pick(pool.length ? pool : [A.hold]);
@@ -1156,7 +1158,7 @@
       say("DONE");
     }
 
-    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
+    Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, stay, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
   }
 })();
