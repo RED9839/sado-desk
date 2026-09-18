@@ -201,6 +201,7 @@
       <div class="row"><label>불투명도</label><input type="range" min="20" max="100" step="5" data-s="opacity" data-scale="100"><span class="val" data-fmt="%"></span></div>
     </div>
     <div class="card"><h3>전체 공통</h3>
+      <div class="row"><label class="toggle"><input type="checkbox" data-s="display.confineMonitor">모니터 가두기<span class="hint">켜면 사도가 지금 서 있는 모니터 안에서만 돌아다니고, 다른 모니터로는 마우스로 끌어다 놓아야만 갑니다(놓은 곳이 다음 시작 자리). 끄면 모든 모니터를 오가요 — 가끔 옆 모니터로 원정도</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.overTaskbar">작업표시줄 위로 그림 침범<span class="hint">발은 작업표시줄 위에 두고, 발 아래로 내려오는 무기·꼬리는 작업표시줄 위에 그려짐. 끄면 잘림</span></label></div>
       <div class="row"><label class="toggle"><input type="checkbox" data-s="display.autoStart">윈도우 시작 시 자동 실행<span class="hint">설치판(사도 데스크.exe)에서만 동작. 개발 실행(run.cmd)에서는 무시</span></label></div>
       <div class="row"><label>프레임<span class="hint">게임 모션은 30프레임으로 만들어져 있습니다(키프레임이 전부 1/30초 위에 있음). 30은 게임에서 보던 그대로, 60은 키 사이를 보간해 원본보다 매끄럽게 보이고 끌기·던지기도 부드럽습니다. 수직동기화는 모니터가 그리는 만큼(144Hz 면 144) 그립니다. <b>자동</b>은 가만히 있을 땐 30, 손댈 때만 60. 30 고정은 노트북에서 가장 오래 갑니다</span></label><select data-s="display.fps"><option value="auto">자동 (손댈 때만 60 · 기본)</option><option value="30">30 프레임 (절전)</option><option value="60">60 프레임</option><option value="vsync">수직동기화 (모니터 주사율만큼)</option></select></div>
