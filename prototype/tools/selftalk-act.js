@@ -8,7 +8,8 @@ const DATA = path.join(__dirname, "..", "data");
 // 앞에서부터 첫 매치. 전원이 가진 접두어(Angry Eat Happy Idle Pat Sad Touch Smash Tickle Close)를 먼저,
 // 다수가 가진 것(Blank Panic Shy Surprise Sulky Dance Serious Sorry Talk Taunt Proud Thinking Tired Smile)은 뒤에
 const RULES = [
-  [/(졸리|졸려|자고|낮잠|잠들|하품|피곤|나른)/, "Tired"],
+  // 낱말은 그 뜻일 때만 — "자고"는 말자고·가자고에, "울"은 저울·거울·억울·울타리에 걸렸다(문구 리뷰). 조사·활용을 붙여 좁힌다
+  [/(졸리|졸려|낮잠|잠들|잠이 |잠을|잠은|잠도|잠자|하품|피곤|나른|자야겠|자러|잘래|잘 거|잘게|졸음|꾸벅)/, "Tired"],
   [/(먹어|먹을|먹고|먹는|맛있|배고|한 입|드세|식사|요리|간식 좀)/, "Eat"],
   [/(춤|노래|흥얼|리듬)/, "Dance"],
   [/(청소|치우|정리|닦)/, "Clean"],
@@ -19,7 +20,7 @@ const RULES = [
   [/(미안|죄송|사과)/, "Sorry"],
   [/(놀랐|깜짝|헉|어라|이럴 수가)/, "Surprise"],
   [/(화나|짜증|용서|훔쳐|도둑|가만 안)/, "Angry"],
-  [/(슬프|아쉽|외로|울)/, "Sad"],
+  [/(슬프|아쉽|(?<![의예])외로|(?<![기예])울었|울고 |울음|울지 마|울컥|눈물|흑흑)/, "Sad"],   // 의외로·예외로·기울었 은 아니다
   [/[?？]\s*$/, "Question"],
 ];
 const BY_MOOD = { happy: "Happy", smile: "Smile", anger: "Angry", sad: "Sad", surprise: "Surprise", eat: "Eat", sulky: "Sulky", "": "Talk" };
@@ -33,6 +34,7 @@ for (const lines of groups) for (const l of lines) {
   const STRONG = ["anger", "sad", "surprise"];
   let act = STRONG.includes(l.m) ? BY_MOOD[l.m] : null;
   if (!act) for (const [re, a] of RULES) if (re.test(l.t)) { act = a; break; }
+  if (act === "Sad" && ["happy", "smile"].includes(l.m)) act = BY_MOOD[l.m];   // "눈물이 날 것 같네요"(기쁨) — 감정이 밝으면 눈물 낱말보다 감정을 따른다
   if (!act) act = BY_MOOD[l.m] || "Talk";
   l.a = act; n++; byAct[act] = (byAct[act] || 0) + 1;
 }

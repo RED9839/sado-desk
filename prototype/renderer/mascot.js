@@ -502,7 +502,7 @@
       await activateMode(true);
     }
     // activating++ 로 진행 중인 activateMode 를 무효화한다 — 캐릭터를 지우는 도중 SD 로드가 끝나면 내려놓은 슬롯에 다시 채워 넣고(텍스처 누수) spawn() 이 죽은 미니미 스켈레톤을 건드렸다
-    function dispose() { disposed = true; activating++; clearTimeout(announceTimer); unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); hideHit(); }
+    function dispose() { disposed = true; activating++; clearTimeout(announceTimer); clearTimeout(emoteTimer); unloadSlot(sd); unloadSlot(sdI); mini.skeleton = null; mini.state = null; if (currentVoice) currentVoice.pause(); hideHit(); }
     function hideHit() { lastHit = null; host.hitRect({ x: 0, y: 0, w: 0, h: 0 }, id); } // lastHit 을 비워야 다음 pushHitRect 가 같은 자리라도 다시 보낸다
     function onGeo() { if (m.state !== "boot") { m.x = clampX(m.x); if (m.state !== "thrown" && m.state !== "drag") m.y = floorAt(m.x); } }
 
@@ -575,9 +575,11 @@
     // AI 대답의 감정 태그 → 그 표정 애니 한 번 + 감정 소리. SD가 아니거나 풀이 없으면 반응 애니로
     // AI 대답/혼잣말의 감정 → 표정 애니를 한 번 재생하고 마지막 프레임에서 멈춰(pose) 말풍선이 떠 있는 동안 그 표정을 유지.
     //   mood 없음: role=speak(말하는 쪽)면 Talk/Point/Blank 같은 '말하는' 포즈, role=listen(화면을 살피는 쪽)이면 Blank/Think/Nodding '듣는' 포즈
-    function emote(arg) {
+    let emoteTimer = 0;
+    function emote(arg, tries = 0) {
       const mood = arg && arg.mood; if (arg && arg.hold) holdUntil = Math.max(holdUntil, performance.now() + arg.hold);
-      if (!canInterrupt("emote")) return;
+      // 잡거나 던지는 중이면 자르지 않고 1.5초 뒤에 다시 본다(3번까지) — 말풍선은 이미 떠 있는데 동작만 빠지던 것(대본 리뷰 ④)
+      if (!canInterrupt("emote")) { clearTimeout(emoteTimer); if (tries < 3 && !disposed) emoteTimer = setTimeout(() => emote({ ...arg, hold: 0 }, tries + 1), 1500); return; }
       if (isSD()) useSlot(slotForRest());
       const A = active.A;
       const pool = mood && A.moods ? (A.moods[mood] || []).filter(has) : [];
@@ -593,7 +595,8 @@
       if (poseMs > 0 && !A.idleLoop.has(a)) {
         // 말풍선이 떠 있는 동안: 멈춰 있지 않고 같은 감정의 변형을 이어서 재생 (끝나면 onComplete가 다음 변형을 고름)
         const cands = (role === "listen" ? LISTEN : SPEAK).filter(has);
-        m.posePool = pool.length ? pool : (cands.length ? cands : [a]);
+        // 대본이 동작을 지정했으면 말풍선이 떠 있는 동안 그 동작의 변형만 이어 간다 — 청소 이야기 중에 청소 동작이 미소로 바뀌던 것(대본 리뷰 ①)
+        m.posePool = want.length ? want : pool.length ? pool : (cands.length ? cands : [a]);
         play(a, false); m.state = "pose"; m.timer = poseMs / 1000;
       }
       else playOnce(a, "react");
