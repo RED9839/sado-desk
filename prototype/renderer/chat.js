@@ -25,7 +25,12 @@
   input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } }); // Escape 는 아래 window 쪽 하나로 (둘이면 chatClose 가 두 번)
   input.addEventListener("input", () => { input.style.height = ""; input.style.height = Math.min(72, input.scrollHeight) + "px"; resize(); });
   el("close").addEventListener("click", () => host.chatClose());
-  el("clear").addEventListener("click", () => { log.innerHTML = ""; host.chatClear(); resize(); });
+  // 기록 지우기는 되돌릴 수 없어 두 번 — 첫 클릭은 3초간 "정말 지우기?" 로 바뀌고, 그 안에 다시 누르면 지운다
+  { const clr = el("clear"); let armT = 0;
+    clr.addEventListener("click", () => {
+      if (!clr.classList.contains("arm")) { clr.classList.add("arm"); clr.textContent = "정말 지우기?"; armT = setTimeout(() => { clr.classList.remove("arm"); clr.textContent = "기록 지우기"; }, 3000); return; }
+      clearTimeout(armT); clr.classList.remove("arm"); clr.textContent = "기록 지우기"; log.innerHTML = ""; host.chatClear(); resize();
+    }); }
   el("settings").addEventListener("click", () => host.openSettings("ai"));
   window.addEventListener("keydown", (e) => { if (e.key === "Escape") host.chatClose(); });
 

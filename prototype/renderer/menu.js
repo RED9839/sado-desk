@@ -47,8 +47,9 @@
     document.getElementById("skin-cur").textContent = KO.skinName(S.skin);
     document.getElementById("scale-chips").innerHTML = [0.3, 0.4, 0.5, 0.6, 0.8, 1.0].map(v => `<div class="chip ${v === S.scale ? "on" : ""}" data-scale="${v}">${Math.round(v * 100)}%</div>`).join("");
     document.getElementById("mood-chips").innerHTML = MOODS.map(([k, label]) => `<div class="chip ${(S.mood || "") === k ? "on" : ""}" data-mood="${k}">${label}</div>`).join("");
-    document.getElementById("mood-state").textContent = (MOODS.find(([k]) => k === (S.mood || "")) || MOODS[0])[1] + (S.mode !== "sd" ? " (스탠딩에서)" : "");
-    document.getElementById("mute-state").textContent = S.sound.muted ? "음소거" : "켜짐";
+    document.getElementById("mood-state").textContent = (MOODS.find(([k]) => k === (S.mood || "")) || MOODS[0])[1] + (S.mode !== "sd" ? " (스탠딩에서)" : "") + " ▸";
+    document.getElementById("mute-state").textContent = (S.sound.muted ? "꺼짐" : `${Math.round(S.sound.master * 100)}%`) + " ▸";
+    document.getElementById("mute-toggle").textContent = S.sound.muted ? "켜기" : "";
     for (const row of menuEl.querySelectorAll("[data-vol]")) { const k = row.dataset.vol, v = Math.round(S.sound[k] * 100); row.querySelector("input").value = v; row.querySelector(".val").textContent = v + "%"; row.classList.toggle("off", S.sound.muted); }
     document.getElementById("debug-state").textContent = S.display.debug ? "켜짐" : "꺼짐";
     document.getElementById("remove-item").style.display = (S.count || 1) > 1 ? "" : "none";

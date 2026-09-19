@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 설정</title>
 <style>
-  :root{--bg:#1c1c21;--panel:#26262d;--panel2:#202026;--line:#3a3a45;--line2:#4a4a58;--text:#ececf1;--muted:#9a9aa8;--muted2:#7d7d8c;--accent:#6c8cff;--accent2:#4f6fe0;--danger:#ff8a8a;--ok:#7bd88f}
+  :root{--bg:#1c1c21;--panel:#26262d;--panel2:#202026;--line:#3a3a45;--line2:#4a4a58;--text:#ececf1;--muted:#a6a6b4;--muted2:#8a8a99;--accent:#6c8cff;--accent2:#4f6fe0;--danger:#ff8a8a;--ok:#7bd88f}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.55 "Malgun Gothic","Segoe UI",sans-serif;user-select:none}
   body{display:flex}
@@ -30,7 +30,7 @@
   .row{display:flex;align-items:center;gap:12px;padding:7px 0;min-height:34px;border-top:1px solid transparent}
   .row + .row{border-top-color:#2e2e37}
   .row > label{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-  .row .hint{color:var(--muted);font-size:11.5px;line-height:1.5}
+  .row .hint{color:var(--muted);font-size:12px;line-height:1.5}
   .row input[type=range]{width:240px;flex:none;accent-color:var(--accent);margin:0}
   .row .val{width:56px;flex:none;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
   .row.off{opacity:.45}
@@ -43,6 +43,17 @@
   .toggle .hint{grid-column:2;display:block;margin-top:1px}
   /* 형태 같은 선택 카드 */
   .opts{display:flex;flex-direction:column;gap:8px}
+  .seg-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .seg-lbl{color:var(--muted);font-size:12px;font-weight:700}
+  .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+  .seg label{position:relative;cursor:pointer}
+  .seg input{position:absolute;opacity:0;pointer-events:none}
+  .seg span{display:block;padding:5px 14px;border-radius:8px;font-size:13px;color:var(--muted)}
+  .seg label:hover span{color:var(--text)}
+  .seg input:checked + span{background:var(--accent);color:#fff;font-weight:600}
+  #charbar.common .chip:not(.add):not(.rm){opacity:.45}
+  #charbar.common #bulk-wrap{display:none}
+  #charbar.common #charbar-note{color:var(--text)}
   .opt{display:grid;grid-template-columns:16px 1fr;column-gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer}
   .opt:hover{border-color:var(--line2)}
   .opt:has(input:checked){border-color:var(--accent);background:#262b3d}
@@ -61,13 +72,13 @@
   .row > label:not(.toggle) + select,.row > label:not(.toggle) + input[type=text],.row > label:not(.toggle) + input[type=password]{flex:0 1 320px}
   a{color:var(--accent)}
   /* 사도 그리드 */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:calc(100vh - 330px);overflow:auto;padding:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:calc(100vh - 250px);overflow:auto;padding:2px}
   .tile{background:var(--panel2);border:2px solid transparent;border-radius:10px;padding:6px 4px 4px;text-align:center;cursor:pointer;position:relative}
   .tile:hover{border-color:#55556a}
   .tile.on{border-color:var(--accent)}
   .tile canvas{width:72px;height:96px;display:block;margin:0 auto}
   .tile .nm{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
-  .tile .vc{position:absolute;top:4px;right:6px;font-size:10px;color:var(--muted)}
+  .tile .vc{position:absolute;top:4px;right:6px;font-size:11px;color:var(--muted)}
   .tile .vc.zero{color:var(--danger)}
   .tile .q{position:absolute;top:22px;left:6px;font-size:10px;color:#f0c060}
   .tile .sd{position:absolute;top:5px;left:6px;font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff}
@@ -132,13 +143,16 @@
   </section>
   <section id="tab-character" class="on">
     <h2>사도</h2>
-    <div class="card"><h3>형태</h3>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="mode" value="minimi" data-s="mode"><span><b>미니미</b><small>게임 로비에서 사용하는 작은 모습입니다. 폴짝 뛰며 이동합니다. 모든 외형을 지원합니다.</small></span></label>
-        <label class="opt"><input type="radio" name="mode" value="sd" data-s="mode"><span><b>스탠딩</b><small>사도 상세 화면의 모습입니다. 표정과 교감 동작을 지원하며, 이동할 때는 주로 미니미로 전환됩니다.</small></span></label>
-        <label class="opt"><input type="radio" name="mode" value="ingame" data-s="mode"><span><b>전투 SD</b><small>전투에서 사용하는 모습입니다. 대기·이동·등장·승리·공격 동작을 사용하며, 표정과 교감 동작은 지원하지 않습니다. 별도의 전투 SD 데이터가 필요합니다.</small></span></label>
+    <div class="card" style="padding:10px 16px">
+      <div class="seg-row"><span class="seg-lbl">형태</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="mode" value="minimi" data-s="mode"><span>미니미</span></label>
+          <label><input type="radio" name="mode" value="sd" data-s="mode"><span>스탠딩</span></label>
+          <label><input type="radio" name="mode" value="ingame" data-s="mode"><span>전투 SD</span></label>
+        </div>
+        <span class="hint" id="mode-desc" style="flex:1;min-width:200px"></span>
       </div>
-      <div class="hint" id="mode-note" style="margin-top:8px"></div>
+      <div class="hint" id="mode-note"></div>
     </div>
     <div class="toolbar"><input type="text" id="skin-search" placeholder="이름 검색 (한글/영문, 사복 이름 포함)"><label class="toggle"><input type="checkbox" id="skin-voiced">음성이 있는 외형만</label><label class="toggle"><input type="checkbox" id="skin-sd">스탠딩이 있는 외형만</label><span id="skin-count" class="hint"></span></div>
     <div class="grid" id="skin-grid"></div>
@@ -241,14 +255,6 @@
 
   <section id="tab-ai">
     <h2>AI 대화</h2>
-    <div class="card warn"><h3>⚠ 사용 전 안내</h3>
-      <ul>
-        <li><b>AI 대화의 답변은 AI가 생성하며, 원작 설정과 다를 수 있습니다. 공식 대사가 아닙니다.</b> 이 앱은 팬이 만든 비공식 프로그램으로 에피드게임즈와 관계가 없습니다.</li>
-        <li><b>스토리 내용이 언급될 수 있습니다.</b> 사도가 자신이 등장한 테마극장이나 메인 스토리의 일을 먼저 꺼낼 수 있습니다. 아직 보지 않은 이야기라면 결말을 듣게 될 수 있습니다.</li>
-        <li><b>Ollama가 아닌 서비스를 사용하면 대화 내용이 해당 서비스의 서버로 전송됩니다.</b> 개인정보나 비밀번호는 입력하지 마세요. 대화를 PC 밖으로 보내지 않으려면 Ollama(로컬)를 사용해 주세요.</li>
-        <li><b>API 키는 사용자 본인의 것이며, 선택한 AI 서비스와 사용량에 따라 요금이 발생할 수 있습니다.</b> API 키는 이 PC에 저장하며, 선택한 AI 서비스 인증에만 사용합니다. 앱에는 키가 들어 있지 않습니다. <span id="ai-key-enc"></span></li>
-      </ul>
-    </div>
     <div class="card"><h3>AI 서비스</h3>
       <div class="hint">사도 우클릭 → <b>AI 대화</b> 또는 <code>Ctrl+Shift+Space</code>로 대화창을 엽니다. 사도별 말투 프로필(호칭·어미·감탄사)을 AI에 전달해 그 사도처럼 답하고, 답변의 감정에 맞춰 표정과 음성을 재생합니다. 대화 내용은 이 PC와 선택한 AI 서비스에만 전송됩니다.</div>
       <div class="row" style="margin-top:8px"><label>AI 서비스</label>
@@ -261,6 +267,15 @@
         </select></div>
       <div class="hint" id="ai-resolved" style="margin:-2px 0 6px"></div>
       <div class="row"><button class="btn" id="ai-test">연결 확인</button><span class="hint" id="ai-test-out"></span></div>
+    </div>
+    <div class="card warn" style="padding:10px 16px">
+      <div class="hint"><b>답변은 AI가 생성한 것으로 공식 대사가 아닙니다.</b> Ollama가 아닌 서비스는 대화·캡처가 그 서버로 전송되고, API 키 요금은 사용자 부담입니다.
+        <details style="margin-top:6px"><summary>자세히 보기</summary><ul style="margin:6px 0 0;padding-left:18px">
+          <li><b>AI 대화의 답변은 AI가 생성하며, 원작 설정과 다를 수 있습니다. 공식 대사가 아닙니다.</b> 이 앱은 팬이 만든 비공식 프로그램으로 에피드게임즈와 관계가 없습니다.</li>
+          <li><b>스토리 내용이 언급될 수 있습니다.</b> 사도가 자신이 등장한 테마극장이나 메인 스토리의 일을 먼저 꺼낼 수 있습니다. 아직 보지 않은 이야기라면 결말을 듣게 될 수 있습니다.</li>
+          <li><b>Ollama가 아닌 서비스를 사용하면 대화 내용이 해당 서비스의 서버로 전송됩니다.</b> 개인정보나 비밀번호는 입력하지 마세요. 대화를 PC 밖으로 보내지 않으려면 Ollama(로컬)를 사용해 주세요.</li>
+          <li><b>API 키는 사용자 본인의 것이며, 선택한 AI 서비스와 사용량에 따라 요금이 발생할 수 있습니다.</b> API 키는 이 PC에 저장하며, 선택한 AI 서비스 인증에만 사용합니다. 앱에는 키가 들어 있지 않습니다. <span id="ai-key-enc"></span></li>
+        </ul></details></div>
     </div>
     <div class="card"><h3>Google Gemini</h3>
       <div class="hint"><b>설치가 필요 없어 가장 간단합니다.</b> <a href="#" data-ai-url="gemini">Google AI Studio</a>에 구글 계정으로 로그인해 "Create API key"를 누르고, 발급된 키를 아래에 붙여 넣어 저장해 주세요. 무료 등급의 한도는 모델과 시기에 따라 다르며 Google AI Studio에서 확인할 수 있습니다.</div>
