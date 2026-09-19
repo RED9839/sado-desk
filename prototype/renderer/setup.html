@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 — 에셋 가져오기</title>
+<html lang="ko"><head><meta charset="utf-8"><title>사도 데스크 — 게임 데이터 가져오기</title>
 <style>
   :root{--bg:#1f1f24;--panel:#2b2b31;--panel2:#24242a;--line:#44444f;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a;--ok:#7bd88f;--warn:#f0c060}
   *{box-sizing:border-box}
@@ -30,28 +30,28 @@
   code{background:#1a1a1f;padding:1px 5px;border-radius:4px;font-size:11px;user-select:text}
 </style></head>
 <body>
-<h1>에셋 가져오기</h1>
-<div class="hint">사도 데스크에는 사도 그림·보이스가 들어 있지 않습니다. 이 PC의 <b>앱플레이어</b>(뮤뮤·LD플레이어·블루스택)에 설치된 <b>트릭컬 리바이브</b>에서 직접 꺼내 옵니다.
-게임 서버나 실행 중인 게임에는 손대지 않고, 에뮬레이터 안의 파일을 복사해 앱이 읽는 형태로 바꿉니다. 추출물은 <b>본인 PC에서만</b> 쓰고 다른 사람에게 배포하지 마세요.</div>
+<h1>게임 데이터 가져오기</h1>
+<div class="hint">사도 데스크에는 사도 외형·음성 데이터가 들어 있지 않습니다. 지원하는 <b>앱플레이어</b>(뮤뮤·LD플레이어·블루스택)에 설치된 <b>트릭컬 리바이브</b>에서 게임 데이터를 가져옵니다.
+게임 서버나 실행 중인 게임에는 접근하지 않고, 앱플레이어 안의 파일을 복사해 앱이 읽는 형태로 바꿉니다. 가져온 데이터는 <b>본인 PC에서만</b> 사용하고 다른 사람에게 배포하지 마세요.</div>
 
 <div class="card"><h3>현재 상태</h3>
   <div class="status" id="status">확인 중…</div>
 </div>
 
-<div class="card"><h3>1. 앱플레이어에서 추출</h3>
+<div class="card"><h3>1. 앱플레이어에서 가져오기</h3>
   <div class="row"><label class="hint" style="flex:none;width:90px">기기</label><select id="device" style="flex:1;background:#1a1a1f;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit"><option value="">검색 중…</option></select><button class="btn" id="scan">다시 검색</button><button class="btn" id="ld-adb" style="display:none" title="LD플레이어 설정 파일에 ADB 디버깅(로컬)을 켜고 그 인스턴스를 재시작합니다">LD ADB 켜고 재시작</button></div>
-  <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택을 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색하세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 보입니다.</div>
+  <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택을 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색해 주세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 검색됩니다.</div>
   <div class="row"><label class="hint" style="flex:none;width:90px">직접 지정</label><input type="text" id="mumu" placeholder="자동 검색이 안 될 때만: adb.exe 경로 · adb 포트(예 5555) · 127.0.0.1:5555 · 뮤뮤 nx_main 폴더"><button class="btn" id="pick-mumu">찾기…</button></div>
   <div id="steps">
     <label class="toggle"><input type="checkbox" data-step="minimi" checked disabled>미니미 (필수 · 2MB)</label>
     <label class="toggle"><input type="checkbox" data-step="sfx" checked disabled>효과음 (필수)</label>
-    <label class="toggle"><input type="checkbox" data-step="standing" checked>스탠딩 SD — 사도 상세 화면 그림 <span class="hint">(기기에 내려받힌 사도만 · 수백 MB · 2~5분)</span></label>
-    <label class="toggle"><input type="checkbox" data-step="voice" checked>보이스 — 로비 대사만 <span class="hint">(약 7,000개 · 5~10분)</span></label>
-    <label class="toggle"><input type="checkbox" id="force">이미 있는 것도 다시 받기 <span class="hint">(끄면 새로 받은 사도·보이스만 추가)</span></label>
-    <label class="toggle"><input type="checkbox" data-step="ingame">인게임 SD — 스탠딩이 없는 사도의 대체용 <span class="hint">(400MB · 선택)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="standing" checked>스탠딩 — 사도 상세 화면의 모습 <span class="hint">(기기에 내려받은 사도만 · 수백 MB · 2~5분)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="voice" checked>음성 — 로비 음성 대사 <span class="hint">(약 7,000개 · 5~10분)</span></label>
+    <label class="toggle"><input type="checkbox" id="force">이미 있는 것도 다시 가져오기 <span class="hint">(끄면 새로 받은 외형·음성만 추가)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="ingame">전투 SD — 전투에서 사용하는 모습 <span class="hint">(400MB · 선택 · 스탠딩이 없는 사도의 대체로도 사용)</span></label>
   </div>
-  <div class="hint" style="margin-top:6px">게임에서 사도 상세 화면을 한 번 열어본 사도만 스탠딩이 기기에 내려받혀 있습니다. 나중에 더 받았으면 "에셋 다시 가져오기"를 하세요 (보이스는 이미 있는 것을 건너뜁니다). 실제 스마트폰은 안드로이드 11 이상에서 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다.</div>
-  <div class="row" style="margin-top:6px"><button class="btn primary" id="start">추출 시작</button><button class="btn danger" id="cancel" disabled>중단</button><span class="hint" id="pyinfo"></span></div>
+  <div class="hint" style="margin-top:6px">게임에서 사도 상세 화면을 한 번 열어 본 사도만 스탠딩이 기기에 내려받아져 있습니다. 나중에 더 받았으면 "게임 데이터 다시 가져오기"를 해 주세요 (음성은 이미 있는 것을 건너뜁니다). 실제 스마트폰은 안드로이드 11 이상에서 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다.</div>
+  <div class="row" style="margin-top:6px"><button class="btn primary" id="start">가져오기 시작</button><button class="btn danger" id="cancel" disabled>중단</button><span class="hint" id="pyinfo"></span></div>
 </div>
 
 <div class="card" id="progress"><h3>진행</h3>
@@ -59,8 +59,8 @@
   <div id="log"></div>
 </div>
 
-<div class="card"><h3>2. 또는 이미 추출해 둔 폴더 사용</h3>
-  <div class="row"><span class="hint" style="flex:1">다른 PC에서 추출했거나 개발용 <code>prototype/assets</code>가 있으면 그 폴더를 지정합니다 (<code>minimi/</code>가 들어 있는 폴더).</span><button class="btn" id="use-folder">폴더 선택…</button><button class="btn" id="open-root">에셋 폴더 열기</button><button class="btn" id="open-log">추출 로그 열기</button></div>
+<div class="card"><h3>2. 또는 이미 가져온 폴더 사용</h3>
+  <div class="row"><span class="hint" style="flex:1">다른 PC에서 가져왔거나 개발용 <code>prototype/assets</code>가 있으면 그 폴더를 지정합니다 (<code>minimi/</code>가 들어 있는 폴더).</span><button class="btn" id="use-folder">폴더 선택…</button><button class="btn" id="open-root">게임 데이터 폴더 열기</button><button class="btn" id="open-log">로그 열기</button></div>
 </div>
 <script src="setup.js"></script>
 </body></html>

@@ -39,11 +39,11 @@
   }
   function render() {
     document.getElementById("menu-title").textContent = KO.skinName(S.skin, { withSkin: false });
-    document.getElementById("menu-sub").textContent = (S.count || 1) > 1 ? `${S.count}명 소환 중` : "사도 데스크";
+    document.getElementById("menu-sub").textContent = (S.count || 1) > 1 ? `사도 ${S.count}명` : "사도 데스크";
     const cur = catalog.skins.find(s => s.name === S.skin), sdA = cur?.sd || {};
-    const MODES = [["minimi", "미니미", true], ["sd", "스탠딩", !!(sdA.standing || sdA.ingame)], ["ingame", "인게임", !!sdA.ingame]];
+    const MODES = [["minimi", "미니미", true], ["sd", "스탠딩", !!(sdA.standing || sdA.ingame)], ["ingame", "전투 SD", !!sdA.ingame]];
     document.getElementById("mode-state").textContent = (MODES.find(([k]) => k === S.mode) || MODES[0])[1];
-    document.getElementById("mode-chips").innerHTML = MODES.map(([k, label, ok]) => `<div class="chip ${S.mode === k ? "on" : ""} ${ok ? "" : "off"}" data-mode="${k}" title="${ok ? "" : (k === "ingame" ? "이 사도는 인게임 SD 데이터가 없음 (에셋 가져오기 → '인게임 SD' 체크)" : "이 사도는 스탠딩 데이터가 없음")}">${label}</div>`).join("");
+    document.getElementById("mode-chips").innerHTML = MODES.map(([k, label, ok]) => `<div class="chip ${S.mode === k ? "on" : ""} ${ok ? "" : "off"}" data-mode="${k}" title="${ok ? "" : (k === "ingame" ? "이 외형은 전투 SD 데이터가 없습니다 (게임 데이터 가져오기 → '전투 SD' 선택)" : "이 외형은 스탠딩 데이터가 없습니다")}">${label}</div>`).join("");
     document.getElementById("skin-cur").textContent = KO.skinName(S.skin);
     document.getElementById("scale-chips").innerHTML = [0.3, 0.4, 0.5, 0.6, 0.8, 1.0].map(v => `<div class="chip ${v === S.scale ? "on" : ""}" data-scale="${v}">${Math.round(v * 100)}%</div>`).join("");
     document.getElementById("mood-chips").innerHTML = MOODS.map(([k, label]) => `<div class="chip ${(S.mood || "") === k ? "on" : ""}" data-mood="${k}">${label}</div>`).join("");

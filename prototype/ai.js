@@ -39,6 +39,7 @@ const DEFAULTS = {
 };
 
 // ---- 키 ----
+const keysEncrypted = () => { try { return safeStorage.isEncryptionAvailable(); } catch { return false; } };   // 설정 창의 "암호화해 저장" 문구는 이 값이 참일 때만
 function encKey(plain) {
   if (!plain) return "";
   try { if (safeStorage.isEncryptionAvailable()) return "enc:" + safeStorage.encryptString(plain).toString("base64"); } catch {}
@@ -516,6 +517,6 @@ function bibleBrief(b, o = {}) {
     !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
-module.exports = { detectMachine, pickOllamaModel, sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags,
+module.exports = { keysEncrypted, detectMachine, pickOllamaModel, sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags,
   // 테스트용 — 스트림 파서와 제공자 함수. 앱 코드는 위의 것만 쓴다
   _test: { stripNoise, partialField, ndjson, sse, chatGemini, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };

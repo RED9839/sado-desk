@@ -32,7 +32,7 @@
   host.on("chat:init", ({ who, prov, history, ready, setup }) => {
     el("who").textContent = who || "사도"; el("prov").textContent = prov || "";
     log.innerHTML = "";
-    if (!ready) { const d = document.createElement("div"); d.className = "setup"; d.innerHTML = setup || "AI 제공자가 설정되지 않았어요. <b>AI 설정…</b>에서 Ollama(무료·로컬)나 API 키를 넣어 주세요."; log.appendChild(d); }
+    if (!ready) { const d = document.createElement("div"); d.className = "setup"; d.innerHTML = setup || "AI 서비스가 설정되지 않았습니다. <b>설정 → AI 대화</b>에서 Ollama(로컬)를 연결하거나 API 키를 저장해 주세요."; log.appendChild(d); }
     for (const m of history || []) add(m.role === "user" ? "user" : "bot", m.text);
     el("status").textContent = ready ? "" : "설정 필요";
     setBusy(false); resize();

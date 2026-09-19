@@ -21,7 +21,7 @@ module.exports = function createSetupWindow(ctx) {
   function openSetup() {
     if (setupWin && !setupWin.isDestroyed()) { setupWin.show(); setupWin.focus(); return; }
     setupWin = new BrowserWindow({
-      width: 720, height: 640, minWidth: 600, minHeight: 480, title: "사도 데스크 — 에셋 가져오기", show: false,
+      width: 720, height: 640, minWidth: 600, minHeight: 480, title: "사도 데스크 — 게임 데이터 가져오기", show: false,
       backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
       webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
     });
@@ -37,10 +37,10 @@ module.exports = function createSetupWindow(ctx) {
   // preload 가 파일 읽기를 허용할 폴더(앱 폴더·에셋 폴더·userData). 동기여야 preload 초기화 때 쓸 수 있다
   ipcMain.on("roots:get", (e) => { e.returnValue = [__dirname, ctx.assetRoot, path.join(app.getPath("userData"), "assets"), ctx.dataRoot].filter(Boolean); });
   ipcMain.handle("assets:status", () => ({ root: ctx.assetRoot, hasAssets: ctx.hasAssets(ctx.assetRoot), userDataRoot: ctx.toSlash(path.join(app.getPath("userData"), "assets")), running: !!extractProc, python: pythonExe().exe, standing: Object.keys(ctx.standing.game).length, ingame: Object.keys(ctx.standing.ingame).length, voice: fs.existsSync(path.join(ctx.assetRoot, "voice", "index.json")), packaged: app.isPackaged }));
-  ipcMain.handle("assets:pick-folder", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "에셋 폴더 선택 (minimi/ 폴더가 들어 있는 곳)" }); return r.canceled ? null : r.filePaths[0]; });
+  ipcMain.handle("assets:pick-folder", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "게임 데이터 폴더 선택 (minimi/ 폴더가 들어 있는 곳)" }); return r.canceled ? null : r.filePaths[0]; });
   ipcMain.handle("assets:pick-mumu", async () => { const r = await dialog.showOpenDialog(setupWin || undefined, { properties: ["openDirectory"], title: "뮤뮤 앱플레이어 설치 폴더 (MuMuManager.exe·adb.exe가 있는 nx_main)" }); return r.canceled ? null : r.filePaths[0]; });
   ipcMain.handle("assets:use-folder", (_e, folder) => {
-    if (!ctx.hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel 이 없어요. 추출된 에셋 폴더(assets)를 골라 주세요." };
+    if (!ctx.hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel이 없습니다. 게임 데이터를 가져온 폴더(assets)를 선택해 주세요." };
     ctx.updateSettings({ assets: { root: ctx.toSlash(folder) } }); ctx.rescanAssets(); ctx.startMascot(); ctx.refreshTray(); return { ok: true, root: ctx.assetRoot };
   });
   ipcMain.handle("assets:scan", () => new Promise((resolve) => {
@@ -64,7 +64,7 @@ module.exports = function createSetupWindow(ctx) {
     if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
     const out = path.join(app.getPath("userData"), "assets");
     try { fs.mkdirSync(out, { recursive: true }); }
-    catch (e) { return { ok: false, error: `에셋 폴더를 만들 수 없어요 (${out}): ${e.message}` }; }
+    catch (e) { return { ok: false, error: `게임 데이터 폴더를 만들 수 없습니다 (${out}): ${e.message}` }; }
     const py = pythonExe(); const script = path.join(toolsDir(), "extract-all.py");
     const args = [...py.args, script, "--out", out, "--json", "--steps", (opt.steps || ["minimi", "sfx", "standing", "ingame", "voice"]).join(",")];
     if (opt.mumu) args.push("--mumu", opt.mumu);

@@ -440,7 +440,7 @@ const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).b
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
 const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
 // 설정창용
-ipcMain.handle("ai:status", () => Ai.status(settings.global.ai));
+ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));   // 키가 실제로 암호화돼 저장되는지 — 설정 창이 사실대로 적는다
 ipcMain.handle("ai:set-key", (_e, provider, key) => { if (!["gemini", "anthropic", "openai"].includes(provider)) return false; updateSettings({ ai: { keys: { [provider]: Ai.encKey(String(key || "").trim()) } } }); return true; });
 ipcMain.handle("ai:test", async (_e, provider) => {
   const prof = chatProfile(settings.characters[0].id); let out = "";
@@ -631,21 +631,21 @@ require("./test-hooks.js")({ get chatFor() { return CH.for; }, get mascotWin() {
 // ---- 트레이 ----
 function buildTray() {
   const items = [
-    ...settings.characters.map(c => ({ label: `${koSkin(c.skin)} (${c.mode === "sd" ? "SD" : c.mode === "ingame" ? "인게임" : "미니미"})`, submenu: [
+    ...settings.characters.map(c => ({ label: `${koSkin(c.skin)} (${c.mode === "sd" ? "스탠딩" : c.mode === "ingame" ? "전투 SD" : "미니미"})`, submenu: [
       { label: "설정...", click: () => openSettings("character", c.id) },
       { label: "다시 등장", click: () => sendMascot(c.id, "respawn") },
       { label: "보내기", enabled: settings.characters.length > 1, click: () => removeCharacter(c.id) },
     ] })),
-    { label: "하나 더 부르기", click: () => addCharacter() },
+    { label: "사도 추가", click: () => addCharacter() },
     { type: "separator" },
     { label: news && news.unread ? `새 소식 ${news.unread}개 보기` : "새 소식 (없음)", enabled: !!(news && news.items.length), click: () => { ipcMain.emit("news:show"); } },
     { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
     { type: "separator" },
-    { label: "말 걸기 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
+    { label: "AI 대화 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
     ...(UP.info ? [{ label: `새 버전 ${UP.info.tag} 받기...`, click: () => shell.openExternal(UP.info.url) }] : []),
     { label: "설정...", click: () => openSettings() },
-    { label: hasAssets(ASSET_ROOT) ? "에셋 다시 가져오기..." : "에셋 가져오기...", click: () => openSetup() },
-    { label: "사운드 음소거", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
+    { label: hasAssets(ASSET_ROOT) ? "게임 데이터 다시 가져오기..." : "게임 데이터 가져오기...", click: () => openSetup() },
+    { label: "소리 끄기", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },
     { type: "separator" },
     { label: "종료", click: () => app.quit() },
   ];

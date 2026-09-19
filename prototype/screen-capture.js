@@ -35,11 +35,11 @@ module.exports = function createScreenCapture(ctx) {
     // 고른 창만 보내기 — 허용 목록에 있는 창 중 가장 앞의 것. 하나도 안 열려 있으면 화면을 보내지 않는다
     if ((ai.screenScope || "windows") === "windows") {
       const allow = (ai.screenWindows || []).map(x => String(x).toLowerCase());
-      if (!allow.length) throw new Error("사도가 볼 창을 아직 안 고르셨어요. 설정 → AI 대화 → '화면 보기'에서 보여 줄 창을 켜 주세요.");
+      if (!allow.length) throw new Error("캡처를 허용할 앱을 아직 선택하지 않았습니다. 설정 → AI 대화 → 화면 보기에서 앱을 선택해 주세요.");
       const own = ownWindowIds();
       const wins = await desktopCapturer.getSources({ types: ["window"], thumbnailSize: { width: maxW, height: maxW } });
       const hit = wins.find(w => !own.has(w.id) && w.name && !/^사도 데스크/.test(w.name) && allow.includes(appLabelOf(w.name).toLowerCase()));
-      if (!hit) throw new Error(`고르신 창이 지금 하나도 안 열려 있어요 (${(ai.screenWindows || []).join(", ")}).`);
+      if (!hit) throw new Error(`허용한 앱의 창이 지금 하나도 열려 있지 않습니다 (${(ai.screenWindows || []).join(", ")}).`);
       if (hit.thumbnail.isEmpty()) throw new Error("그 창을 캡처하지 못했어요 (최소화돼 있으면 안 보입니다)");
       return { mime: "image/jpeg", data: hit.thumbnail.toJPEG(60).toString("base64"), window: appLabelOf(hit.name) };
     }
