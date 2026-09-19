@@ -21,6 +21,8 @@
   .card.warn{background:#2c2620;border-color:#5a4a2e;border-left:3px solid #d8a33a}
   .card.warn h3{color:#e7bf6a}
   .card.warn .hint{color:#cfc4ae}
+  .card.dim{opacity:.55}
+  .card.dim:hover,.card.dim:focus-within{opacity:1}
   .card.warn ul{margin:6px 0 0;padding-left:18px}
   .card.warn li{margin:3px 0;color:#cfc4ae;font-size:12px;line-height:1.6}
   .card h3{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.02em;text-transform:none}
@@ -43,6 +45,9 @@
   .toggle .hint{grid-column:2;display:block;margin-top:1px}
   /* 형태 같은 선택 카드 */
   .opts{display:flex;flex-direction:column;gap:8px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#34343f;color:var(--text);margin-right:6px}
+  .badge.warn{background:#5a4a2a;color:#ffd98a}
+  #mode-note:not(:empty){margin-top:8px}
   .step{padding:8px 0;border-top:1px solid var(--line)}
   .step:first-of-type{border-top:0}
   .step-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -84,10 +89,10 @@
   .tile:hover{border-color:#55556a}
   .tile.on{border-color:var(--accent)}
   .tile canvas{width:72px;height:96px;display:block;margin:0 auto}
-  .tile .nm{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+  .tile .nm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
   .tile .vc{position:absolute;top:4px;right:6px;font-size:11px;color:var(--muted)}
   .tile .vc.zero{color:var(--danger)}
-  .tile .q{position:absolute;top:22px;left:6px;font-size:10px;color:#f0c060}
+  .tile .q{position:absolute;top:22px;left:6px;font-size:11px;color:#f0c060}
   .tile .sd{position:absolute;top:5px;left:6px;font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff}
   .tile .sd.st{top:21px;background:#5a4a8a}
   .tag{font-size:9px;padding:0 4px;border-radius:3px;background:#3e5a9a;color:#dfe8ff;vertical-align:middle}
@@ -104,7 +109,8 @@
   #charbar .chip{padding:5px 11px;border-radius:16px;background:#34343f;cursor:pointer;font-size:12px;border:1px solid transparent;display:flex;align-items:center;gap:6px}
   #charbar .chip:hover{filter:brightness(1.15)}
   #charbar .chip.on{background:var(--accent);color:#fff}
-  #charbar .chip .n{opacity:.6;font-size:10px}
+  #charbar .chip .n{opacity:.7;font-size:11px}
+  button.btn:focus-visible,.chip:focus-visible,.seg label:focus-within span,nav button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   #charbar .chip.add{background:transparent;border-color:var(--line2);color:var(--muted)}
   #charbar .chip.rm{background:transparent;border-color:var(--line2);color:var(--danger);margin-left:auto}
   #charbar .note{flex-basis:100%;color:var(--muted2);font-size:11px;margin:2px 0 0 2px}
@@ -266,13 +272,14 @@
       <div class="hint">사도 우클릭 → <b>AI 대화</b> 또는 <code>Ctrl+Shift+Space</code>로 대화창을 엽니다. 사도별 말투 프로필(호칭·어미·감탄사)을 AI에 전달해 그 사도처럼 답하고, 답변의 감정에 맞춰 표정과 음성을 재생합니다. 대화 내용은 이 PC와 선택한 AI 서비스에만 전송됩니다.</div>
       <div class="row" style="margin-top:8px"><label>AI 서비스</label>
         <select data-s="ai.provider">
-          <option value="auto">자동 (Gemini → Anthropic → Ollama → OpenAI 호환 순으로 사용 가능한 것)</option>
+          <option value="auto">자동 선택</option>
           <option value="ollama">Ollama — 내 PC에서 실행 (요금 없음 · 오프라인)</option>
           <option value="gemini">Google Gemini — API 키 (무료 등급 있음)</option>
           <option value="anthropic">Anthropic Claude — API 키 (유료)</option>
           <option value="openai">OpenAI 호환 (Groq · OpenRouter · LM Studio …)</option>
         </select></div>
-      <div class="hint" id="ai-resolved" style="margin:-2px 0 6px"></div>
+      <div class="hint" id="ai-order" style="margin:-2px 0 2px"></div>
+      <div class="hint" id="ai-resolved" style="margin:0 0 6px"></div>
       <div class="row"><button class="btn" id="ai-test">연결 확인</button><span class="hint" id="ai-test-out"></span></div>
     </div>
     <div class="card warn" style="padding:10px 16px">
