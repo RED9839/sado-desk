@@ -48,18 +48,23 @@
     const bulk = bulkNow();
     if (bulkEl) { bulkEl.checked = bulk; document.getElementById("bulk-wrap").classList.toggle("on", bulk); }
     const note = document.getElementById("charbar-note"); if (!note) return;
-    note.textContent = bulk
-      ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 적용됩니다 (외형은 각자 그대로).`
-      : "외형·행동·크기·불투명도는 선택한 사도에만 적용됩니다. 소리·화면 설정은 모든 사도에 공통입니다.";
-    const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 ? "" : "none";
+    note.textContent = COMMON_TABS.has(curTab) ? "이 탭의 설정은 모든 사도에 공통으로 적용됩니다."
+      : bulk ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 적용됩니다 (외형은 각자 그대로).`
+      : curTab === "display" ? "크기·불투명도는 선택한 사도에만, 아래 '전체 공통'은 모든 사도에 적용됩니다."
+      : "이 탭의 설정은 선택한 사도에만 적용됩니다. 여러 사도를 함께 바꾸려면 '모든 사도에 적용'을 켜 주세요.";
+    const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 && !COMMON_TABS.has(curTab) ? "" : "none";
   }
 
   host.on("select", (id) => selectChar(id));
 
   // ---- 탭 ----
+  const COMMON_TABS = new Set(["sound", "news", "ai", "about"]);   // 모든 사도 공통인 탭 — 사도 칩을 흐리게, 일괄 적용은 숨김
+  let curTab = "character";
   const showTab = (name) => {
+    curTab = name;
     for (const b of document.querySelectorAll("nav button")) b.classList.toggle("on", b.dataset.tab === name);
     for (const s of document.querySelectorAll("main section")) s.classList.toggle("on", s.id === "tab-" + name);
+    document.getElementById("charbar").classList.toggle("common", COMMON_TABS.has(name)); updateBulkNote();
     if (name === "ai") refreshAi(); else if (name === "news") renderNews(); // 브로드캐스트 때는 보이는 탭만 새로 그리므로, 탭을 열 때 한 번은 채워야 한다
   };
   for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
@@ -93,6 +98,8 @@
     if (document.querySelector("#tab-ai.on")) refreshAi(); // 설정이 바뀔 때마다(슬라이더 한 칸에도) Ollama 에 물어봤다 — 보이는 탭일 때만
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
+    { const MODE_DESC = { minimi: "게임 로비의 작은 모습입니다. 폴짝 뛰며 이동하고 모든 외형을 지원합니다.", sd: "사도 상세 화면의 모습입니다. 표정과 교감 동작을 지원하며, 이동할 때는 미니미로 전환됩니다.", ingame: "전투에서 사용하는 모습입니다. 표정·교감 동작은 없고 별도의 전투 SD 데이터가 필요합니다." };
+      const md = document.getElementById("mode-desc"); if (md) md.textContent = MODE_DESC[S.mode] || ""; }
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
       mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 전투 SD 데이터가 없어 스탠딩으로 표시됩니다 (게임 데이터 가져오기 → '전투 SD' 선택)` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·전투 SD 데이터가 모두 없어 미니미로 표시됩니다`)
         : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 전투 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·전투 SD 데이터가 모두 없어 미니미로 표시됩니다`; }
