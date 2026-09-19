@@ -16,7 +16,15 @@ module.exports = function createSelfTalk(ctx) {
   const SELF_TAGS = ["morning", "day", "evening", "night", "late", "weekend", "thrown", "petted", "poked", "idle"];
   const lastEvent = new Map(); // 인스턴스 id → { kind, at } 렌더러가 알려 준 마지막 교감 (던져짐·쓰다듬음·꿀밤)
   let lastTouchAt = Date.now(); // 마지막으로 손이 닿은 시각 — 30분 넘으면 "오래 가만히 둠"
-  ipcMain.on("mascot:event", (e, id, kind) => { const me = typeof id === "string" ? id : ctx.instanceOf(e.sender); if (!me || typeof kind !== "string") return; lastEvent.set(me, { kind, at: Date.now() }); lastTouchAt = Date.now(); });
+  // 교감 직후 그 상황의 대본 한 줄 — 늘은 아니고(음성 반응이 먼저다) 35%, 사도마다 45초에 한 번. 나머지는 90초 동안 후보 가중치로 남는다
+  const lastReactAt = new Map();
+  ipcMain.on("mascot:event", (e, id, kind) => {
+    const me = typeof id === "string" ? id : ctx.instanceOf(e.sender); if (!me || typeof kind !== "string") return;
+    lastEvent.set(me, { kind, at: Date.now() }); lastTouchAt = Date.now();
+    if (!SELF_TAGS.includes(kind) || Math.random() >= 0.35 || Date.now() - (lastReactAt.get(me) || 0) < 45000) return;
+    lastReactAt.set(me, Date.now());
+    setTimeout(() => { try { saySelfTalk(me, { only: kind }); } catch (err) { console.warn("selftalk react", err.message); } }, 1400);   // 착지·쓰다듬기 음성이 끝날 즈음
+  });
   function selfCtx(id) {
     const now = new Date(), h = now.getHours(), tags = new Set();
     tags.add(h < 6 ? "late" : h < 11 ? "morning" : h < 17 ? "day" : h < 21 ? "evening" : "night");
@@ -29,12 +37,13 @@ module.exports = function createSelfTalk(ctx) {
   // 기본 줄과 같은 못에 넣되 가중치를 줘서 코스튬을 입은 티가 나게 한다.
   // skinOnly — 말투가 바뀌는 코스튬(한가닥 네르의 사투리 반말, 체육관 실비아의 어린 반말): 기본 줄을 섞으면 평소 말투가 새어
   // 나오므로 코스튬 줄만 쓴다 (talk-ko 의 그 코스튬에 style 이 따로 적힌 경우, 코드 리뷰)
-  function pickSelfTalk(key, id, skinKey, skinOnly = false) {
+  function pickSelfTalk(key, id, skinKey, skinOnly = false, only = "") {
     const mine = selfTalk[key] || [], skin = (skinKey && skinTalk[skinKey]) || [];
-    const all = skin.length ? (skinOnly ? skin : [...mine, ...skin]) : mine;
+    let all = skin.length ? (skinOnly ? skin : [...mine, ...skin]) : mine;
+    if (only) all = all.filter(x => x.w === only);   // 교감 직후: 그 상황 줄만 (없으면 말하지 않는다)
     if (!all.length) return null;
     const ctx = id ? selfCtx(id) : new Set();
-    const fits = all.filter(x => !x.w || ctx.has(x.w));   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
+    const fits = all.filter(x => !x.w || ctx.has(x.w) || x.w === only);   // 지금 상황에 안 맞는 꼬리표 줄은 뺀다
     const said = selfTalkSaid.get(key) || [];
     let fresh = fits.filter(x => !said.includes(x.t));
     if (!fresh.length) fresh = fits.length ? fits : all;      // 다 돌았으면 처음부터
@@ -48,7 +57,7 @@ module.exports = function createSelfTalk(ctx) {
   // 말풍선 + 모션. 대본이 없으면 false 를 돌려주니 부르는 쪽이 다른 수를 쓸 수 있다
   function saySelfTalk(id, opts = {}) {
     const prof = ctx.chatProfile(id); if (!prof) return false;
-    const line = pickSelfTalk(prof.key, id, prof.skinKey, !!(prof.skin && prof.styleBase && prof.style !== prof.styleBase)); if (!line) return false;
+    const line = pickSelfTalk(prof.key, id, prof.skinKey, !!(prof.skin && prof.styleBase && prof.style !== prof.styleBase), opts.only || ""); if (!line) return false;
     const ttl = ctx.bubbleMs(line.t);
     const who = prof.skin ? `${prof.ko} · ${prof.skin}` : prof.ko;
     ctx.showBubble(id, { items: [], text: { head: "", body: line.t, tail: "", who }, ttl });

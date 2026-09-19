@@ -247,6 +247,21 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }
 
+  // --react-test — 교감 직후 그 상황의 대본만 나오는지(only), 없는 상황이면 말하지 않는지. 에셋 필요(로컬)
+  if (argHas("--react-test")) setTimeout(() => {
+    const fails = [], ok = (cond, msg) => { console.log(`REACTTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const a = ctx.settings.characters[0].id, prof = ctx.chatProfile(a), lines = ctx.selfTalk[prof.key] || [];
+    for (const kind of ["petted", "poked", "thrown"]) {
+      const said = new Set();
+      for (let i = 0; i < 12; i++) { const r = ctx.saySelfTalk(a, { only: kind, quiet: true }); if (!r) break; const t = (ctx.selfTalkSaid.get(prof.key) || []).slice(-1)[0]; said.add(t); }
+      const tagged = new Set(lines.filter(x => x.w === kind).map(x => x.t));
+      ok(said.size > 0 && [...said].every(t => tagged.has(t)), `${kind}: ${said.size}줄 말함, 전부 [${kind}] 꼬리표 (${[...said][0] || "-"})`);
+    }
+    ok(ctx.saySelfTalk(a, { only: "nosuchtag", quiet: true }) === false, "없는 상황이면 말하지 않는다");
+    console.log(`REACTTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {
