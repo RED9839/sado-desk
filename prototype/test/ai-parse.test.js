@@ -124,3 +124,15 @@ test("updater.newerThan — 태그 비교 (v 접두어·세 자리·자릿수 �
   assert.equal(UP.newerThan("v1.0", "0.99.99"), true);
   assert.deepEqual(UP.semver("v1.2"), [1, 2]);
 });
+
+test("explainError — 제공자 오류를 할 일이 담긴 한 줄로, 원문은 JSON 덤프를 뗀 짧은 것만", () => {
+  const E = (m) => Ai.explainError(new Error(m));
+  assert.match(E('Gemini 400: API key not valid. Please pass a valid API key. [{"@type":"x"}]'), /^API 키가 올바르지 않거나.*\(Gemini 400: API key not valid\. Please pass a valid API key\)$/);
+  assert.match(E("Gemini 429: You exceeded your current quota"), /^사용 한도를 넘었거나/);
+  assert.match(E("Ollama가 실행 중이 아니에요"), /^Ollama에 연결할 수 없습니다/);
+  assert.match(E("fetch failed"), /^AI 서비스에 연결할 수 없습니다/);
+  assert.match(E('https://api.groq.com/openai/v1 401: {"error":{"message":"Invalid API Key"}}'), /^API 키가 올바르지 않거나/);
+  assert.match(E('Ollama 404: model "x" not found'), /^모델을 찾을 수 없습니다/);
+  assert.match(E("Gemini 503: Service Unavailable"), /^AI 서비스가 일시적으로/);
+  assert.match(E("이상한 오류"), /^오류: 이상한 오류$/);
+});
