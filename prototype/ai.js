@@ -45,7 +45,8 @@ function explainError(e) {
   const short = m.replace(/\s+/g, " ").split(/[\[{]/)[0].trim().replace(/[:,.]$/, "").slice(0, 100);   // JSON 덤프는 뗀다 — 상태 코드와 첫 문장만
   let hint = null;
   if (/Ollama가 실행 중이 아니|Ollama.*(fetch failed|ECONNREFUSED)|ECONNREFUSED[^\n]*11434/i.test(m)) hint = "Ollama에 연결할 수 없습니다. 설치·실행 상태와 서버 주소를 확인해 주세요.";
-  else if (/fetch failed|ENOTFOUND|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ETIMEDOUT|UND_ERR/i.test(m)) hint = "AI 서비스에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.";
+  else if (/^terminated$|other side closed|socket hang up|aborted|ECONNRESET|stream.*(closed|ended)/i.test(m)) hint = "AI 서비스와의 연결이 중간에 끊겼습니다. 다시 말을 걸어 주세요.";
+  else if (/fetch failed|ENOTFOUND|ECONNREFUSED|EAI_AGAIN|ETIMEDOUT|UND_ERR/i.test(m)) hint = "AI 서비스에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.";
   else if (/\b(400|401|403)\b/.test(m) && /api key|api_key|invalid.*key|authentication|unauthorized|permission|credential|x-api-key|not valid/i.test(m)) hint = "API 키가 올바르지 않거나 권한이 없습니다. 설정 → AI 대화에서 키를 다시 저장해 주세요.";
   else if (/\b429\b|quota|rate.?limit|RESOURCE_EXHAUSTED|overloaded|insufficient_quota|credit/i.test(m)) hint = "사용 한도를 넘었거나 서버가 붐빕니다. 잠시 뒤 다시 시도하거나 다른 모델·서비스를 골라 주세요.";
   else if (/\b(500|502|503|504)\b/.test(m)) hint = "AI 서비스가 일시적으로 응답하지 않습니다. 잠시 뒤 다시 시도해 주세요.";

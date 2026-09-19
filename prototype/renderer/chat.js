@@ -44,7 +44,7 @@
   });
   host.on("chat:token", ({ delta }) => { if (!cur) cur = add("bot", "", "typing"); cur.textContent += delta; log.scrollTop = log.scrollHeight; if (busy) setBusy(true); }); // 조각이 오는 동안은 감시 타이머를 다시 센다
   host.on("chat:done", ({ text, error }) => {
-    if (error) { if (cur) cur.remove(); add("bot", error, "err"); }
+    if (error) { if (cur && cur.textContent) { cur.classList.remove("typing"); cur.classList.add("cut"); cur.textContent += " …"; } else if (cur) cur.remove(); add("bot", error, "err"); }   // 오다 끊긴 답은 지우지 않고 남긴다 — 읽던 글이 사라지면 더 당황스럽다
     else if (cur) { cur.classList.remove("typing"); cur.textContent = text; }
     cur = null; setBusy(false); resize();
   });

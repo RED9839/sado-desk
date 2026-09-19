@@ -136,3 +136,6 @@ test("explainError — 제공자 오류를 할 일이 담긴 한 줄로, 원문�
   assert.match(E("Gemini 503: Service Unavailable"), /^AI 서비스가 일시적으로/);
   assert.match(E("이상한 오류"), /^오류: 이상한 오류$/);
 });
+test("explainError — 스트림이 중간에 끊긴 것(terminated)은 연결 끊김으로", () => {
+  assert.match(Ai.explainError(new Error("terminated")), /^AI 서비스와의 연결이 중간에 끊겼습니다/);
+});
