@@ -21,8 +21,11 @@
   .card.warn{background:#2c2620;border-color:#5a4a2e;border-left:3px solid #d8a33a}
   .card.warn h3{color:#e7bf6a}
   .card.warn .hint{color:#cfc4ae}
-  .card.dim{opacity:.55}
-  .card.dim:hover,.card.dim:focus-within{opacity:1}
+  details.fold{margin-bottom:14px}
+  details.fold > summary{cursor:pointer;color:var(--muted);font-size:12.5px;padding:8px 12px;border:1px dashed var(--line2);border-radius:10px;list-style:none}
+  details.fold > summary::before{content:"▸ "}
+  details.fold[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:8px}
+  details.fold[open] > summary::before{content:"▾ "}
   .card.warn ul{margin:6px 0 0;padding-left:18px}
   .card.warn li{margin:3px 0;color:#cfc4ae;font-size:12px;line-height:1.6}
   .card h3{margin:0 0 10px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.02em;text-transform:none}
@@ -273,10 +276,10 @@
       <div class="row" style="margin-top:8px"><label>AI 서비스</label>
         <select data-s="ai.provider">
           <option value="auto">자동 선택</option>
-          <option value="ollama">Ollama — 내 PC에서 실행 (요금 없음 · 오프라인)</option>
-          <option value="gemini">Google Gemini — API 키 (무료 등급 있음)</option>
-          <option value="anthropic">Anthropic Claude — API 키 (유료)</option>
-          <option value="openai">OpenAI 호환 (Groq · OpenRouter · LM Studio …)</option>
+          <option value="ollama">Ollama — 로컬</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="anthropic">Anthropic Claude</option>
+          <option value="openai">OpenAI 호환</option>
         </select></div>
       <div class="hint" id="ai-order" style="margin:-2px 0 2px"></div>
       <div class="hint" id="ai-resolved" style="margin:0 0 6px"></div>
@@ -294,7 +297,7 @@
     <div class="card"><h3>Google Gemini</h3>
       <div class="hint"><b>설치가 필요 없어 가장 간단합니다.</b> <a href="#" data-ai-url="gemini">Google AI Studio</a>에 구글 계정으로 로그인해 "Create API key"를 누르고, 발급된 키를 아래에 붙여 넣어 저장해 주세요. 무료 등급의 한도는 모델과 시기에 따라 다르며 Google AI Studio에서 확인할 수 있습니다.</div>
       <div class="row" style="margin-top:6px"><label>API 키</label><input type="password" id="ai-key-gemini" placeholder="AIza…" style="width:260px"><button class="btn" data-savekey="gemini">저장</button><span class="hint" id="ai-key-gemini-state"></span></div>
-      <div class="row"><label>모델</label><input type="text" data-s="ai.gemini.model" style="width:220px"><span class="hint">gemini-flash-latest(기본) · gemini-flash-lite-latest 등</span></div>
+      <div class="row"><label>모델<span class="hint">gemini-flash-latest(기본) · gemini-flash-lite-latest 등</span></label><input type="text" data-s="ai.gemini.model" style="width:220px"></div>
     </div>
     <div class="card"><h3>Ollama (로컬)</h3>
       <div class="hint">내 PC에서 실행되는 AI입니다. API 키와 요금이 없고 대화가 PC 밖으로 나가지 않습니다. 대신 <b>모델 파일 5GB 안팎을 내려받아야 하고</b>, 그래픽카드가 없으면 답변에 몇 초씩 걸립니다. 잘 모르겠다면 설치가 필요 없는 위의 Gemini를 권장합니다.</div>
@@ -310,7 +313,7 @@
       <div class="row" style="margin-top:6px"><label style="flex:none;width:60px">상태</label><span id="ai-ollama-state" class="hint" style="flex:1;min-width:0;line-height:1.5">확인 중…</span></div>
       <div class="row"><label style="flex:none;width:60px">내 PC</label><span id="ai-ollama-spec" class="hint" style="flex:1;min-width:0;line-height:1.5">확인 중…</span><button class="btn" id="ai-fit" style="display:none">내 PC에 맞추기</button></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
-      <div class="row"><label>서버 주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
+      <div class="row"><label>서버 주소<span class="hint">기본 http://localhost:11434</span></label><input type="text" data-s="ai.ollama.url" style="width:220px"></div>
       <div class="row"><label>모델 메모리 유지 시간<span class="hint">답변 뒤 이 시간 동안 모델이 그래픽카드 메모리에 남아 있습니다. 7.8b 모델은 약 5GB를 차지합니다. <b>게임을 하신다면 '답변할 때만'</b>을 권장합니다 — 답변이 끝나면 바로 비우고, 대신 부를 때마다 1.7초쯤 더 걸립니다.</span></label><select data-s="ai.ollama.keepAlive"><option value="5m">5분 (기본)</option><option value="30m">30분</option><option value="0">답변할 때만 (게임할 때)</option><option value="-1">계속 유지</option></select></div>
     </div>
     <div class="card"><h3>Anthropic Claude (유료)</h3>

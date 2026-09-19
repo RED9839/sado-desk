@@ -31,11 +31,16 @@
 
   // ---- 캐릭터(인스턴스) 선택 바 ----
   const chipsEl = document.getElementById("char-chips");
+  // 고른 형태(mode)와 실제로 그려지는 형태 — 스킨에 그 데이터가 없으면 다른 것으로 대체된다. 본문 배지와 상단 칩이 같은 계산을 쓴다
+  const MODE_NAME = { minimi: "미니미", sd: "스탠딩", ingame: "전투 SD" };
+  function shownMode(skin, mode) { const a = (catalog.skins.find(s => s.name === skin) || {}).sd || {}; return mode === "ingame" ? (a.ingame ? "ingame" : a.standing ? "sd" : "minimi") : mode === "sd" ? (a.standing ? "sd" : a.ingame ? "ingame" : "minimi") : "minimi"; }
   function renderCharBar() {
-    chipsEl.innerHTML = FULL.characters.map((c, i) => `<span class="chip ${c.id === cur ? "on" : ""}" data-char="${c.id}"><span class="n">${i + 1}</span>${KO.skinName(c.skin, { withSkin: false })}${c.mode === "sd" ? " · 스탠딩" : ""}</span>`).join("");
+    chipsEl.innerHTML = FULL.characters.map((c, i) => { const shown = shownMode(c.skin, c.mode), tag = c.mode === "minimi" && shown === "minimi" ? "" : shown === c.mode ? ` · ${MODE_NAME[c.mode]}` : ` · <s>${MODE_NAME[c.mode]}</s>→${MODE_NAME[shown]}`;
+      return `<span class="chip ${c.id === cur ? "on" : ""}" data-char="${c.id}" tabindex="0" role="button" title="${shown === c.mode ? "" : `${MODE_NAME[c.mode]} 데이터가 없어 ${MODE_NAME[shown]}로 표시 중`}"><span class="n">${i + 1}</span>${KO.skinName(c.skin, { withSkin: false })}${tag}</span>`; }).join("");
     const rm = document.getElementById("char-remove"); if (FULL.characters.length > 1) rm.removeAttribute("disabled"); else rm.setAttribute("disabled", "");
   }
   chipsEl.addEventListener("click", (e) => { const t = e.target.closest("[data-char]"); if (!t) return; selectChar(t.dataset.char); });
+  chipsEl.addEventListener("keydown", (e) => { if (e.key !== "Enter" && e.key !== " ") return; const t = e.target.closest("[data-char]"); if (!t) return; e.preventDefault(); selectChar(t.dataset.char); });
   document.getElementById("char-add").addEventListener("click", () => host.addCharacter(cur));
   document.getElementById("char-remove").addEventListener("click", () => { if (FULL.characters.length > 1) host.removeCharacter(cur); });
   function selectChar(id) { if (!charOf(id)) return; cur = id; S = view(); renderControls(); markCurrent(); }
@@ -102,8 +107,7 @@
       const md = document.getElementById("mode-desc"); if (md) md.textContent = MODE_DESC[S.mode] || ""; }
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
       // 고른 형태와 실제로 그려지는 형태가 다르면 배지로 분명히 — "선택이 안 먹었다" 로 느끼지 않게 (UI 리뷰)
-      const NAME = { minimi: "미니미", sd: "스탠딩", ingame: "전투 SD" };
-      const shown = S.mode === "ingame" ? (a.ingame ? "ingame" : a.standing ? "sd" : "minimi") : S.mode === "sd" ? (a.standing ? "sd" : a.ingame ? "ingame" : "minimi") : "minimi";
+      const NAME = MODE_NAME, shown = shownMode(S.skin, S.mode);
       const missing = S.mode === "ingame" && !a.ingame ? "전투 SD 데이터 없음 (게임 데이터 가져오기 → '전투 SD' 선택)" : S.mode === "sd" && !a.standing ? "스탠딩 데이터 없음 (게임에서 사도 상세 화면을 한 번 열어 본 뒤 다시 가져오기)" : "";
       mn.innerHTML = shown === S.mode ? "" : `<span class="badge warn">현재 표시: ${NAME[shown]}</span> ${KO.skinName(S.skin)}은(는) ${missing}`; }
     const nv = document.getElementById("nav-ver"); if (nv) nv.textContent = "v" + (catalog.version || "");
@@ -239,14 +243,23 @@
       document.getElementById("ai-resolved").textContent = !st.resolved ? "→ 사용할 수 있는 AI 서비스가 없습니다. 아래에서 하나를 준비해 주세요."
         : ready ? `→ 현재 사용: ${names[st.resolved]}` : `→ ${names[st.resolved]}을(를) 골랐지만 아직 준비되지 않았습니다. 아래 카드에서 ${st.resolved === "ollama" ? "설치·모델 내려받기를" : "API 키 저장을"} 진행해 주세요.`;
       { const prov = getPath(FULL.global, "ai.provider") || "auto", order = document.getElementById("ai-order");
-        if (order) order.textContent = prov === "auto" ? "자동 선택: Gemini → Anthropic → Ollama → OpenAI 호환 순으로, 준비된 첫 서비스를 씁니다." : "";
-        // 고른 서비스의 카드를 맨 앞으로, 나머지는 흐리게 — 서비스별 설정이 넷이라 길었다
+        const DESC = { auto: "자동 선택: Gemini → Anthropic → Ollama → OpenAI 호환 순으로, 준비된 첫 서비스를 씁니다.", ollama: "내 PC에서 실행합니다. API 키와 요금이 없고 대화가 PC 밖으로 나가지 않습니다.", gemini: "Google API 키가 필요합니다. 무료 등급이 있습니다.", anthropic: "Anthropic API 키가 필요합니다 (유료). 말투 재현 측정에서 가장 높았습니다.", openai: "Groq·OpenRouter·LM Studio 등 /v1/chat/completions 를 제공하는 서비스를 연결합니다." };
+        if (order) order.textContent = DESC[prov] || "";
+        // 고른 서비스의 카드만 펼치고 나머지는 '다른 서비스 설정' 로 접는다 — 흐리게 두면 못 쓰는 것처럼 보였다(UI 리뷰)
         const CARD = { gemini: "Google Gemini", ollama: "Ollama", anthropic: "Anthropic", openai: "OpenAI" };
-        const cards = [...document.querySelectorAll("#tab-ai .card")].filter(c => Object.values(CARD).some(t => (c.querySelector("h3") || {}).textContent?.startsWith(t)));
-        const anchor = cards[0] && cards[0].previousElementSibling;
-        for (const c of cards) c.classList.toggle("dim", prov !== "auto" && !(c.querySelector("h3").textContent.startsWith(CARD[prov] || "")));
-        const first = cards.find(c => c.querySelector("h3").textContent.startsWith(CARD[prov] || "\u0000"));
-        if (first && anchor && anchor.nextElementSibling !== first) anchor.after(first); }
+        let fold = document.getElementById("ai-others");
+        if (!fold) { fold = document.createElement("details"); fold.id = "ai-others"; fold.className = "fold"; fold.innerHTML = "<summary>다른 서비스 설정</summary>"; }
+        const isCard = c => Object.values(CARD).some(t => ((c.querySelector("h3") || {}).textContent || "").startsWith(t));
+        const cards = [...document.querySelectorAll("#tab-ai > .card, #tab-ai #ai-others > .card")].filter(isCard);
+        const anchor = document.querySelector("#tab-ai .card.warn");
+        if (prov === "auto") { for (const c of [...cards].reverse()) anchor.after(c); if (fold.parentNode) fold.remove(); }   // after 는 앞에 끼우므로 역순으로 넣어 원래 순서
+        else {
+          const mine = cards.find(c => c.querySelector("h3").textContent.startsWith(CARD[prov])), others = cards.filter(c => c !== mine);
+          if (mine) anchor.after(mine);
+          for (const c of others) fold.appendChild(c);
+          fold.querySelector("summary").textContent = `다른 서비스 설정 (${others.map(c => c.querySelector("h3").textContent.split(" (")[0]).join(" · ")})`;
+          (mine || anchor).after(fold);
+        } }
       { const enc = document.getElementById("ai-key-enc"); if (enc) enc.textContent = st.keysEncrypted === false ? "이 PC에서는 운영체제 암호화를 사용할 수 없어 키를 암호화하지 않은 상태로 저장합니다." : st.keysEncrypted ? "키는 Windows 계정에 묶인 암호화(DPAPI)로 저장합니다." : ""; }
       const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "Ollama에 연결할 수 없습니다. 설치·실행 상태와 서버 주소를 확인해 주세요." : o.hasModel ? `연결됨 · 모델 ${o.models.length}개 설치됨` : `연결됨 · 모델 없음 → '내려받기'를 눌러 주세요 (설치된 모델: ${o.models.join(", ") || "-"})`;
       // ①②③ 단계 표시 — Ollama 가 뭔지 모르는 사람이 지금 어디까지 왔는지 보게. 끝난 단계는 ✓, 지금 할 단계는 →
