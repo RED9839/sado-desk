@@ -22,14 +22,14 @@
     const base = heroName(hero);
     if (!withSkin || !skinNo) return base;
     const sk = names.skins[hero]?.[skinNo];
-    return `${base} · ${sk || "스킨 " + skinNo}`;
+    return `${base} · ${sk || "사복 " + skinNo}`;
   }
-  const skinTitle = (skinName) => { const { hero, skinNo } = parse(skinName); return skinNo ? (names.skins[hero]?.[skinNo] || `스킨 ${skinNo}`) : names.defaultSkin; };
+  const skinTitle = (skinName) => { const { hero, skinNo } = parse(skinName); return skinNo ? (names.skins[hero]?.[skinNo] || `사복 ${skinNo}`) : names.defaultSkin; };
   // 검색용: 영문 원본 + 한글 이름 + 스킨 이름
   const searchText = (skinName) => `${skinName} ${skinTitle(skinName)} ${heroName(parse(skinName).hero)}`.toLowerCase();
 
   // 애니메이션: Idle2_3 → "대기 2-3", Jump4 → "점프 4", Spawn10 → "등장 10"
-  const ANIM_GROUP = { Idle: "대기", Act: "동작", Jump: "점프", Spawn: "등장", Throw: "던지기", Attack: "공격", Success: "성공", Fail: "실패" };
+  const ANIM_GROUP = { Idle: "대기", Act: "잔동작", Jump: "점프", Spawn: "등장", Throw: "던지기", Attack: "공격", Success: "성공", Fail: "실패" };
   const ANIM_NOTE = { Idle1_1: "숨쉬기", Idle1_2: "숨쉬기·갸웃", Idle2_1: "폴짝", Idle2_2: "높이 폴짝", Idle2_3: "찌그러지기", Idle2_4: "크게 찌그러지기", Idle2_5: "납작", Idle3_7: "뒤집기", Idle: "느긋한 대기", Idle2: "느긋한 대기 2", Act5_1: "쭉 늘어나기", Act6_1: "갸웃갸웃", Success: "만세", Fail: "풀썩" };
   function anim(name) {
     const m = String(name).match(/^([A-Za-z]+?)(\d+)?(?:_(\d+))?$/);

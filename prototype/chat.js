@@ -108,7 +108,7 @@ module.exports = function createChat(ctx) {
       return r;
     } catch (e) {
       const aborted = ctl.signal.aborted || e.name === "AbortError" || e.name === "TimeoutError"; // 창 닫기(사용자) 또는 90초 시한. Gemini 재시도 대기 중이면 "취소됨" Error 로 온다
-      const msg = aborted ? (timedOut ? "AI 가 한참 답을 하지 않아 그만두었어요." : "") : e.message === "no-provider" ? "AI 제공자가 없어요. 'AI 설정…'에서 Ollama나 API 키를 넣어 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
+      const msg = aborted ? (timedOut ? "AI가 오랫동안 답하지 않아 중단했습니다." : "") : e.message === "no-provider" ? "사용할 수 있는 AI 서비스가 없습니다. 설정 → AI 대화에서 Ollama를 연결하거나 API 키를 저장해 주세요." : `오류: ${String(e.message || e).slice(0, 200)}`;
       // 끊긴 턴에도 chat:done 은 보낸다 — 렌더러는 이걸 받아야 입력칸을 다시 연다. 창을 닫아 끊은 경우엔 받을 창이 없어 그냥 사라진다
       chatSendFor(seq, "chat:done", msg ? { error: msg } : { text: partial });
       console.log("chat error:", timedOut ? "timeout(90s)" : e.message);
@@ -118,7 +118,7 @@ module.exports = function createChat(ctx) {
   // 혼자 화면 보고 한마디 (대화창에 표시). userText 있으면 그 말에 화면을 붙여 답함
   async function screenTalk(id, userText) {
     const chatOpen = chatWin && !chatWin.isDestroyed() && chatFor === id;
-    if (!ctx.screenAllowed()) { if (!chatOpen) openChat(id); const seq = chatSeq; setTimeout(() => chatSendFor(seq, "chat:done", { error: "화면 보기가 꺼져 있어요. 설정 → AI 대화 → '화면 보기'를 켜 주세요 (스크린샷이 선택한 AI 제공자에게 전송됩니다)." }), chatOpen ? 0 : 1200); return; }
+    if (!ctx.screenAllowed()) { if (!chatOpen) openChat(id); const seq = chatSeq; setTimeout(() => chatSendFor(seq, "chat:done", { error: "화면 캡처가 허용되지 않았습니다. 설정 → AI 대화 → '화면 캡처 사용 허용'을 켜 주세요. 캡처 이미지는 선택한 AI 서비스로 전송됩니다." }), chatOpen ? 0 : 1200); return; }
     if (!chatOpen) openChat(id, { quiet: !userText });
     const seq = chatSeq;   // 캡처를 기다리는 사이 창을 닫거나 다른 사도로 옮기면 여기서 멈춘다 — AI 요청을 시작하지 않는다(코드 리뷰 P2)
     ctx.sendMascot(id, "emote", { mood: "", role: "listen", pose: 4000, hold: 12000 }); // 화면을 살피는 포즈

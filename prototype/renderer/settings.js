@@ -49,8 +49,8 @@
     if (bulkEl) { bulkEl.checked = bulk; document.getElementById("bulk-wrap").classList.toggle("on", bulk); }
     const note = document.getElementById("charbar-note"); if (!note) return;
     note.textContent = bulk
-      ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 들어갑니다 (사도 모습만은 각자 그대로).`
-      : "사도·행동·크기·불투명도는 선택한 사도에만 적용되고, 사운드·화면 설정은 전체 공통입니다.";
+      ? `아래에서 바꾸는 값이 사도 ${FULL.characters.length}명 모두에게 적용됩니다 (외형은 각자 그대로).`
+      : "외형·행동·크기·불투명도는 선택한 사도에만 적용됩니다. 소리·화면 설정은 모든 사도에 공통입니다.";
     const w = document.getElementById("bulk-wrap"); if (w) w.style.display = FULL.characters.length > 1 ? "" : "none";
   }
 
@@ -94,8 +94,8 @@
     for (const row of document.querySelectorAll("[data-vol]")) row.classList.toggle("off", S.sound.muted);
     renderVoiceSummary();
     const mn = document.getElementById("mode-note"); if (mn) { const cur = catalog.skins.find(s => s.name === S.skin); const a = cur?.sd || {};
-      mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 인게임 SD 데이터가 없어 스탠딩 SD로 표시됩니다 (에셋 가져오기 → '인게임 SD' 체크)` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·인게임 데이터가 모두 없어 미니미로 표시됩니다`)
-        : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 인게임 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·인게임 데이터가 모두 없어 미니미로 표시됩니다`; }
+      mn.textContent = S.mode === "ingame" ? (a.ingame ? "" : a.standing ? `※ ${KO.skinName(S.skin)}은(는) 전투 SD 데이터가 없어 스탠딩으로 표시됩니다 (게임 데이터 가져오기 → '전투 SD' 선택)` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·전투 SD 데이터가 모두 없어 미니미로 표시됩니다`)
+        : S.mode !== "sd" || a.standing ? "" : a.ingame ? `※ ${KO.skinName(S.skin)}은(는) 스탠딩 데이터가 없어 전투 SD로 표시됩니다` : `※ ${KO.skinName(S.skin)}은(는) 스탠딩·전투 SD 데이터가 모두 없어 미니미로 표시됩니다`; }
     const nv = document.getElementById("nav-ver"); if (nv) nv.textContent = "v" + (catalog.version || "");
     document.title = `사도 데스크 설정 — ${KO.skinName(S.skin)}${FULL.characters.length > 1 ? ` (${FULL.characters.findIndex(c => c.id === cur) + 1}/${FULL.characters.length})` : ""}`;
     renderCharBar();
@@ -135,7 +135,7 @@
       const vc = voiceCountOf(sk.name);
       const mm = sk.name.replace(/^Mini_/, "").match(/^(.*?)(Skin\d+)?$/), folder = mm[1].toLowerCase(), variant = mm[2] ? mm[2].toLowerCase() : "base";
       const guess = KO.isGuessed(sk.name);
-      t.title = [`${KO.skinName(sk.name)} (${sk.name})`, guess ? "※ 추정 이름" : null, `보이스: ${voiceIndex[folder] ? `${folder}/ (${variant === "base" ? "기본" : "스킨 " + variant.slice(4)})` : "없음"} · ${vc}개`].filter(Boolean).join("\n"); // 기본↔이격 분리 확인용
+      t.title = [`${KO.skinName(sk.name)} (${sk.name})`, guess ? "※ 추정 이름" : null, `음성: ${voiceIndex[folder] ? `${folder}/ (${variant === "base" ? "기본" : "사복 " + variant.slice(4)})` : "없음"} · ${vc}개`].filter(Boolean).join("\n"); // 기본↔이격 분리 확인용
       t.dataset.search = KO.searchText(sk.name);
       t.innerHTML = `<canvas></canvas><div class="nm">${KO.skinName(sk.name, { withSkin: false })}${mm[2] ? `<br><span style="color:var(--muted)">${KO.skinTitle(sk.name)}</span>` : ""}</div><span class="vc ${vc ? "" : "zero"}">♪${vc}</span>${guess ? '<span class="q" title="추정 이름">?</span>' : ""}`;
       t.dataset.sd = (sk.sd?.ingame || sk.sd?.standing) ? "1" : "";
@@ -211,10 +211,10 @@
     const open = (await host.aiWindows()) || [];
     const on = allowedWins();
     const rows = open.map(w => ({ label: w.label, title: w.title, open: true }));
-    for (const l of on) if (!rows.some(r => r.label === l)) rows.push({ label: l, title: "지금 열려 있지 않음", open: false });
+    for (const l of on) if (!rows.some(r => r.label === l)) rows.push({ label: l, title: "지금 열려 있지 않습니다", open: false });
     box.innerHTML = rows.length
       ? rows.map(r => `<label class="toggle" style="display:flex;gap:8px;padding:3px 0;${r.open ? "" : "opacity:.55"}"><input type="checkbox" data-win="${esc(r.label)}"${on.includes(r.label) ? " checked" : ""}><span><b>${esc(r.label)}</b> <span style="color:var(--muted);font-size:11px">${esc(r.title)}</span></span></label>`).join("")
-      : "고를 수 있는 창이 없어요.";
+      : "선택할 수 있는 창이 없습니다.";
     for (const el of box.querySelectorAll("[data-win]")) el.addEventListener("change", () => { toggleWin(el.dataset.win, el.checked); renderWindows(); });
   }
   { const b = document.getElementById("ai-win-refresh"); if (b) b.addEventListener("click", () => renderWindows()); }
@@ -224,20 +224,21 @@
     clearTimeout(aiTimer); aiTimer = setTimeout(async () => {
       const st = await host.aiStatus(); if (!st) return;
       const names = { ollama: "Ollama", gemini: "Gemini", anthropic: "Claude", openai: "OpenAI 호환" };
-      document.getElementById("ai-resolved").textContent = st.resolved ? `→ 지금 쓰는 것: ${names[st.resolved]}` : "→ 쓸 수 있는 제공자가 없어요 (아래에서 하나를 준비해 주세요)";
-      const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "실행 중 아님 — Ollama를 설치·실행해 주세요 (설치하면 자동으로 켜져 있음)" : o.hasModel ? `실행 중 · 모델 있음 (${o.models.length}개 설치됨)` : `실행 중 · 모델 없음 → '내려받기' (설치된 것: ${o.models.join(", ") || "-"})`;
+      document.getElementById("ai-resolved").textContent = st.resolved ? `→ 현재 사용: ${names[st.resolved]}` : "→ 사용할 수 있는 AI 서비스가 없습니다. 아래에서 하나를 준비해 주세요.";
+      { const enc = document.getElementById("ai-key-enc"); if (enc) enc.textContent = st.keysEncrypted === false ? "이 PC에서는 운영체제 암호화를 사용할 수 없어 키를 암호화하지 않은 상태로 저장합니다." : st.keysEncrypted ? "키는 Windows 계정에 묶인 암호화(DPAPI)로 저장합니다." : ""; }
+      const o = st.ollama; document.getElementById("ai-ollama-state").textContent = !o.running ? "Ollama에 연결할 수 없습니다. 설치·실행 상태와 서버 주소를 확인해 주세요." : o.hasModel ? `연결됨 · 모델 ${o.models.length}개 설치됨` : `연결됨 · 모델 없음 → '내려받기'를 눌러 주세요 (설치된 모델: ${o.models.join(", ") || "-"})`;
       // ①②③ 단계 표시 — Ollama 가 뭔지 모르는 사람이 지금 어디까지 왔는지 보게. 끝난 단계는 ✓, 지금 할 단계는 →
       { const s1 = document.getElementById("ai-step1-state"), s2 = document.getElementById("ai-step2-state");
-        if (s1) { s1.textContent = o.running ? "✓ 설치됨 · 돌아가는 중" : "→ 아직 설치되지 않았어요 (설치 뒤 이 탭을 다시 열면 확인됩니다)"; s1.style.color = o.running ? "var(--ok, #7bd88f)" : ""; }
-        if (s2) { s2.textContent = !o.running ? "①을 먼저" : o.hasModel ? `✓ 모델 있음 (${o.models.join(", ")})` : "→ 아래 '내 PC에 맞추기' 다음 '내려받기'"; s2.style.color = o.running && o.hasModel ? "var(--ok, #7bd88f)" : ""; } }
-      for (const k of ["gemini", "anthropic", "openai"]) document.getElementById(`ai-key-${k}-state`).textContent = st[k].key ? "저장됨 ✓" : "없음";
+        if (s1) { s1.textContent = o.running ? "✓ 설치됨 · 실행 중" : "→ 아직 연결되지 않았습니다 (설치 뒤 이 탭을 다시 열면 확인됩니다)"; s1.style.color = o.running ? "var(--ok, #7bd88f)" : ""; }
+        if (s2) { s2.textContent = !o.running ? "①을 먼저 진행해 주세요" : o.hasModel ? `✓ 모델 있음 (${o.models.join(", ")})` : "→ 아래 '내 PC에 맞추기' 다음 '내려받기'를 눌러 주세요"; s2.style.color = o.running && o.hasModel ? "var(--ok, #7bd88f)" : ""; } }
+      for (const k of ["gemini", "anthropic", "openai"]) document.getElementById(`ai-key-${k}-state`).textContent = st[k].key ? "저장됨 ✓" : "저장된 키 없음";
       // PC 사양과 그에 맞는 모델 — 지금 고른 것이 사양에 안 맞으면 눈에 띄게 알린다
       const spec = document.getElementById("ai-ollama-spec");
       if (spec) {
-        if (!st.machine || !st.recommend) spec.textContent = "사양을 읽지 못했어요";
+        if (!st.machine || !st.recommend) spec.textContent = "PC 사양을 읽지 못했습니다.";
         else {
           const mc = st.machine, rc = st.recommend;
-          const hw = `RAM ${mc.ramGB}GB` + (mc.vramGB != null ? ` · 그래픽카드 메모리 ${mc.vramGB}GB` : " · 그래픽카드 메모리 못 읽음");
+          const hw = `RAM ${mc.ramGB}GB` + (mc.vramGB != null ? ` · 그래픽카드 메모리 ${mc.vramGB}GB` : " · 그래픽카드 메모리 확인 불가");
           const cur = (document.querySelector('[data-s="ai.ollama.model"]') || {}).value || "";
           const same = cur && (cur === rc.model || cur.split(":")[0] === rc.model.split(":")[0]);
           spec.textContent = (same || !cur) ? `${hw} → ${rc.model} (${rc.ko}) 권장` : `${hw} → ${rc.model} (${rc.ko}) 권장 · 지금은 ${cur}`;
@@ -251,7 +252,7 @@
   }
   for (const b of document.querySelectorAll("[data-savekey]")) b.addEventListener("click", async () => { const k = b.dataset.savekey, inp = document.getElementById(`ai-key-${k}`); await host.aiSetKey(k, inp.value); inp.value = ""; refreshAi(); });
   for (const a of document.querySelectorAll("[data-ai-url]")) a.addEventListener("click", (e) => { e.preventDefault(); host.aiOpenUrl(a.dataset.aiUrl); });
-  document.getElementById("ai-test").addEventListener("click", async (e) => { const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "생각 중…"; const r = await host.aiTest(); e.target.disabled = false; out.textContent = r.ok ? `[${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `실패: ${r.error}`; });
+  document.getElementById("ai-test").addEventListener("click", async (e) => { const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "확인 중…"; const r = await host.aiTest(); e.target.disabled = false; out.textContent = r.ok ? `연결됨 [${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `연결 실패: ${r.error}`; });
   document.getElementById("ai-pull").addEventListener("click", async (e) => { const model = getPath(FULL.global, "ai.ollama.model"); const out = document.getElementById("ai-pull-out"); e.target.disabled = true; out.textContent = `${model} 내려받는 중…`; const r = await host.aiPull(model); e.target.disabled = false; out.textContent = r.ok ? "완료 ✓" : `실패: ${r.error}`; refreshAi(); });
   host.on("ai:pull-progress", (t) => { document.getElementById("ai-pull-out").textContent = t; });
   // 사용자가 눌렀을 때만 모델 이름을 바꾼다. 내려받기는 여전히 따로 눌러야 한다
@@ -270,13 +271,13 @@
   function renderAbout() {
     const voices = Object.values(voiceIndex).reduce((n, h) => n + Object.values(h).reduce((m, sk) => m + Object.values(sk).reduce((q, l) => q + l.length, 0), 0), 0);
     const guessedN = (KO.names.guessed || []).length;
-    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["모션 런타임", `spine-ts ${spineVersion()}`], ["사도 · 사복/스킨", `${catalog.skins.length}벌`], ["모션", `${catalog.animations.length}개`], ["보이스", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["에셋 폴더", `<code>${catalog.assetRoot}</code>`]];
+    const kv = [["앱", `사도 데스크 프로토타입 v${catalog.version}`], ["실행 환경", `Electron ${catalog.electron}`], ["동작 런타임", `spine-ts ${spineVersion()}`], ["외형", `${catalog.skins.length}벌`], ["동작", `${catalog.animations.length}개`], ["음성", `${Object.keys(voiceIndex).length}명 · ${voices}파일`], ["한글 이름표", `${Object.keys(KO.names.heroes).length}명 (추정 ${guessedN}명 — <code>assets/names-ko.json</code>)`], ["설정 파일", `<code>${catalog.settingsFile}</code>`], ["게임 데이터 폴더", `<code>${catalog.assetRoot}</code>`]];
     document.getElementById("about-kv").innerHTML = kv.map(([k, v]) => `<div class="k">${k}</div><div>${v}</div>`).join("");
   }
   const spineVersion = () => "4.1.56";
   for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => host.openPath(b.dataset.open));
   document.getElementById("assets-setup")?.addEventListener("click", () => host.assetsOpenSetup());
-  document.getElementById("reset").addEventListener("click", () => { if (confirm("모든 설정을 기본값으로 되돌릴까요?")) host.resetSettings(); });
+  document.getElementById("reset").addEventListener("click", () => { if (confirm("설정을 초기화하시겠습니까?\n추가한 사도와 개별 설정이 초기화됩니다. AI 설정과 API 키는 유지됩니다.")) host.resetSettings(); });
 
   // ---- 동기화 ----
   host.on("settings", (s) => { FULL = s; S = view(); renderControls(); markCurrent(); if (document.querySelector("#tab-news.on")) renderNews(); });

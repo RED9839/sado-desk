@@ -8,8 +8,8 @@
   async function refresh() {
     const s = await host.assetsStatus();
     el("status").innerHTML = s.hasAssets
-      ? `<b>에셋 있음</b> — <code>${s.root}</code><br>스탠딩 ${s.standing}세트 · 인게임 SD ${s.ingame}세트 · 보이스 ${s.voice ? "있음" : "없음"}`
-      : `<b style="color:var(--warn)">에셋 없음</b> — 아래에서 추출하면 <code>${s.userDataRoot}</code> 에 저장됩니다`;
+      ? `<b>게임 데이터 있음</b> — <code>${s.root}</code><br>스탠딩 ${s.standing}세트 · 전투 SD ${s.ingame}세트 · 음성 ${s.voice ? "있음" : "없음"}`
+      : `<b style="color:var(--warn)">게임 데이터 없음</b> — 아래에서 가져오면 <code>${s.userDataRoot}</code>에 저장됩니다`;
     el("pyinfo").textContent = s.packaged ? "" : `python: ${s.python} (UnityPy · Pillow · imageio-ffmpeg 필요)`;
     running = s.running; el("start").disabled = running; el("cancel").disabled = !running;
   }
@@ -41,13 +41,13 @@
     const r = await host.assetsExtract({ force: el("force").checked, steps, mumu: manual && !isAdb && !isPort && !isSerial ? manual : null, adb: pick ? pick.adb : (isAdb ? manual : null), serial: pick ? pick.serial : (isPort ? `127.0.0.1:${manual}` : isSerial ? manual : null) });
     if (!r.ok) { line(r.error, "error"); return; }
     running = true; el("start").disabled = true; el("cancel").disabled = false;
-    line(`추출 시작 — ${steps.join(", ")}`);
+    line(`가져오기 시작 — ${steps.join(", ")}`);
   });
   el("cancel").addEventListener("click", () => { host.assetsCancel(); line("중단 요청…", "warn"); });
   el("use-folder").addEventListener("click", async () => {
     const p = await host.assetsPickFolder(); if (!p) return;
     const r = await host.assetsUseFolder(p);
-    if (r.ok) { line(`에셋 폴더 지정: ${r.root}`, "ok"); refresh(); } else line(r.error, "error");
+    if (r.ok) { line(`게임 데이터 폴더 지정: ${r.root}`, "ok"); refresh(); } else line(r.error, "error");
   });
   el("open-root").addEventListener("click", () => host.assetsOpenRoot());
   el("open-log").addEventListener("click", () => host.assetsOpenLog());
