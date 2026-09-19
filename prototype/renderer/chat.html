@@ -7,7 +7,8 @@
   #chat:before{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top-color:#fffaf2;border-bottom:0;z-index:1}
   .head{font-weight:700;color:#c85a7a;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;-webkit-app-region:drag;cursor:move}
   .head .r{display:flex;gap:6px;align-items:center;-webkit-app-region:no-drag}
-  .head .x,.head .clr{cursor:pointer;color:#8f7f79;font-weight:400;padding:3px 7px;font-size:12.5px;border-radius:8px;line-height:1.2}
+  .head .x,.head .clr{all:unset;cursor:pointer;color:#8f7f79;font-weight:400;padding:3px 7px;font-size:12.5px;border-radius:8px;line-height:1.2;font-family:inherit}
+  .head .x:focus-visible,.head .clr:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid #c85a7a;outline-offset:1px}
   .head .x{font-size:14px}
   .head .x:hover,.head .clr:hover{color:#c85a7a;background:#fbe9ef}
   .head .clr.arm{color:#fff;background:#c85a7a}
@@ -38,7 +39,7 @@
 </style></head>
 <body>
 <div id="chat">
-  <div class="head"><span id="who">사도</span><span class="r"><span class="prov" id="prov"></span><span class="clr" id="clear" title="대화 기록 지우기 (한 번 더 누르면 지웁니다)">기록 지우기</span><span class="x" id="close" title="닫기 (Esc)">✕</span></span></div>
+  <div class="head"><span id="who">사도</span><span class="r"><span class="prov" id="prov"></span><button class="clr" id="clear" title="대화 기록 지우기 (한 번 더 누르면 지웁니다)">기록 지우기</button><button class="x" id="close" title="닫기 (Esc)" aria-label="닫기">✕</button></span></div>
   <div id="log"></div>
   <div class="row"><textarea id="in" rows="1" placeholder="메시지 입력"></textarea><button id="cam" class="ghost" title="이 메시지와 함께 지금 화면을 첨부합니다 (설정 → AI 대화 → 화면 캡처 사용 허용)">📷</button><button id="send" title="보내기 (Enter)">➤</button></div>
   <div class="hint"><span id="status"></span><span class="keys" id="keys">Enter 전송 · Shift+Enter 줄바꿈</span><a id="settings">AI 설정…</a></div>
