@@ -425,7 +425,8 @@ async function status(ai) {
   };
   // 사양 읽기(nvidia-smi 실행)는 Ollama 가 실제로 돌고 있을 때만 한다 —
   // 로컬 AI 를 안 쓰는 사람의 PC 에서 프로세스를 띄울 이유가 없다
-  if (tags !== null) { try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {} }
+  // PC 사양·권장 모델은 Ollama 가 없어도 준다 — 설치 전이 바로 이 안내가 필요한 때다 (전엔 연결됐을 때만 채워 "사양을 읽지 못했습니다" 로 보였다)
+  try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {}
   s.resolved = resolve(cfg, s);
   return s;
 }
