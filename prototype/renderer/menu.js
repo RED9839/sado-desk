@@ -93,7 +93,17 @@
       case "quit": host.quit(); break;
     }
   });
-  window.addEventListener("keydown", (e) => { if (e.key === "Escape") host.menuClose(); });
+  // 키보드: 항목·칩에 Tab 으로 닿고, ↑↓ 로 옮기고, Enter·Space 로 누른다 (UI 리뷰 — 클릭 중심이었다)
+  const focusables = () => [...menuEl.querySelectorAll(".item,.chip,input[type=range]")].filter(el => el.offsetParent !== null && !el.classList.contains("off"));
+  const applyTabIndex = () => { for (const el of menuEl.querySelectorAll(".item,.chip")) if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0"); };
+  applyTabIndex(); new MutationObserver(applyTabIndex).observe(menuEl, { childList: true, subtree: true });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { host.menuClose(); return; }
+    if (e.target && e.target.tagName === "INPUT" && e.target.type === "text") return;   // 검색칸에서는 글자 입력
+    const list = focusables(), i = list.indexOf(document.activeElement);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); const n = list.length ? list[(i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length] : null; if (n) n.focus(); }
+    else if ((e.key === "Enter" || e.key === " ") && i >= 0 && list[i].tagName !== "INPUT") { e.preventDefault(); list[i].click(); }
+  });
   host.on("settings", (s) => { S = s; render(); });
   render();
 })();
