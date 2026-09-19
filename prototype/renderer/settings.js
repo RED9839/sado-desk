@@ -242,7 +242,7 @@
       // PC 사양과 그에 맞는 모델 — 지금 고른 것이 사양에 안 맞으면 눈에 띄게 알린다
       const spec = document.getElementById("ai-ollama-spec");
       if (spec) {
-        if (!st.machine || !st.recommend) spec.textContent = "PC 사양을 읽지 못했습니다.";
+        if (!st.machine || !st.recommend) spec.textContent = "PC 사양을 읽지 못했습니다. RAM·그래픽카드 메모리를 보고 모델을 직접 골라 주세요.";
         else {
           const mc = st.machine, rc = st.recommend;
           const hw = `RAM ${mc.ramGB}GB` + (mc.vramGB != null ? ` · 그래픽카드 메모리 ${mc.vramGB}GB` : " · 그래픽카드 메모리 확인 불가");

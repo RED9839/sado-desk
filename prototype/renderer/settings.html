@@ -43,6 +43,13 @@
   .toggle .hint{grid-column:2;display:block;margin-top:1px}
   /* 형태 같은 선택 카드 */
   .opts{display:flex;flex-direction:column;gap:8px}
+  .step{padding:8px 0;border-top:1px solid var(--line)}
+  .step:first-of-type{border-top:0}
+  .step-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .step-head b{font-size:13px}
+  .step-head .hint{margin-left:auto;text-align:right}
+  .step > .hint{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.55}
+  .step-act{margin-top:8px}
   .seg-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .seg-lbl{color:var(--muted);font-size:12px;font-weight:700}
   .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
@@ -284,8 +291,8 @@
     </div>
     <div class="card"><h3>Ollama (로컬)</h3>
       <div class="hint">내 PC에서 실행되는 AI입니다. API 키와 요금이 없고 대화가 PC 밖으로 나가지 않습니다. 대신 <b>모델 파일 5GB 안팎을 내려받아야 하고</b>, 그래픽카드가 없으면 답변에 몇 초씩 걸립니다. 잘 모르겠다면 설치가 필요 없는 위의 Gemini를 권장합니다.</div>
-      <div class="row" id="ai-step1"><label><b>① Ollama 설치</b><span class="hint">설치 파일을 받아 실행하면 됩니다. 따로 켤 필요 없이 백그라운드에서 항상 실행됩니다. 설치가 끝나면 이 줄이 ✓로 바뀝니다.</span></label><button class="btn" data-ai-url="ollama">내려받기 페이지 열기</button><span class="hint" id="ai-step1-state"></span></div>
-      <div class="row" id="ai-step2"><label><b>② 한국어 모델 내려받기</b><span class="hint">아래 '내 PC에 맞추기'를 누르면 그래픽카드 메모리에 맞는 모델 이름이 입력됩니다. 그다음 '내려받기'를 눌러 주세요. 한 번만 하면 됩니다.</span></label><span class="hint" id="ai-step2-state"></span></div>
+      <div class="step" id="ai-step1"><div class="step-head"><b>① Ollama 설치</b><span class="hint" id="ai-step1-state"></span></div><div class="hint">설치 파일을 받아 실행하면 됩니다. 따로 켤 필요 없이 백그라운드에서 항상 실행됩니다. 설치가 끝나면 이 줄이 ✓로 바뀝니다.</div><div class="step-act"><button class="btn" data-ai-url="ollama">내려받기 페이지 열기</button></div></div>
+      <div class="step" id="ai-step2"><div class="step-head"><b>② 한국어 모델 내려받기</b><span class="hint" id="ai-step2-state"></span></div><div class="hint">아래 '내 PC' 줄의 권장 모델을 '내 PC에 맞추기'로 넣고 '내려받기'를 눌러 주세요. 한 번만 하면 됩니다.</div></div>
       <details class="hint" style="margin:4px 0 8px"><summary>자세히 보기 — 모델 비교 (실측)</summary>
         아래 속도는 RTX 4080 기준이고, 괄호 안은 그래픽카드 없이 CPU만 쓸 때입니다.<br>
         · <code>exaone3.5:2.4b</code> 1.6GB — 가장 가볍습니다. 답 0.2초(1.0초). 다만 사도 고유 어미(~다비·~입니닷)를 자주 놓쳐요(재현 34%).<br>
@@ -293,8 +300,8 @@
         · <code>qwen2.5:14b</code> 9GB — 그래픽카드 메모리가 10GB 넘을 때. 답 0.8초(5.5초). 어미는 72%로 조금 낮지만 "이 게임 재밌어?" 같은 말에 사도 말투가 깨지는 일이 훨씬 적습니다.<br>
         <b>말투 재현은 Gemini·Claude보다 낮게 측정됐습니다.</b> 그래픽카드가 없거나 RAM이 8GB인 PC에서는 9GB 모델이 실행되지 않으므로 2.4b를 권장합니다.
       </details>
-      <div class="row" style="margin-top:6px"><label>상태</label><span id="ai-ollama-state" class="hint">확인 중…</span></div>
-      <div class="row"><label>내 PC</label><span id="ai-ollama-spec" class="hint">확인 중…</span><button class="btn" id="ai-fit" style="display:none">내 PC에 맞추기</button></div>
+      <div class="row" style="margin-top:6px"><label style="flex:none;width:60px">상태</label><span id="ai-ollama-state" class="hint" style="flex:1;min-width:0;line-height:1.5">확인 중…</span></div>
+      <div class="row"><label style="flex:none;width:60px">내 PC</label><span id="ai-ollama-spec" class="hint" style="flex:1;min-width:0;line-height:1.5">확인 중…</span><button class="btn" id="ai-fit" style="display:none">내 PC에 맞추기</button></div>
       <div class="row"><label>모델</label><input type="text" data-s="ai.ollama.model" style="width:220px"><button class="btn" id="ai-pull">내려받기</button><span class="hint" id="ai-pull-out"></span></div>
       <div class="row"><label>서버 주소</label><input type="text" data-s="ai.ollama.url" style="width:220px"><span class="hint">기본 http://localhost:11434</span></div>
       <div class="row"><label>모델 메모리 유지 시간<span class="hint">답변 뒤 이 시간 동안 모델이 그래픽카드 메모리에 남아 있습니다. 7.8b 모델은 약 5GB를 차지합니다. <b>게임을 하신다면 '답변할 때만'</b>을 권장합니다 — 답변이 끝나면 바로 비우고, 대신 부를 때마다 1.7초쯤 더 걸립니다.</span></label><select data-s="ai.ollama.keepAlive"><option value="5m">5분 (기본)</option><option value="30m">30분</option><option value="0">답변할 때만 (게임할 때)</option><option value="-1">계속 유지</option></select></div>
