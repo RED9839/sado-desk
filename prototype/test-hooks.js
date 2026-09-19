@@ -262,6 +262,28 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 4000);
 
+  // --aifail-test — 외부 AI 실패 상황에서 안내와 입력 복구. test/fake-ai.js(OpenAI 호환 흉내)가 끊김 → 429 → 401 → 정상 순으로 답한다
+  if (argHas("--aifail-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`AIFAIL ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const a = ctx.settings.characters[0].id; ctx.openChat(a); await sleep(2500);
+    const js = (code) => ctx.chatWin.webContents.executeJavaScript(code);
+    const send = async (text) => { await js(`document.getElementById("in").value = ${JSON.stringify(text)}; document.getElementById("send").click();`); for (let i = 0; i < 30 && !ctx.chatBusy; i++) await sleep(100); for (let i = 0; i < 300 && ctx.chatBusy; i++) await sleep(100); await sleep(400); };
+    const last = () => js(`(() => { const e = [...document.querySelectorAll("#log .msg.bot")].pop(); return { text: e ? e.textContent : "", err: !!(e && e.classList.contains("err")), cut: document.querySelectorAll("#log .msg.bot.cut").length, inOn: !document.getElementById("in").disabled, sendOn: !document.getElementById("send").disabled }; })()`);
+    await send("첫 번째"); let r = await last();
+    ok(r.err && /연결이 중간에 끊겼습니다/.test(r.text) && r.cut === 1 && r.inOn && r.sendOn, `① 스트림 끊김 → 안내 "${r.text.slice(0, 40)}" · 받은 조각 남김=${r.cut} · 입력 ${r.inOn ? "열림" : "잠김"}`);
+    await send("두 번째"); r = await last();
+    ok(r.err && /사용 한도를 넘었거나/.test(r.text) && r.inOn, `② 429 → "${r.text.slice(0, 40)}" · 입력 ${r.inOn ? "열림" : "잠김"}`);
+    await send("세 번째"); r = await last();
+    ok(r.err && /API 키가 올바르지 않거나/.test(r.text) && r.inOn, `③ 401 → "${r.text.slice(0, 40)}" · 입력 ${r.inOn ? "열림" : "잠김"}`);
+    await send("네 번째"); r = await last();
+    ok(!r.err && /잘 왔다비/.test(r.text) && r.inOn, `④ 그 뒤 정상 답 "${r.text.slice(0, 30)}" — 오류 뒤에도 다음 턴이 된다`);
+    const hist = Ai.loadHistory(app.getPath("userData"), a);
+    ok(hist.length === 2, `⑤ 기록에는 정상 턴만 남았다 (${hist.length}줄, 2)`);
+    console.log(`AIFAIL ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 6000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {
