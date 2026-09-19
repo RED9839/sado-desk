@@ -8,6 +8,14 @@
  */
 (function (root) {
   const MOTION_VOICE = [
+    // 이동·수면·교감 대기 루프에는 관계없는 잡담이나 울음소리를 붙이지 않는다.
+    [/^(?:Move|Walk|Dash|Jump|Sleep|Sleepy)(?:_|\d|$)/i, null],
+    [/^(?:Pat|Touch)_Idle(?:_|$)/i, null],
+    // 교감 단계는 넓은 접두어 규칙보다 먼저 판정한다.
+    [/^Smash_End_1(?:_|$)/i, ["smashHit", "hit", "surprise"]],
+    [/^Smash_End_2(?:_|$)/i, ["smashLine", "anger"]],
+    [/^Tickle_End(?:_|$)/i, ["tickleduring", "ticklestart"]],
+    [/^Tickle_Idle(?:_|$)/i, ["tickleduring", "ticklestart"]],
     // 혼잣말 재료를 늘리며 더한 것 — 고민하는 동작엔 hmm, 끄덕/도리질엔 yes/no
     [/^(Thinking|Think|Question|Curious|Doubt|Hesitate)/i, ["hmm", "line", "affinity"]],
     [/^(Nodding|Yes|Agree|Ok)/i, ["yes", "line"]],
@@ -39,16 +47,23 @@
     // 먹기
     [/^(Eat|Hungry|Bread|Drink|Cook|Latte|Smell|Spit|Spitter)/i, ["eat"]],
     // 교감 애니 (STT로 확인한 실제 대응): 간지럽히기 = 웃음 / 쓰다듬기 = touch2_x(pat) / 볼 당기기(Touch_*) = touch1_x(cheek)
-    [/^(Tickle_Idle|TIckle)/i, ["ticklestart", "tickleduring"]],
-    [/^Tickle_End/i, ["tickleduring", "ticklestart"]],
+    [/^Tickle/i, ["ticklestart", "tickleduring"]],
     [/^Pat/i, ["pat", "pleasure"]],
-    [/^Touch/i, ["cheek", "touch"]],
+    [/^Touch/i, ["cheek"]],
     // 등장·인사
     [/^(Spawn|Enter|Hi$|Hi_|Greeting|Hug|Call)/i, ["spawn", "greeting"]],
     // 잡담(대사) — 멍·말하기·생각·질문·놀리기·기타 동작
     [/^(Blank|Nodding|Taunt|Talk|Speak|Whisper|Think|Thinking|Question|Curious|Serious|Point|Check|Note|Read|Write|Work|Camera|Phone|Mic|Loudspeaker|Recorder|Recoder|Clock|Mirror|Money|Count|Sit|Sitting|Squat|Stand|Rest|Yoga|Pray|Quiet|Ignore|Yare|Bbang|Gao|Try|Clean|Act|Idle_3|Idle3|Dumb|Robot|Drill|Scouter|Rummage|Glasses|Mask|Scroll|Track|Aside|Jackson|Parrot|Domo|Kirat|Kisya|Baldo|Urcharyu|Sijeo|Dehet|Taik|Oioi|Beni|Rock|Go|Drive|Drift|Dash|Jump|Move|Walk|Promise|Succession|Concent|Open|Closed|Help|Disgust|Lying|Down|Yes)/i, ["line", "affinity", "callplayer", "hmm", "greeting"]],
   ];
   function voiceCatsFor(anim) { for (const [re, cats] of MOTION_VOICE) if (re.test(anim)) return cats; return null; }
-  const api = { MOTION_VOICE, voiceCatsFor };
+  // 없는 전용 음성만 다음 후보로 대체한다. 한 개뿐이어도 다른 의미의 음성을 섞지 않는다.
+  function voicePoolFor(categories, cats) {
+    for (const category of cats) {
+      const files = categories[category];
+      if (Array.isArray(files) && files.length) return files;
+    }
+    return [];
+  }
+  const api = { MOTION_VOICE, voiceCatsFor, voicePoolFor };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MotionVoice = api;
 })(typeof window !== "undefined" ? window : globalThis);
