@@ -156,10 +156,14 @@
     }
     // touch 파일은 두 묶음: touch1[_n] = 볼 당기기 대사(친밀도 3단계), touch2[_n] = 쓰다듬기 대사. 스킨 전용(_skinN)은 index가 이미 스킨 키로 분리해 둠
     if (cats.touch) { cats.cheek = cats.touch.filter(f => /touch1(_\d+)?(_skin\d+)?\.ogg$/.test(f)); cats.pat = cats.touch.filter(f => /touch2(_\d+)?(_skin\d+)?\.ogg$/.test(f)); }
+    if (cats.dutchrubend) {
+      cats.smashHit = cats.dutchrubend.filter(f => /dutchrubend1(?:_\d+)?(?:_skin\d+)?\.ogg$/.test(f));
+      cats.smashLine = cats.dutchrubend.filter(f => /dutchrubend2(?:_\d+)?(?:_skin\d+)?\.ogg$/.test(f));
+    }
     return { hero: voiceIndex[hero] ? hero : null, skin, cats, base: h.base || {} };
   }
   // cheek·pat 은 touch 를 둘로 가른 것이라 따로 세면 같은 파일이 두 번 들어간다(에르핀 스킨1: 6이 12로)
-  const countVoices = (vs) => Object.entries(vs.cats).reduce((n, [c, l]) => n + (c === "cheek" || c === "pat" ? 0 : l.length), 0);
+  const countVoices = (vs) => new Set(Object.values(vs.cats).flat()).size;
   function loadImage(src) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src; }); }
   // 아틀라스 텍스처 로드. pma:false 아틀라스는 업로드 시 프리멀티플라이해서 PMA 백버퍼와 맞춘다 (가장자리 흰 테 방지)
   async function loadAtlas(atlasPath, dir) {
@@ -277,7 +281,7 @@
       // 보이스 수는 여기서만 센다 — 설정창이 index.json 을 따로 합쳐 세던 때는 스킨 묶음이 카테고리를 통째로 갈아치워 HUD 와 숫자가 달랐다(에르핀 스킨1)
       const vs = voiceSetFor(sk.name);
       const pv = ["greeting", "pat", "joy", "line"].map(c => vs.cats[c]).concat(Object.values(vs.cats)).find(l => l && l.length);
-      skins.push({ name: sk.name, voices: countVoices(vs), voiceCats: Object.fromEntries(Object.entries(vs.cats).filter(([c, l]) => l.length && c !== "cheek" && c !== "pat").map(([c, l]) => [c, l.length])), previewVoice: pv ? pv[0] : null, sd: sdAvailable(sk.name), region: region ? { page: region.page.name, x: region.x, y: region.y, width: region.width, height: region.height, degrees: region.degrees } : null });
+      skins.push({ name: sk.name, voices: countVoices(vs), voiceCats: Object.fromEntries(Object.entries(vs.cats).filter(([c, l]) => l.length && !["cheek", "pat", "smashHit", "smashLine"].includes(c)).map(([c, l]) => [c, l.length])), previewVoice: pv ? pv[0] : null, sd: sdAvailable(sk.name), region: region ? { page: region.page.name, x: region.x, y: region.y, width: region.width, height: region.height, degrees: region.degrees } : null });
     }
     const f = firstMascot();
     return { animations: miniData.animations.map(a => ({ name: a.name, duration: +a.duration.toFixed(2) })), sdAnimations: f ? f.sdAnimations() : [], skins };
@@ -433,16 +437,9 @@
     // 뜻이 정해진 자리(쓰다듬기·볼 당기기·간지럽히기·등장): 전용 대사만 쓴다.
     // 섞어 버리면 전용이 묻힌다 — 쓰다듬기 전용 대사는 셋인데 pleasure·joy 열 개와 같이 담겨 41% 밖에 안 나왔다.
     // 게임 파일은 쓰다듬기·볼 당기기 3개, 등장 2개, 간지럽히기 1개가 표준이다.
-    // 전용이 둘 이상이면 그것만, 하나뿐이면 같은 말만 되풀이되니 뒤 묶음을 보탠다.
-    const OWN_MIN = 2;
+    // 전용이 하나뿐이어도 의미를 지킨다. 없을 때만 다음 카테고리로 넘어간다.
     function playVoiceOwn(...cats) {
-      const lists = cats.map(c => voiceSet.cats[c]).filter(l => l && l.length);
-      if (!lists.length) return null;
-      const own = lists[0];
-      if (own.length >= OWN_MIN) return playFrom(own);              // 전용 대사가 넉넉하면 그것만
-      const extra = lists.slice(1).flat();                          // 모자라면 뒤 묶음을 보태되,
-      const reps = Math.max(1, Math.ceil(extra.length / own.length)); // 전용이 절반은 되게 되풀이해 넣는다
-      return playFrom([...extra, ...Array.from({ length: reps }, () => own).flat()]);
+      return playFrom(MotionVoice.voicePoolFor(voiceSet.cats, cats));
     }
     // 클릭: 아무 말이나 — 전용 대사(쓰다듬기·등장·간지럼)는 넣지 않는다.
     // 크레페처럼 감정 보이스가 하나도 없는 사도(8~16명)는 말을 잃으므로 그때만 쓰다듬기 대사로 받친다.
@@ -711,7 +708,7 @@
     }
     function smashLine() {
       const line = voiceFile(/dutchrubend2/, voiceSet.cats.dutchrubend, voiceSet.base.dutchrubend);
-      if (line) playVoiceFile(line); else playVoice("dutchrubend", "anger", "surprise");
+      if (line) playVoiceFile(line); else playVoiceOwn("anger", "surprise");
     }
     function onComplete(slot, entry) {
       if (cfg.logPos) console.log(`COMPLETE[${id}] state=${m.state} anim=${m.anim} entry=${entry.animation && entry.animation.name} cur=${slot.state.getCurrent(0) && slot.state.getCurrent(0).animation.name} active=${slot === active}`);
@@ -835,7 +832,7 @@
             if (Math.abs(m.vy) < 250) {
               m.vx = m.vy = 0; m.rot = 0; if (isSD()) useSlot(slotForRest()); applyFacing(); if (host.event) host.event("thrown", id); playOnce(firstOf(active.A.land || "", "Angry_1", "Idle_1", "Idle1_1"), "land");
               if (S.sound.landSfx) playSfx("jump02");
-              if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoice("surprise", "hit", "sorry", "anger"); } // ticklestart(간지럼 웃음)는 여기 쓸 것이 아니다
+              if (S.sound.landVoice) { if (!motionVoice(m.anim, true)) playVoiceOwn("hit", "surprise", "anger"); } // 착지는 피격·놀람 반응만. 간지럼 웃음이나 사과 대사는 사용하지 않는다.
             } else { // 튕김: 세게 떨어질 때만, 세기에 비례해 작게 (작은 튕김은 무음)
               const impact = Math.abs(m.vy); m.vy *= -0.45; m.vx *= 0.75;
               if (S.sound.landSfx && impact > 900) playSfx("jump02", Math.min(0.7, impact / 4000));
@@ -993,7 +990,7 @@
       } else if (m.state === "touch" && mouse.zone === "head" && active.A.smash.length) { // 머리 톡 → 꿀밤
         if (host.event) host.event("poked", id); smashHit();
       } else if (m.state === "touch" && mouse.zone === "cheek" && active.A.touchEnd && Math.hypot(grab.dx, grab.dy) >= TAP_PX) { // 볼을 끌었을 때만 → touch1_x ("당기지 마!")
-        playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoiceOwn("cheek", "touch");
+        playOnce(active.A.touchEnd, "react"); if (S.sound.clickVoice) playVoiceOwn("cheek");
       } else if (m.state === "thrown") { /* 공중에서 톡 — 잡아 끌지 않았으면 그대로 떨어지게 둔다(react 로 바꾸면 중력이 멈춰 공중에 선다) */
       } else {                               // 몸 톡(안 움직이고 뗌) / 미니미: 가벼운 반응 모션 + 그에 맞는 소리(웃음 등). 볼 당기기 대사("아파!")는 볼을 잡았을 때만, 간지럽히기는 문질러야
         if (isSD()) useSlot(slotForRest());
@@ -1107,7 +1104,7 @@
       await settle(); cx = m.x; cy = H - m.y - m.h / 2; fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(60);
       say(`sd click(몸 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Happy/Smile/… + erpin/joy|pleasure — 톡은 간지럽히기·볼 당기기 아님)`);
       { await sleep(2600); await settle(); const g0 = headGeom(); const ex = g0.headX, ey = H - g0.eyeY; fire("mousedown", ex, ey); say(`press cheek → anim=${m.anim} (expect Touch_Idle)`); await sleep(30); fire("mouseup", ex, ey); await sleep(60);
-        say(`cheek tap(볼 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`); }
+        say(`cheek tap(볼 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react 가벼운 반응(Happy/Smile…) + erpin/joy|pleasure — 볼을 끌지 않은 톡은 볼 당기기가 아니다)`); }
       { // 교감: 머리 드래그 = 쓰다듬기, 얼굴 드래그 = 볼 당기기, 몸 드래그 = 들기
         await sleep(2600); await settle(); cx = m.x; const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); const hb = headBone(sd);
         const g = headGeom(); const topY = H - g.top, neckY = H - g.neckY, hx = g.headX, eyeSY = H - g.eyeY;
