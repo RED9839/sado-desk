@@ -322,6 +322,10 @@ function openSettings(tab, forId) {
     // 탭마다 위쪽 한 장 + 아래로 끝까지 내린 한 장. AI 탭처럼 긴 탭은 위만 찍으면 절반을 못 본다
     const shoot = () => { if (!settingsWin || i >= tabs.length) return; settingsWin.webContents.send("tab", tabs[i]); setTimeout(async () => {
       const dir = path.join(__dirname, "out"); fs.mkdirSync(dir, { recursive: true });
+      // 탭이 실제로 바뀐 뒤에 찍는다 — 렌더러가 늦게 뜨면 첫 "tab" 메시지가 사라져 한 탭씩 어긋난 파일이 남았다(리뷰). 3초까지 기다리며 다시 보낸다
+      for (let t = 0; t < 30; t++) { const on = await settingsWin.webContents.executeJavaScript("(document.querySelector('main section.on')||{}).id"); if (on === "tab-" + tabs[i]) break; if (t % 5 === 4) settingsWin.webContents.send("tab", tabs[i]); await new Promise(r => setTimeout(r, 100)); }
+      { const on = await settingsWin.webContents.executeJavaScript("(document.querySelector('main section.on')||{}).id"); if (on !== "tab-" + tabs[i]) { console.log("SHOT SKIP", tabs[i], "탭 전환 안 됨:", on); i++; shoot(); return; } }
+      await new Promise(r => setTimeout(r, 300));
       const top = await settingsWin.webContents.capturePage(); fs.writeFileSync(path.join(dir, `settings-${tabs[i]}.png`), top.toPNG());
       const more = await settingsWin.webContents.executeJavaScript("(()=>{const m=document.querySelector('main');const can=m.scrollHeight>m.clientHeight+8;m.scrollTop=m.scrollHeight;return can})()");
       if (more) { // 긴 탭은 가운데·아래도 한 장씩 — AI 탭은 세 화면 분량이다
