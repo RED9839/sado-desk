@@ -37,8 +37,7 @@ function resolveAssetRoot() {
   if (fs.existsSync(oldDir)) { fs.mkdirSync(newDir, { recursive: true }); for (const f of ["settings.json", "news-state.json"]) { const src = path.join(oldDir, f), dst = path.join(newDir, f); if (fs.existsSync(src) && !fs.existsSync(dst)) { fs.copyFileSync(src, dst); console.log(`migrated ${f} ← ${oldDir}`); } } }
 } catch (e) { console.warn("userData migrate", e.message); } })();
 const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
-const argHas = (f) => process.argv.includes(f);
-const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
+const { argHas, argVal } = require("./args.js");
 let NAMES = { heroes: {}, skins: {} };
 try { NAMES = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "names-ko.json"), "utf8")); } catch (e) { console.warn("data/names-ko.json 을 읽지 못했습니다 — 사도 이름이 영문으로 보입니다:", e.message); }
 function koSkin(skin) { const m = skin.replace(/^Mini_/, "").match(/^(.*?)(?:Skin(\d+))?$/); const base = NAMES.heroes[m[1]] || m[1]; return m[2] ? `${base} · ${NAMES.skins[m[1]]?.[m[2]] || "스킨 " + m[2]}` : base; }
@@ -598,15 +597,8 @@ function openMenu(id, sx, sy) {
 // 커서가 멀면 성기게 본다 — 가까워지는 건 한 틱 안에 알아채므로 손맛은 그대로다
 let lastCursor = null, still = 0; // still: 커서가 같은 자리에 머문 틱 수
 let cursorT = null, cursorMs = 0;
-const NEAR_PX = 240;
-function cursorPollMs() {
-  if (!geo) return 50;
-  const p = lastCursor;
-  if (!p) return 16;
-  let near = false;
-  for (const inst of instances.values()) { const r = inst.rect; if (!r) continue; if (p.x > r.x - NEAR_PX && p.x < r.x + r.w + NEAR_PX && p.y > r.y - NEAR_PX && p.y < r.y + r.h + NEAR_PX) { near = true; break; } }
-  return near ? 16 : 50;
-}
+const CP = require("./cursor-poll.js");
+const cursorPollMs = () => CP.pollMs(lastCursor, [...instances.values()].map(i => i.rect).filter(Boolean));
 function startCursorPoll(ms) {
   if (cursorT && cursorMs === ms) return;
   if (cursorT) clearInterval(cursorT);
@@ -626,7 +618,7 @@ function cursorTick() {
   lastCursor = { x, y };
   mascotWin.webContents.send("cursor", lastCursor);
 }
-startCursorPoll(16);
+startCursorPoll(CP.FAST);
 
 // ---- IPC ----
 ipcMain.on("loaded", (e, info) => { catalog = info; lastCursor = null; buildTray(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("catalog", catalogPayload()); showGuideOnce(); });
@@ -713,7 +705,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(16); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
+require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(CP.FAST); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -785,7 +777,7 @@ function applyFullscreenHide() {
   const want = fsNow && hideFsOn();
   if (want === fsHidden) return;
   fsHidden = want;
-  if (!want) startCursorPoll(16); else stopCursorPoll();   // 숨는 동안엔 커서를 묻지 않는다
+  if (!want) startCursorPoll(CP.FAST); else stopCursorPoll();   // 숨는 동안엔 커서를 묻지 않는다
   const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
   if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", want); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
   if (want) { for (const w of wins) w.hide(); }

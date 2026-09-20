@@ -8,8 +8,7 @@ const { app, shell } = require("electron");
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
 const { pipeline } = require("node:stream/promises"), { Readable, Transform } = require("node:stream");
-const argHas = (f) => process.argv.includes(f);
-const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
+const { argHas, argVal } = require("./args.js");
 
 module.exports = function createUpdater(ctx) {
   const UPDATE_REPO = "RED9839/sado-desk";
