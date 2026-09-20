@@ -717,7 +717,7 @@ function buildTray() {
 
 if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (!hasAssets(ASSET_ROOT)) { openSetup(); return; } if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
 // ---- 업데이트 확인 — updater.js ----
-const UP = require("./updater.js")({ refreshTray: () => { if (tray) buildTray(); } });
+const UP = require("./updater.js")({ refreshTray: () => { if (tray) buildTray(); }, startUpdate: () => startUpdate() });
 const checkUpdate = UP.checkUpdate;
 let mascotStarted = false;
 function startMascot() {
