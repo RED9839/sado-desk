@@ -45,9 +45,9 @@ run.cmd --multi-test # 사도 추가 → 개별 설정 → 2번 사도 메뉴 �
 - 볼륨 = 전체 × 카테고리, 음소거 시 0. 슬라이더 놓으면 미리듣기. 트레이 메뉴에도 음소거 토글
 
 ## 한글 표기
-- 사도/스킨 이름: `data/names-ko.json` ← `python tools/build-names.py <나무위키 캐시>`
+- 사도/사복 이름: `data/names-ko.json` ← `python tools/build-names.py <나무위키 캐시>`
   - 사도 144명: 나무위키 사도 문서 상단 표의 영문 표기(`Erpin | エルフィン | …`)로 게임 id ↔ 한글 이름 대응. 문서가 없는 것(더미·위스프 4종)은 추정(UI에 '?')
-  - 스킨 273/274개: 나무위키 '사복' 절의 테마 사복 이름 + **게임 아이콘 대조로 확정한 번호표** `tools/names-verified.json` (스킨 번호는 출시 순서와 17% 불일치해 이름만으로는 못 정함). 미확정: SilviaSkin3
+  - 사복 273/274개: 나무위키 '사복' 절의 테마 사복 이름 + **게임 아이콘 대조로 확정한 번호표** `tools/names-verified.json` (사복 번호는 출시 순서와 17% 불일치해 이름만으로는 못 정함). 미확정: SilviaSkin3
 - 동작/음성 종류 한글: `renderer/ko.js` (KO.anim, KO.voiceCat)
 
 ## GIF 추출 (스탠딩 Spine → 투명 GIF)
@@ -56,7 +56,7 @@ electron tools/render-gif.js -- <skel> <atlas> <out.gif> [--anim Idle_1] [--skin
 python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] [--only alice,crepe] [--all-anims]
 ```
 - `renderer/gif.html`이 spine-webgl로 프레임을 뽑고(`canvas.toDataURL`), `tools/render-gif.js`가 ffmpeg(imageio-ffmpeg 내장 바이너리) palettegen/paletteuse로 투명 GIF 인코딩
-- 입력은 본인 게임에서 추출한 `assets/standing/` 이다. 출력: `out/gif/<한글이름>/<스킨>_<애니>.gif`
+- 입력은 본인 게임에서 가져온 `assets/standing/` 이다. 출력: `out/gif/<한글이름>/<사복>_<동작>.gif`
 
 ## 설정 저장
 `%APPDATA%\사도 데스크\settings.json` (예전 `trickcal-crepe-mascot-proto` 폴더가 있으면 첫 실행에 자동 복사) (v2) — `{version:2, global:{sound, display, talk, news, ai, assets}, characters:[{id, skin, mode, mood, scale, opacity, monitor, behavior}, …]}`. 메인 프로세스가 단일 소스로 관리: 각 창이 `settings:set`(패치, 캐릭터 id) → 메인이 `sanitizePatch`로 걸러(모르는 키는 버리고 범위 밖 수치는 범위 안으로, `ai.keys`는 여기로 못 들어옴) → `GLOBAL_KEYS`(sound·display·talk·news·ai·assets)에 든 키는 global, 나머지(`CHAR_KEYS` = `CHAR_DEFAULTS`의 키)는 해당 캐릭터에 병합·저장 → 마스코트 창에는 `viewFor(id)`(내 캐릭터 + 공통), 설정창에는 전체를 브로드캐스트. 기본값·분류·범위는 모두 `settings-schema.js`(Electron 없이 `npm test`가 그대로 부른다). 저장은 `.tmp`에 쓴 뒤 이름 바꾸기(쓰는 도중 전원이 나가도 반쪽 파일이 안 남게), 깨진 파일은 `settings.json.bad`로 옆에 두고 기본값으로 시작, '초기화'는 AI 설정(제공자·키)만 남기고 나머지를 기본값으로. v1 파일은 자동 이관.
