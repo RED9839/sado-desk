@@ -63,10 +63,11 @@ python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] 
 
 ## 테스트
 ```
-npm test          # 순수 로직 38개 — 설정 검사·AI 파서(Gemini 끊김 재시도)·혼잣말 검사기·데이터 짝. Node 내장 node --test, 의존성 없음
+npm test          # 순수 로직 51개 — 설정 검사·AI 파서(끊김 재시도·오류 안내)·혼잣말 검사기·데이터 짝·동작별 음성·새 소식(로컬 가짜 서버). Node 내장 node --test, 의존성 없음
 npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 시나리오 셋을 돌린다 (약 50초). chat: 대화 상태 경쟁 11가지(대상 전환·기록 지우기·연속 열기·캡처 중 닫기/전환/끄기·답하는 중 닫기·재열기)를 모의 AI(SADO_AI_MOCK)로 · extract: 가짜 추출기(test/fake-extract.js)로 실패·재시도·취소(손자 프로세스까지 죽는지) · settings: 깨진 설정 파일 복구·저장 걸러내기·초기화 · aifail: 가짜 OpenAI 호환 서버(test/fake-ai.js)가 스트림 끊김 → 429 → 401 → 정상 순으로 답할 때 안내 문구·받은 조각 보존·입력 복구·기록. `node test/flow.js chat` 처럼 하나만도 됨
 npm run test:first-run # 설치판 첫 실행 — 빌드된 exe(dist/win-unpacked 또는 설치본)를 빈 프로필로 띄워 '가져오기' 창이 첫 화면으로 뜨는지 (먼저 npm run pack 또는 npm run dist)
 ```
+진단 정보(설정 → 정보 → '진단 정보 복사')는 `--diag-test` 로 검사한다 — 필요한 줄이 다 있고 API 키·대화 내용이 섞이지 않는지.
 그 밖의 수동 훅은 `test-hooks.js` (`--selftalk-test`, `--menu-test --menu-click`, `--screen-test --dry`, `--memdump` …).
 
 ## 구조
