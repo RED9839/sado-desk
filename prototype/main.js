@@ -475,6 +475,12 @@ async function confirmInstall() {
   const r = UP.install();
   if (!r.ok) { shell.showItemInFolder(UP.state.file || ""); dialog.showMessageBox({ type: "info", title: "사도 데스크", message: "설치 파일을 열어 주세요.", detail: r.error }); }
 }
+// 설치가 실패하면 설치 파일이 우리를 이 인자로 다시 켠다 (updater.install 의 || 갈래) — 조용히 옛 판으로 돌아오면 사람은 됐는지 안 됐는지 모른다
+if (argHas("--update-failed")) app.whenReady().then(() => setTimeout(async () => {
+  const { dialog } = require("electron");
+  const a = await dialog.showMessageBox({ type: "warning", title: "사도 데스크 업데이트", message: "새 버전 설치가 끝나지 못했어요.", detail: `지금 판(v${app.getVersion()})은 그대로 쓰실 수 있습니다. 릴리스 페이지에서 설치 파일을 직접 받아 설치해 보세요.`, buttons: ["릴리스 페이지 열기", "닫기"], defaultId: 1, cancelId: 1 });
+  if (a.response === 0) shell.openExternal("https://github.com/RED9839/sado-desk/releases/latest");
+}, 3000));
 ipcMain.handle("update:state", () => ({ info: UP.info, state: UP.state, version: app.getVersion() }));
 ipcMain.handle("update:check", async () => { await UP.checkUpdate(); return { info: UP.info, version: app.getVersion() }; });
 ipcMain.on("update:start", () => startUpdate());
