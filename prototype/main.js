@@ -444,6 +444,40 @@ const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).b
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
 const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
 // 설정창용
+// ---- 업데이트: 앱 안에서 받아 설치 ----
+const pct = (st) => st.total ? `${Math.round(st.got / st.total * 100)}%` : `${(st.got / 1048576).toFixed(0)}MB`;
+let updateBusy = false;
+async function startUpdate(silentIfBusy = false) {
+  if (!UP.info) return;
+  if (updateBusy) { if (!silentIfBusy) console.log("update: 이미 진행 중"); return; }
+  if (UP.state.phase === "ready") return confirmInstall();
+  updateBusy = true; buildTray();
+  const tick = setInterval(buildTray, 1500);   // 트레이 항목에 진행률
+  const r = await UP.download();
+  clearInterval(tick); updateBusy = false; buildTray();
+  if (!r.ok) {
+    const { dialog } = require("electron");
+    const a = await dialog.showMessageBox({ type: "warning", title: "사도 데스크 업데이트", message: "업데이트를 받지 못했어요.", detail: r.error + "\n\n릴리스 페이지에서 직접 받으실 수도 있습니다.", buttons: ["릴리스 페이지 열기", "닫기"], defaultId: 1, cancelId: 1 });
+    if (a.response === 0) shell.openExternal(UP.info.url);
+    return;
+  }
+  confirmInstall();
+}
+async function confirmInstall() {
+  const { dialog } = require("electron");
+  const a = await dialog.showMessageBox({
+    type: "question", title: "사도 데스크 업데이트",
+    message: `새 버전 ${UP.info.tag} 을 받았습니다. 지금 설치할까요?`,
+    detail: "설치하는 동안 사도가 잠시 사라졌다가 새 버전으로 다시 나타납니다. 설정과 게임 데이터는 그대로입니다.",
+    buttons: ["지금 설치", "나중에"], defaultId: 0, cancelId: 1,
+  });
+  if (a.response !== 0) return;
+  const r = UP.install();
+  if (!r.ok) { shell.showItemInFolder(UP.state.file || ""); dialog.showMessageBox({ type: "info", title: "사도 데스크", message: "설치 파일을 열어 주세요.", detail: r.error }); }
+}
+ipcMain.handle("update:state", () => ({ info: UP.info, state: UP.state, version: app.getVersion() }));
+ipcMain.handle("update:check", async () => { await UP.checkUpdate(); return { info: UP.info, version: app.getVersion() }; });
+ipcMain.on("update:start", () => startUpdate());
 ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));
 // 진단 정보 — 문제를 알릴 때 붙이라고 한 덩이로. API 키·대화 내용·창 제목은 넣지 않는다 (키는 있고 없고만)
 ipcMain.handle("diag:get", async () => {
@@ -666,7 +700,7 @@ function buildTray() {
     { label: "지금 소식 확인", click: async () => { if (news) { const r = await news.check(true); if (!r.added.length) console.log("news: 새 소식 없음", r.errors); } } },
     { type: "separator" },
     { label: "AI 대화 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
-    ...(UP.info ? [{ label: `새 버전 ${UP.info.tag} 받기...`, click: () => shell.openExternal(UP.info.url) }] : []),
+    ...(UP.info ? [{ label: UP.state.phase === "downloading" ? `새 버전 ${UP.info.tag} 받는 중… ${pct(UP.state)}` : UP.state.phase === "ready" ? `새 버전 ${UP.info.tag} 설치하기` : `새 버전 ${UP.info.tag} 받기`, click: () => startUpdate() }] : []),
     { label: "설정...", click: () => openSettings() },
     { label: hasAssets(ASSET_ROOT) ? "게임 데이터 다시 가져오기..." : "게임 데이터 가져오기...", click: () => openSetup() },
     { label: "소리 끄기", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },

@@ -324,6 +324,23 @@
   const spineVersion = () => "4.1.56";
   for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => host.openPath(b.dataset.open));
   document.getElementById("assets-setup")?.addEventListener("click", () => host.assetsOpenSetup());
+  // ---- 업데이트 ----
+  async function renderUpdate(r) {
+    const note = document.getElementById("upd-note"), go = document.getElementById("upd-go"); if (!note) return;
+    const st = r.state || {};
+    if (st.phase === "downloading") { note.textContent = `받는 중… ${st.total ? Math.round(st.got / st.total * 100) + "%" : ""}`; go.style.display = "none"; return; }
+    if (r.info) {
+      note.textContent = st.phase === "ready" ? `새 버전 ${r.info.tag} 을 받아 두었습니다. 설치하면 사도가 잠시 사라졌다가 새 버전으로 돌아옵니다.`
+        : `새 버전 ${r.info.tag} 이 있습니다 (지금 v${r.version}). 앱 안에서 받아 설치합니다 — 받은 파일은 검사값(SHA-256)과 대조합니다.`;
+      go.textContent = st.phase === "ready" ? "지금 설치" : "받아서 설치"; go.style.display = "";
+    } else { note.textContent = `최신판입니다 (v${r.version}).`; go.style.display = "none"; }
+  }
+  document.getElementById("upd-check")?.addEventListener("click", async (e) => {
+    const b = e.target; b.disabled = true; const was = b.textContent; b.textContent = "확인 중…";
+    try { renderUpdate(await host.updateCheck()); } finally { b.textContent = was; b.disabled = false; }
+  });
+  document.getElementById("upd-go")?.addEventListener("click", () => { host.updateStart(); setTimeout(async () => renderUpdate(await host.updateState()), 800); });
+  host.updateState().then(renderUpdate).catch(() => {});
   // 진단 정보 — 문제를 알릴 때 붙이라고. 키·대화 내용은 들어가지 않는다
   document.getElementById("diag-copy")?.addEventListener("click", async (e) => {
     const b = e.target; b.disabled = true; const was = b.textContent;

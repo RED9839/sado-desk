@@ -39,6 +39,9 @@ contextBridge.exposeInMainWorld("host", {
   mascot: (cmd, arg, id) => ipcRenderer.send("mascot", cmd, arg, id === undefined ? INSTANCE : id),
   openPath: (which) => ipcRenderer.send("open-path", which),
   diagGet: () => ipcRenderer.invoke("diag:get"),
+  updateState: () => ipcRenderer.invoke("update:state"),
+  updateCheck: () => ipcRenderer.invoke("update:check"),
+  updateStart: () => ipcRenderer.send("update:start"),
   copyText: (t) => ipcRenderer.send("copy-text", String(t || "")),
   // 에셋 가져오기(추출)
   assetsStatus: () => ipcRenderer.invoke("assets:status"),
