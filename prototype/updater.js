@@ -31,10 +31,16 @@ module.exports = function createUpdater(ctx) {
     } catch (e) { console.log("update check 실패", e.message); }
   }
   // 지난 판 설치 파일 치우기 — 설치가 끝나고 새 판으로 돌아오면 120MB 짜리가 남는다
+  const busyWith = (f) => {   // 내려받는 중(.part)이거나 설치를 기다리는 파일인가
+    if (!state || !state.file || (state.phase !== "downloading" && state.phase !== "ready" && state.phase !== "installing")) return false;
+    const base = path.basename(state.file);
+    return f === base || f === base + ".part";
+  };
   function sweepOld() {
     try {
       const d = path.join(app.getPath("userData"), "update"); if (!fs.existsSync(d)) return;
       for (const f of fs.readdirSync(d)) {
+        if (busyWith(f)) continue;   // 지금 받고 있거나 받아 둔 파일은 건드리지 않는다
         const v = (f.match(/(\d+\.\d+\.\d+)/) || [])[1];
         if (!v || !newerThan(v, app.getVersion())) { fs.rmSync(path.join(d, f), { force: true }); console.log("update: 지난 설치 파일 지움", f); }
       }
