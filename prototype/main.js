@@ -40,7 +40,7 @@ const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
 const argHas = (f) => process.argv.includes(f);
 const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
 let NAMES = { heroes: {}, skins: {} };
-try { NAMES = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "names-ko.json"), "utf8")); } catch {}
+try { NAMES = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "names-ko.json"), "utf8")); } catch (e) { console.warn("data/names-ko.json 을 읽지 못했습니다 — 사도 이름이 영문으로 보입니다:", e.message); }
 function koSkin(skin) { const m = skin.replace(/^Mini_/, "").match(/^(.*?)(?:Skin(\d+))?$/); const base = NAMES.heroes[m[1]] || m[1]; return m[2] ? `${base} · ${NAMES.skins[m[1]]?.[m[2]] || "스킨 " + m[2]}` : base; }
 
 // ---- 설정 ----
@@ -399,11 +399,11 @@ function showBubble(id, payload) {
 function closeBubble() { if (bubbleWin && !bubbleWin.isDestroyed()) bubbleWin.close(); }
 
 // ---- AI 대화 창 — chat.js (아래 CH). 프로필 자료는 여기서 읽어 chatProfile 로 준다 ----
-let talkStyle = null; try { talkStyle = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-style.json"), "utf8")); } catch {} // 보이스 STT 대본 분석(어미 비율·표본) — 없어도 됨
-let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "relations.json"), "utf8")); } catch {} // 사도끼리 부르는 말·함께 등장 (tools/build-relations.py)
-let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch {} // 테마극장 출연·줄거리 (나무위키)
-let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch {} // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
-let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch {} // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
+let talkStyle = null; try { talkStyle = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "talk-style.json"), "utf8")); } catch (e) { console.warn("data/talk-style.json 을 읽지 못했습니다 — 말투 통계 없이 돕니다:", e.message); } // 보이스 STT 대본 분석(어미 비율·표본) — 없어도 됨
+let relations = null; try { relations = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "relations.json"), "utf8")); } catch (e) { console.warn("data/relations.json 을 읽지 못했습니다 — 사도끼리 부르는 말 없이 돕니다:", e.message); } // 사도끼리 부르는 말·함께 등장 (tools/build-relations.py)
+let theaters = []; try { theaters = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "theaters.json"), "utf8")).items || []; } catch (e) { console.warn("data/theaters.json 을 읽지 못했습니다 — 테마극장 이야기 없이 돕니다:", e.message); } // 테마극장 출연·줄거리 (나무위키)
+let bible = {}; try { bible = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "bible.json"), "utf8")); } catch (e) { console.warn("data/bible.json 을 읽지 못했습니다 — 인물 사전 없이 돕니다:", e.message); } // 인물 사전: 나무위키 사도 문서 139편 요약(누구인지·성격·관계·행적·말버릇)
+let vsamples = {}; try { vsamples = JSON.parse(fs.readFileSync(path.join(DATA_ROOT, "voice-samples.json"), "utf8")); } catch (e) { console.warn("data/voice-samples.json 을 읽지 못했습니다 — 말투 예시 없이 돕니다:", e.message); } // 말투 예시: 게임 대사가 아니라, 잰 말투에 맞춰 우리가 지은 문장
 // 혼잣말(대본)은 selftalk.js — 데이터 적재·상황 고르기·말풍선 내보내기. bubbleMs 는 아래에서 정의되므로 getter 로
 const ST = require("./selftalk.js")({ dataRoot: DATA_ROOT, get bubbleMs() { return bubbleMs; }, chatProfile: (id) => chatProfile(id), instanceOf: (wc) => instanceOf(wc), sendMascot: (id, cmd, arg) => sendMascot(id, cmd, arg), showBubble: (id, p) => showBubble(id, p) });
 const selfTalk = ST.lines, skinTalk = ST.skins, saySelfTalk = ST.saySelfTalk, selfTalkSaid = ST.selfTalkSaid;
@@ -444,7 +444,26 @@ const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).b
 // 렌더러가 보낸 높이는 정수여야 한다 — NaN 이면 setBounds 가 메인에서 throw 한다 (레이아웃 전에 0/undefined 로 온 적이 있다)
 const heightOf = (h, lo) => { h = Math.round(+h); return Number.isFinite(h) && h >= lo ? h : null; };
 // 설정창용
-ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));   // 키가 실제로 암호화돼 저장되는지 — 설정 창이 사실대로 적는다
+ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));
+// 진단 정보 — 문제를 알릴 때 붙이라고 한 덩이로. API 키·대화 내용·창 제목은 넣지 않는다 (키는 있고 없고만)
+ipcMain.handle("diag:get", async () => {
+  const g = settings.global, ai = g.ai || {};
+  let st = null; try { st = await Ai.status(ai); } catch (e) { st = { error: e.message }; }
+  const disp = (geo && geo.displays || []).map((d, i) => `${i + 1}) ${d.w}×${(d.bottom - d.top) || "?"} scale ${d.scale || 1}${d.primary ? " 주" : ""}`);
+  const L = [
+    `사도 데스크 v${app.getVersion()} · Electron ${process.versions.electron} · ${process.platform} ${require("os").release()}`,
+    `설치판: ${app.isPackaged ? "예" : "아니오(개발 실행)"} · 켠 지 ${Math.round((Date.now() - (app._startedAt || Date.now())) / 60000)}분`,
+    `게임 데이터: ${hasAssets(ASSET_ROOT) ? "있음" : "없음"} — 스탠딩 ${Object.keys(STANDING.game).length} · 전투 SD ${Object.keys(STANDING.ingame).length} · 외형 ${(catalog.skins || []).length}벌`,
+    `사도 ${settings.characters.length}명: ${settings.characters.map(c => `${koSkin(c.skin)}(${c.mode})`).join(", ")}`,
+    `화면: ${disp.length}대 [${disp.join(" · ")}] · 모니터 가두기 ${g.display.confineMonitor !== false ? "켬" : "끔"} · 맨 앞 유지 ${g.display.keepOnTop ? "켬" : "끔"} · 전체화면 숨김 ${g.display.hideFullscreen !== false ? "켬" : "끔"} · 갱신 ${g.display.fps}`,
+    `소리: ${g.sound.muted ? "꺼짐" : `전체 ${Math.round(g.sound.master * 100)}% · 음성 ${Math.round(g.sound.voice * 100)}% · 효과음 ${Math.round(g.sound.sfx * 100)}%`}`,
+    `AI: 고른 것 ${ai.provider || "auto"} · 지금 쓰는 것 ${(st && st.resolved) || "없음"} · 키 ${["gemini", "anthropic", "openai"].filter(k => st && st[k] && st[k].key).join(",") || "없음"}${Ai.keysEncrypted() ? "(암호화)" : "(암호화 불가)"} · Ollama ${st && st.ollama ? (st.ollama.running ? `실행 중, 모델 ${st.ollama.models.length}개` : "연결 안 됨") : "?"}`,
+    `AI 대화: 먼저 말 걸기 ${ai.proactive ? "켬" : "끔"} · 화면 보기 ${ai.screen ? `켬(${ai.screenScope === "display" ? "모니터 전체" : `앱 ${(ai.screenWindows || []).length}개`})` : "끔"} · 기록 ${ai.memory !== false ? "켬" : "끔"}`,
+    `새 소식: ${g.news && g.news.enabled === false ? "끔" : "켬"} · 마지막 확인 ${news && news.status.lastCheck ? new Date(news.status.lastCheck).toLocaleString("ko-KR") : "없음"} · 마지막 오류 ${(news && news.status.lastError) || "없음"}`,
+    `경로: 설정 ${SETTINGS_FILE} · 게임 데이터 ${ASSET_ROOT}`,
+  ];
+  return L.join("\n");
+});   // 키가 실제로 암호화돼 저장되는지 — 설정 창이 사실대로 적는다
 ipcMain.handle("ai:set-key", (_e, provider, key) => { if (!["gemini", "anthropic", "openai"].includes(provider)) return false; updateSettings({ ai: { keys: { [provider]: Ai.encKey(String(key || "").trim()) } } }); return true; });
 ipcMain.handle("ai:test", async (_e, provider) => {
   const prof = chatProfile(settings.characters[0].id); let out = "";
@@ -606,6 +625,7 @@ ipcMain.on("news:test", async () => { // 미리보기: 지금 올라와 있는 �
 });
 ipcMain.on("bubble:resize", (_e, h) => { h = heightOf(h, 1); if (h === null) return; if (bubbleWin && !bubbleWin.isDestroyed()) { bubbleBounds = { ...(bubbleBounds || { x: 0, y: 0, width: BUBBLE_W }), height: Math.max(80, h) }; bubblePlace(bubbleFor); } });
 ipcMain.on("bubble:close", () => closeBubble());
+ipcMain.on("copy-text", (_e, t) => { try { require("electron").clipboard.writeText(String(t || "").slice(0, 20000)); } catch (e) { console.warn("clipboard", e.message); } });
 ipcMain.on("open-path", (_e, which) => { if (which === "settings") shell.showItemInFolder(SETTINGS_FILE); else if (which === "assets") shell.openPath(ASSET_ROOT); });
 ipcMain.on("char:add", (e, from) => addCharacter(from || instanceOf(e.sender)));
 ipcMain.on("char:remove", (e, id) => removeCharacter(id || instanceOf(e.sender)));
@@ -630,7 +650,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
+require("./test-hooks.js")({ get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {

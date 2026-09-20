@@ -312,6 +312,13 @@
   const spineVersion = () => "4.1.56";
   for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => host.openPath(b.dataset.open));
   document.getElementById("assets-setup")?.addEventListener("click", () => host.assetsOpenSetup());
+  // 진단 정보 — 문제를 알릴 때 붙이라고. 키·대화 내용은 들어가지 않는다
+  document.getElementById("diag-copy")?.addEventListener("click", async (e) => {
+    const b = e.target; b.disabled = true; const was = b.textContent;
+    try { const t = await host.diagGet(); host.copyText(t); b.textContent = "복사했습니다 ✓"; }
+    catch (err) { b.textContent = "복사 실패: " + err.message; }
+    setTimeout(() => { b.textContent = was; b.disabled = false; }, 2500);
+  });
   document.getElementById("reset").addEventListener("click", () => { if (confirm("설정을 초기화하시겠습니까?\n추가한 사도와 개별 설정이 초기화됩니다. AI 설정과 API 키는 유지됩니다.")) host.resetSettings(); });
 
   // ---- 동기화 ----

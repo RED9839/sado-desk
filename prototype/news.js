@@ -13,13 +13,19 @@ const BOARDS = { notice: { id: 3, label: "공지사항" }, update: { id: 11, lab
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) sado-desk/0.8";
 const MAX_KEEP = 60;
 
-function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {} }) {
+// 주소·시한은 시험에서만 갈아 끼운다 (test/news.test.js 가 로컬 가짜 서버를 물린다). 제품 코드는 기본값 그대로
+const DEFAULT_ENDPOINTS = {
+  youtube: (ch) => `https://www.youtube.com/feeds/videos.xml?channel_id=${ch}`,
+  lounge: (boardId) => `https://comm-api.game.naver.com/nng_main/v1/community/lounge/${LOUNGE}/feed?offset=0&limit=8&order=NEW&boardId=${boardId}`,
+};
+function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {}, endpoints, timeoutMs = 15000 }) {
+  const EP = { ...DEFAULT_ENDPOINTS, ...(endpoints || {}) };
   let state = { seen: { youtube: [], lounge: [] }, items: [], unread: 0, initialized: false, lastCheck: 0, lastError: null };
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, "utf8")) }; } catch {}
   let timer = null, checking = false;
   const save = () => { try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify(state, null, 2)); } catch (e) { log("news state save", e); } };
 
-  async function fetchText(url, ms = 15000) {
+  async function fetchText(url, ms = timeoutMs) {
     const ac = new AbortController(); const t = setTimeout(() => ac.abort(), ms);
     try { const r = await fetch(url, { headers: { "User-Agent": UA, Referer: "https://game.naver.com/" }, signal: ac.signal }); if (!r.ok) throw new Error(`HTTP ${r.status}`); return await r.text(); }
     finally { clearTimeout(t); }
@@ -27,7 +33,7 @@ function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {} }) {
   const unesc = (s) => s.replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d)).replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
   async function fetchYouTube() {
-    const xml = await fetchText(`https://www.youtube.com/feeds/videos.xml?channel_id=${YT_CHANNEL}`);
+    const xml = await fetchText(EP.youtube(YT_CHANNEL));
     const out = [];
     for (const m of xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)) {
       const e = m[1];
@@ -41,7 +47,7 @@ function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {} }) {
   }
   async function fetchBoard(key) {
     const b = BOARDS[key];
-    const json = JSON.parse(await fetchText(`https://comm-api.game.naver.com/nng_main/v1/community/lounge/${LOUNGE}/feed?offset=0&limit=8&order=NEW&boardId=${b.id}`));
+    const json = JSON.parse(await fetchText(EP.lounge(b.id)));
     if (json.code !== 200) throw new Error(`lounge ${key}: ${json.message}`);
     return (json.content.feeds || []).map(f => {
       const fe = f.feed || {}; const d = String(fe.createdDate || "");
@@ -97,4 +103,4 @@ function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {} }) {
   function inject(items) { const list = items.map(it => ({ ...it, read: false })); state.items = [...list, ...state.items].slice(0, MAX_KEEP); state.unread = state.items.filter(i => !i.read).length; save(); onNew(items); }
   return { check, start, stop, markRead, inject, latest, get items() { return state.items; }, get unread() { return state.unread; }, get status() { return { lastCheck: state.lastCheck, lastError: state.lastError, initialized: state.initialized }; }, BOARDS };
 }
-module.exports = { createNewsWatcher };
+module.exports = { createNewsWatcher, BOARDS };

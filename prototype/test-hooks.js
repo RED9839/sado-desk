@@ -284,6 +284,21 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 6000);
 
+  // --diag-test — 진단 정보에 필요한 줄이 다 있고, API 키·대화 내용 같은 비밀이 섞이지 않는지
+  if (argHas("--diag-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`DIAGTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    ctx.openSettings("about"); await new Promise(r => setTimeout(r, 2500));   // handle 은 직접 못 부르니 설정 창의 다리로 부른다
+    const out = await ctx.settingsWin.webContents.executeJavaScript("window.host.diagGet()");
+    console.log("DIAGTEST ----" + String.fromCharCode(10) + out + String.fromCharCode(10) + "DIAGTEST ----");
+    for (const must of ["사도 데스크 v", "게임 데이터:", "사도 ", "화면:", "소리:", "AI:", "새 소식:", "경로:"]) ok(out.includes(must), `줄 있음: ${must}`);
+    const key = Ai.decKey(Ai.merge(ctx.settings.global.ai).keys.gemini || "");
+    ok(!/sk-ant-|AIza|"keys"/.test(out) && (!key || !out.includes(key)), "API 키가 들어가지 않는다");
+    ok(!/혼잣말\[|chat\[/.test(out), "대화·혼잣말 내용이 들어가지 않는다");
+    { const lines = out.split(String.fromCharCode(10)).length; ok(lines >= 8 && out.length < 4000, `길이 ${out.length}자 · ${lines}줄 (붙여 넣을 만한 크기)`); }
+    console.log(`DIAGTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {
