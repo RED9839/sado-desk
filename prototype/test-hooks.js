@@ -41,14 +41,23 @@ module.exports = function installTestHooks(ctx) {
     const fails = [], ok = (cond, msg) => { console.log(`HITTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     const got = []; ipcMain.on("hit-ev", (_e, ev) => got.push(ev));
-    const blocked = []; const w = ctx.hitWin;
+    const blocked = [];
+    // 사도가 떠 있으면 그 히트 창을, 아니면(에셋이 없는 CI) 같은 페이지를 직접 띄운다 —
+    // 이 시험의 핵심은 '그 페이지의 스크립트가 CSP 에 막히지 않고 입력을 메인까지 넘기는가' 이고, 그건 사도 없이도 볼 수 있다
+    const own = argHas("--hit-standalone") || !(ctx.hitWin && !ctx.hitWin.isDestroyed());   // --hit-standalone: 에셋이 있는 PC 에서도 CI 와 같은 길을 시험해 보려고
+    const w = own ? new BrowserWindow({
+      x: 100, y: 100, width: 200, height: 200, show: false, transparent: true, frame: false, alwaysOnTop: true, skipTaskbar: true,
+      resizable: false, movable: false, hasShadow: false, focusable: false, backgroundColor: "#00000000",
+      webPreferences: { preload: path.join(__dirname, "renderer", "hit-preload.js"), contextIsolation: true, sandbox: true },
+    }) : ctx.hitWin;
+    if (own) { await w.loadFile(path.join(__dirname, "renderer", "hit.html")); console.log("HITTEST 사도가 없어 히트 창을 직접 띄웠다 (에셋 없는 환경)"); }
     ok(!!w && !w.isDestroyed(), "히트 창이 있다");
     if (!w || w.isDestroyed()) { console.log("HITTEST FAILED " + fails.length); return app.exit(1); }
     w.webContents.on("console-message", (ev) => { if (/Refused to (execute|load)/i.test(ev.message)) blocked.push(ev.message); });
     // 에셋이 있으면 진짜 사도 자리에, 없으면(CI) 아무 자리에나 창을 놓고 입력을 넣는다
     const id = (ctx.settings.characters[0] || {}).id, inst = id && ctx.instances.get(id);
     let b;
-    if (inst && inst.rect) {
+    if (!own && inst && inst.rect) {
       // 창이 선 자리만 본다 — 진짜 커서가 딴 데 있으면 16ms 폴링이 곧 숨긴다(그래도 입력은 창에 넣을 수 있다).
       // 사도는 걷는 중이라 한 번 재면 그 사이에 움직여 있다. 여러 번 재서 가장 잘 맞은 것을 본다(가만히 서는 순간이 온다)
       let best = 0;
@@ -64,7 +73,7 @@ module.exports = function installTestHooks(ctx) {
       }
       ok(best > 0.5, `사도 자리에 히트 창이 선다 (겹침 ${Math.round(100 * best)}%)`);
     }
-    else { b = { x: 100, y: 100, width: 200, height: 200 }; w.setBounds(b); w.showInactive(); await sleep(200); console.log("HITTEST 에셋 없음 — 창만 놓고 입력 검사"); }
+    else { b = { x: 100, y: 100, width: 200, height: 200 }; w.setBounds(b); w.showInactive(); await sleep(300); }
     const px = Math.round(b.width / 2), py = Math.round(b.height / 2);
     const put = (type, button, clickCount) => w.webContents.sendInputEvent({ type, x: px, y: py, globalX: b.x + px, globalY: b.y + py, button, clickCount, modifiers: [] });
     got.length = 0;
@@ -77,7 +86,7 @@ module.exports = function installTestHooks(ctx) {
     const d = got.find(e => e.type === "mousedown");
     ok(!!d && Math.abs(d.sx - (b.x + px)) <= 2 && Math.abs(d.sy - (b.y + py)) <= 2, `좌표가 화면 좌표로 온다 (${d ? d.sx + "," + d.sy : "-"} ≈ ${b.x + px},${b.y + py})`);
     ok(blocked.length === 0, `CSP 에 막힌 스크립트 없음${blocked.length ? " — " + blocked[0].slice(0, 80) : ""}`);
-    if (inst && inst.rect) {   // 에셋이 있을 때만: 오른쪽 버튼이 메뉴까지 가는지 (창 → 메인 다음 구간: 메인 → 마스코트 렌더러)
+    if (!own && inst && inst.rect) {   // 에셋이 있을 때만: 오른쪽 버튼이 메뉴까지 가는지 (창 → 메인 다음 구간: 메인 → 마스코트 렌더러)
       ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx: b.x + px, sy: b.y + py, button: 2, buttons: 0 });
       for (let i = 0; i < 80 && !(ctx.menuWin && !ctx.menuWin.isDestroyed()); i++) {   // 사도가 다른 동작 중이면 메뉴가 늦게 열린다 — 8초까지 기다리고 한 번 더 눌러 본다
         if (i === 40) ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx: b.x + px, sy: b.y + py, button: 2, buttons: 0 });
@@ -85,6 +94,7 @@ module.exports = function installTestHooks(ctx) {
       }
       ok(!!(ctx.menuWin && !ctx.menuWin.isDestroyed()), "오른쪽 버튼 → 메뉴가 열린다");
     }
+    if (own && !w.isDestroyed()) w.destroy();
     console.log(`HITTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 6000);
