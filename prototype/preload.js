@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld("host", {
   getCatalog: () => ipcRenderer.invoke("catalog:get"),
   mascot: (cmd, arg, id) => ipcRenderer.send("mascot", cmd, arg, id === undefined ? INSTANCE : id),
   openPath: (which) => ipcRenderer.send("open-path", which),
+  diagGet: () => ipcRenderer.invoke("diag:get"),
+  copyText: (t) => ipcRenderer.send("copy-text", String(t || "")),
   // 에셋 가져오기(추출)
   assetsStatus: () => ipcRenderer.invoke("assets:status"),
   assetsPickFolder: () => ipcRenderer.invoke("assets:pick-folder"),
