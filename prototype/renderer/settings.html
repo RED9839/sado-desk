@@ -10,6 +10,7 @@
   nav .brand{display:flex;align-items:center;gap:8px;padding:4px 8px 16px;font-weight:700;font-size:14px}
   nav .brand img{width:28px;height:28px;border-radius:7px}
   nav button{all:unset;display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px}
+  nav button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   nav button:hover{background:#2e2e37;color:var(--text)}
   nav button.on{background:var(--accent);color:#fff;font-weight:600}
   nav .ver{margin-top:auto;padding:8px 12px;font-size:11px;color:var(--muted2)}
@@ -121,7 +122,7 @@
   #charbar .note{flex-basis:100%;color:var(--muted2);font-size:11px;margin:2px 0 0 2px}
 </style></head>
 <body>
-<nav>
+<nav role="tablist" aria-label="설정 분류">
   <div class="brand"><img src="tray.png" alt=""><span>사도 데스크</span></div>
   <button data-tab="guide">조작법</button>
   <button data-tab="character" class="on">사도</button>

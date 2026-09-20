@@ -299,6 +299,31 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 4000);
 
+  // --keys-test — 설정 창의 키보드 조작: Tab 으로 탭 줄에 닿고, ←→ 로 탭을 옮기고, Home·End 로 처음·끝
+  if (argHas("--keys-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`KEYSTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    ctx.openSettings("character"); await sleep(2500);
+    const wc = ctx.settingsWin.webContents;
+    const js = (c) => wc.executeJavaScript(c);
+    const cur = () => js("(document.querySelector('main section.on')||{}).id");
+    const focused = () => js("document.activeElement && document.activeElement.dataset ? (document.activeElement.dataset.tab || document.activeElement.tagName) : 'none'");
+    ok((await js("[...document.querySelectorAll('nav button')].filter(b => b.tabIndex === 0).length")) === 1, "Tab 으로 닿는 탭 단추는 하나(고른 것)");
+    await js("document.querySelector('nav button.on').focus()"); await sleep(200);
+    const key = (k) => wc.sendInputEvent({ type: "keyDown", keyCode: k });
+    key("Right"); await sleep(300);
+    ok((await cur()) === "tab-behavior" && (await focused()) === "behavior", `→ 로 다음 탭 (${await cur()} · 포커스 ${await focused()})`);
+    key("Left"); await sleep(300);
+    ok((await cur()) === "tab-character", `← 로 이전 탭 (${await cur()})`);
+    key("End"); await sleep(300);
+    ok((await cur()) === "tab-about", `End 로 마지막 탭 (${await cur()})`);
+    key("Home"); await sleep(300);
+    ok((await cur()) === "tab-guide", `Home 으로 첫 탭 (${await cur()})`);
+    ok((await js("document.activeElement.getAttribute('aria-selected')")) === "true", "고른 탭에 aria-selected");
+    console.log(`KEYSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
   // --first-run-test — 설치판의 첫 실행. 빈 프로필(--userdata 새 폴더)로 띄우면 에셋이 없으니 '가져오기' 창이 첫 화면으로 떠야 한다.
   // test/first-run.js 가 dist/win-unpacked 또는 설치된 exe 로 돌린다 (개발 실행에선 prototype/assets 가 잡혀 첫 실행이 아니다)
   if (argHas("--first-run-test")) setTimeout(async () => {

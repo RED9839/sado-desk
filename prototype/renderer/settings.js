@@ -71,8 +71,20 @@
     for (const s of document.querySelectorAll("main section")) s.classList.toggle("on", s.id === "tab-" + name);
     document.getElementById("charbar").classList.toggle("common", COMMON_TABS.has(name)); updateBulkNote();
     if (name === "ai") refreshAi(); else if (name === "news") renderNews(); // 브로드캐스트 때는 보이는 탭만 새로 그리므로, 탭을 열 때 한 번은 채워야 한다
+    // 탭 하나만 Tab 으로 닿게 하고(고른 것), 나머지는 ←→ 로 — 흔한 탭 조작 방식
+    for (const b of navBtns) { const on = b.dataset.tab === name; b.tabIndex = on ? 0 : -1; b.setAttribute("aria-selected", on ? "true" : "false"); b.setAttribute("role", "tab"); }
   };
-  for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => showTab(b.dataset.tab));
+  const navBtns = [...document.querySelectorAll("nav button")];
+  for (const b of navBtns) b.addEventListener("click", () => showTab(b.dataset.tab));
+  // ←→ 로 옆 탭, Home·End 로 처음·끝. 고른 탭으로 포커스도 옮긴다
+  document.querySelector("nav").addEventListener("keydown", (e) => {
+    const i = navBtns.indexOf(document.activeElement); if (i < 0) return;
+    const to = e.key === "ArrowRight" || e.key === "ArrowDown" ? (i + 1) % navBtns.length
+      : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (i - 1 + navBtns.length) % navBtns.length
+      : e.key === "Home" ? 0 : e.key === "End" ? navBtns.length - 1 : -1;
+    if (to < 0) return;
+    e.preventDefault(); showTab(navBtns[to].dataset.tab); navBtns[to].focus();
+  });
   host.on("tab", (t) => showTab(t));
 
   // ---- 일반 컨트롤 바인딩 (data-s="path") ----
@@ -325,7 +337,7 @@
   host.on("settings", (s) => { FULL = s; S = view(); renderControls(); markCurrent(); if (document.querySelector("#tab-news.on")) renderNews(); if (document.querySelector("#tab-ai.on")) refreshAi(); });   // 서비스를 바꾸면 카드 순서·흐림도 따라간다
   host.on("catalog", async (c) => { catalog = c; await loadPages(); buildGrid(); buildAnims(); renderAbout(); });
 
-  bindControls(); renderControls(); renderNews();
+  bindControls(); renderControls(); renderNews(); showTab(document.querySelector("nav button.on").dataset.tab);   // 시작할 때도 탭 상태(roving tabindex·aria)를 맞춘다
   if (catalog.skins.length) { await loadPages(); buildGrid(); buildAnims(); renderAbout(); }
   else document.getElementById("skin-count").textContent = "마스코트 로딩 중…";
   console.log(`SETTINGS ready skins=${catalog.skins.length} anims=${catalog.animations.length} skin=${S.skin} chars=${FULL.characters.length} cur=${cur}`);
