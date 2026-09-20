@@ -456,6 +456,7 @@ async function startUpdate(silentIfBusy = false) {
   const r = await UP.download();
   clearInterval(tick); updateBusy = false; buildTray();
   if (!r.ok) {
+    if (r.cancelled) return;   // 사람이 멈춘 것 — 아무 말도 하지 않는다
     const { dialog } = require("electron");
     const a = await dialog.showMessageBox({ type: "warning", title: "사도 데스크 업데이트", message: "업데이트를 받지 못했어요.", detail: r.error + "\n\n릴리스 페이지에서 직접 받으실 수도 있습니다.", buttons: ["릴리스 페이지 열기", "닫기"], defaultId: 1, cancelId: 1 });
     if (a.response === 0) shell.openExternal(UP.info.url);
@@ -484,6 +485,7 @@ if (argHas("--update-failed")) app.whenReady().then(() => setTimeout(async () =>
 ipcMain.handle("update:state", () => ({ info: UP.info, state: UP.state, version: app.getVersion() }));
 ipcMain.handle("update:check", async () => { await UP.checkUpdate(); return { info: UP.info, version: app.getVersion() }; });
 ipcMain.on("update:start", () => startUpdate());
+ipcMain.on("update:cancel", () => { UP.cancel(); buildTray(); });
 ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));
 // 진단 정보 — 문제를 알릴 때 붙이라고 한 덩이로. API 키·대화 내용·창 제목은 넣지 않는다 (키는 있고 없고만)
 ipcMain.handle("diag:get", async () => {
@@ -508,7 +510,8 @@ ipcMain.handle("ai:set-key", (_e, provider, key) => { if (!["gemini", "anthropic
 ipcMain.handle("ai:test", async (_e, provider) => {
   const prof = chatProfile(settings.characters[0].id); let out = "";
   try { const r = await Ai.chat(settings.global.ai, prof, [{ role: "user", text: "안녕! 한 마디만 해 줘." }], (d) => { out += d; }, { provider: provider || undefined }); return { ok: true, text: r.text, emotion: r.raw, provider: r.provider, model: r.model }; }
-  catch (e) { return { ok: false, error: e.message === "no-provider" ? "쓸 수 있는 제공자가 없어요" : String(e.message || e).slice(0, 300) }; }
+  // 대화창과 같은 말로 안내한다 — 같은 오류인데 화면마다 설명이 다르면 사용자가 두 번 헤맨다. 원문은 상세로 따로 준다
+  catch (e) { return { ok: false, error: e.message === "no-provider" ? "쓸 수 있는 AI 서비스가 없습니다. 설정 → AI 대화에서 Ollama를 연결하거나 API 키를 저장해 주세요." : Ai.explainError(e), detail: String(e.message || e).slice(0, 300) }; }
 });
 let pullProc = null;
 ipcMain.handle("ai:pull", (e, model) => new Promise((resolve) => { // ollama pull <model> (CLI가 PATH에 있어야 함)
@@ -707,6 +710,7 @@ function buildTray() {
     { type: "separator" },
     { label: "AI 대화 (Ctrl+Shift+Space)", click: () => openChat(settings.characters[0].id) },
     ...(UP.info ? [{ label: UP.state.phase === "downloading" ? `새 버전 ${UP.info.tag} 받는 중… ${pct(UP.state)}` : UP.state.phase === "ready" ? `새 버전 ${UP.info.tag} 설치하기` : `새 버전 ${UP.info.tag} 받기`, click: () => startUpdate() }] : []),
+    ...(UP.state.phase === "downloading" ? [{ label: "받기 취소", click: () => UP.cancel() }] : []),
     { label: "설정...", click: () => openSettings() },
     { label: hasAssets(ASSET_ROOT) ? "게임 데이터 다시 가져오기..." : "게임 데이터 가져오기...", click: () => openSetup() },
     { label: "소리 끄기", type: "checkbox", checked: settings.global.sound.muted, click: (m) => updateSettings({ sound: { muted: m.checked } }) },

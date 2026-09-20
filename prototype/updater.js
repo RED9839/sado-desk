@@ -9,6 +9,7 @@ const fs = require("node:fs"), path = require("node:path"), crypto = require("no
 const { spawn } = require("node:child_process");
 const { pipeline } = require("node:stream/promises"), { Readable, Transform } = require("node:stream");
 const argHas = (f) => process.argv.includes(f);
+const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
 
 module.exports = function createUpdater(ctx) {
   const UPDATE_REPO = "RED9839/sado-desk";
@@ -59,10 +60,19 @@ module.exports = function createUpdater(ctx) {
   const dir = () => { const d = path.join(app.getPath("userData"), "update"); fs.mkdirSync(d, { recursive: true }); return d; };
   const sha256 = (file) => new Promise((res, rej) => { const h = crypto.createHash("sha256"), s = fs.createReadStream(file); s.on("data", (c) => h.update(c)); s.on("end", () => res(h.digest("hex"))); s.on("error", rej); });
 
+  // 받는 동안 쓰는 것들 — 멈춤(연결은 살아 있는데 데이터가 안 오는 것)과 사람이 누른 취소
+  const STALL_MS = +argVal("--update-stall-ms", 60_000) || 60_000;   // 시험에서만 줄인다
+  let dlAbort = null, stalled = false, cancelled = false;
+  function cancel() {   // 트레이·설정의 '받기 취소'
+    if (state.phase !== "downloading" || !dlAbort) return { ok: false, error: "받는 중이 아니에요." };
+    cancelled = true; dlAbort.abort();
+    return { ok: true };
+  }
   async function download(onProgress = () => {}) {
     const info = updateInfo;
     if (!info || !info.asset) return { ok: false, error: "받을 파일이 없어요. 릴리스 페이지에서 직접 받아 주세요." };
     if (state.phase === "downloading") return { ok: false, error: "이미 받는 중이에요." };
+    stalled = false; cancelled = false;
     state = { phase: "downloading", got: 0, total: info.size || 0, file: null, error: null };
     let tmp = null, file = null;
     try {
@@ -72,14 +82,23 @@ module.exports = function createUpdater(ctx) {
       if (!info.sha256) throw new Error("깃허브가 이 파일의 검사값(SHA-256)을 알려 주지 않았어요. 안전을 확인할 수 없어 설치하지 않습니다.");
       // 이미 받아 둔 것이 맞으면 다시 받지 않는다
       if (fs.existsSync(file) && (await sha256(file)) === info.sha256) { state = { ...state, phase: "ready", got: info.size, total: info.size }; return { ok: true, file, cached: true }; }
-      const r = await fetch(info.asset, { headers: { "User-Agent": `sado-desk/${app.getVersion()}` }, redirect: "follow" });
+      // 멈춤 시계: 조각이 올 때마다 다시 감는다. 60초 동안 한 조각도 안 오면 끊는다 (연결이 살아 있는 채 멎으면
+      // '받는 중' 이 영영 남고 다시 시도도 막혔다). 사람이 누른 취소도 같은 신호를 쓴다
+      const ac = dlAbort = new AbortController();
+      let stallT = null;
+      const bump = () => { if (stallT) clearTimeout(stallT); stallT = setTimeout(() => { stalled = true; ac.abort(); }, STALL_MS); };
+      bump();
+      let r;
+      try { r = await fetch(info.asset, { headers: { "User-Agent": `sado-desk/${app.getVersion()}` }, redirect: "follow", signal: ac.signal }); }
+      finally { if (!r) { if (stallT) clearTimeout(stallT); } }
       if (!r.ok || !r.body) throw new Error(`HTTP ${r.status}`);
       state.total = +(r.headers.get("content-length") || info.size || 0);
       tmp = file + ".part";
       // pipeline 으로 잇는다: 디스크가 차거나 쓰기가 막히면 여기서 거부로 돌아온다(예전엔 write 오류를 아무도 듣지 않아 그대로 터졌다).
       // 역압도 pipeline 이 맡는다 — 120MB 를 메모리에 쌓지 않는다
-      const count = new Transform({ transform(c, _e, cb) { state.got += c.length; onProgress(state.got, state.total); cb(null, c); } });
-      await pipeline(Readable.fromWeb(r.body), count, fs.createWriteStream(tmp));
+      const count = new Transform({ transform(c, _e, cb) { state.got += c.length; bump(); onProgress(state.got, state.total); cb(null, c); } });
+      try { await pipeline(Readable.fromWeb(r.body), count, fs.createWriteStream(tmp), { signal: ac.signal }); }
+      finally { if (stallT) clearTimeout(stallT); dlAbort = null; }
       const got = await sha256(tmp);   // 깃허브가 알려 준 sha256 과 대조 — 다르면 버린다
       if (got !== info.sha256) { fs.rmSync(tmp, { force: true }); throw new Error("받은 파일이 손상됐어요 (검사값이 다릅니다). 다시 시도해 주세요."); }
       fs.rmSync(file, { force: true }); fs.renameSync(tmp, file);
@@ -89,9 +108,13 @@ module.exports = function createUpdater(ctx) {
       return { ok: true, file };
     } catch (e) {
       if (tmp) { try { fs.rmSync(tmp, { force: true }); } catch {} }   // 실패한 조각은 남기지 않는다
-      state = { ...state, phase: "error", error: e.message };
-      console.log("update 내려받기 실패:", e.message);
-      return { ok: false, error: e.message };
+      dlAbort = null;
+      const msg = cancelled ? "받기를 멈췄어요."
+        : stalled ? `받는 속도가 너무 느려 중단했어요 (${STALL_MS / 1000}초 동안 아무것도 오지 않았습니다). 다시 시도해 주세요.`
+        : e.message;
+      state = { ...state, phase: cancelled ? "idle" : "error", error: cancelled ? null : msg };   // 취소는 오류가 아니다 — 다시 누를 수 있게 처음 상태로
+      console.log("update 내려받기 실패:", cancelled ? "사용자 취소" : stalled ? "멈춤(60초)" : e.message);
+      return { ok: false, error: msg, cancelled, stalled };
     }
   }
 
@@ -156,6 +179,22 @@ module.exports = function createUpdater(ctx) {
       fs2.mkdirSync = realMk;
       ok(!x.ok && !x.threw && state.phase === "error", `폴더를 못 만들면 터지지 않고 오류로 돌아온다 (${(x.error || x.threw || "").slice(0, 30)})`);
       x = await download(); ok(x.ok, "그 뒤에도 정상으로 돌아온다");
+      {   // 멈춤: 머리만 보내고 조용해지는 서버를 세워 본다 (진짜 느린 회선 대신)
+        const http = require("node:http");
+        const srv = http.createServer((_q, res) => { res.writeHead(200, { "content-length": "999999999" }); res.write(Buffer.alloc(1024)); });   // 이후 아무것도 안 보낸다
+        await new Promise((res2) => srv.listen(18099, "127.0.0.1", res2));
+        const keepAsset = updateInfo.asset, keepSha = updateInfo.sha256;
+        updateInfo.asset = "http://127.0.0.1:18099/x.exe"; updateInfo.sha256 = "1".repeat(64);
+        const t1 = Date.now(); const st1 = await download();
+        ok(!st1.ok && st1.stalled && state.phase === "error" && Date.now() - t1 < 20000, `멈춘 연결을 ${((Date.now() - t1) / 1000).toFixed(1)}초에 끊는다 (${(st1.error || "").slice(0, 30)})`);
+        // 취소: 같은 서버에 붙였다가 사람이 멈추는 경우
+        const p2 = download(); await new Promise((r2) => setTimeout(r2, 800));
+        const c = cancel(); const st2 = await p2;
+        ok(c.ok && !st2.ok && st2.cancelled && state.phase === "idle", `받는 중 취소하면 처음 상태로 (${state.phase})`);
+        ok(!cancel().ok, "받는 중이 아니면 취소할 것도 없다");
+        srv.close(); updateInfo.asset = keepAsset; updateInfo.sha256 = keepSha;
+        const back = await download(); ok(back.ok, "취소한 뒤에도 다시 받을 수 있다");
+      }
       if (argHas("--update-spawn-test")) {   // 설치 프로세스를 시작조차 못 하는 경우
         const keep = process.env.ComSpec, prevCb = ctx.onInstallError; let told = null;
         process.env.ComSpec = "C:/__없는폴더__/nope.exe"; ctx.onInstallError = (m) => { told = m; };
@@ -175,5 +214,5 @@ module.exports = function createUpdater(ctx) {
   }, 3000);
 
   if (argHas("--update-test")) setTimeout(async () => { await checkUpdate(); console.log("UPDATETEST", app.getVersion(), JSON.stringify(updateInfo), "newer(v9.9.9,cur)=", newerThan("v9.9.9", app.getVersion()), "newer(v0.1.0,cur)=", newerThan("v0.1.0", app.getVersion())); app.quit(); }, 2000);
-  return { checkUpdate, download, install, get info() { return updateInfo; }, get state() { return state; }, newerThan, semver };
+  return { checkUpdate, download, install, cancel, get info() { return updateInfo; }, get state() { return state; }, newerThan, semver };
 };

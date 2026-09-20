@@ -25,14 +25,20 @@ module.exports = function installTestHooks(ctx) {
     const id = (ctx.settings.characters[0] || {}).id, inst = id && ctx.instances.get(id);
     let b;
     if (inst && inst.rect) {
-      const r = ctx.screenRect(inst.rect);
-      ctx.updateHitTarget(r.x + r.width / 2 - ctx.geo.x, r.y + r.height / 2 - ctx.geo.y);
-      await sleep(200); b = w.getBounds();
       // 창이 선 자리만 본다 — 진짜 커서가 딴 데 있으면 16ms 폴링이 곧 숨긴다(그래도 입력은 창에 넣을 수 있다).
-      // 사도는 걷는 중일 수 있어 정확히 같은 사각형을 기대하지 않고 겹치는 넓이로 본다
-      const now = ctx.screenRect(ctx.instances.get(id).rect);
-      const ov = Math.max(0, Math.min(b.x + b.width, now.x + now.width) - Math.max(b.x, now.x)) * Math.max(0, Math.min(b.y + b.height, now.y + now.height) - Math.max(b.y, now.y));
-      ok(ov / (now.width * now.height) > 0.5, `사도 자리에 히트 창이 선다 (창 ${b.x},${b.y} ${b.width}x${b.height} · 사도 ${now.x},${now.y} ${now.width}x${now.height} · 겹침 ${Math.round(100 * ov / (now.width * now.height))}%)`);
+      // 사도는 걷는 중이라 한 번 재면 그 사이에 움직여 있다. 여러 번 재서 가장 잘 맞은 것을 본다(가만히 서는 순간이 온다)
+      let best = 0;
+      for (let i = 0; i < 8; i++) {
+        const r = ctx.screenRect(ctx.instances.get(id).rect);
+        ctx.updateHitTarget(r.x + r.width / 2 - ctx.geo.x, r.y + r.height / 2 - ctx.geo.y);
+        await sleep(150);
+        b = w.getBounds();
+        const now = ctx.screenRect(ctx.instances.get(id).rect);
+        const ov = Math.max(0, Math.min(b.x + b.width, now.x + now.width) - Math.max(b.x, now.x)) * Math.max(0, Math.min(b.y + b.height, now.y + now.height) - Math.max(b.y, now.y));
+        best = Math.max(best, ov / (now.width * now.height));
+        if (best > 0.5) break;
+      }
+      ok(best > 0.5, `사도 자리에 히트 창이 선다 (겹침 ${Math.round(100 * best)}%)`);
     }
     else { b = { x: 100, y: 100, width: 200, height: 200 }; w.setBounds(b); w.showInactive(); await sleep(200); console.log("HITTEST 에셋 없음 — 창만 놓고 입력 검사"); }
     const px = Math.round(b.width / 2), py = Math.round(b.height / 2);
@@ -49,7 +55,10 @@ module.exports = function installTestHooks(ctx) {
     ok(blocked.length === 0, `CSP 에 막힌 스크립트 없음${blocked.length ? " — " + blocked[0].slice(0, 80) : ""}`);
     if (inst && inst.rect) {   // 에셋이 있을 때만: 오른쪽 버튼이 메뉴까지 가는지 (창 → 메인 다음 구간: 메인 → 마스코트 렌더러)
       ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx: b.x + px, sy: b.y + py, button: 2, buttons: 0 });
-      for (let i = 0; i < 30 && !(ctx.menuWin && !ctx.menuWin.isDestroyed()); i++) await sleep(100);
+      for (let i = 0; i < 80 && !(ctx.menuWin && !ctx.menuWin.isDestroyed()); i++) {   // 사도가 다른 동작 중이면 메뉴가 늦게 열린다 — 8초까지 기다리고 한 번 더 눌러 본다
+        if (i === 40) ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx: b.x + px, sy: b.y + py, button: 2, buttons: 0 });
+        await sleep(100);
+      }
       ok(!!(ctx.menuWin && !ctx.menuWin.isDestroyed()), "오른쪽 버튼 → 메뉴가 열린다");
     }
     console.log(`HITTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
@@ -158,7 +167,7 @@ module.exports = function installTestHooks(ctx) {
   //   ⑤ 화면 캡처 중 창 닫기 · ⑥ 캡처 중 다른 사도로 · ⑦ 캡처 중 '화면 보기' 끄기 → AI 요청이 시작되지 않는다 (⑧ 은 캡처가 그대로 끝나면 턴이 도는 대조군)
   //   ⑨ 답하는 중 창 닫고 다시 열기 → 끊긴 턴은 저장되지 않고, 새 창은 입력이 열려 있다
   //   ⑩ A→B→A 연속 열기 → 대상·이름 A  ·  ⑪ 같은 사도의 답이 오는 중 다시 열기 → 답이 끊기지 않고 창에 남는다
-  if (argHas("--chat-race-test")) setTimeout(async () => {
+  if (argHas("--chat-race-test")) setTimeout(async () => { try {
     const [a, b] = ctx.settings.characters.map(c => c.id); const ud = app.getPath("userData");
     const fails = [], ok = (cond, msg) => { console.log(`RACETEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -225,8 +234,30 @@ module.exports = function installTestHooks(ctx) {
       ok(b1.x === b2.x && b1.y === b2.y, `⑫ 사도가 (400, −200) 옮겨도 창은 그대로 (${b2.x - b1.x}, ${b2.y - b1.y})`);
       ctx.chatWin.close(); ctx.instances.delete("zz");
     }
+    // ⑬ 기록 파일이 망가진 채 말을 걸기 — JSON 으로 읽히지만 배열이 아닌 {} (사람이 고쳤거나 저장이 잘렸을 때).
+    // 고치기 전엔 준비 단계(hist.map)에서 터졌고 그게 try 밖이라 chatBusy 가 잠긴 채 남아 대화가 영영 막혔다
+    // 앞 창이 닫히는 중일 수 있다(⑫). 닫힘이 끝나고 a 의 새 창이 현재 창이 될 때까지 기다린다 — 그 틈에 보내면 chatWin 이 null 이다
+    const winUp = async () => { for (let i = 0; i < 80 && !(ctx.chatWin && !ctx.chatWin.isDestroyed() && ctx.chatFor === a); i++) await sleep(100); await sleep(800); };
+    for (let i = 0; i < 40 && ctx.chatWin; i++) await sleep(100);   // ⑫ 의 close 가 끝나기 전에 열면 openChat 이 제 차례를 잃는다(창 닫힘이 chatSeq 를 올린다)
+    ctx.openChat(a); await winUp();
+    Ai.clearHistory(ud, a); Ai.saveHistory(ud, a, [{ role: "user", text: "씨앗" }, { role: "assistant", text: "응" }], 12);
+    const cdir = path.join(ud, "chat");
+    const hfile = path.join(cdir, fs.readdirSync(cdir).find(f => f.endsWith(".json")));
+    fs.writeFileSync(hfile, JSON.stringify({ broken: true }));   // 배열이 아니다
+    ok(Ai.loadHistory(ud, a).length === 0, `⑬ 망가진 기록은 빈 것으로 읽는다 (${JSON.stringify(Ai.loadHistory(ud, a))})`);
+    await sendIn("망가진 기록에도 대답해 줘"); await wait(); await sleep(300);
+    ok(!ctx.chatBusy, `⑬ 턴 뒤 대화가 잠기지 않았다 (busy=${ctx.chatBusy})`);
+    ok(Ai.loadHistory(ud, a).length === 2, `⑬ 새 기록 ${Ai.loadHistory(ud, a).length}줄 (2 — 망가진 것 대신 새로 쌓인다)`);
+    // ⑭ 답하는 도중 '기록 저장' 끄기 → 그 답은 저장되지 않는다 (시작 시점 설정을 붙들고 있으면 저장됐다)
+    Ai.clearHistory(ud, a);
+    await sendIn("이건 저장되면 안 돼"); await sleep(400);
+    const busyAtOff = ctx.chatBusy; ctx.updateSettings({ ai: { memory: false } }); await wait(); await sleep(400);
+    ok(busyAtOff, "⑭ 끌 때 답하는 중이었다(시험 전제)");
+    ok(Ai.loadHistory(ud, a).length === 0, `⑭ 끈 뒤 기록 ${Ai.loadHistory(ud, a).length}줄 (0)`);
+    ctx.updateSettings({ ai: { memory: true } });
     console.log(`RACETEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
+    } catch (e) { console.log("RACETEST FAIL 시험 자체가 터졌다:", e && e.stack || e); console.log("RACETEST FAILED 1"); app.exit(1); }
   }, 6000);
 
   // --stay-test — 대화창이 열려 있는 동안 그 사도가 제자리에 있는지(폴짝·점프 없음), 닫으면 다시 돌아다니는지. 에셋 필요(로컬)

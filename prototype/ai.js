@@ -208,7 +208,15 @@ function parseEmotion(text) {
 
 // ---- 대화 기록 (캐릭터별) ----
 function historyFile(userData, id) { return path.join(userData, "chat", `${id}.json`); }
-function loadHistory(userData, id) { try { return JSON.parse(fs.readFileSync(historyFile(userData, id), "utf8")); } catch { return []; } }
+// 기록 파일은 사람이 열어 고칠 수도 있고 저장 중 잘릴 수도 있다. JSON 으로 읽히는 것만으로는 모자라서 꼴까지 본다 —
+// 배열이 아니면([]가 아니라 {} 같은) 버리고, 줄 단위로 role/text 가 성한 것만 남긴다 (여기서 안 거르면 chat.js 가 터졌다)
+function loadHistory(userData, id) {
+  try {
+    const v = JSON.parse(fs.readFileSync(historyFile(userData, id), "utf8"));
+    if (!Array.isArray(v)) return [];
+    return v.filter(m => m && typeof m === "object" && (m.role === "user" || m.role === "assistant") && typeof m.text === "string");
+  } catch { return []; }
+}
 function saveHistory(userData, id, msgs, max) {
   try { fs.mkdirSync(path.join(userData, "chat"), { recursive: true }); fs.writeFileSync(historyFile(userData, id), JSON.stringify(msgs.slice(-max * 2), null, 0)); } catch {}
 }

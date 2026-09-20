@@ -6,7 +6,7 @@ const { spawn } = require("node:child_process");
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
 const electron = require("electron");   // 일반 node 에서 require 하면 실행 파일 경로가 온다
 const SCENARIOS = {
-  chat: { flag: "--chat-race-test", tag: "RACETEST", limit: 150_000 },
+  chat: { flag: "--chat-race-test", tag: "RACETEST", limit: 210_000 },
   // 진짜 파이썬 대신 가짜 추출기(node) — "실행파일|인자" 를 setup-window.js 가 읽는다. 뒤에 붙는 extract-all.py 경로는 가짜가 무시한다
   extract: { flag: "--extract-test", tag: "EXTRACTTEST", limit: 60_000, env: { SADO_EXTRACTOR: `${process.execPath}|${path.join(__dirname, "fake-extract.js")}` } },
   settings: { flag: "--settings-test", tag: "SETTINGSTEST", limit: 60_000, seed: "{{{ 깨진 설정 파일" },   // 깨진 settings.json 으로 시작

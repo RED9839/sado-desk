@@ -299,7 +299,13 @@
   }
   for (const b of document.querySelectorAll("[data-savekey]")) b.addEventListener("click", async () => { const k = b.dataset.savekey, inp = document.getElementById(`ai-key-${k}`); await host.aiSetKey(k, inp.value); inp.value = ""; refreshAi(); });
   for (const a of document.querySelectorAll("[data-ai-url]")) a.addEventListener("click", (e) => { e.preventDefault(); host.aiOpenUrl(a.dataset.aiUrl); });
-  document.getElementById("ai-test").addEventListener("click", async (e) => { const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "확인 중…"; const r = await host.aiTest(); e.target.disabled = false; out.textContent = r.ok ? `연결됨 [${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `연결 실패: ${r.error}`; });
+  document.getElementById("ai-test").addEventListener("click", async (e) => {
+    const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "확인 중…";
+    const r = await host.aiTest(); e.target.disabled = false;
+    // 대화창과 같은 안내 문장을 쓰고, 제공자가 보낸 원문은 뒤에 작게 붙인다 (같은 오류를 두 화면이 다르게 말하면 안 된다)
+    out.textContent = r.ok ? `연결됨 [${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})`
+      : `연결 실패: ${r.error}${r.detail && r.detail !== r.error ? ` — 원문: ${r.detail}` : ""}`;
+  });
   document.getElementById("ai-pull").addEventListener("click", async (e) => { const model = getPath(FULL.global, "ai.ollama.model"); const out = document.getElementById("ai-pull-out"); e.target.disabled = true; out.textContent = `${model} 내려받는 중…`; const r = await host.aiPull(model); e.target.disabled = false; out.textContent = r.ok ? "완료 ✓" : `실패: ${r.error}`; refreshAi(); });
   host.on("ai:pull-progress", (t) => { document.getElementById("ai-pull-out").textContent = t; });
   // 사용자가 눌렀을 때만 모델 이름을 바꾼다. 내려받기는 여전히 따로 눌러야 한다
@@ -328,7 +334,10 @@
   async function renderUpdate(r) {
     const note = document.getElementById("upd-note"), go = document.getElementById("upd-go"); if (!note) return;
     const st = r.state || {};
-    if (st.phase === "downloading") { note.textContent = `받는 중… ${st.total ? Math.round(st.got / st.total * 100) + "%" : ""}`; go.style.display = "none"; return; }
+    const stop = document.getElementById("upd-stop");
+    if (stop) stop.style.display = st.phase === "downloading" ? "" : "none";
+    if (st.phase === "downloading") { note.textContent = `받는 중… ${st.total ? Math.round(st.got / st.total * 100) + "%" : ""}`; go.style.display = "none"; setTimeout(async () => renderUpdate(await host.updateState()), 1000); return; }
+    if (st.phase === "error" && st.error) { note.textContent = st.error; go.textContent = "다시 시도"; go.style.display = ""; return; }
     if (r.info) {
       note.textContent = st.phase === "ready" ? `새 버전 ${r.info.tag} 을 받아 두었습니다. 설치하면 사도가 잠시 사라졌다가 새 버전으로 돌아옵니다.`
         : `새 버전 ${r.info.tag} 이 있습니다 (지금 v${r.version}). 앱 안에서 받아 설치합니다 — 받은 파일은 검사값(SHA-256)과 대조합니다.`;
@@ -340,6 +349,7 @@
     try { renderUpdate(await host.updateCheck()); } finally { b.textContent = was; b.disabled = false; }
   });
   document.getElementById("upd-go")?.addEventListener("click", () => { host.updateStart(); setTimeout(async () => renderUpdate(await host.updateState()), 800); });
+  document.getElementById("upd-stop")?.addEventListener("click", () => { host.updateCancel(); setTimeout(async () => renderUpdate(await host.updateState()), 500); });
   host.updateState().then(renderUpdate).catch(() => {});
   // 진단 정보 — 문제를 알릴 때 붙이라고. 키·대화 내용은 들어가지 않는다
   document.getElementById("diag-copy")?.addEventListener("click", async (e) => {
