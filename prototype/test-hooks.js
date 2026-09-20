@@ -10,13 +10,50 @@ const argHas = (f) => process.argv.includes(f);
 const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
 
 module.exports = function installTestHooks(ctx) {
-  if (argHas("--hit-test")) setTimeout(() => {
-    const id = ctx.settings.characters[0].id, inst = ctx.instances.get(id); const b = ctx.screenRect(inst.rect); const sx = b.x + b.width / 2, sy = b.y + b.height / 2;
-    ctx.updateHitTarget(sx - ctx.geo.x, sy - ctx.geo.y);
-    const ev = (type, button) => ipcMain.emit("hit-ev", null, { type, sx, sy, button, buttons: 0 }); // instance 없이 → hitFor 로 라우팅되는지
-    console.log("HITTEST rect", JSON.stringify(b), "hitFor", ctx.hitFor, "shown", ctx.hitShown, "hitWin", ctx.hitWin ? JSON.stringify(ctx.hitWin.getBounds()) : null);
-    ev("mousedown", 0); setTimeout(() => ev("mouseup", 0), 60);
-    setTimeout(() => { ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx, sy, button: 2, buttons: 0 }); setTimeout(() => console.log("HITTEST menuWin", ctx.menuWin ? JSON.stringify(ctx.menuWin.getBounds()) : null), 1500); }, 1500);
+  // --hit-test — 손짓이 닿는 길: 히트 창(renderer/hit.html + hit.js) → ipc "hit-ev" → 마스코트 창.
+  // 이 창의 스크립트가 막히면(예전에 CSP 가 인라인을 막았다) 사도는 보이는데 아무 손짓도 먹지 않는다.
+  // 그래서 ipc 를 직접 쏘지 않고 **실제 창에 입력을 넣어** 확인한다. 에셋 없이도 돈다(CI)
+  if (argHas("--hit-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`HITTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const got = []; ipcMain.on("hit-ev", (_e, ev) => got.push(ev));
+    const blocked = []; const w = ctx.hitWin;
+    ok(!!w && !w.isDestroyed(), "히트 창이 있다");
+    if (!w || w.isDestroyed()) { console.log("HITTEST FAILED " + fails.length); return app.exit(1); }
+    w.webContents.on("console-message", (ev) => { if (/Refused to (execute|load)/i.test(ev.message)) blocked.push(ev.message); });
+    // 에셋이 있으면 진짜 사도 자리에, 없으면(CI) 아무 자리에나 창을 놓고 입력을 넣는다
+    const id = (ctx.settings.characters[0] || {}).id, inst = id && ctx.instances.get(id);
+    let b;
+    if (inst && inst.rect) {
+      const r = ctx.screenRect(inst.rect);
+      ctx.updateHitTarget(r.x + r.width / 2 - ctx.geo.x, r.y + r.height / 2 - ctx.geo.y);
+      await sleep(200); b = w.getBounds();
+      // 창이 선 자리만 본다 — 진짜 커서가 딴 데 있으면 16ms 폴링이 곧 숨긴다(그래도 입력은 창에 넣을 수 있다).
+      // 사도는 걷는 중일 수 있어 정확히 같은 사각형을 기대하지 않고 겹치는 넓이로 본다
+      const now = ctx.screenRect(ctx.instances.get(id).rect);
+      const ov = Math.max(0, Math.min(b.x + b.width, now.x + now.width) - Math.max(b.x, now.x)) * Math.max(0, Math.min(b.y + b.height, now.y + now.height) - Math.max(b.y, now.y));
+      ok(ov / (now.width * now.height) > 0.5, `사도 자리에 히트 창이 선다 (창 ${b.x},${b.y} ${b.width}x${b.height} · 사도 ${now.x},${now.y} ${now.width}x${now.height} · 겹침 ${Math.round(100 * ov / (now.width * now.height))}%)`);
+    }
+    else { b = { x: 100, y: 100, width: 200, height: 200 }; w.setBounds(b); w.showInactive(); await sleep(200); console.log("HITTEST 에셋 없음 — 창만 놓고 입력 검사"); }
+    const px = Math.round(b.width / 2), py = Math.round(b.height / 2);
+    const put = (type, button, clickCount) => w.webContents.sendInputEvent({ type, x: px, y: py, globalX: b.x + px, globalY: b.y + py, button, clickCount, modifiers: [] });
+    got.length = 0;
+    put("mouseMove", "left", 0); await sleep(120);
+    put("mouseDown", "left", 1); await sleep(120);
+    put("mouseUp", "left", 1); await sleep(200);
+    ok(got.some(e => e.type === "mousedown"), `마우스 누름이 전달됐다 (${got.map(e => e.type).join(",") || "아무것도 안 옴"})`);
+    ok(got.some(e => e.type === "mouseup"), "마우스 뗌이 전달됐다");
+    ok(got.some(e => e.type === "mousemove"), "마우스 이동이 전달됐다");
+    const d = got.find(e => e.type === "mousedown");
+    ok(!!d && Math.abs(d.sx - (b.x + px)) <= 2 && Math.abs(d.sy - (b.y + py)) <= 2, `좌표가 화면 좌표로 온다 (${d ? d.sx + "," + d.sy : "-"} ≈ ${b.x + px},${b.y + py})`);
+    ok(blocked.length === 0, `CSP 에 막힌 스크립트 없음${blocked.length ? " — " + blocked[0].slice(0, 80) : ""}`);
+    if (inst && inst.rect) {   // 에셋이 있을 때만: 오른쪽 버튼이 메뉴까지 가는지 (창 → 메인 다음 구간: 메인 → 마스코트 렌더러)
+      ipcMain.emit("hit-ev", null, { instance: id, type: "mousedown", sx: b.x + px, sy: b.y + py, button: 2, buttons: 0 });
+      for (let i = 0; i < 30 && !(ctx.menuWin && !ctx.menuWin.isDestroyed()); i++) await sleep(100);
+      ok(!!(ctx.menuWin && !ctx.menuWin.isDestroyed()), "오른쪽 버튼 → 메뉴가 열린다");
+    }
+    console.log(`HITTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
   }, 6000);
 
   if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말투 확인: 스킨마다 같은 질문 → 답 로그

@@ -1,5 +1,5 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'"><title>hit</title>
+<html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'"><title>hit</title>
 <style>
   /* 캐릭터 크기만 한 투명 창. 마우스 이벤트를 받아 메인→마스코트 창으로 넘긴다.
      큰 마스코트 창은 항상 클릭 통과라 Chrome이 "가려졌다"고 판단하지 않는다(유튜브 회색 방지). */
@@ -7,12 +7,5 @@
   body.grabbing{cursor:grabbing}
 </style></head>
 <body>
-<script>
-  const send = (type, e) => window.hit.ev({ type, sx: e.screenX, sy: e.screenY, button: e.button, buttons: e.buttons });
-  window.addEventListener("mousedown", (e) => { if (e.button === 0) document.body.classList.add("grabbing"); send("mousedown", e); });
-  window.addEventListener("mouseup", (e) => { document.body.classList.remove("grabbing"); send("mouseup", e); });
-  window.addEventListener("mousemove", (e) => send("mousemove", e));
-  window.addEventListener("mouseleave", (e) => send("mouseleave", e));
-  window.addEventListener("contextmenu", (e) => e.preventDefault());
-</script>
+<script src="hit.js"></script>
 </body></html>
