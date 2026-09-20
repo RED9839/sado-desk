@@ -154,7 +154,19 @@
   const voiceCountOf = (skinName) => skinInfo(skinName).voices || 0;
   const grid = document.getElementById("skin-grid"), search = document.getElementById("skin-search"), voicedOnly = document.getElementById("skin-voiced"), sdOnly = document.getElementById("skin-sd");
   const tiles = new Map();
+  // 사도 외형이 423개다. 타일마다 144×192 캔버스를 만들어 바로 그리면 픽셀 버퍼만 40MB 넘게 잡고,
+  // 그중 화면에 보이는 건 스무 개 남짓이다. 캔버스는 0×0 으로 두었다가 **눈에 들어올 때** 크기를 주고 그린다
+  const thumbRegion = new WeakMap();
+  const thumbIO = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      const cv = e.target; thumbIO.unobserve(cv);
+      const region = thumbRegion.get(cv); thumbRegion.delete(cv);
+      drawThumb(cv, region);
+    }
+  }, { root: grid, rootMargin: "300px" });   // 스크롤보다 한 화면 앞서 그려 둔다 — 빈칸이 보이지 않게
   function buildGrid() {
+    thumbIO.disconnect();
     grid.innerHTML = ""; tiles.clear();
     for (const sk of [...catalog.skins].sort((a, b) => KO.skinName(a.name).localeCompare(KO.skinName(b.name), "ko") || a.name.localeCompare(b.name))) {
       const t = document.createElement("div"); t.className = "tile"; t.dataset.skin = sk.name;
@@ -163,10 +175,10 @@
       const guess = KO.isGuessed(sk.name);
       t.title = [`${KO.skinName(sk.name)} (${sk.name})`, guess ? "※ 추정 이름" : null, `음성: ${voiceIndex[folder] ? `${folder}/ (${variant === "base" ? "기본" : "사복 " + variant.slice(4)})` : "없음"} · ${vc}개`].filter(Boolean).join("\n"); // 기본↔이격 분리 확인용
       t.dataset.search = KO.searchText(sk.name);
-      t.innerHTML = `<canvas></canvas><div class="nm">${KO.skinName(sk.name, { withSkin: false })}${mm[2] ? `<br><span style="color:var(--muted)">${KO.skinTitle(sk.name)}</span>` : ""}</div><span class="vc ${vc ? "" : "zero"}">♪${vc}</span>${guess ? '<span class="q" title="추정 이름">?</span>' : ""}`;
+      t.innerHTML = `<canvas width="0" height="0"></canvas><div class="nm">${KO.skinName(sk.name, { withSkin: false })}${mm[2] ? `<br><span style="color:var(--muted)">${KO.skinTitle(sk.name)}</span>` : ""}</div><span class="vc ${vc ? "" : "zero"}">♪${vc}</span>${guess ? '<span class="q" title="추정 이름">?</span>' : ""}`;
       t.dataset.sd = (sk.sd?.ingame || sk.sd?.standing) ? "1" : "";
       t.dataset.voices = vc;
-      drawThumb(t.querySelector("canvas"), sk.region);
+      const cv = t.querySelector("canvas"); thumbRegion.set(cv, sk.region); thumbIO.observe(cv);   // 그리기는 보일 때
       t.addEventListener("click", () => set("skin", sk.name));
       grid.appendChild(t); tiles.set(sk.name, t);
     }
@@ -341,12 +353,15 @@
   for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => host.openPath(b.dataset.open));
   document.getElementById("assets-setup")?.addEventListener("click", () => host.assetsOpenSetup());
   // ---- 업데이트 ----
+  let updTimer = null;
+  window.addEventListener("pagehide", () => { if (updTimer) clearTimeout(updTimer); });   // 창을 닫으면 멈춘다
   async function renderUpdate(r) {
     const note = document.getElementById("upd-note"), go = document.getElementById("upd-go"); if (!note) return;
     const st = r.state || {};
     const stop = document.getElementById("upd-stop");
     if (stop) stop.style.display = st.phase === "downloading" ? "" : "none";
-    if (st.phase === "downloading") { note.textContent = `받는 중… ${st.total ? Math.round(st.got / st.total * 100) + "%" : ""}`; go.style.display = "none"; setTimeout(async () => renderUpdate(await host.updateState()), 1000); return; }
+    if (updTimer) { clearTimeout(updTimer); updTimer = null; }   // 진행률 갱신은 하나만 — 버튼을 여러 번 눌러도 겹치지 않게
+    if (st.phase === "downloading") { note.textContent = `받는 중… ${st.total ? Math.round(st.got / st.total * 100) + "%" : ""}`; go.style.display = "none"; updTimer = setTimeout(async () => renderUpdate(await host.updateState()), 1000); return; }
     if (st.phase === "error" && st.error) { note.textContent = st.error; go.textContent = "다시 시도"; go.style.display = ""; return; }
     if (r.info) {
       note.textContent = st.phase === "ready" ? `새 버전 ${r.info.tag} 을 받아 두었습니다. 설치하면 사도가 잠시 사라졌다가 새 버전으로 돌아옵니다.`

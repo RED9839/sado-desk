@@ -406,20 +406,29 @@ const TIERS = {
 let _machine = null;
 // 그래픽카드 메모리는 Win32_VideoController 가 16GB 를 4GB 로 보고하는 등 못 믿는다(32비트 넘침).
 // nvidia-smi 가 있으면 그것만 믿고, 없으면 RAM 으로 보수적으로 고른다 — 모자라게 잡는 쪽이 안전하다
-function detectMachine() {
-  if (_machine) return _machine;
-  const os = require("os"), cp = require("child_process");
-  const ramGB = +(os.totalmem() / 1073741824).toFixed(1);
-  let vramGB = null;
-  try {
-    const out = cp.execFileSync("nvidia-smi", ["--query-gpu=memory.total", "--format=csv,noheader,nounits"],
-      { timeout: 2500, stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
-    const mib = Math.max(...out.split(/\r?\n/).map(x => parseInt(x, 10)).filter(x => x > 0));
-    if (isFinite(mib) && mib > 0) vramGB = +(mib / 1024).toFixed(1);
-  } catch {}
-  _machine = { ramGB, vramGB, cores: os.cpus().length };
-  return _machine;
+let _machineWait = null;
+const machineBase = () => { const os = require("os"); return { ramGB: +(os.totalmem() / 1073741824).toFixed(1), vramGB: null, cores: os.cpus().length }; };
+// 예전엔 execFileSync 라 nvidia-smi 가 굼뜬 PC(드라이버가 막 올라오는 중 등)에서 **최대 2.5초 동안 앱 전체가 멎었다**.
+// 이제 비동기로 부르고, 그 사이에 또 물으면 같은 약속을 나눠 갖는다(프로세스를 두 번 띄우지 않는다)
+function detectMachineAsync() {
+  if (_machine) return Promise.resolve(_machine);
+  if (_machineWait) return _machineWait;
+  _machineWait = new Promise((resolve) => {
+    let done = false;
+    const finish = (vramGB) => { if (done) return; done = true; _machine = { ...machineBase(), vramGB }; _machineWait = null; resolve(_machine); };
+    try {
+      require("child_process").execFile("nvidia-smi", ["--query-gpu=memory.total", "--format=csv,noheader,nounits"],
+        { timeout: 2500, windowsHide: true }, (err, out) => {
+          if (err || !out) return finish(null);
+          const mib = Math.max(...String(out).trim().split(/\r?\n/).map(x => parseInt(x, 10)).filter(x => x > 0));
+          finish(isFinite(mib) && mib > 0 ? +(mib / 1024).toFixed(1) : null);
+        });
+    } catch { finish(null); }
+  });
+  return _machineWait;
 }
+// 동기로 묻는 쪽(모델 고르기)은 기다리지 않는다 — 아직 모르면 RAM 만 보고 보수적으로 고른다
+function detectMachine() { return _machine || machineBase(); }
 /** 이 PC 에 맞는 Ollama 모델. { model, tier, why } */
 function pickOllamaModel(m) {
   m = m || detectMachine();
@@ -447,7 +456,7 @@ async function status(ai) {
   // 사양 읽기(nvidia-smi 실행)는 Ollama 가 실제로 돌고 있을 때만 한다 —
   // 로컬 AI 를 안 쓰는 사람의 PC 에서 프로세스를 띄울 이유가 없다
   // PC 사양·권장 모델은 Ollama 가 없어도 준다 — 설치 전이 바로 이 안내가 필요한 때다 (전엔 연결됐을 때만 채워 "사양을 읽지 못했습니다" 로 보였다)
-  try { s.machine = detectMachine(); s.recommend = pickOllamaModel(s.machine); } catch {}
+  try { s.machine = await detectMachineAsync(); s.recommend = pickOllamaModel(s.machine); } catch {}
   s.resolved = resolve(cfg, s);
   return s;
 }
@@ -541,4 +550,4 @@ function bibleBrief(b, o = {}) {
 }
 module.exports = { explainError, keysEncrypted, pickOllamaModel, sampleLinesFor, trimToBubble, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory,
   // 테스트용 — 스트림 파서와 제공자 함수. 앱 코드는 위의 것만 쓴다
-  _test: { stripNoise, partialField, ndjson, sse, chatGemini, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };
+  _test: { stripNoise, partialField, ndjson, sse, chatGemini, detectMachine, detectMachineAsync, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };

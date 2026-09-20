@@ -139,3 +139,20 @@ test("explainError — 제공자 오류를 할 일이 담긴 한 줄로, 원문�
 test("explainError — 스트림이 중간에 끊긴 것(terminated)은 연결 끊김으로", () => {
   assert.match(Ai.explainError(new Error("terminated")), /^AI 서비스와의 연결이 중간에 끊겼습니다/);
 });
+
+// PC 사양 읽기 — nvidia-smi 를 부르는 일이라 예전엔 동기(최대 2.5초 앱 정지)였다.
+// 지금은 비동기이고, 아직 모르는 동안에도 동기 호출은 곧바로 답해야 한다(모델 고르기가 기다리면 안 된다)
+test("사양 읽기 — 동기 호출은 기다리지 않는다", () => {
+  const t0 = Date.now();
+  const m = Ai._test.detectMachine();
+  assert.ok(Date.now() - t0 < 100, `즉시 돌아온다 (${Date.now() - t0}ms)`);
+  assert.ok(m.ramGB > 0 && m.cores > 0, `RAM·코어는 바로 안다 (${m.ramGB}GB, ${m.cores}코어)`);
+});
+
+test("사양 읽기 — 동시에 물어도 한 번만 조회하고 같은 답을 나눠 갖는다", async () => {
+  const t0 = Date.now();
+  const [a, b] = await Promise.all([Ai._test.detectMachineAsync(), Ai._test.detectMachineAsync()]);
+  assert.equal(a, b, "같은 객체를 돌려준다(조회를 두 번 하지 않는다)");
+  assert.ok(Date.now() - t0 < 4000, `제한 시간 안에 끝난다 (${Date.now() - t0}ms)`);
+  assert.equal(Ai._test.detectMachine(), a, "그 뒤 동기 호출도 읽어 둔 값을 쓴다");
+});

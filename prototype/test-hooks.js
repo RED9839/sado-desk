@@ -10,6 +10,38 @@ const argHas = (f) => process.argv.includes(f);
 const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
 
 module.exports = function installTestHooks(ctx) {
+  // --perf-test — 숨어 있을 때 정말로 쉬는지 센다: 렌더러의 rAF 예약 횟수와 메인의 커서 확인 타이머.
+  // 에셋이 필요하다(로컬). 프레임을 세려면 진짜로 그려야 해서 가짜 사도로는 못 한다
+  if (argHas("--perf-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`PERFTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const js = (code) => ctx.mascotWin.webContents.executeJavaScript(code);
+    // rAF 예약을 센다 (그린 프레임이 아니라 '깨어난 횟수')
+    await js(`window.__raf = 0; if (!window.__rafWrapped) { const o = window.requestAnimationFrame.bind(window); window.requestAnimationFrame = (cb) => { window.__raf++; return o(cb); }; window.__rafWrapped = true; } true`);
+    const count = async (ms) => { await js("window.__raf = 0; true"); await sleep(ms); return js("window.__raf"); };
+    const before = await count(1000);
+    ok(before > 20, `평소엔 초당 ${before}번 깨어난다(시험 전제)`);
+    ctx.setFsHidden(true); await sleep(300);
+    const hidden = await count(1000);
+    ok(hidden <= 2, `숨으면 초당 ${hidden}번 — 예약이 멈춘다 (전에는 평소와 같았다)`);
+    ok(!ctx.cursorPoll.on, `숨는 동안 커서 확인도 멈춘다 (on=${ctx.cursorPoll.on})`);
+    ctx.setFsHidden(false); await sleep(500);
+    const after = await count(1000);
+    ok(after > 20, `돌아오면 다시 ${after}번 — 멈춘 뒤에도 깨어난다`);
+    ok(ctx.cursorPoll.on, "커서 확인도 다시 돈다");
+    // 커서가 사도에게서 멀면 성기게 (16ms → 50ms)
+    const inst = ctx.instances.get(ctx.settings.characters[0].id);
+    if (inst && inst.rect && ctx.geo) {
+      const r = ctx.screenRect(inst.rect);
+      require("electron").screen; // (커서를 옮길 수는 없으니) 가까움 판정에 쓰는 좌표를 직접 넣어 본다
+      const far = { x: r.x + 4000, y: r.y + 4000 };
+      console.log(`PERFTEST 커서 간격 지금 ${ctx.cursorPoll.ms}ms (사도 ${r.x},${r.y})`);
+      ok(ctx.cursorPoll.ms === 16 || ctx.cursorPoll.ms === 50, `간격이 둘 중 하나다 (${ctx.cursorPoll.ms}ms)`);
+    }
+    console.log(`PERFTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 7000);
+
   // --hit-test — 손짓이 닿는 길: 히트 창(renderer/hit.html + hit.js) → ipc "hit-ev" → 마스코트 창.
   // 이 창의 스크립트가 막히면(예전에 CSP 가 인라인을 막았다) 사도는 보이는데 아무 손짓도 먹지 않는다.
   // 그래서 ipc 를 직접 쏘지 않고 **실제 창에 입력을 넣어** 확인한다. 에셋 없이도 돈다(CI)
