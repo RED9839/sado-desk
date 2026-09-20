@@ -7,6 +7,7 @@
 const { app, shell } = require("electron");
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
+const { pipeline } = require("node:stream/promises"), { Readable, Transform } = require("node:stream");
 const argHas = (f) => process.argv.includes(f);
 
 module.exports = function createUpdater(ctx) {
@@ -41,6 +42,7 @@ module.exports = function createUpdater(ctx) {
     return f === base || f === base + ".part";
   };
   function sweepOld() {
+    if (!app || typeof app.getPath !== "function") return;   // 일렉트론 밖(단위 테스트)에서는 할 일이 없다
     try {
       const d = path.join(app.getPath("userData"), "update"); if (!fs.existsSync(d)) return;
       for (const f of fs.readdirSync(d)) {
@@ -50,7 +52,7 @@ module.exports = function createUpdater(ctx) {
       }
     } catch (e) { console.warn("update sweep", e.message); }
   }
-  setTimeout(sweepOld, 5000);
+  const sweepTimer = setTimeout(sweepOld, 5000); if (sweepTimer.unref) sweepTimer.unref();   // 이 타이머가 프로세스를 붙잡지 않게
 
   // ---- 받아서 설치 ----
   let state = { phase: "idle", got: 0, total: 0, file: null, error: null };   // idle · downloading · ready · installing · error
@@ -63,25 +65,29 @@ module.exports = function createUpdater(ctx) {
     if (state.phase === "downloading") return { ok: false, error: "이미 받는 중이에요." };
     const file = path.join(dir(), info.name || `SadoDesk-Setup-${info.tag}.exe`);
     state = { phase: "downloading", got: 0, total: info.size || 0, file, error: null };
+    let tmp = null;
     try {
+      // 검사값을 모르면 설치하지 않는다 — '검증한 것만 설치한다'가 이 경로의 전부라서, 검증을 건너뛸 바엔 사람이 직접 받는 게 낫다
+      if (!info.sha256) throw new Error("깃허브가 이 파일의 검사값(SHA-256)을 알려 주지 않았어요. 안전을 확인할 수 없어 설치하지 않습니다.");
       // 이미 받아 둔 것이 맞으면 다시 받지 않는다
-      if (fs.existsSync(file) && info.sha256 && (await sha256(file)) === info.sha256) { state = { ...state, phase: "ready", got: info.size, total: info.size }; return { ok: true, file, cached: true }; }
+      if (fs.existsSync(file) && (await sha256(file)) === info.sha256) { state = { ...state, phase: "ready", got: info.size, total: info.size }; return { ok: true, file, cached: true }; }
       const r = await fetch(info.asset, { headers: { "User-Agent": `sado-desk/${app.getVersion()}` }, redirect: "follow" });
       if (!r.ok || !r.body) throw new Error(`HTTP ${r.status}`);
       state.total = +(r.headers.get("content-length") || info.size || 0);
-      const tmp = file + ".part"; const out = fs.createWriteStream(tmp);
-      for await (const chunk of r.body) { out.write(chunk); state.got += chunk.length; onProgress(state.got, state.total); }
-      await new Promise((res, rej) => out.end((e) => e ? rej(e) : res()));
-      if (info.sha256) {   // 깃허브가 알려 준 sha256 과 대조 — 다르면 버린다
-        const got = await sha256(tmp);
-        if (got !== info.sha256) { fs.unlinkSync(tmp); throw new Error("받은 파일이 손상됐어요 (검증 실패). 다시 시도해 주세요."); }
-      }
+      tmp = file + ".part";
+      // pipeline 으로 잇는다: 디스크가 차거나 쓰기가 막히면 여기서 거부로 돌아온다(예전엔 write 오류를 아무도 듣지 않아 그대로 터졌다).
+      // 역압도 pipeline 이 맡는다 — 120MB 를 메모리에 쌓지 않는다
+      const count = new Transform({ transform(c, _e, cb) { state.got += c.length; onProgress(state.got, state.total); cb(null, c); } });
+      await pipeline(Readable.fromWeb(r.body), count, fs.createWriteStream(tmp));
+      const got = await sha256(tmp);   // 깃허브가 알려 준 sha256 과 대조 — 다르면 버린다
+      if (got !== info.sha256) { fs.rmSync(tmp, { force: true }); throw new Error("받은 파일이 손상됐어요 (검사값이 다릅니다). 다시 시도해 주세요."); }
       fs.rmSync(file, { force: true }); fs.renameSync(tmp, file);
       for (const f of fs.readdirSync(dir())) if (f !== path.basename(file)) { try { fs.rmSync(path.join(dir(), f), { force: true }); } catch {} }   // 지난 판 정리
       state = { ...state, phase: "ready", file };
-      console.log(`update: 내려받기 완료 ${file} (${(state.got / 1048576).toFixed(0)}MB, 검증 ${info.sha256 ? "ok" : "생략"})`);
+      console.log(`update: 내려받기 완료 ${file} (${(state.got / 1048576).toFixed(0)}MB, 검증 ok)`);
       return { ok: true, file };
     } catch (e) {
+      if (tmp) { try { fs.rmSync(tmp, { force: true }); } catch {} }   // 실패한 조각은 남기지 않는다
       state = { ...state, phase: "error", error: e.message };
       console.log("update 내려받기 실패:", e.message);
       return { ok: false, error: e.message };
@@ -94,8 +100,9 @@ module.exports = function createUpdater(ctx) {
     if (!app.isPackaged) { console.log("update: 개발 실행에서는 설치하지 않는다 —", state.file); return { ok: false, error: "개발 실행에서는 설치하지 않습니다." }; }
     state = { ...state, phase: "installing" };
     const exe = app.getPath("exe");
-    // cmd 를 떼어 놓고 돌린다: 설치가 끝난 뒤 새 판을 켜는 일까지 맡아야 해서 (우리는 먼저 꺼진다)
-    const p = spawn(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `""${state.file}" /S & start "" "${exe}""`], { detached: true, stdio: "ignore", windowsVerbatimArguments: true });
+    // cmd 를 떼어 놓고 돌린다: 설치가 끝난 뒤 새 판을 켜는 일까지 맡아야 해서 (우리는 먼저 꺼진다).
+    // && 로 이어 설치가 성공했을 때만 그냥 켜고, 실패하면 --update-failed 로 켜서 사람에게 알린다 (예전엔 & 라 실패해도 조용히 켜졌다)
+    const p = spawn(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `""${state.file}" /S && start "" "${exe}" || start "" "${exe}" --update-failed"`], { detached: true, stdio: "ignore", windowsVerbatimArguments: true });
     p.unref();
     console.log("update: 설치 시작 —", state.file);
     setTimeout(() => app.quit(), 400);
@@ -120,6 +127,14 @@ module.exports = function createUpdater(ctx) {
       const bad = r.file + ".bad"; fs2.copyFileSync(r.file, bad); const fd = fs2.openSync(bad, "r+"); const one = Buffer.alloc(1); fs2.readSync(fd, one, 0, 1, 1000); fs2.writeSync(fd, Buffer.from([one[0] ^ 0xff]), 0, 1, 1000); fs2.closeSync(fd);   // 한 바이트를 뒤집는다
       const h = require("node:crypto").createHash("sha256").update(fs2.readFileSync(bad)).digest("hex");
       ok(h !== updateInfo.sha256, "망가진 파일은 검사값이 달라진다(검증이 잡는다)"); fs2.rmSync(bad, { force: true });
+      const keep = updateInfo.sha256;
+      updateInfo.sha256 = null;   // 깃허브가 검사값을 안 주는 경우
+      let x = await download(); ok(!x.ok && /검사값/.test(x.error || ""), `검사값이 없으면 받지 않는다 (${(x.error || "").slice(0, 40)})`);
+      updateInfo.sha256 = "0".repeat(64);   // 캐시를 건너뛰게 한 뒤, .part 자리에 폴더를 둬서 쓰기를 막는다
+      const partDir = r.file + ".part"; fs2.mkdirSync(partDir, { recursive: true });
+      x = await download(); ok(!x.ok && state.phase === "error", `쓰기가 막히면 터지지 않고 오류로 돌아온다 (${(x.error || "").slice(0, 40)})`);
+      fs2.rmSync(partDir, { recursive: true, force: true }); updateInfo.sha256 = keep;
+      x = await download(); ok(x.ok && x.cached && state.phase === "ready", "다시 받아 둔 상태로 돌아온다(캐시)");
     }
     console.log(`UPDLTEST ${fails ? "FAILED " + fails : "ALL PASS"}`);
     if (argHas("--update-install")) { console.log("UPDLTEST 설치 시도"); const i = install(); console.log("UPDLTEST install →", JSON.stringify(i)); return; }
