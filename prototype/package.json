@@ -46,6 +46,7 @@
       "fullscreen-watch.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
+      "!renderer/mascot-selftest.js",
       "data/**/*",
       "package.json",
       "node_modules/@esotericsoftware/**",
