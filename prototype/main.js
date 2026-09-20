@@ -594,10 +594,29 @@ function openMenu(id, sx, sy) {
 }
 
 // ---- 커서 폴링 (모든 마스코트 창에) ----
+// 16ms 마다 커서를 묻는 건 사도 근처에서만 값어치가 있다. 사도가 숨었으면 아예 멈추고(전체화면 뒤),
+// 커서가 멀면 성기게 본다 — 가까워지는 건 한 틱 안에 알아채므로 손맛은 그대로다
 let lastCursor = null, still = 0; // still: 커서가 같은 자리에 머문 틱 수
-setInterval(() => {
+let cursorT = null, cursorMs = 0;
+const NEAR_PX = 240;
+function cursorPollMs() {
+  if (!geo) return 50;
+  const p = lastCursor;
+  if (!p) return 16;
+  let near = false;
+  for (const inst of instances.values()) { const r = inst.rect; if (!r) continue; if (p.x > r.x - NEAR_PX && p.x < r.x + r.w + NEAR_PX && p.y > r.y - NEAR_PX && p.y < r.y + r.h + NEAR_PX) { near = true; break; } }
+  return near ? 16 : 50;
+}
+function startCursorPoll(ms) {
+  if (cursorT && cursorMs === ms) return;
+  if (cursorT) clearInterval(cursorT);
+  cursorMs = ms; cursorT = setInterval(cursorTick, ms);
+}
+function stopCursorPoll() { if (cursorT) { clearInterval(cursorT); cursorT = null; cursorMs = 0; } }
+function cursorTick() {
   if (!geo || !mascotWin || mascotWin.isDestroyed()) return;
-  if (fsHidden) { if (hitFor !== null) placeHit(null); return; } // 전체화면 뒤에 숨어 있을 때 히트 창이 다시 뜨면 안 된다
+  if (fsHidden) { if (hitFor !== null) placeHit(null); stopCursorPoll(); return; } // 전체화면 뒤에 숨는 동안엔 묻지도 않는다(applyFullscreenHide 가 다시 켠다)
+  startCursorPoll(cursorPollMs());
   const p = screen.getCursorScreenPoint();
   const x = p.x - geo.x, y = p.y - geo.y;
   // 커서가 가만히 있으면 대상 판정을 4틱(≈64ms)에 한 번만 하고 렌더러에도 알리지 않는다(같은 값이다).
@@ -606,7 +625,8 @@ setInterval(() => {
   still = 0; updateHitTarget(x, y);
   lastCursor = { x, y };
   mascotWin.webContents.send("cursor", lastCursor);
-}, 16);
+}
+startCursorPoll(16);
 
 // ---- IPC ----
 ipcMain.on("loaded", (e, info) => { catalog = info; lastCursor = null; buildTray(); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.webContents.send("catalog", catalogPayload()); showGuideOnce(); });
@@ -693,7 +713,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
+require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(16); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -765,6 +785,7 @@ function applyFullscreenHide() {
   const want = fsNow && hideFsOn();
   if (want === fsHidden) return;
   fsHidden = want;
+  if (!want) startCursorPoll(16); else stopCursorPoll();   // 숨는 동안엔 커서를 묻지 않는다
   const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
   if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", want); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
   if (want) { for (const w of wins) w.hide(); }

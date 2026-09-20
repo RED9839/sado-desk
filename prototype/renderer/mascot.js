@@ -153,7 +153,7 @@
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
       for (const t of pmaFix) try { t.update(false); } catch (e) { console.warn("PMA 재업로드 실패", e); } // update(useMipMaps) — 우리는 밉맵을 안 쓴다
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-      glLost = false; last = performance.now(); acc = 0; // 잃어버린 동안 쌓인 시간을 한 번에 넘기지 않게
+      glLost = false; last = performance.now(); acc = 0; wake(); // 잃어버린 동안 쌓인 시간을 한 번에 넘기지 않게. 예약이 멈춰 있으니 다시 깨운다
     }, false);
 
     const root = `${cfg.assetRoot}/minimi`;
@@ -168,7 +168,7 @@
     await sync(cfg.characters);
     console.log(`MASCOT ready chars=${[...mascots.keys()].join(",")} window=${W}x${H}`);
     host.loaded(buildCatalog());
-    requestAnimationFrame(loop);
+    wake();   // 첫 시작도 wake 로 — looping 깃발이 맞아야 나중에 깨우는 게 동작한다
     if (cfg.selftest) { glTest(); firstMascot()?.selftest(); }
     if (cfg.moodTest) firstMascot()?.moodTest();
     if (cfg.ingameTest) firstMascot()?.ingameTest();
@@ -219,12 +219,16 @@
     for (const mas of mascots.values()) if (mas.hands) return 1000 / 60;
     return 1000 / 30;
   }
-  let acc = 0, probeN = 0, probeT0 = 0, paused = false;
-  host.on("pause", (p) => { paused = !!p; if (!paused) last = performance.now(); }); // 돌아올 때 dt 가 한꺼번에 튀지 않게
+  let acc = 0, probeN = 0, probeT0 = 0, paused = false, looping = false;
+  // 멈출 땐 **예약까지** 멈춘다. 전에는 매 프레임 깨어나 건너뛰기만 해서, 게임 뒤에 숨은 동안에도 초당 60~144번 깨어났다.
+  // 상주 프로그램이라 이 빈 깨어남이 배터리·전력으로 그대로 나간다. 깨우는 곳은 세 군데뿐 — pause 해제 · 컨텍스트 복구 · 처음 시작
+  function wake() { if (looping || paused || glLost) return; looping = true; last = performance.now(); acc = 0; requestAnimationFrame(loop); }
+  host.on("pause", (p) => { paused = !!p; if (!paused) wake(); }); // 돌아올 때 dt 가 한꺼번에 튀지 않게(wake 가 last 를 다시 잡는다)
   function loop(now) {
+    if (paused || glLost) { looping = false; return; }   // 예약하지 않고 끝낸다 — 다시 깨우는 건 wake()
     const raw = now - last; last = now;
     acc += raw;
-    if (acc < frameMs() - 2 || paused || glLost) { requestAnimationFrame(loop); return; } // paused: 전체화면 뒤에 숨어 있을 때 메인이 알려 준다(document.hidden 은 backgroundThrottling:false 라 늘 false). glLost: 컨텍스트가 돌아올 때까지 그리지 않는다(예약은 유지)
+    if (acc < frameMs() - 2) { requestAnimationFrame(loop); return; }
     if (cfg && cfg.fpsProbe) { probeN++; if (!probeT0) probeT0 = now; if (now - probeT0 >= 3000) { const f = firstMascot(); console.log(`FPSPROBE ${(probeN / ((now - probeT0) / 1000)).toFixed(1)} fps  setting=${f ? f.S.display.fps : "?"} hands=${[...mascots.values()].some(x => x.hands)}`); probeN = 0; probeT0 = now; } }
     // 30 으로 묶었을 땐 고정 스텝(정확히 1/30초)으로 넘긴다. 이월분을 dt 에도 넣고 다음 프레임에도 더하면 두 번 세어져
     // 100Hz·144Hz 모니터에서 시간이 4~10% 빨리 흘렀다. 매 프레임 모드는 실제 경과 시간을 쓴다
