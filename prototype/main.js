@@ -723,7 +723,13 @@ function buildTray() {
 
 if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (!hasAssets(ASSET_ROOT)) { openSetup(); return; } if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
 // ---- 업데이트 확인 — updater.js ----
-const UP = require("./updater.js")({ refreshTray: () => { if (tray) buildTray(); }, startUpdate: () => startUpdate() });
+const UP = require("./updater.js")({
+  refreshTray: () => { if (tray) buildTray(); }, startUpdate: () => startUpdate(),
+  // 설치기를 띄우지도 못한 경우 — 우리는 살아 있으니 여기서 말해 준다 (설치 뒤 실패는 --update-failed 로 새 판이 말한다)
+  onInstallError: (msg) => { const { dialog } = require("electron"); dialog.showMessageBox({ type: "warning", title: "사도 데스크 업데이트", message: "설치를 시작하지 못했어요.", detail: `${msg}
+
+받아 둔 설치 파일은 그대로 있습니다. 잠시 뒤 다시 시도하시거나, 파일을 직접 실행해 보세요.`, buttons: ["설치 파일 위치 열기", "닫기"], defaultId: 1, cancelId: 1 }).then((a) => { if (a.response === 0 && UP.state.file) shell.showItemInFolder(UP.state.file); }); },
+});
 const checkUpdate = UP.checkUpdate;
 let mascotStarted = false;
 function startMascot() {

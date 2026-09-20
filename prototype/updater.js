@@ -63,10 +63,11 @@ module.exports = function createUpdater(ctx) {
     const info = updateInfo;
     if (!info || !info.asset) return { ok: false, error: "받을 파일이 없어요. 릴리스 페이지에서 직접 받아 주세요." };
     if (state.phase === "downloading") return { ok: false, error: "이미 받는 중이에요." };
-    const file = path.join(dir(), info.name || `SadoDesk-Setup-${info.tag}.exe`);
-    state = { phase: "downloading", got: 0, total: info.size || 0, file, error: null };
-    let tmp = null;
+    state = { phase: "downloading", got: 0, total: info.size || 0, file: null, error: null };
+    let tmp = null, file = null;
     try {
+      // 폴더 만들기(dir)도 여기 안에서 — 권한이 없거나 디스크가 막히면 이것부터 실패한다
+      file = path.join(dir(), info.name || `SadoDesk-Setup-${info.tag}.exe`); state.file = file;
       // 검사값을 모르면 설치하지 않는다 — '검증한 것만 설치한다'가 이 경로의 전부라서, 검증을 건너뛸 바엔 사람이 직접 받는 게 낫다
       if (!info.sha256) throw new Error("깃허브가 이 파일의 검사값(SHA-256)을 알려 주지 않았어요. 안전을 확인할 수 없어 설치하지 않습니다.");
       // 이미 받아 둔 것이 맞으면 다시 받지 않는다
@@ -95,18 +96,32 @@ module.exports = function createUpdater(ctx) {
   }
 
   // 설치 파일을 조용히 돌리고 끝나면 새 판을 띄운다. 우리는 그 사이에 꺼진다(파일이 교체되어야 하므로)
+  // 시작조차 못 했을 때 — 우리는 꺼지지 않는다. 받아 둔 파일은 그대로 두어 다시 해 볼 수 있게 한다
+  function failInstall(msg) {
+    state = { ...state, phase: "ready", error: msg };
+    console.log("update: 설치를 시작하지 못했다 —", msg);
+    try { if (ctx.onInstallError) ctx.onInstallError(msg); } catch {}
+    return { ok: false, error: `설치 프로그램을 시작하지 못했어요 (${msg}).` };
+  }
   function install() {
     if (state.phase !== "ready" || !state.file || !fs.existsSync(state.file)) return { ok: false, error: "받아 둔 설치 파일이 없어요." };
-    if (!app.isPackaged) { console.log("update: 개발 실행에서는 설치하지 않는다 —", state.file); return { ok: false, error: "개발 실행에서는 설치하지 않습니다." }; }
+    if (!app.isPackaged && !argHas("--update-spawn-test")) { console.log("update: 개발 실행에서는 설치하지 않는다 —", state.file); return { ok: false, error: "개발 실행에서는 설치하지 않습니다." }; }
+    const shell = process.env.ComSpec || "cmd.exe";
+    if (!fs.existsSync(shell)) return failInstall(`명령 프롬프트를 찾지 못했어요: ${shell}`);
     state = { ...state, phase: "installing" };
     const exe = app.getPath("exe");
     // cmd 를 떼어 놓고 돌린다: 설치가 끝난 뒤 새 판을 켜는 일까지 맡아야 해서 (우리는 먼저 꺼진다).
     // && 로 이어 설치가 성공했을 때만 그냥 켜고, 실패하면 --update-failed 로 켜서 사람에게 알린다 (예전엔 & 라 실패해도 조용히 켜졌다)
-    const p = spawn(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `""${state.file}" /S && start "" "${exe}" || start "" "${exe}" --update-failed"`], { detached: true, stdio: "ignore", windowsVerbatimArguments: true });
-    p.unref();
-    console.log("update: 설치 시작 —", state.file);
-    setTimeout(() => app.quit(), 400);
-    return { ok: true };
+    let quitT = null;
+    try {
+      const p = spawn(shell, ["/d", "/s", "/c", `""${state.file}" /S && start "" "${exe}" || start "" "${exe}" --update-failed"`], { detached: true, stdio: "ignore", windowsVerbatimArguments: true });
+      // spawn 이 실패하면(ComSpec 이 없거나 실행 권한이 없으면) error 가 뒤늦게 온다 — 꺼지기 전에 잡아 되돌린다
+      p.on("error", (e) => { if (quitT) { clearTimeout(quitT); quitT = null; } failInstall(e.message); });
+      p.unref();
+      console.log("update: 설치 시작 —", state.file);
+      quitT = setTimeout(() => app.quit(), 1200);   // error 가 올 틈을 주고 끈다
+      return { ok: true };
+    } catch (e) { if (quitT) clearTimeout(quitT); return failInstall(e.message); }
   }
 
   // --update-dl-test — 받기·검증까지 실제로 해 본다 (--update-force 와 함께). 설치는 포장판에서만
@@ -135,6 +150,24 @@ module.exports = function createUpdater(ctx) {
       x = await download(); ok(!x.ok && state.phase === "error", `쓰기가 막히면 터지지 않고 오류로 돌아온다 (${(x.error || "").slice(0, 40)})`);
       fs2.rmSync(partDir, { recursive: true, force: true }); updateInfo.sha256 = keep;
       x = await download(); ok(x.ok && x.cached && state.phase === "ready", "다시 받아 둔 상태로 돌아온다(캐시)");
+      const realMk = fs2.mkdirSync;   // 받을 폴더를 못 만드는 경우 (권한·디스크)
+      fs2.mkdirSync = () => { throw new Error("EPERM 시험"); };
+      try { x = await download(); } catch (e) { x = { ok: false, threw: e.message }; }
+      fs2.mkdirSync = realMk;
+      ok(!x.ok && !x.threw && state.phase === "error", `폴더를 못 만들면 터지지 않고 오류로 돌아온다 (${(x.error || x.threw || "").slice(0, 30)})`);
+      x = await download(); ok(x.ok, "그 뒤에도 정상으로 돌아온다");
+      if (argHas("--update-spawn-test")) {   // 설치 프로세스를 시작조차 못 하는 경우
+        const keep = process.env.ComSpec, prevCb = ctx.onInstallError; let told = null;
+        process.env.ComSpec = "C:/__없는폴더__/nope.exe"; ctx.onInstallError = (m) => { told = m; };
+        const r2 = install();   // ① 아예 없는 경로 — 띄우기 전에 걸러진다
+        await new Promise((res) => setTimeout(res, 1500));   // app.quit 이 예약됐다면 이 사이에 꺼졌을 것이다
+        ok(!r2.ok && !!told && state.phase === "ready", `① 설치를 시작 못 하면 끄지 않고 알린다 (${(r2.error || "").slice(0, 40)})`);
+        told = null; process.env.ComSpec = "C:/Windows";   // ② 있긴 한데 실행할 수 없는 것 — spawn 의 error 이벤트로 온다
+        const r3 = install();
+        await new Promise((res) => setTimeout(res, 1500));
+        ok(!!told && state.phase === "ready", `② 띄우다 실패해도 끄지 않고 알린다 (${(told || "").slice(0, 40)}, install→${r3.ok ? "ok" : "fail"})`);
+        process.env.ComSpec = keep; ctx.onInstallError = prevCb;
+      }
     }
     console.log(`UPDLTEST ${fails ? "FAILED " + fails : "ALL PASS"}`);
     if (argHas("--update-install")) { console.log("UPDLTEST 설치 시도"); const i = install(); console.log("UPDLTEST install →", JSON.stringify(i)); return; }
