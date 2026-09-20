@@ -44,6 +44,8 @@
       "chat.js",
       "updater.js",
       "fullscreen-watch.js",
+      "args.js",
+      "cursor-poll.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
       "!renderer/mascot-selftest.js",
