@@ -447,6 +447,24 @@ module.exports = function installTestHooks(ctx) {
     ok(d.global.sound.master === GLOBAL_DEFAULTS.sound.master && (d.characters[0].opacity === undefined || d.characters[0].opacity === 1), `③ 소리·표시는 기본값 (master=${d.global.sound.master} opacity=${d.characters[0].opacity})`);
     ok(d.global.ai.screen === true && d.global.ai.screenScope === "display", `③ AI 설정은 유지 (screen=${d.global.ai.screen} scope=${d.global.ai.screenScope})`);
     ok(!ctx.hasAssets(ctx.assetRoot) || ctx.instances.size === 1, `③ 화면의 사도도 하나 (${ctx.instances.size}${ctx.hasAssets(ctx.assetRoot) ? "" : " — 에셋 없는 환경, 건너뜀"})`);
+    // ④ 연결 확인 버튼 — 확인 자체가 터져도 버튼이 다시 눌려야 하고(안 그러면 한 번 실패로 영영 못 누른다),
+    //    실패 원문은 접힌 채로 따로 보여야 한다
+    ctx.openSettings("ai");
+    for (let i = 0; i < 60 && !(ctx.settingsWin && !ctx.settingsWin.isDestroyed()); i++) await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 1500));
+    const js = (code) => ctx.settingsWin.webContents.executeJavaScript(code);
+    ipcMain.removeHandler("ai:test");   // contextBridge 로 넘긴 host 는 얼려 있어 렌더러에서 못 바꾼다 — 메인 쪽에서 터뜨린다
+    await js(`document.getElementById("ai-test").click(); true`);
+    await new Promise(r => setTimeout(r, 800));
+    let ui = await js(`({ disabled: document.getElementById("ai-test").disabled, out: document.getElementById("ai-test-out").textContent })`);
+    ok(!ui.disabled && /마치지 못했어요/.test(ui.out), `④ 확인이 터져도 버튼이 다시 눌린다 (disabled=${ui.disabled}, "${ui.out.slice(0, 30)}")`);
+    ipcMain.handle("ai:test", async () => ({ ok: false, error: "API 키가 올바르지 않습니다.", detail: "HTTP 401 invalid_api_key: 제공자 원문" }));
+    await js(`document.getElementById("ai-test").click(); true`);
+    await new Promise(r => setTimeout(r, 800));
+    ui = await js(`({ disabled: document.getElementById("ai-test").disabled, out: document.getElementById("ai-test-out").firstChild.textContent, det: !!document.querySelector("#ai-test-out details.raw"), open: document.querySelector("#ai-test-out details.raw")?.open, raw: document.querySelector("#ai-test-out .rawtext")?.textContent || "" })`);
+    ok(!ui.disabled && /API 키가 올바르지 않습니다/.test(ui.out) && !/HTTP 401/.test(ui.out), `④ 안내는 대화창과 같은 문장 ("${ui.out.slice(0, 30)}")`);
+    ok(ui.det && !ui.open && /HTTP 401/.test(ui.raw), `④ 원문은 접힌 채 따로 (접힘=${!ui.open}, "${ui.raw.slice(0, 20)}")`);
+    ctx.settingsWin.close();
     console.log(`SETTINGSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 4000);

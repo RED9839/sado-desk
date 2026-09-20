@@ -300,11 +300,21 @@
   for (const b of document.querySelectorAll("[data-savekey]")) b.addEventListener("click", async () => { const k = b.dataset.savekey, inp = document.getElementById(`ai-key-${k}`); await host.aiSetKey(k, inp.value); inp.value = ""; refreshAi(); });
   for (const a of document.querySelectorAll("[data-ai-url]")) a.addEventListener("click", (e) => { e.preventDefault(); host.aiOpenUrl(a.dataset.aiUrl); });
   document.getElementById("ai-test").addEventListener("click", async (e) => {
-    const out = document.getElementById("ai-test-out"); e.target.disabled = true; out.textContent = "확인 중…";
-    const r = await host.aiTest(); e.target.disabled = false;
-    // 대화창과 같은 안내 문장을 쓰고, 제공자가 보낸 원문은 뒤에 작게 붙인다 (같은 오류를 두 화면이 다르게 말하면 안 된다)
-    out.textContent = r.ok ? `연결됨 [${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})`
-      : `연결 실패: ${r.error}${r.detail && r.detail !== r.error ? ` — 원문: ${r.detail}` : ""}`;
+    const btn = e.target, out = document.getElementById("ai-test-out");
+    btn.disabled = true; out.textContent = "확인 중…";
+    try {
+      const r = await host.aiTest();
+      // 대화창과 같은 안내 문장을 쓴다 (같은 오류를 두 화면이 다르게 말하면 안 된다). 제공자 원문은 접어서 따로
+      out.textContent = r.ok ? `연결됨 [${r.provider}/${r.model}] ${r.text} (${r.emotion || "감정 태그 없음"})` : `연결 실패: ${r.error}`;
+      if (!r.ok && r.detail && r.detail !== r.error) {
+        const d = document.createElement("details"); d.className = "raw";
+        const sm = document.createElement("summary"); sm.textContent = "원문 보기";
+        const pre = document.createElement("div"); pre.className = "rawtext"; pre.textContent = r.detail;
+        d.append(sm, pre); out.append(d);
+      }
+    } catch (err) {   // 연결 확인 자체가 터져도 버튼은 다시 눌릴 수 있어야 한다
+      out.textContent = `연결 확인을 마치지 못했어요: ${(err && err.message) || err}`;
+    } finally { btn.disabled = false; }
   });
   document.getElementById("ai-pull").addEventListener("click", async (e) => { const model = getPath(FULL.global, "ai.ollama.model"); const out = document.getElementById("ai-pull-out"); e.target.disabled = true; out.textContent = `${model} 내려받는 중…`; const r = await host.aiPull(model); e.target.disabled = false; out.textContent = r.ok ? "완료 ✓" : `실패: ${r.error}`; refreshAi(); });
   host.on("ai:pull-progress", (t) => { document.getElementById("ai-pull-out").textContent = t; });
