@@ -13,94 +13,8 @@
   const hud = document.getElementById("hud");
   const host = window.host;
 
-  // ---- 미니미 애니 ----
-  const MINI = {
-    idleActs: ["Idle1_1", "Idle1_2", "Idle2_1", "Idle2_2", "Idle2_3", "Idle2_4", "Idle2_5", "Idle3_5", "Idle3_6", "Idle3_7", "Idle", "Act1_1", "Act2_1", "Act3_1", "Act4_1", "Act5_1", "Act6_1"],
-    idleQuiet: ["Idle1_1", "Idle1_2", "Idle"],
-    idleLoop: new Set(["Idle1_1", "Idle1_2", "Idle", "Idle2_1"]),
-    move: "Idle2_1", jump: ["Jump1", "Jump2", "Jump3", "Jump5", "Jump6"], spawn: ["Spawn1", "Spawn2"],
-    react: ["Success", "Idle3_7", "Act6_1", "Idle2_4"], land: "Idle2_3", drag: "Idle1_1", hold: "Idle1_1",
-    moveSpeed: 110, // px/s (scale 0.5 기준 ×2)
-    // 미니미는 그림이 하나라 '표정' 대신 몸짓으로: 행복=만세/폴짝, 미소=갸웃, 분노=공격/늘어나기, 슬픔=풀썩/납작, 놀람=뒤집기, 냠냠=동작, 삐짐=찌그러지기
-    moods: { happy: ["Success", "Jump1", "Jump2", "Idle2_2"], smile: ["Act6_1", "Idle1_2", "Idle3_5"], anger: ["Attack1_1", "Attack1_2", "Act5_1"], sad: ["Fail", "Idle2_5", "Idle2_3"], surprise: ["Idle3_7", "Jump3", "Idle2_4"], eat: ["Act2_1", "Act3_1", "Act1_1"], sulky: ["Idle2_3", "Idle2_5", "Act5_1"] },
-    speak: ["Act1_1", "Act6_1", "Idle3_5", "Idle3_6", "Act4_1"], listen: ["Idle1_2", "Act6_1", "Idle3_6"],
-    all: ["Idle1_1","Idle1_2","Idle2_1","Idle2_2","Idle2_3","Idle2_4","Idle2_5","Idle3_5","Idle3_6","Idle3_7","Act1_1","Act2_1","Act3_1","Act4_1","Act5_1","Act6_1","Jump1","Jump2","Jump3","Success","Fail","Attack1_1","Attack1_2"],
-  };
-  // ---- SD(스탠딩) 애니 — 캐릭터마다 구성이 달라서(에르핀 Angry 16개, 앨리스는 Move 없음) 로드 시 접두어로 자동 분류 ----
-  function sdPools(data) {
-    const all = data.animations.map(a => ({ n: a.name, d: a.duration }));
-    const by = (prefixes, maxDur = 4) => all.filter(a => prefixes.some(p => a.n.startsWith(p + "_")) && a.d <= maxDur).map(a => a.n);
-    const idles = by(["Idle"], 10);
-    // 대기 중 스스로 하는 잔동작: 감정이 튀지 않는 것들(화남·슬픔·놀람은 클릭/착지/메뉴로만). 보이스는 motion-voice.js 매핑으로 카테고리 매칭
-    const acts = by(["Happy", "Smile", "Laugh", "Shy", "Blank", "Proud", "Clean", "Try", "Taunt", "Talk", "Dance", "Sing", "Eat", "Think", "Thinking", "Serious", "Curious", "Question", "Tired", "Sleepy", "Bbang", "Gao", "Ignore", "Melong", "Merong", "Joke"], 3.5);
-    return {
-      idleActs: [...idles, ...idles, ...acts], idleQuiet: idles.length ? idles : ["Idle_1"], idleLoop: new Set(idles),
-      move: ["Move_1", "Move_2", "Walk_1"].find(n => data.findAnimation(n)) || null, // 없으면 절차적 폴짝 이동
-      jump: [], spawn: [],
-      react: [...by(["Happy", "Smile", "Laugh", "Proud", "Surprise"], 3), ...by(["Shy", "Taunt", "Excited"], 3)],
-      land: ["Groggy_1", "Surprise_1", "Panic_1", "Angry_1", "Smash_End_1"].find(n => data.findAnimation(n)) || null,
-      drag: ["Panic_1", "Surprise_1", "Touch_Idle"].find(n => data.findAnimation(n)) || null, // 들려 있을 때
-      // 게임 교감 4종 (보이스 STT + 나무위키 대사표로 확인, docs/05-보이스-카탈로그.md):
-      //  볼 당기기 = Touch_Idle(누르는 동안 볼 늘어남) → Touch_End + touch1_x 대사("당기지 마!")   쓰다듬기 = Pat_Idle → Pat_End + touch2_x 대사("더 쓰다듬으라고")
-      //  꿀밤 = Smash_End + dutchrubend(1=맞는 소리, 2=대사 "머리 때리지 마!")                     간지럽히기 = Tickle_Idle → Tickle_End + ticklestart/tickleduring(웃음)
-      touchIdle: data.findAnimation("Touch_Idle") ? "Touch_Idle" : null, touchEnd: data.findAnimation("Touch_End") ? "Touch_End" : null,
-      patIdle: data.findAnimation("Pat_Idle") ? "Pat_Idle" : null, patEnd: data.findAnimation("Pat_End") ? "Pat_End" : null,
-      tickleIdle: ["Tickle_Idle_1", "Tickle_Idle"].find(n => data.findAnimation(n)) || null, tickleIdle2: data.findAnimation("Tickle_Idle_2") ? "Tickle_Idle_2" : null, tickleEnd: data.findAnimation("Tickle_End") ? "Tickle_End" : null,
-      smash: ["Smash_End_1", "Smash_End"].filter(n => data.findAnimation(n)),
-      hold: idles[0] || all[0]?.n, moveSpeed: 90, hopHeight: 22,
-      moods: moodPools(all),
-      all: all.map(a => a.n),
-    };
-  }
-  // 표정 고정(스토리 표정 8종: 기본·미소·분노·슬픔·행복·냠냠·삐짐·놀람) — 애니를 한 번 재생하고 마지막 프레임에서 멈춰 '스탠딩'처럼 둔다.
-  //   미소 = Happy_1(가벼운 웃음)·Smile, 행복 = 그 밖의 Happy·Laugh·Dance. 없는 캐릭터(크레페 Sulky/Surprise 없음)는 비슷한 감정으로 대체
-  const MOOD_ORDER = ["smile", "anger", "sad", "happy", "eat", "sulky", "surprise"];
-  function moodPools(all) {
-    const by = (re, maxDur = 4) => all.filter(a => re.test(a.n) && a.d <= maxDur).map(a => a.n);
-    const first = (...cands) => cands.find(c => c.length) || [];
-    const happy = by(/^Happy_\d+$/), happyRest = happy.filter(n => n !== "Happy_1");
-    return {
-      smile: first(by(/^Smile_/), happy.slice(0, 1), by(/^Shy_/)),
-      happy: first(happyRest, by(/^(Laugh|Dance|Nicesmile|Excited)_/), happy),
-      anger: first(by(/^(Angry|Mad)_/), by(/^Upset_/)),
-      sad: first(by(/^Sad_/), by(/^(Cry|Sorry)_/)),
-      eat: first(by(/^Eat_/), by(/^(Hungry|Bread|Drink)_/)),
-      sulky: first(by(/^Sulky_/), by(/^(Upset|Mad|Serious)_/), by(/^Angry_\d+$/).slice(0, 1)),
-      surprise: first(by(/^(Surprise|Surprised|Shock)_/), by(/^Panic_/), by(/^Groggy_/)),
-    };
-  }
-  const SD = { idleActs: [], idleQuiet: ["Idle_1"], idleLoop: new Set(["Idle_1"]), move: null, jump: [], spawn: [], react: [], land: null, drag: null, hold: "Idle_1", moveSpeed: 90, hopHeight: 22, moods: {} };
-  // ---- 인게임 SD(전투·마이홈) 애니: Idle / Move / Spawn / Victory / Groggy / Attack / Skill / Ultimate ... 414/416 세트에 Move 있음 ----
-  // 인게임 SD 는 전투 모션뿐이다. 417세트를 전수 조사해서(tools/_ig-survey.mjs) 실제로 있는 것만 쓴다.
-  //   Idle 416 · Die 416 · Spawn 416 · Groggy 415 · Move 414 · Victory 413 · Attack1_1 410 · Skill1_1 409
-  //   Ultimate1_1 391 · Attack2_1 330 · Experience_1/2 142 · EasterEgg_Victory 47 · EasterEgg_Idle 19 · Aside1_1 6
-  // 딴 모습(_Change·_DreamForm·_SebastianForm…)과 작업용 찌꺼기(Test_DUMMY/…·z…·잔상·Groggry)는 고르지 않는다.
-  const IG_SKIP = /(\/|^z|^\d|^test$|^잔상$|^Groggry$|_rejected$|dummy|MirrorImage|AlterEgo_|FakeDie|_SebastianForm$|_DreamForm$|_ChangeForm$|_Change$|^OW\d_|^AS\d_|백업)/i;
-  function ingamePools(data) {
-    const hasA = (n) => !!data.findAnimation(n);
-    const ok = (n) => hasA(n) && !IG_SKIP.test(n);
-    const keep = (...names) => names.filter(ok);
-    return {
-      // 대기 중 스스로 하는 것. Idle 을 여러 번 넣어 가끔만 큰 동작이 나오게 한다
-      idleActs: ["Idle", "Idle", "Idle", "Idle", ...keep("Victory", "EasterEgg_Idle", "Experience_1", "Experience_2", "Aside1_1", "Attack1_1")].concat(["Idle"]),
-      idleQuiet: ["Idle"], idleLoop: new Set(["Idle", "EasterEgg_Idle"]),
-      move: ok("Move") ? "Move" : null, jump: [], spawn: keep("Spawn"),
-      // 클릭했을 때. 승리·궁극기가 가장 볼만하다 (길면 ONESHOT_CAP 초에서 잘린다)
-      // 허수아비(scarecrow*)처럼 공격 모션이 아예 없는 세트가 둘 있어 빈 풀이 되지 않게 받쳐 둔다
-      react: keep("Victory", "EasterEgg_Victory", "Ultimate1_1", "Skill1_1", "Attack1_1", "Attack2_1").concat(
-        keep("Victory", "Attack1_1").length ? [] : keep("Buff", "Hit_1", "Hit", "Spawn")),
-      land: keep("Groggy", "Hit", "Die")[0] || null, drag: keep("Groggy", "Bind", "Idle")[0] || null,
-      hold: "Idle", moveSpeed: 120, hopHeight: 18,
-      // 전투 모션밖에 없으니: 행복·미소 = 승리, 분노 = 공격·궁극기, 슬픔·삐짐·놀람 = 그로기·피격
-      moods: {
-        happy: keep("EasterEgg_Victory", "Victory", "Experience_2"), smile: keep("Victory", "Experience_1"),
-        anger: keep("Ultimate1_1", "Attack1_1", "Attack2_1", "Skill1_1"), sad: keep("Groggy", "Die"),
-        surprise: keep("Hit", "Groggy", "Bind"), eat: keep("Experience_1", "Victory"), sulky: keep("Groggy", "Bind"),
-      },
-      speak: keep("Aside1_1", "Victory", "Attack1_1"), listen: keep("EasterEgg_Idle", "Idle"),
-      all: data.animations.map(a => a.name).filter(n => !IG_SKIP.test(n)),
-    };
-  }
+  // ---- 애니 풀(미니미·스탠딩·전투 SD 분류)은 renderer/anim-pools.js — 순수 계산이라 node 테스트가 붙는다 ----
+  const { MINI, SD, sdPools, ingamePools } = AnimPools;
   // SD 배율: 스탠딩·인게임 스켈레톤은 같은 단위(에르핀 Head 본 y=429 동일)라 바운딩 박스로 맞추지 않고 단위→픽셀 고정 배율을 쓴다.
   // 박스 기준이면 지팡이·머리장식 크기에 따라 몸 크기가 달라져 혼합 모드에서 미스매치가 난다. scale 0.5 → 0.4px/unit (에르핀 ≈ 283px)
   const SD_UNIT = 0.8;
@@ -130,9 +44,10 @@
     geoD = g.displays.map(d => ({ id: d.id, x0: d.x, x1: d.x + d.w, floor: H - d.floor, top: H - d.top, primary: d.primary }));
     for (const mas of mascots.values()) mas.onGeo();
   }
-  function dispAt(x) { let best = null, bd = 1e9; for (const d of geoD) { const dd = x < d.x0 ? d.x0 - x : x > d.x1 ? x - d.x1 : 0; if (dd < bd) { bd = dd; best = d; } } return best; }
-  const floorAt = (x) => (dispAt(x) || { floor: 0 }).floor;
-  const topAt = (x) => (dispAt(x) || { top: H }).top;
+  // 모니터 고르기·바닥·벽은 renderer/screen-geo.js (순수) — 여기서는 지금 기하를 물려 쓴다
+  const dispAt = (x) => ScreenGeo.dispAt(geoD, x);
+  const floorAt = (x) => ScreenGeo.floorAt(geoD, x);
+  const topAt = (x) => ScreenGeo.topAt(geoD, x, H);
   const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
   const deepMerge = (b, p) => { const o = { ...b }; for (const [k, v] of Object.entries(p || {})) o[k] = isObj(v) && isObj(b[k]) ? deepMerge(b[k], v) : v; return o; };
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -773,11 +688,7 @@
     // 0 이거나 뽑아 버린 모니터면 지금 서 있는 모니터. 끌어다 다른 모니터에 놓으면 그곳이 새 집이고, 다음 시작도 그곳에서
     // display.confineMonitor 가 꺼져 있으면 null — 창 전체를 오가고 가끔 원정도 간다 ('모든 모니터 이동')
     function myDisp() { if (S.display && S.display.confineMonitor === false) return null; const id = +S.monitor || 0; return (id && geoD.find(d => d.id === id)) || dispAt(m.x); }   // 옛 설정에 문자열이 남아 있어도 견딘다
-    function clampX(x, d = myDisp()) {
-      const lo = (d ? d.x0 : 0) + WALL_MARGIN + m.w / 2;
-      const hi = (d ? d.x1 : W) - WALL_MARGIN - m.w / 2;
-      return hi < lo ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, x));   // 모니터가 사도보다 좁으면 가운데
-    }
+    const clampX = (x, d = myDisp()) => ScreenGeo.clampX(x, d, W, m.w, WALL_MARGIN);
 
     // ---- 프레임 ----
     let logT = 0;
@@ -996,159 +907,18 @@
       m.over = hit(e.clientX, e.clientY);
     }
 
-    // ---- 셀프테스트 (첫 캐릭터에서만) ----
-    function fire(type, x, y, button = 0) { onMouse({ type, x, y, button, buttons: 0 }); }
-    const shot = (name) => { const pad = 24; console.log(`SHOTREQ ${name} ${Math.round(m.x - m.w / 2 - pad)} ${Math.round(H - m.y - m.h - pad)} ${Math.round(m.w + pad * 2)} ${Math.round(m.h + pad * 2)}`); };
-    async function ingameTest() {
-      const say = (s) => console.log("INGAMETEST " + s);
-      await sleep(2500);
-      for (const skin of ["Mini_Erpin", "Mini_Crepe", "Mini_ErpinSkin1"]) {
-        patchSettings({ mode: "ingame", skin, mood: "", sound: { muted: true } }); await sleep(3000);
-        say(`${skin}: active=${active === mini ? "minimi" : active.family} src=${sd.src} key=${sd.key?.split("/").slice(-1)[0]} anims=${sd.data?.animations.length} state=${m.state} anim=${m.anim} move=${active.A.move} h=${m.h.toFixed(0)}`);
-        shot(`ingame-${skin}`); await sleep(500);
-        // 이동 강제
-        const B0 = S.behavior.hopChance; S.behavior.hopChance = 100; m.state = "idle"; m.timer = 0; await sleep(700); say(`${skin} move: state=${m.state} slot=${active === mini ? "minimi" : active.family} anim=${m.anim} (expect hop + Move on ingame)`); S.behavior.hopChance = B0; await sleep(2500);
-      }
-      // 전투 대사: 인게임 형태에서 클릭 → Victory/Attack 리액션 + victory/basicattack 보이스
-      patchSettings({ mode: "ingame", skin: "Mini_Erpin", sound: { muted: false, master: 0.5, voice: 0.01 } }); await sleep(2500);
-      { const cats = Object.keys(voiceSet.cats).filter(c => voiceSet.cats[c].length); say(`erpin voice cats: ${cats.join(" ")} (expect victory/basicattack/spskill/ultimate/hit/die 포함)`); }
-      for (const a of ["Victory", "Attack1_1", "Skill1_1", "Ultimate1_1", "Groggy", "Die", "Spawn"]) { const f = motionVoice(a, true); say(`ingame motion ${a} → ${f}`); await sleep(150); }
-      { const cx0 = m.x, cy0 = H - m.y - m.h / 2; fire("mousemove", cx0, cy0); fire("mousedown", cx0, cy0); await sleep(30); fire("mouseup", cx0, cy0); await sleep(80); say(`ingame click → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Victory/Attack + victory/basicattack voice)`); }
-      patchSettings({ mode: "sd", skin: "Mini_Erpin", sound: { muted: true } }); await sleep(2000); say(`back to sd: src=${sd.src} anim=${m.anim} (expect standing/game)`);
-      say("done");
-    }
-    async function moodTest() {
-      const say = (s) => console.log("MOODTEST " + s);
-      await sleep(2500);
-      patchSettings({ mode: "sd", mood: "", sound: { muted: true } }); await sleep(1500);
-      for (const mood of ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"]) {
-        patchSettings({ mood }); await sleep(2200);
-        say(`mood=${mood || "default"} state=${m.state} anim=${m.anim} pool=${(active.A.moods?.[mood] || []).join("/")}`); shot(`mood-${mood || "default"}`); await sleep(600);
-      }
-      patchSettings({ mood: "" }); say("MOODTEST done");
-    }
-    async function selftest() {
-      const say = (s) => console.log("SELFTEST " + s);
-      const settle = async () => { if (isSD()) useSlot(slotForRest()); m.state = "idle"; m.timer = 99; m.rot = 0; m.y = floorAt(m.x); play(active.A.hold, true); await sleep(120); };
-      await sleep(3000); if (S.mode !== "minimi") { patchSettings({ mode: "minimi" }); await sleep(500); } await settle();
-      let cx = m.x, cy = H - m.y - m.h / 2;
-      fire("mousemove", cx, cy); await sleep(50);
-      say(`hover hit=${hit(cx, cy)} (expect true)`);
-      fire("mousedown", cx, cy); await sleep(60); fire("mouseup", cx, cy); await sleep(100);
-      say(`click state=${m.state} anim=${m.anim} (expect react)`);
-      await sleep(2500); await settle();
-      cx = m.x; cy = H - m.y - m.h / 2;
-      fire("mousemove", cx, cy); fire("mousedown", cx, cy);
-      for (let i = 1; i <= 12; i++) { await sleep(16); fire("mousemove", cx + i * 3, cy - i * 12); }
-      say(`drag state=${m.state} y=${m.y.toFixed(0)} (expect drag, y>0)`);
-      for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", cx + 36 + i * 45, cy - 144 - i * 6); }
-      fire("mouseup", cx + 36 + 8 * 45, cy - 144 - 48);
-      await sleep(30);
-      say(`throw state=${m.state} vx=${m.vx.toFixed(0)} vy=${m.vy.toFixed(0)} (expect thrown, vx>0)`);
-      let maxY = 0, t0 = performance.now();
-      while (m.state === "thrown" && performance.now() - t0 < 6000) { maxY = Math.max(maxY, m.y); await sleep(50); }
-      say(`after throw state=${m.state} anim=${m.anim} maxY=${maxY.toFixed(0)} x=${m.x.toFixed(0)} last=${JSON.stringify(lastPlayed)} (expect land + voice)`);
-      await sleep(600);
-      fire("mousemove", 10, 10); await sleep(50);
-      say(`leave over=${m.over} (expect false)`);
-      await settle(); cx = m.x; cy = H - m.y - m.h / 2;
-      fire("mousedown", 5, 5); await sleep(30);
-      say(`outside click menuOpen=${menuOpen} over=${m.over} (expect false/false)`);
-      patchSettings({ skin: "Mini_Crepe" });
-      await settle(); cx = m.x; cy = H - m.y - m.h / 2;
-      patchSettings({ sound: { master: 0.5, voice: 0.8, muted: false } });
-      fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(30);
-      say(`sound click anim=${m.anim} last=${JSON.stringify(lastPlayed)} (expect voice crepe/touch* — 크레페는 감정 대사 없음, volume 0.4)`);
-      patchSettings({ sound: { muted: true } });
-      fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(30);
-      say(`sound muted last=${JSON.stringify(lastPlayed)} (expect volume 0)`);
-      const fromMain = await host.getSettings(id);
-      say(`settings roundtrip main.sound=${JSON.stringify(fromMain.sound)} main.skin=${fromMain.skin} (expect muted true, master 0.5, skin Mini_Crepe)`);
-      patchSettings({ skin: "Mini_ErpinSkin1" }); say(`voice set erpin skin1 hero=${voiceSet.hero} skin=${voiceSet.skin} n=${voiceCount()}`);
-      patchSettings({ skin: "Mini_Dummy" }); say(`voice set dummy hero=${voiceSet.hero} n=${voiceCount()} (expect null/0, no crash: ${playVoice("touch")})`);
-      patchSettings({ skin: "Mini_Crepe", sound: { muted: false, master: 0.8, voice: 0.5 } });
-      patchSettings({ behavior: { hop: false, jump: false } }); decideIdle(); say(`behavior hop/jump off → state=${m.state} anim=${m.anim} (expect idle/react, not hop/jump)`);
-      patchSettings({ behavior: { hop: true, jump: true } });
-      patchSettings({ opacity: 0.5 }); say(`opacity skeleton.alpha=${active.skeleton.color.a} (expect 0.5)`); patchSettings({ opacity: 1 });
-      // SD 모드: 크레페(게임 추출) → 에르핀 스킨1(사이트 HD) → 스탠딩 없는 더미 → 미니미 폴백
-      patchSettings({ mode: "sd", skin: "Mini_Erpin" }); await sleep(3500);
-      say(`sd erpin(default, 스탠딩만) active=${active === mini ? "minimi" : active.family} ingameLoaded=${!!sdI.skeleton} state=${m.state} anim=${m.anim} (expect standing, ingame not loaded)`);
-      m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); await sleep(150); say(`sd move(default) slot=${active === mini ? "minimi" : active.family} anim=${m.anim} k=${active.k.toFixed(3)} h=${m.h.toFixed(0)} standingBox=${sd.h.toFixed(0)} body=${((bodyHeight(sd) || 0) * sd.k).toFixed(0)} (expect minimi Idle2_1, h = 기본 미니미 크기 ≈ 184)`);
-      S.behavior.hopChance = 0; m.state = "idle"; decideIdle(); say(`sd rest after move slot=${active === mini ? "minimi" : active.family} anim=${m.anim} (expect standing)`); S.behavior.hopChance = 45;
-      say(`erpin ingame slot loaded=${!!sdI.skeleton} (expect false — 인게임은 스탠딩 없을 때만)`);
-      patchSettings({ skin: "Mini_Vela" }); await sleep(2500);
-      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); say(`vela ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px (expect ground 0 = 원점, bottom < 0 = 머리가 지면 아래로) skel.y=${sd.skeleton.y.toFixed(0)} floor=${floorAt(m.x)}`);
-        m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); await sleep(100); say(`vela minimi move h=${m.h.toFixed(0)} standingBox=${sd.h.toFixed(0)} body=${((bodyHeight(sd) || 0) * sd.k).toFixed(0)} (expect 기본 미니미 크기 ≈ 184)`); S.behavior.hopChance = 45; }
-      patchSettings({ skin: "Mini_Daya" }); await sleep(2500);
-      { const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); say(`daya ground: bounds bottom=${(o.y - sd.skeleton.y).toFixed(0)}px ground=${sd.feet.toFixed(0)}px skel.y=${sd.skeleton.y.toFixed(0)} m.y=${m.y.toFixed(0)} (expect ground ≈ bottom ≈ 0: 돌 바닥이 지면)`); }
-      patchSettings({ skin: "Mini_Erpin" }); await sleep(1500);
-      { m.state = "react"; onComplete(active, active.state.getCurrent(0) || { loop: false }); say(`after motion → state=${m.state} anim=${m.anim} timer=${m.timer.toFixed(2)} (expect idle loop, timer≈actGap ${S.behavior.actGap})`); }
-      S.behavior.hopChance = 0; m.state = "idle"; decideIdle(); say(`hybrid rest slot=${active.family} anim=${m.anim} (expect standing Idle_*)`); S.behavior.hopChance = 45;
-      await settle(); cx = m.x; cy = H - m.y - m.h / 2; fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(60);
-      say(`hybrid click(몸 톡) slot=${active.family} anim=${m.anim} voice=${lastPlayed?.name} (expect standing 가벼운 반응(Happy/Smile…) + joy — 톡은 간지럽히기·볼 당기기 아님)`);
-      patchSettings({ skin: "Mini_Crepe" }); await sleep(2500);
-      say(`hybrid crepe(인게임 없음) active=${active.family} sdI=${sdI.skeleton ? "loaded" : "-"} (expect standing only)`);
-
-      patchSettings({ skin: "Mini_Crepe" }); await sleep(2500);
-      say(`sd crepe active=${active.kind} src=${sd.src} key=${sd.key?.split("/").slice(-2).join("/")} anims=${sd.data?.animations.length} h=${m.h.toFixed(0)} state=${m.state} anim=${m.anim} (expect sd/game/crepe 47 h≈208)`);
-
-      patchSettings({ skin: "Mini_ErpinSkin1" }); await sleep(3000);
-      say(`sd erpin skin1 active=${active === mini ? "minimi" : active.family} standing=${sd.key?.split("/").slice(-2).join("/")} ingame=${sdI.key?.split("/").slice(-1)[0]} (expect standing Erpin/ErpinSkin1 + ingame erpinskin1)`);
-      await settle(); cx = m.x; cy = H - m.y - m.h / 2; fire("mousemove", cx, cy); fire("mousedown", cx, cy); await sleep(30); fire("mouseup", cx, cy); await sleep(60);
-      say(`sd click(몸 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Happy/Smile/… + erpin/joy|pleasure — 톡은 간지럽히기·볼 당기기 아님)`);
-      { await sleep(2600); await settle(); const g0 = headGeom(); const ex = g0.headX, ey = H - g0.eyeY; fire("mousedown", ex, ey); say(`press cheek → anim=${m.anim} (expect Touch_Idle)`); await sleep(30); fire("mouseup", ex, ey); await sleep(60);
-        say(`cheek tap(볼 톡) state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react 가벼운 반응(Happy/Smile…) + erpin/joy|pleasure — 볼을 끌지 않은 톡은 볼 당기기가 아니다)`); }
-      { // 교감: 머리 드래그 = 쓰다듬기, 얼굴 드래그 = 볼 당기기, 몸 드래그 = 들기
-        await sleep(2600); await settle(); cx = m.x; const o = new spine.Vector2(), z = new spine.Vector2(); sd.skeleton.getBounds(o, z, bTmp); const hb = headBone(sd);
-        const g = headGeom(); const topY = H - g.top, neckY = H - g.neckY, hx = g.headX, eyeSY = H - g.eyeY;
-        say(`zones(erpin): head=${hb?.data.name} eyes=${eyeBones(sd).length} anchors=${g.anchors} u=${g.u.toFixed(0)}px browY=${(g.browY - g.neckY).toFixed(0)}px-above-neck patY=${((ctrlBone(sd, "pat")?.worldY ?? 0) - g.neckY).toFixed(0)} zone(top+20)=${zoneAt(hx, topY + 20)} zone(eye)=${zoneAt(hx, eyeSY)} zone(neck+10)=${zoneAt(hx, neckY - 10)} zone(body)=${zoneAt(cx, H - m.y - 30)} zone(beside head)=${zoneAt(hx + 4 * g.u, eyeSY)} (expect head / cheek / cheek / body / body)`);
-        shot("idle-before"); await sleep(120); const py = topY + 25; fire("mousedown", hx, py); say(`press head → state=${m.state} anim=${m.anim} (expect touch, 대기 애니 유지 — 머리는 놓아야 꿀밤/끌어야 쓰다듬기)`);
-        fire("mouseup", hx, py); await sleep(30); say(`tap head(꿀밤 1단) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect smash1 Smash_End_1 + erpin/dutchrubend1)`);
-        await sleep(1400); say(`꿀밤 2단 → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Smash_End_2 + erpin/dutchrubend2*)`);
-        await sleep(3500); await settle(); fire("mousedown", hx, py);
-        for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 6, py); } await sleep(40); shot("pat-drag"); await sleep(120); say(`pat drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect pat Pat_Idle, Character_Pat 본이 손을 따라 20~48px 이동)`);
-        fire("mouseup", hx + 48, py); await sleep(30); say(`pat release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Pat_End + erpin/touch2*)`);
-        await sleep(400); say(`pat ctrl bone after release: kind=${grab.kind} offset=${(grabOffsetPx("pat") ?? -1).toFixed(0)}px (expect null, ≈0 = 제자리로 감쇠)`);
-        await sleep(3500); await settle(); sd.skeleton.getBounds(o, z, bTmp); const cy2 = H - (hb ? hb.worldY : o.y + z.y * 0.55) - 12;
-        fire("mousedown", hx, cy2); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", hx + i * 8, cy2 + i * 3); }
-        await sleep(40); shot("cheek-drag"); await sleep(120); { const b = ctrlBone(sd, "cheek"); say(`cheek drag → state=${m.state} anim=${m.anim} ctrl=${grab.kind} bone=${b?.data.name} parent=${b?.parent?.data.name} offset=${(grabOffsetPx("cheek") ?? -1).toFixed(0)}px (expect touch Touch_Idle 유지, Character_Ball_Move 본이 커서를 따라 30~70px 이동 → 얼굴이 절반 따라옴)`); }
-        shot("cheek-drag2"); await sleep(120); fire("mouseup", hx + 64, cy2 + 24); await sleep(30); say(`cheek release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Touch_End + erpin/touch1*)`);
-        await sleep(400); say(`cheek ctrl bone after release: kind=${grab.kind} offset=${(grabOffsetPx("cheek") ?? -1).toFixed(0)}px (expect null, ≈0)`);
-        await sleep(3000); await settle(); cx = m.x; let by = H - m.y - 30; fire("mousedown", cx, by); await sleep(700);
-        say(`body press+hold 0.7s → state=${m.state} anim=${m.anim} (expect touch, 대기 애니 그대로 — 가만히 누르면 아무것도 안 함)`);
-        fire("mouseup", cx, by); await sleep(30); say(`body tap release → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect react Happy/Smile/… + joy — 간지럽히기 아님)`);
-        await sleep(4500); await settle(); cx = m.x; by = H - m.y - 30; fire("mousedown", cx, by); // 몸 문지르기(좌우 왕복 24px) → 간지럽히기
-        for (const dx of [8, 16, 24, 16, 8, 0, -8, 0, 8, 16]) { await sleep(16); fire("mousemove", cx + dx, by); }
-        say(`body rub(문지르기) → state=${m.state} anim=${m.anim} voice=${lastPlayed?.name} (expect tickle Tickle_Idle_1 + ticklestart — 루프 하나만)`);
-        await sleep(350); for (const dx of [8, 0, -8]) { await sleep(16); fire("mousemove", cx + dx, by); } await sleep(30);
-        say(`rub more → state=${m.state} anim=${m.anim} (expect still tickle Tickle_Idle_1, no Idle_2 switch)`);
-        fire("mouseup", cx - 8, by); await sleep(30); say(`rub release → state=${m.state} anim=${m.anim} (expect react Tickle_End)`);
-        await sleep(4500); await settle(); cx = m.x; by = H - m.y - 30; const x0 = m.x; fire("mousedown", cx, by); for (let i = 1; i <= 8; i++) { await sleep(16); fire("mousemove", cx + i * 12, by - i * 12); }
-        say(`body drag(위로) → state=${m.state} moved=${(m.x - x0).toFixed(0)}px after 96px cursor (expect drag, moved ≈ 96−48 = 48 → 세로 45px 넘은 지점부터 따라옴, 튀지 않음)`);
-        fire("mouseup", cx + 96, by - 96); await sleep(1500); await settle(); cx = m.x; by = H - m.y - 30; fire("mousedown", cx, by); // 가로로 길게 문지르기(±100px) → 들리지 않아야
-        for (const dx of [40, 80, 120, 80, 40, 0, -40, -80, -120, -80, -40, 0]) { await sleep(16); fire("mousemove", cx + dx, by); }
-        say(`body wide rub(가로 ±120px) → state=${m.state} anim=${m.anim} (expect tickle Tickle_Idle_1, not drag)`); fire("mouseup", cx, by); await sleep(1500); await settle();
-        { patchSettings({ skin: "Mini_Opal" }); await sleep(2500); await settle(); const g2 = headGeom(); const hx2 = g2.headX, eyeS = H - g2.eyeY, topS = H - g2.top;
-          say(`zones(opal, 큰 모자 hatRatio≈8): u=${g2.u.toFixed(0)} topAboveEye=${(g2.top - g2.eyeY).toFixed(0)}px zone(eye)=${zoneAt(hx2, eyeS)} zone(eye+1.5u 머리)=${zoneAt(hx2, eyeS - 1.5 * g2.u)} zone(top-20 모자)=${zoneAt(hx2, topS + 20)} (expect cheek / head / head — 예전 방식이면 얼굴이 모자 중간까지 올라갔음)`); }
-        patchSettings({ skin: "Mini_ErpinSkin1" }); await sleep(2500);
-        say(`voice split: cheek=${voiceSet.cats.cheek?.length} pat=${voiceSet.cats.pat?.length} touch=${voiceSet.cats.touch?.length} (expect 3/3/6 for erpin skin1 view)`);
-      }
-      m.state = "idle"; S.behavior.hopChance = 100; decideIdle(); say(`sd move slot=${active === mini ? "minimi" : active.family} state=${m.state} anim=${m.anim} (expect minimi Idle2_1)`); await sleep(400); S.behavior.hopChance = 45;
-      patchSettings({ skin: "Mini_Dummy" }); await sleep(800);
-      say(`sd dummy active=${active.kind} (expect minimi fallback)`);
-      patchSettings({ skin: "Mini_Crepe", mode: "minimi" }); await sleep(500);
-      say(`back to minimi active=${active.kind} h=${m.h.toFixed(0)} (expect minimi 184)`);
-      { const pairs = ["Happy_1", "Angry_1", "Sad_1", "Surprise_1", "Eat_1", "Blank_1", "Spawn", "Victory", "Success", "Idle2_4"].map(a => `${a}→${(voiceCatsFor(a) || ["-"]).join("/")}`); say(`motion→voice map: ${pairs.join(", ")}`); }
-      patchSettings({ skin: "Mini_Erpin", mode: "sd" }); await sleep(2500);
-      { const f = motionVoice("Happy_1", true); say(`motion voice Happy_1 → ${f} (expect erpin/joy* or pleasure*)`); const f2 = motionVoice("Angry_1", true); say(`motion voice Angry_1 → ${f2} (expect erpin/anger*)`); }
-      say(`motion voice gating: chance=${S.sound.motionVoiceChance} cooldown=${S.sound.motionVoiceCooldown}s on=${S.sound.motionVoice}`);
-      { patchSettings({ sound: { muted: false, master: 0.5, voice: 0.01 } }); playVoice("joy", "touch"); await sleep(300); m.state = "idle"; m.timer = 0.01; await sleep(400); say(`voice hold: voicePlaying=${voicePlaying()} state=${m.state} timer=${m.timer.toFixed(2)} (expect still idle while voice plays, timer≥0.4)`); if (currentVoice) currentVoice.pause(); patchSettings({ sound: { voice: 0.5, master: 0.8 } }); }
-      patchSettings({ skin: "Mini_Crepe", mode: "sd" }); await sleep(1500);
-      say(`geo: window ${W}x${H}, displays=${geoD.map(d => `[${d.x0}-${d.x1} floor=${d.floor} top=${d.top}${d.primary ? " P" : ""}]`).join(" ")} floorAt(100)=${floorAt(100)} floorAt(W-100)=${floorAt(W - 100)} (expect 2 displays, floor>0 = 작업표시줄 높이)`);
-      { const o = m.x; m.state = "idle"; m.x = W - 200; m.y = floorAt(m.x); say(`on 2nd monitor x=${m.x.toFixed(0)} floor=${floorAt(m.x)} (expect that display's floor)`); m.x = o; m.y = floorAt(o); }
-      say(`multi: mascots=${mascots.size} ids=${[...mascots.keys()].join(",")} (expect ≥1, one window)`);
-      say("DONE");
-    }
+    // ---- 셀프테스트 (--selftest 등) 는 renderer/mascot-selftest.js — 제품 코드가 아니라 설치판에는 넣지 않는다(package.json build.files).
+    // 그래서 없을 수도 있다: 없으면 빈 함수로 둔다. 바뀌는 값은 getter 로 넘긴다
+    const T = typeof MascotSelftest === "undefined" ? {} : MascotSelftest.create({
+      m, mini, sd, sdI, id, host, menuOpen, sleep, hit, hover, onMouse, patchSettings, decideIdle, useSlot, slotForRest,
+      isSD, play, playVoice, motionVoice, voiceCount, voicePlaying, voiceCatsFor, onComplete, bodyHeight, zoneAt,
+      ctrlBone, eyeBones, headBone, headGeom, floorAt, mascots, bTmp, grab, grabOffsetPx,
+      get S() { return S; }, get active() { return active; }, get voiceSet() { return voiceSet; },
+      get lastPlayed() { return lastPlayed; }, get geoD() { return geoD; }, get W() { return W; }, get H() { return H; },
+      get currentVoice() { return currentVoice; },
+    });
+    const noop = async () => { console.log("셀프테스트는 개발 실행에서만 돕니다 (설치판에는 들어 있지 않습니다)"); };
+    const { selftest = noop, moodTest = noop, ingameTest = noop } = T;
 
     Object.assign(self, { start, dispose, hideHit, onGeo, applySettings, update, pushHitRect, hover, onMouse, spawn, playCmd, preview, announce, emote, stay, logState, moodTest, ingameTest, hudLine, sdAnimations, selftest });
     return self;
