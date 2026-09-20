@@ -26,7 +26,11 @@ module.exports = function createUpdater(ctx) {
       ctx.refreshTray();
       if (updateNotified === tag) return; updateNotified = tag;
       const { Notification } = require("electron");
-      if (Notification.isSupported()) { const n = new Notification({ title: `사도 데스크 ${tag} 업데이트가 나왔어요`, body: `지금 ${app.getVersion()} → ${tag.replace(/^v/, "")}. 클릭하면 다운로드 페이지가 열려요. (트레이 메뉴에서도 받을 수 있어요)`, silent: true }); n.on("click", () => shell.openExternal(updateInfo.url)); n.show(); }
+      if (Notification.isSupported()) {
+        const n = new Notification({ title: `사도 데스크 ${tag} 업데이트가 나왔어요`, body: `지금 ${app.getVersion()} → ${tag.replace(/^v/, "")}. 클릭하면 앱 안에서 받아 설치해요. (트레이 메뉴·설정에서도 됩니다)`, silent: true });
+        n.on("click", () => { if (ctx.startUpdate) ctx.startUpdate(); else shell.openExternal(updateInfo.url); });   // 브라우저로 받으면 '웹에서 받음' 표시가 붙어 경고가 뜬다
+        n.show();
+      }
       console.log(`update: ${app.getVersion()} → ${tag}`);
     } catch (e) { console.log("update check 실패", e.message); }
   }
