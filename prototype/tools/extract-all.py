@@ -9,7 +9,7 @@
   --json  진행 상황을 한 줄 JSON으로 출력(앱 UI가 읽음): {"step":..,"msg":..,"done":n,"total":n,"level":"info|warn|error|ok"}
 필요 패키지: UnityPy(texture2ddecoder 포함), Pillow / 보이스 opus 변환은 opusenc.exe (pyruntime 옆)
 """
-import argparse, json, os, re, shutil, subprocess, sys, tempfile, time, glob, io as _io, zipfile, urllib.request
+import argparse, json, os, re, shutil, subprocess, sys, tempfile, time, glob, io as _io, zipfile, urllib.request, socket
 from concurrent.futures import ProcessPoolExecutor
 
 PKG = "com.epidgames.trickcalrevive"
@@ -109,6 +109,21 @@ def ensure_modern_adb(adb_exe, cache_dir):
     except Exception as e:
         log("adb", f"platform-tools 내려받기 실패({e}) — 앱플레이어 adb로 계속합니다", "warn")
     return adb_exe
+
+# adb 서버(기본 5037)는 한 번 뜨면 계속 남는다. 우리가 띄운 것만 끝나고 정리한다 —
+# 사용자가 다른 일로 이미 띄워 둔 서버를 죽이면 그쪽 작업이 끊긴다
+def _adb_port_open(port=5037):
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.4): return True
+    except Exception: return False
+
+def _last_adb_exe():
+    return next(iter(_ADB_VER), None)   # 이번 실행에서 실제로 부른 adb (버전 확인 때 기록된다)
+
+def kill_adb_if_ours(adb_exe, was_open):
+    if was_open or not adb_exe or not _adb_port_open(): return
+    try: subprocess.run([adb_exe, "kill-server"], env=ENV, capture_output=True, timeout=10)
+    except Exception: pass
 
 _ADB_VER = {}
 def adb_version(exe):
@@ -554,6 +569,7 @@ def main():
     global JSON
     try: sys.stdout.reconfigure(encoding="utf-8"); sys.stderr.reconfigure(encoding="utf-8")
     except Exception: pass
+    adb_was_open = _adb_port_open()   # 시작할 때 이미 adb 서버가 떠 있었나 — 우리가 띄운 것만 끝나고 정리하려고
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=None); ap.add_argument("--steps", default="minimi,sfx,standing,ingame,voice")
     ap.add_argument("--mumu", default=None); ap.add_argument("--vm", default="0"); ap.add_argument("--json", action="store_true"); ap.add_argument("--keep-tmp", action="store_true")
@@ -565,7 +581,9 @@ def main():
     a = ap.parse_args(); JSON = a.json
     global FORCE; FORCE = a.force
     if a.list_devices:
-        print(json.dumps(scan_devices(a.mumu, a.adb), ensure_ascii=False)); return
+        try: print(json.dumps(scan_devices(a.mumu, a.adb), ensure_ascii=False))
+        finally: kill_adb_if_ours(a.adb or _last_adb_exe(), adb_was_open)   # 기기 찾기만 해도 adb 서버가 뜬다
+        return
     if a.enable_ld_adb is not None:
         ldc = ldconsole_path()
         if not ldc: log("adb", "LD플레이어를 찾지 못했어요", "error"); sys.exit(3)
@@ -674,6 +692,7 @@ def main():
         log("error", str(e), "error"); sys.exit(1)
     finally:
         if not a.keep_tmp: shutil.rmtree(tmp, ignore_errors=True)
+        kill_adb_if_ours(locals().get("adb_exe"), adb_was_open)
 
 if __name__ == "__main__":
     main()
