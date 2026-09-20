@@ -232,7 +232,6 @@ async function* ndjson(body) {
 async function* sse(body) { // "data: {...}" 줄만
   for await (const line of ndjson(body)) { if (line.startsWith("data:")) { const d = line.slice(5).trim(); if (d && d !== "[DONE]") yield d; } }
 }
-const imgPart = (img) => img ? { mime: img.mime || "image/png", data: img.data } : null; // {mime, data(base64)}
 
 // 말풍선에 들어갈 감정 — 구조적 출력(JSON 스키마)의 enum 으로도 쓴다
 const BUBBLE_EMO = ["행복", "미소", "분노", "슬픔", "놀람", "냠냠", "삐짐", "기본"];
@@ -532,6 +531,6 @@ function bibleBrief(b, o = {}) {
     !o.short && b.mood ? `감정 경향(감정 태그 고를 때): ${b.mood}` : "",
   ].filter(Boolean).join("\n");
 }
-module.exports = { explainError, keysEncrypted, detectMachine, pickOllamaModel, sampleLinesFor, trimToBubble, bibleBrief, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory, ollamaTags,
+module.exports = { explainError, keysEncrypted, pickOllamaModel, sampleLinesFor, trimToBubble, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory,
   // 테스트용 — 스트림 파서와 제공자 함수. 앱 코드는 위의 것만 쓴다
   _test: { stripNoise, partialField, ndjson, sse, chatGemini, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };

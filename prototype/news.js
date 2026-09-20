@@ -97,4 +97,4 @@ function createNewsWatcher({ stateFile, getConfig, onNew, log = () => {} }) {
   function inject(items) { const list = items.map(it => ({ ...it, read: false })); state.items = [...list, ...state.items].slice(0, MAX_KEEP); state.unread = state.items.filter(i => !i.read).length; save(); onNew(items); }
   return { check, start, stop, markRead, inject, latest, get items() { return state.items; }, get unread() { return state.unread; }, get status() { return { lastCheck: state.lastCheck, lastError: state.lastError, initialized: state.initialized }; }, BOARDS };
 }
-module.exports = { createNewsWatcher, BOARDS, YT_CHANNEL, LOUNGE };
+module.exports = { createNewsWatcher };
