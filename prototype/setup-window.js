@@ -8,6 +8,19 @@ const { spawn } = require("node:child_process");
 
 module.exports = function createSetupWindow(ctx) {
   let setupWin = null, extractProc = null;
+  // adb 서버(5037)는 한 번 뜨면 계속 남는다. 파이썬 쪽도 스스로 정리하지만, 기기 찾기와 가져오기가 겹치면
+  // 뒤에 시작한 쪽이 "원래 떠 있었다"고 보아 안 죽인다. 그래서 앱이 처음 봤을 때 닫혀 있었으면 이 창이 주인으로 치고 끝날 때 정리한다
+  let adbWasOpen = null, lastAdbExe = null;
+  const adbPortOpen = () => new Promise((res) => {
+    const s = require("node:net").connect({ host: "127.0.0.1", port: 5037 });
+    const done = (v) => { try { s.destroy(); } catch {} res(v); };
+    s.setTimeout(400); s.once("connect", () => done(true)); s.once("error", () => done(false)); s.once("timeout", () => done(false));
+  });
+  const noteAdbStart = async (exe) => { if (exe) lastAdbExe = exe; if (adbWasOpen === null) adbWasOpen = await adbPortOpen(); };
+  async function cleanupAdb() {   // 앱을 끌 때 — 우리가 띄운 서버만
+    if (adbWasOpen !== false || !lastAdbExe || !(await adbPortOpen())) return;
+    try { spawn(lastAdbExe, ["kill-server"], { windowsHide: true }).on("error", () => {}); console.log("adb 서버 정리:", lastAdbExe); } catch {}
+  }
   function toolsDir() { return app.isPackaged ? path.join(process.resourcesPath, "tools") : path.join(__dirname, "tools"); }
   function pythonExe() {
     // 시험용 갈아 끼우기(개발 실행에서만): "실행파일|인자" — test/flow.js 가 가짜 추출기(node 스크립트)를 끼워 실패·취소·재시도를 돌린다
@@ -43,7 +56,7 @@ module.exports = function createSetupWindow(ctx) {
     if (!ctx.hasAssets(folder)) return { ok: false, error: "이 폴더에 minimi/minimi.skel이 없습니다. 게임 데이터를 가져온 폴더(assets)를 선택해 주세요." };
     ctx.updateSettings({ assets: { root: ctx.toSlash(folder) } }); ctx.rescanAssets(); ctx.startMascot(); ctx.refreshTray(); return { ok: true, root: ctx.assetRoot };
   });
-  ipcMain.handle("assets:scan", () => new Promise((resolve) => {
+  ipcMain.handle("assets:scan", async () => { await noteAdbStart(null); return new Promise((resolve) => {
     const py = pythonExe(); const args = [...py.args, path.join(toolsDir(), "extract-all.py"), "--list-devices", "--json"];
     let out = "", err = "";
     try {
@@ -56,12 +69,13 @@ module.exports = function createSetupWindow(ctx) {
         killTree(p.pid, () => { try { p.kill(); } catch {} });
         resolve({ ok: false, error: "기기 찾기가 60초를 넘겼어요. 앱플레이어를 켠 뒤 다시 찾아 주세요.", devices: [] });
       }, 60000);
-      p.on("exit", () => { clearTimeout(timer); try { resolve({ ok: true, devices: JSON.parse(out.trim().split("\n").pop() || "[]") }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
+      p.on("exit", () => { clearTimeout(timer); try { const devices = JSON.parse(out.trim().split("\n").pop() || "[]"); if (devices[0] && devices[0].adb) lastAdbExe = devices[0].adb; resolve({ ok: true, devices }); } catch { resolve({ ok: false, error: (err || out).slice(0, 300), devices: [] }); } });
     } catch (e) { resolve({ ok: false, error: e.message, devices: [] }); }
-  }));
+  }); });
   ipcMain.handle("assets:extract", (_e, opt) => startExtract(opt));
   function startExtract(opt) {
     if (extractProc) return { ok: false, error: "이미 추출 중이에요." };
+    noteAdbStart(opt.adb);   // 가져오기가 adb 서버를 띄운다 — 앱이 끝날 때 정리하려고 기억해 둔다
     const out = path.join(app.getPath("userData"), "assets");
     try { fs.mkdirSync(out, { recursive: true }); }
     catch (e) { return { ok: false, error: `게임 데이터 폴더를 만들 수 없습니다 (${out}): ${e.message}` }; }
@@ -126,6 +140,6 @@ module.exports = function createSetupWindow(ctx) {
   ipcMain.on("assets:open-root", () => { try { fs.mkdirSync(ctx.assetRoot, { recursive: true }); } catch (e) { console.warn("assets root mkdir", e.message); } shell.openPath(ctx.assetRoot); }); // 설정에 적힌 폴더가 없는 드라이브(빠진 USB)면 mkdir 이 던진다
   ipcMain.on("assets:open-log", () => { const f = path.join(app.getPath("userData"), "extract.log"); if (fs.existsSync(f)) shell.openPath(f); });
   // 앱을 끌 때 돌던 추출기를 정리한다 (before-quit)
-  function stopExtract() { if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); }
-  return { openSetup, stopExtract, startExtract, get extractPid() { return extractProc ? extractProc.pid : 0; }, get setupWin() { return setupWin; } };
+  function stopExtract() { if (extractProc) killTree(extractProc.pid, () => { try { extractProc.kill(); } catch {} }); cleanupAdb(); }
+  return { openSetup, stopExtract, startExtract, cleanupAdb, get extractPid() { return extractProc ? extractProc.pid : 0; }, get setupWin() { return setupWin; } };
 };

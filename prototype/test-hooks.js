@@ -221,7 +221,8 @@ module.exports = function installTestHooks(ctx) {
     if (D.length < 2) { console.log("MONTEST FAIL 모니터가 둘 이상이어야 한다"); app.exit(1); return; }
     const R = () => (ctx.instances.get(a) || {}).rect, cx = () => { const r = R(); return r ? r.x + r.w / 2 : NaN; };   // 공중에 떠 있는 순간엔 히트 사각형이 없다(null)
     const dispOf = (x) => D.findIndex(d => x >= d.x && x < d.x + d.w);
-    ctx.updateSettings({ behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
+    // 미니미로 맞춘다 — 스탠딩은 가로로 끄는 것이 '간지럽히기' 로 잡혀 들어 올려지지 않는다(시험이 끌기를 못 한다)
+    ctx.updateSettings({ mode: "minimi", behavior: { hopChance: 100, jumpChance: 0, idleMin: 0.3, idleMax: 0.8, hopRange: 900 } }, a);   // 멀리, 자주 폴짝
     ctx.updateSettings({ display: { confineMonitor: !argHas("--roam") } });   // --roam 은 대조군: '모니터 가두기' 를 끄면 ① 이 떨어져야 한다. 프로필이 재사용되니 켜는 쪽도 명시
     await sleep(3000); const d0 = dispOf(cx());
     { const want = D.findIndex(d => d.id === +ctx.settings.characters[0].monitor); if (want >= 0) ok(d0 === want, `⓪ 설정에 적힌 모니터에서 시작 (${d0} = ${want})`); else console.log(`MONTEST PASS ⓪ 설정에 모니터가 없어 ${d0}번에서 시작 (건너뜀)`); }
@@ -283,6 +284,9 @@ module.exports = function installTestHooks(ctx) {
     console.log(`AIFAIL ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 6000);
+
+  // --quit-in <초> — 그만큼 뒤에 앱을 정상 종료한다(app.quit → before-quit 이 돈다). 끝날 때 치우는 것들을 시험할 때
+  if (argHas("--quit-in")) setTimeout(() => { console.log("QUITIN 정상 종료"); app.quit(); }, (+argVal("--quit-in", 10) || 10) * 1000);
 
   // --diag-test — 진단 정보에 필요한 줄이 다 있고, API 키·대화 내용 같은 비밀이 섞이지 않는지
   if (argHas("--diag-test")) setTimeout(async () => {
