@@ -108,7 +108,6 @@
   const HIDE_SD_SLOTS = /^(CommonShadow|Shadow|Point_Shadow|Ground|Floor)$/i; // SD: 발밑 바닥 그림자 (바운딩 바닥을 36유닛 내려 정렬·크기를 틀어놓음)
   const GRAVITY = 2600, WALL_MARGIN = 20;
   const IMAGE_FACES = -1;       // 미니미 원본 그림은 왼쪽을 본다 → 오른쪽(facing=+1)으로 갈 때 미러
-  const MINI_MATCH = 0.78;
 
   // ---- 모션 ↔ 보이스 매핑은 renderer/motion-voice.js (node 감사 도구와 공유) ----
   const voiceCatsFor = (anim) => MotionVoice.voiceCatsFor(anim);
@@ -162,7 +161,7 @@
     }
     return { hero: voiceIndex[hero] ? hero : null, skin, cats, base: h.base || {} };
   }
-  // cheek·pat 은 touch 를 둘로 가른 것이라 따로 세면 같은 파일이 두 번 들어간다(에르핀 스킨1: 6이 12로)
+  // 파일 집합의 크기로 센다 — cheek·pat(touch 를 가른 것), smashHit·smashLine(dutchrubend 를 가른 것)은 같은 파일이 두 묶음에 들어가 있다(에르핀 사복1: 6이 12로 세지던 문제)
   const countVoices = (vs) => new Set(Object.values(vs.cats).flat()).size;
   function loadImage(src) { return new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = src; }); }
   // 아틀라스 텍스처 로드. pma:false 아틀라스는 업로드 시 프리멀티플라이해서 PMA 백버퍼와 맞춘다 (가장자리 흰 테 방지)
@@ -618,7 +617,7 @@
 
     function setSkin(name, greet) {
       const skin = miniData.findSkin(name);
-      if (skin) { mini.skeleton.setSkin(skin); mini.skeleton.setSlotsToSetupPose(); miniRawH = 0; }
+      if (skin) { mini.skeleton.setSkin(skin); mini.skeleton.setSlotsToSetupPose(); }
       selectVoiceSet(name);
       if (greet) playVoice("greeting", "spawn", "pat");   // touch 는 볼 당기기 대사를 품고 있어 인사로 쓰지 않는다
     }
@@ -642,15 +641,6 @@
     // 박스 바닥이 원점보다 위면(주비 238 등 아무것도 지면에 닿지 않음) 박스 바닥을 바닥에 놓는다.
     function groundY(slot, off, size) { return off.y > 0 ? off.y : 0; }
     function applyFacing() { active.skeleton.scaleX = active.k * facing * IMAGE_FACES; }
-    let miniRawH = 0;
-    // (참고용) SD 모드에서 미니미를 스탠딩 크기에 맞추는 배율 — 지금은 기본 미니미 크기로 통일해서 사용하지 않음
-    function miniMatchK() {
-      if (!miniRawH) { const sk = mini.skeleton; const sx = sk.scaleX, sy = sk.scaleY; sk.scaleX = 1; sk.scaleY = 1; sk.setToSetupPose(); sk.setSlotsToSetupPose(); hideExtraSlots(mini); sk.updateWorldTransform(); const o = new spine.Vector2(), z = new spine.Vector2(); sk.getBounds(o, z, bTmp); miniRawH = Math.max(1, z.y); sk.scaleX = sx; sk.scaleY = sy; }
-      const body = sd.skeleton ? bodyHeight(sd) : null;
-      const boxPx = (sd.h || 0) > 0 ? sd.h : 560 * scale() * SD_UNIT;
-      const standingPx = body ? Math.min(boxPx, body * sd.k * 1.65) : boxPx;
-      return (standingPx * MINI_MATCH) / miniRawH;
-    }
     // 발(발 본)→Head 본 높이(스켈레톤 단위). Head 본이 없거나 비율이 이상하면 null
     function bodyHeight(slot) {
       const sk = slot.skeleton; if (!sk) return null;

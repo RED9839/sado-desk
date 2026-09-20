@@ -113,4 +113,4 @@ function clampSettings(s) {
   for (const c of s.characters) if (c.monitor !== undefined) c.monitor = +c.monitor || 0;   // 모니터 id 는 숫자 — 손으로 고친 파일이 문자열을 들고 있어도 맞춘다
   return fixed;
 }
-module.exports = { CHAR_DEFAULTS, GLOBAL_DEFAULTS, GLOBAL_KEYS, CHAR_KEYS, RANGES, ENUMS, STRINGS, LISTS, isObj, deepMerge, checkValue, sanitizeTree, sanitizePatch, clampSettings };
+module.exports = { CHAR_DEFAULTS, GLOBAL_DEFAULTS, GLOBAL_KEYS, CHAR_KEYS, isObj, deepMerge, sanitizePatch, clampSettings };
