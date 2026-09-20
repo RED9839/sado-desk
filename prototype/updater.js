@@ -191,7 +191,8 @@ module.exports = function createUpdater(ctx) {
         const aim = (path2) => { updateInfo.asset = "http://127.0.0.1:18099" + path2; updateInfo.sha256 = "1".repeat(64); };
         aim("/stall");
         const t1 = Date.now(); const st1 = await download();
-        ok(!st1.ok && st1.stalled && state.phase === "error" && Date.now() - t1 < 20000, `멈춘 연결을 ${((Date.now() - t1) / 1000).toFixed(1)}초에 끊는다 (${(st1.error || "").slice(0, 30)})`);
+        // 시계값에 맞춰 본다 — --update-stall-ms 없이 돌리면 60초가 정상이다
+        ok(!st1.ok && st1.stalled && state.phase === "error" && Date.now() - t1 < STALL_MS + 8000, `멈춘 연결을 ${((Date.now() - t1) / 1000).toFixed(1)}초에 끊는다 (${(st1.error || "").slice(0, 30)})`);
         aim("/stall");   // 취소: 같은 서버에 붙였다가 사람이 멈추는 경우
         const p2 = download(); await new Promise((r2) => setTimeout(r2, 800));
         const c = cancel(); const st2 = await p2;
