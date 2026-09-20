@@ -79,29 +79,31 @@ module.exports = function createChat(ctx) {
     if (chatBusy) { if (userText) chatSend("chat:done", { error: "아직 말하는 중이에요. 잠깐 뒤에 다시 보내 주세요." }); return null; }
     chatBusy = true; lastChatAt = Date.now(); const seq = chatSeq;
     const ud = app.getPath("userData"), ai = ctx.settings.global.ai, prof = ctx.chatProfile(id);
-    const load = () => ai.memory !== false ? Ai.loadHistory(ud, id) : [];
-    let hist = load();
-    // 먼저 말 걸 때는 모델에게 보여 줄 기록을 최근 두 마디로 줄인다. 제 지난 답이 길게 쌓여 있으면 모델이 그 길이를
-    // 따라가 회차마다 답이 길어졌다(실측 1회 77자 → 3회 141자, 120자 초과 4건 → 100건). 저장은 아래에서 파일을 다시 읽으니 줄지 않는다
-    if (!userText && !opts.image) hist = hist.slice(-2);
-    // 사용자가 보낸 말이 없으면(먼저 말 걸기) 침묵을 알리는 한 줄을 붙인다. 안 붙이면 기록 끝이 assistant 라
-    // normalizeMessages 가 "(계속)" 을 붙이고, 모델은 먼저 말을 거는 대신 자기 혼잣말에 이어 대답한다
-    const msgs = [...hist.map(m => ({ role: m.role, text: m.text })),
-      (userText || opts.image)
-        ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
-        : { role: "user", text: "(사용자가 조용히 있다)" }];
-    // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말이 전부 막혔다. 90초면 끊는다
+    const load = () => (ctx.settings.global.ai.memory !== false ? Ai.loadHistory(ud, id) : []);   // 저장 여부는 그때그때의 설정으로 (아래 저장도 같다)
     const ctl = chatAbort = new AbortController(); let timedOut = false, partial = "";
+    // 제공자가 답을 시작만 하고 멎으면(스트림이 열린 채 조용) chatBusy 가 영영 남아 대화·혼잣말이 전부 막혔다. 90초면 끊는다
     const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, 90_000);
     ctx.sendMascot(id, "announce", { hold: 20000, sound: false }); // 대답하는 동안 제자리에
     try {
+      // 준비(기록 읽기·메시지 만들기)도 이 안에서 한다 — 밖에서 터지면 finally 를 못 지나 chatBusy 가 잠긴 채 남았다
+      let hist = load();
+      // 먼저 말 걸 때는 모델에게 보여 줄 기록을 최근 두 마디로 줄인다. 제 지난 답이 길게 쌓여 있으면 모델이 그 길이를
+      // 따라가 회차마다 답이 길어졌다(실측 1회 77자 → 3회 141자, 120자 초과 4건 → 100건). 저장은 아래에서 파일을 다시 읽으니 줄지 않는다
+      if (!userText && !opts.image) hist = hist.slice(-2);
+      // 사용자가 보낸 말이 없으면(먼저 말 걸기) 침묵을 알리는 한 줄을 붙인다. 안 붙이면 기록 끝이 assistant 라
+      // normalizeMessages 가 "(계속)" 을 붙이고, 모델은 먼저 말을 거는 대신 자기 혼잣말에 이어 대답한다
+      const msgs = [...hist.map(m => ({ role: m.role, text: m.text })),
+        (userText || opts.image)
+          ? { role: "user", text: userText || "(사용자의 화면을 본다)", ...(opts.image ? { image: opts.image } : {}) }
+          : { role: "user", text: "(사용자가 조용히 있다)" }];
       const now = new Date();
       const extra = `지금은 ${now.getMonth() + 1}월 ${now.getDate()}일 ${["일", "월", "화", "수", "목", "금", "토"][now.getDay()]}요일 ${now.getHours()}시 ${now.getMinutes()}분.` + (opts.extra ? "\n" + opts.extra : "");
       const r = await Ai.chat(ai, prof, msgs, (d) => { partial += d; chatSendFor(seq, "chat:token", { delta: d }); }, { extra, signal: ctl.signal });
       // 저장은 시작할 때 읽어 둔 hist 가 아니라 지금 파일 위에 얹는다 — 답을 만드는 사이 '기록 지우기'로 파일이 비었으면 이번 한 마디만 남고
       // (옛 기록이 되살아나던 문제), 먼저 말 걸 때 두 마디로 줄인 것이 저장까지 줄이지 않는다 (줄이면 먼저 말 걸 때마다 기록이 3줄로 잘렸다)
       const saved = [...load(), ...(userText ? [{ role: "user", text: userText, t: Date.now() }] : []), { role: "assistant", text: r.text, t: Date.now() }];
-      if (ai.memory !== false) Ai.saveHistory(ud, id, saved, ai.maxTurns || 12);
+      const aiNow = ctx.settings.global.ai;   // 답하는 사이에 '기록 저장'을 껐을 수 있다 — 저장 직전의 설정을 따른다
+      if (aiNow.memory !== false) Ai.saveHistory(ud, id, saved, aiNow.maxTurns || ai.maxTurns || 12);
       if (opts.say) chatSendFor(seq, "chat:say", { text: r.text }); else chatSendFor(seq, "chat:done", { text: r.text, emotion: r.emotion });
       ctx.sendMascot(id, "emote", { mood: r.emotion, role: "speak", pose: Math.min(15000, 3000 + r.text.length * 90), hold: 15000 });
       console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
