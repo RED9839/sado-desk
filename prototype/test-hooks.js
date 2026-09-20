@@ -6,8 +6,7 @@ const { app, BrowserWindow, ipcMain, screen } = require("electron");
 const fs = require("fs"), path = require("path");
 const Ai = require("./ai.js");
 const Talk = require("./renderer/talk.js");
-const argHas = (f) => process.argv.includes(f);
-const argVal = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
+const { argHas, argVal } = require("./args.js");
 
 module.exports = function installTestHooks(ctx) {
   // --perf-test — 숨어 있을 때 정말로 쉬는지 센다: 렌더러의 rAF 예약 횟수와 메인의 커서 확인 타이머.
@@ -29,15 +28,8 @@ module.exports = function installTestHooks(ctx) {
     const after = await count(1000);
     ok(after > 20, `돌아오면 다시 ${after}번 — 멈춘 뒤에도 깨어난다`);
     ok(ctx.cursorPoll.on, "커서 확인도 다시 돈다");
-    // 커서가 사도에게서 멀면 성기게 (16ms → 50ms)
-    const inst = ctx.instances.get(ctx.settings.characters[0].id);
-    if (inst && inst.rect && ctx.geo) {
-      const r = ctx.screenRect(inst.rect);
-      require("electron").screen; // (커서를 옮길 수는 없으니) 가까움 판정에 쓰는 좌표를 직접 넣어 본다
-      const far = { x: r.x + 4000, y: r.y + 4000 };
-      console.log(`PERFTEST 커서 간격 지금 ${ctx.cursorPoll.ms}ms (사도 ${r.x},${r.y})`);
-      ok(ctx.cursorPoll.ms === 16 || ctx.cursorPoll.ms === 50, `간격이 둘 중 하나다 (${ctx.cursorPoll.ms}ms)`);
-    }
+    // 간격이 상황에 맞는 값인지는 순수 계산이라 단위 시험(test/cursor-poll.test.js)에서 본다. 여기서는 돌고 있는 값만 적어 둔다
+    console.log(`PERFTEST 지금 커서 간격 ${ctx.cursorPoll.ms}ms`);
     console.log(`PERFTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 7000);

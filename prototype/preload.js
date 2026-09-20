@@ -14,7 +14,6 @@ const guard = (p) => { if (!allowed(p)) throw new Error("허용되지 않은 경
 // 이 창이 담당하는 캐릭터 id (메뉴 창). 마스코트 창(캐릭터 전부)·설정 창은 없음 → id를 명시해서 호출
 const INSTANCE = (process.argv.find(a => a.startsWith("--instance=")) || "").slice("--instance=".length) || null;
 contextBridge.exposeInMainWorld("host", {
-  instance: INSTANCE,
   // 파일
   readBytes: (p) => new Uint8Array(fs.readFileSync(guard(p))),
   readText: (p) => fs.readFileSync(guard(p), "utf8"),
