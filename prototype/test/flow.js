@@ -10,6 +10,8 @@ const SCENARIOS = {
   // 진짜 파이썬 대신 가짜 추출기(node) — "실행파일|인자" 를 setup-window.js 가 읽는다. 뒤에 붙는 extract-all.py 경로는 가짜가 무시한다
   extract: { flag: "--extract-test", tag: "EXTRACTTEST", limit: 60_000, env: { SADO_EXTRACTOR: `${process.execPath}|${path.join(__dirname, "fake-extract.js")}` } },
   settings: { flag: "--settings-test", tag: "SETTINGSTEST", limit: 60_000, seed: "{{{ 깨진 설정 파일" },   // 깨진 settings.json 으로 시작
+  // 손짓이 닿는 길: 히트 창에 진짜 입력을 넣어 ipc 까지 오는지. 에셋 없이도 돈다(CI). CSP 가 이 창 스크립트를 막은 적이 있다
+  hit: { flag: "--hit-test", tag: "HITTEST", limit: 60_000 },
   // 외부 AI 실패: 가짜 OpenAI 호환 서버(test/fake-ai.js)를 띄우고 그쪽으로 보낸다. 모의 AI(SADO_AI_MOCK)는 끈다
   aifail: { flag: "--aifail-test", tag: "AIFAIL", limit: 90_000, env: { SADO_AI_MOCK: "" }, server: ["fake-ai.js", "18081"],
     seed: JSON.stringify({ version: 2, global: { ai: { memory: true, provider: "openai", openai: { base: "http://127.0.0.1:18081/v1", model: "fake" }, keys: { openai: "raw:" + Buffer.from("k").toString("base64") } } }, characters: [{ id: "t1", skin: "Mini_Jubee", mode: "minimi" }] }) },
