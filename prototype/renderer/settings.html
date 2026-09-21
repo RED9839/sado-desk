@@ -368,7 +368,8 @@
       <div class="row"><label>새 버전 확인<span class="hint" id="upd-note">앱 안에서 받아 설치합니다. 받은 파일은 깃허브가 알려 준 검사값(SHA-256)과 대조합니다.</span></label><button class="btn" id="upd-check">지금 확인</button><button class="btn" id="upd-go" style="display:none">받아서 설치</button><button class="btn" id="upd-stop" style="display:none">받기 취소</button></div>
     </div>
     <div class="card"><h3>파일</h3>
-      <div class="row"><button class="btn" id="diag-copy" title="버전·설정·AI 상태를 한 덩이로 복사합니다. API 키와 대화 내용은 들어가지 않습니다">진단 정보 복사</button><button class="btn" data-open="settings">설정 파일 위치 열기</button><button class="btn" data-open="assets">게임 데이터 폴더 열기</button><button class="btn" id="assets-setup">게임 데이터 다시 가져오기…</button></div>
+      <div class="row" style="flex-wrap:wrap;gap:8px 12px"><button class="btn" id="diag-copy" title="버전·설정·AI 상태를 한 덩이로 복사합니다. API 키와 대화 내용은 들어가지 않습니다">진단 정보 복사</button><button class="btn" data-open="log" title="앱이 켜진 뒤 일어난 일을 적은 파일(app.log)입니다. 문제를 알릴 때 진단 정보와 함께 붙여 주세요. API 키는 들어가지 않지만 AI 대화의 앞부분 몇 글자는 들어갈 수 있습니다">로그 열기</button><button class="btn" data-open="settings">설정 파일 위치 열기</button><button class="btn" data-open="assets">게임 데이터 폴더 열기</button><button class="btn" id="assets-setup">게임 데이터 다시 가져오기…</button></div>
+      <div class="hint"><b>문제가 생기면</b> '진단 정보 복사'로 붙여 넣은 내용과 '로그 열기'로 찾은 <code>app.log</code>를 <a href="https://github.com/RED9839/sado-desk/issues/new/choose">깃허브 이슈</a>에 올려 주세요. 게임 데이터 가져오기가 안 되면 가져오기 창의 '추출 로그 열기'(<code>extract.log</code>)도 함께.</div>
       <div class="hint">사도 외형과 음성 데이터는 이 앱에 들어 있지 않습니다. 지원하는 앱플레이어에 설치된 트릭컬 리바이브에서 게임 데이터를 가져와 개인 사용 목적으로만 씁니다. 가져온 데이터를 다른 사람에게 배포하지 마세요.</div>
     </div>
     <div class="card"><h3>초기화</h3>

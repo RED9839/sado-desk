@@ -30,6 +30,11 @@ function resolveAssetRoot() {
 }
 // 테스트용: 별도 userData (설치판과 락·설정을 공유하지 않게) — 사도 데스크.exe --userdata C:\sadodesk-test
 { const i = process.argv.indexOf("--userdata"); if (i >= 0 && process.argv[i + 1]) app.setPath("userData", process.argv[i + 1]); }
+// 앱 로그 — 설치판에선 console.* 이 어디에도 남지 않았다. userData/app.log 에 받아 적는다(2MB 넘으면 .1 로 밀기).
+// 사용자가 문제를 알릴 때 설정 → 정보 → '로그 열기' 로 찾아 붙인다. 시험 실행(--userdata)도 그 폴더에 남긴다
+const LOG_FILE = path.join(app.getPath("userData"), "app.log");
+const appLog = require("./app-log.js").create({ file: LOG_FILE });
+appLog.install(`사도 데스크 v${app.getVersion()} 시작 · Electron ${process.versions.electron} · ${process.platform} ${require("node:os").release()} · ${app.isPackaged ? "설치판" : "개발 실행"} · 인자 ${process.argv.slice(1).join(" ") || "(없음)"}`);
 // 앱 이름 변경(trickcal-crepe-mascot-proto → sado-desk): 예전 userData의 설정·소식 상태를 새 폴더로 한 번 옮긴다
 (() => { try {
   if (process.argv.includes("--userdata")) return; // 시험용 폴더에 옛 설정을 끌어오면 첫 실행을 시험할 수 없다
@@ -501,7 +506,7 @@ ipcMain.handle("diag:get", async () => {
     `AI: 고른 것 ${ai.provider || "auto"} · 지금 쓰는 것 ${(st && st.resolved) || "없음"} · 키 ${["gemini", "anthropic", "openai"].filter(k => st && st[k] && st[k].key).join(",") || "없음"}${Ai.keysEncrypted() ? "(암호화)" : "(암호화 불가)"} · Ollama ${st && st.ollama ? (st.ollama.running ? `실행 중, 모델 ${st.ollama.models.length}개` : "연결 안 됨") : "?"}`,
     `AI 대화: 먼저 말 걸기 ${ai.proactive ? "켬" : "끔"} · 화면 보기 ${ai.screen ? `켬(${ai.screenScope === "display" ? "모니터 전체" : `앱 ${(ai.screenWindows || []).length}개`})` : "끔"} · 기록 ${ai.memory !== false ? "켬" : "끔"}`,
     `새 소식: ${g.news && g.news.enabled === false ? "끔" : "켬"} · 마지막 확인 ${news && news.status.lastCheck ? new Date(news.status.lastCheck).toLocaleString("ko-KR") : "없음"} · 마지막 오류 ${(news && news.status.lastError) || "없음"}`,
-    `경로: 설정 ${SETTINGS_FILE} · 게임 데이터 ${ASSET_ROOT}`,
+    `경로: 설정 ${SETTINGS_FILE} · 게임 데이터 ${ASSET_ROOT} · 로그 ${LOG_FILE}`,
   ];
   return L.join("\n");
 });   // 키가 실제로 암호화돼 저장되는지 — 설정 창이 사실대로 적는다
@@ -681,7 +686,7 @@ ipcMain.on("news:test", async () => { // 미리보기: 지금 올라와 있는 �
 ipcMain.on("bubble:resize", (_e, h) => { h = heightOf(h, 1); if (h === null) return; if (bubbleWin && !bubbleWin.isDestroyed()) { bubbleBounds = { ...(bubbleBounds || { x: 0, y: 0, width: BUBBLE_W }), height: Math.max(80, h) }; bubblePlace(bubbleFor); } });
 ipcMain.on("bubble:close", () => closeBubble());
 ipcMain.on("copy-text", (_e, t) => { try { require("electron").clipboard.writeText(String(t || "").slice(0, 20000)); } catch (e) { console.warn("clipboard", e.message); } });
-ipcMain.on("open-path", (_e, which) => { if (which === "settings") shell.showItemInFolder(SETTINGS_FILE); else if (which === "assets") shell.openPath(ASSET_ROOT); });
+ipcMain.on("open-path", (_e, which) => { if (which === "settings") shell.showItemInFolder(SETTINGS_FILE); else if (which === "assets") shell.openPath(ASSET_ROOT); else if (which === "log") { appLog.flush(); shell.showItemInFolder(LOG_FILE); } }); // 로그는 파일을 고른 채 폴더를 연다 — 그대로 끌어다 붙이라고
 ipcMain.on("char:add", (e, from) => addCharacter(from || instanceOf(e.sender)));
 ipcMain.on("char:remove", (e, id) => removeCharacter(id || instanceOf(e.sender)));
 // 히트 창
@@ -818,4 +823,4 @@ app.whenReady().then(() => {
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
-app.on("before-quit", () => { if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });
+app.on("before-quit", () => { appLog.flush(); if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 문제를 알리기 전에 — 진단 정보와 로그 찾는 법
+    url: https://github.com/RED9839/sado-desk#문제가-생겼을-때
+    about: 설정 → 정보 탭의 '진단 정보 복사'와 '로그 열기'. 가져오기 문제는 가져오기 창의 '추출 로그 열기'.
