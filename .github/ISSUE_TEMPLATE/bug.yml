@@ -1,0 +1,67 @@
+name: 버그 제보
+description: 사도 데스크가 이상하게 동작하거나 멈추거나 꺼질 때
+title: "[버그] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        고맙습니다. 아래 세 가지(진단 정보 · app.log · 재현 방법)가 있으면 대부분 한 번에 원인을 찾습니다.
+        **API 키는 어디에도 들어가지 않습니다.** 다만 `app.log`에는 AI 대화의 앞부분 몇 글자가 남을 수 있으니, 올리기 전에 한 번 훑어 주세요.
+  - type: textarea
+    id: what
+    attributes:
+      label: 무슨 일이 일어났나요
+      description: 기대한 것과 실제로 일어난 것. 스크린샷·짧은 영상이 있으면 여기에 끌어다 놓으세요.
+      placeholder: "예) 크레페를 쓰다듬으면 쓰다듬기 음성 대신 웃음 음성이 나온다"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 다시 일어나게 하는 방법
+      description: 순서대로. 매번 일어나는지, 가끔인지도.
+      placeholder: |
+        1. 우클릭 메뉴 → 형태 → 스탠딩
+        2. 머리를 천천히 문지른다
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: diag
+    attributes:
+      label: 진단 정보
+      description: "앱에서 **설정(트레이 아이콘) → 정보 → 진단 정보 복사**를 누른 뒤 여기에 붙여 넣으세요. 버전·설치판 여부·모니터 구성·AI 상태가 한 덩이로 들어갑니다."
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: app.log
+      description: |
+        **설정 → 정보 → 로그 열기**를 누르면 `app.log`가 선택된 폴더가 열립니다. 그 파일을 여기에 **끌어다 놓으세요**(첨부).
+        앱이 아예 켜지지 않으면 `Win+R` → `%APPDATA%\사도 데스크` 에서 찾을 수 있습니다. 문제가 난 직후의 파일이 가장 좋습니다(2MB가 넘으면 `app.log.1`로 밀립니다 — 둘 다 올려도 됩니다).
+      placeholder: 파일을 끌어다 놓거나, 마지막 50줄 정도를 붙여 넣으세요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 어디서 생긴 문제인가요
+      options:
+        - 게임 데이터 가져오기 (→ 가져오기 창의 '추출 로그 열기'로 extract.log 도 함께 첨부해 주세요)
+        - 사도 동작·교감 (이동·점프·쓰다듬기·볼 당기기·던지기…)
+        - 음성·효과음
+        - 혼잣말·말풍선
+        - AI 대화
+        - 새 소식 알림
+        - 설정 창·우클릭 메뉴·트레이
+        - 업데이트
+        - 앱이 안 켜짐 / 꺼짐 / 멈춤
+        - 그 외
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 앱플레이어 (가져오기 문제일 때)
+      placeholder: "예) 뮤뮤 12 / LD플레이어 9 / 블루스택 5 — 사용자 이름이 한글인지도"

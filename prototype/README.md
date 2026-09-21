@@ -63,7 +63,7 @@ python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] 
 
 ## 테스트
 ```
-npm test          # 순수 로직 76개 — 설정 검사·AI 파서(끊김 재시도·오류 안내·사양 읽기)·혼잣말 검사기·데이터 짝·동작별 음성·새 소식(로컬 가짜 서버)·애니 풀·화면 기하·커서 간격. Node 내장 node --test, 의존성 없음
+npm test          # 순수 로직 82개 — 설정 검사·AI 파서(끊김 재시도·오류 안내·사양 읽기)·혼잣말 검사기·데이터 짝·동작별 음성·새 소식(로컬 가짜 서버)·애니 풀·화면 기하·커서 간격·앱 로그. Node 내장 node --test, 의존성 없음
 npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 시나리오 다섯을 돌린다 (약 80초). chat: 대화 상태 경쟁 11가지(대상 전환·기록 지우기·연속 열기·캡처 중 닫기/전환/끄기·답하는 중 닫기·재열기)를 모의 AI(SADO_AI_MOCK)로 · extract: 가짜 추출기(test/fake-extract.js)로 실패·재시도·취소(손자 프로세스까지 죽는지) · settings: 깨진 설정 파일 복구·저장 걸러내기·초기화·연결 확인 버튼 복구 · hit: 히트 창에 진짜 마우스 입력을 넣어 ipc 까지 오는지(CSP 로 막힌 적이 있다) · aifail: 가짜 OpenAI 호환 서버(test/fake-ai.js)가 스트림 끊김 → 429 → 401 → 정상 순으로 답할 때 안내 문구·받은 조각 보존·입력 복구·기록. `node test/flow.js chat` 처럼 하나만도 됨
 npm run test:first-run # 설치판 첫 실행 — 빌드된 exe(dist/win-unpacked 또는 설치본)를 빈 프로필로 띄워 '가져오기' 창이 첫 화면으로 뜨는지 (먼저 npm run pack 또는 npm run dist)
 ```
@@ -79,6 +79,7 @@ selftalk.js        혼잣말 대본 적재·상황 고르기·말풍선
 screen-capture.js  화면 보기 — 허용 창 목록·캡처
 chat.js            AI 대화 창 — 창·대상·요청 번호(chatSeq)·턴(스트림→저장)·화면 보고 한마디·chat:* IPC
 updater.js         깃허브 릴리스 확인·알림
+app-log.js         console.* 을 userData/app.log 에도 남김 (2MB 넘으면 .1 로 밀기) — 순수, node 테스트
 test-hooks.js      --selftalk-test 같은 시험 훅 (제품 코드 아님)
 ai.js              AI 제공자 4종(Gemini·Claude·Ollama·OpenAI 호환) + 모의 제공자(SADO_AI_MOCK)
 preload.js         fs 읽기 · IPC 브리지

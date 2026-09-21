@@ -1,0 +1,16 @@
+name: 제안
+description: 이런 게 있으면 좋겠다, 이건 이렇게 바뀌면 좋겠다
+title: "[제안] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: 제안
+      description: 무엇을, 왜. 지금은 어떻게 하고 있어서 불편한지가 있으면 더 좋습니다.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        이 프로젝트는 비영리 팬 프로젝트라 **게임 자산을 배포하거나 유료 기능·후원을 넣는 제안은 받지 않습니다** (README의 2차 창작 가이드라인 절 참고).
