@@ -14,7 +14,7 @@
     "pyruntime": "python tools/make-pyruntime.py"
   },
   "devDependencies": {
-    "electron": "^44.3.0",
+    "electron": "^44.4.3",
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
@@ -47,6 +47,7 @@
       "args.js",
       "cursor-poll.js",
       "app-log.js",
+      "win-bounds.js",
       "renderer/**/*",
       "!renderer/**/*.bak.js",
       "!renderer/mascot-selftest.js",

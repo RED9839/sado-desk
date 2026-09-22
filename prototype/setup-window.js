@@ -2,7 +2,7 @@
  * 바깥 상태(에셋 루트·설정·트레이)는 ctx 로만 본다: main.js 가 getter 를 넘겨 주므로 값이 바뀌어도 따라간다.
  *   const setup = require("./setup-window.js")(ctx);  → { openSetup, stopExtract }
  */
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, screen } = require("electron");
 const fs = require("fs"), path = require("path");
 const { spawn } = require("node:child_process");
 
@@ -33,17 +33,18 @@ module.exports = function createSetupWindow(ctx) {
   }
   function openSetup() {
     if (setupWin && !setupWin.isDestroyed()) { setupWin.show(); setupWin.focus(); return; }
+    const sb = ctx.savedBounds ? ctx.savedBounds("setup") : null;   // 지난번에 끌어 맞춘 크기·자리
     setupWin = new BrowserWindow({
-      width: 720, height: 640, minWidth: 600, minHeight: 480, title: "사도 데스크 — 게임 데이터 가져오기", show: false,
+      ...(sb || { width: 720, height: Math.min(760, screen.getPrimaryDisplay().workAreaSize.height - 40) }), minWidth: 600, minHeight: 480,   // 항목이 1열이라 조금 길어졌다 — 작은 화면에선 작업영역에 맞춘다 title: "사도 데스크 — 게임 데이터 가져오기", show: false,
       backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
       webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
     });
     setupWin.loadFile(path.join(__dirname, "renderer", "setup.html"));
     setupWin.webContents.on("console-message", (ev) => console.log(`[setup:${ev.level}] ${ev.message}`));
     // 첫 실행(에셋 없음)엔 이 창이 사용자가 보는 첫 화면이라 다른 창 뒤로 숨지 않게 앞으로 끌어온다. ready-to-show가 안 오는 경우 대비 1.5초 뒤 강제 표시
-    const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
+    const reveal = () => { if (!setupWin || setupWin.isDestroyed() || setupWin.isVisible()) return; if (!sb) setupWin.center(); setupWin.show(); setupWin.focus(); setupWin.setAlwaysOnTop(true); setTimeout(() => { if (setupWin && !setupWin.isDestroyed()) setupWin.setAlwaysOnTop(false); }, 1500); try { app.focus({ steal: true }); } catch {} };
     setupWin.once("ready-to-show", reveal); setTimeout(reveal, 1500);
-    const w = setupWin; ctx.trackBounds(w);
+    const w = setupWin; ctx.trackBounds(w); if (ctx.rememberBounds) ctx.rememberBounds(w, "setup");
     w.on("closed", () => { if (setupWin === w) setupWin = null; });
   }
   const setupSend = (ch, data) => { if (setupWin && !setupWin.isDestroyed()) setupWin.webContents.send(ch, data); };

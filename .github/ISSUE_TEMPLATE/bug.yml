@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         고맙습니다. 아래 세 가지(진단 정보 · app.log · 재현 방법)가 있으면 대부분 한 번에 원인을 찾습니다.
-        **API 키는 어디에도 들어가지 않습니다.** 다만 `app.log`에는 AI 대화의 앞부분 몇 글자가 남을 수 있으니, 올리기 전에 한 번 훑어 주세요.
+        **API 키와 대화 내용은 어디에도 들어가지 않습니다.**
   - type: textarea
     id: what
     attributes:

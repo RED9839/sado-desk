@@ -19,7 +19,11 @@
   button.btn.primary{background:var(--accent);color:#fff;font-weight:700}
   button.btn.danger{background:#5a2e2e;color:var(--danger)}
   button.btn[disabled]{opacity:.4;pointer-events:none}
-  #steps{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+  #steps{display:flex;flex-direction:column;gap:4px}
+  #steps .toggle{align-items:flex-start;padding:3px 0}
+  #steps .toggle input{margin-top:2px}
+  #steps .toggle > span{display:flex;flex-direction:column;gap:1px;line-height:1.35}
+  #steps .toggle .hint{font-size:11.5px}
   #progress{flex:1;min-height:120px;display:flex;flex-direction:column}
   .bar{height:6px;background:#1a1a1f;border-radius:3px;overflow:hidden;margin:6px 0}
   .bar i{display:block;height:100%;background:var(--accent);width:0%;transition:width .2s}
@@ -43,12 +47,12 @@
   <div class="hint" id="devtip" style="margin:-2px 0 6px 100px">뮤뮤 12 · 뮤뮤 구버전 · LD플레이어 · 블루스택을 자동으로 찾습니다. <b>앱플레이어를 켠 상태</b>에서 검색해 주세요 (뮤뮤 12는 꺼져 있어도 자동으로 켭니다). 블루스택은 설정 → 고급 → <b>Android 디버그 브리지(ADB)</b>를 켜야 검색됩니다.</div>
   <div class="row"><label class="hint" style="flex:none;width:90px">직접 지정</label><input type="text" id="mumu" placeholder="자동 검색이 안 될 때만: adb.exe 경로 · adb 포트(예 5555) · 127.0.0.1:5555 · 뮤뮤 nx_main 폴더"><button class="btn" id="pick-mumu">찾기…</button></div>
   <div id="steps">
-    <label class="toggle"><input type="checkbox" data-step="minimi" checked disabled>미니미 (필수 · 2MB)</label>
-    <label class="toggle"><input type="checkbox" data-step="sfx" checked disabled>효과음 (필수)</label>
-    <label class="toggle"><input type="checkbox" data-step="standing" checked>스탠딩 — 사도 상세 화면의 모습 <span class="hint">(기기에 내려받은 사도만 · 수백 MB · 2~5분)</span></label>
-    <label class="toggle"><input type="checkbox" data-step="voice" checked>음성 — 로비 음성 대사 <span class="hint">(약 7,000개 · 5~10분)</span></label>
-    <label class="toggle"><input type="checkbox" id="force">이미 있는 것도 다시 가져오기 <span class="hint">(끄면 새로 받은 외형·음성만 추가)</span></label>
-    <label class="toggle"><input type="checkbox" data-step="ingame">전투 SD — 전투에서 사용하는 모습 <span class="hint">(400MB · 선택 · 스탠딩이 없는 사도의 대체로도 사용)</span></label>
+    <label class="toggle"><input type="checkbox" data-step="minimi" checked disabled><span>미니미 <span class="hint">필수 · 게임 로비의 작은 모습 · 2MB</span></span></label>
+    <label class="toggle"><input type="checkbox" data-step="sfx" checked disabled><span>효과음 <span class="hint">필수 · 교감할 때 나는 소리</span></span></label>
+    <label class="toggle"><input type="checkbox" data-step="standing" checked><span>스탠딩 <span class="hint">사도 상세 화면의 모습 · 게임에서 상세 화면을 열어 본 사도만 · 수백 MB · 2~5분</span></span></label>
+    <label class="toggle"><input type="checkbox" data-step="voice" checked><span>음성 <span class="hint">로비 음성 대사 약 7,000개 · 5~10분</span></span></label>
+    <label class="toggle"><input type="checkbox" data-step="ingame"><span>전투 SD <span class="hint">선택 · 전투에서 쓰는 모습 · 스탠딩이 없는 사도의 대체로도 씀 · 400MB</span></span></label>
+    <label class="toggle"><input type="checkbox" id="force"><span>이미 있는 것도 다시 가져오기 <span class="hint">끄면 새로 받은 외형·음성만 추가</span></span></label>
   </div>
   <div class="hint" style="margin-top:6px">게임에서 사도 상세 화면을 한 번 열어 본 사도만 스탠딩이 기기에 내려받아져 있습니다. 나중에 더 받았으면 "게임 데이터 다시 가져오기"를 해 주세요 (음성은 이미 있는 것을 건너뜁니다). 실제 스마트폰은 안드로이드 11 이상에서 adb로 앱 데이터를 읽을 수 없어 앱플레이어가 필요합니다.</div>
   <div class="row" style="margin-top:6px"><button class="btn primary" id="start">가져오기 시작</button><button class="btn danger" id="cancel" disabled>중단</button><span class="hint" id="pyinfo"></span></div>

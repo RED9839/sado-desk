@@ -2,12 +2,17 @@
 <html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:; connect-src 'self' file:"><title>menu</title>
 <style>
   :root{--bg:#26262d;--bg2:#1f1f25;--line:#3a3a45;--text:#ececf1;--muted:#9a9aa8;--accent:#6c8cff;--danger:#ff8a8a}
+  /* 밀도 — 메뉴가 뜨는 화면의 높이(screen.availHeight)에 따라 menu.js 가 body[data-density] 를 정한다.
+     roomy(≥860: 데스크톱 FHD 100%) · normal(700~860: FHD 125%·노트북) · compact(<700: 768p·150%) — 값을 여기 한 곳에서 */
+  body{--pad-y:7px;--head-y:8px;--sep-y:6px;--chips-b:8px;--chip-y:4px}
+  body[data-density=normal]{--pad-y:6px;--head-y:6px;--sep-y:4px;--chips-b:8px;--chip-y:4px}
+  body[data-density=compact]{--pad-y:4px;--head-y:4px;--sep-y:3px;--chips-b:5px;--chip-y:3px}
   html,body{margin:0;background:transparent;overflow:hidden;user-select:none}
   #menu{width:262px;max-height:calc(100vh - 4px);overflow:auto;scrollbar-width:thin;background:var(--bg);color:var(--text);border:1px solid #4a4a58;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.5);font:13px/1.5 "Malgun Gothic",sans-serif;margin:2px}
   #menu::-webkit-scrollbar{width:8px}#menu::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:4px}
   #menu .title{padding:10px 14px 9px;font-weight:700;font-size:13.5px;background:#30303a;border-radius:12px 12px 0 0;cursor:move;-webkit-app-region:drag;user-select:none;position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px}
   #menu .title .tsub{font-weight:400;font-size:11px;color:var(--muted);margin-left:auto}
-  #menu .item{padding:7px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:6px;margin:1px 5px}
+  #menu .item{padding:var(--pad-y) 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:6px;margin:1px 5px}
   #menu .item:hover,#menu .item:focus-visible{background:#363642;outline:none}
   #menu .chip:focus-visible{outline:2px solid #fff;outline-offset:-2px}
   #menu .item > span{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:var(--muted);font-size:12.5px}
@@ -18,9 +23,9 @@
   #menu .item.danger:hover{background:#4a2a2a}
   #menu .item .key{font-size:10.5px;color:#7d7d8c;background:#1f1f25;border:1px solid var(--line);border-radius:4px;padding:0 5px}
   #menu .item .arrow{color:#7d7d8c;font-size:11px}
-  #menu .head{padding:8px 14px 3px;font-size:11px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  #menu .head{padding:var(--head-y) 14px 2px;font-size:11px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:center}
   #menu .head > span{font-weight:400;color:#c9c9d4}
-  #menu .sep{height:1px;background:var(--line);margin:6px 0}
+  #menu .sep{height:1px;background:var(--line);margin:var(--sep-y) 0}
   #menu .sub{display:none;max-height:320px;overflow:auto;overflow-x:hidden;scrollbar-width:thin;background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:2px 0 4px}
   #menu .sub.open{display:block}
   #menu .sub .item{padding:5px 12px 5px 26px;font-size:12px;margin:0 4px;border-radius:5px}
@@ -29,10 +34,10 @@
   #menu .sub .group{padding:5px 12px 3px;font-size:10.5px;color:var(--muted);background:var(--bg2);position:sticky;top:0;font-weight:600}
   #menu input[type=text]{width:calc(100% - 24px);margin:8px 12px 4px;padding:6px 9px;border-radius:7px;border:1px solid var(--line);background:#18181d;color:var(--text);font:12px "Malgun Gothic",sans-serif;outline:none}
   #menu input[type=text]:focus{border-color:var(--accent)}
-  #menu .chips{display:flex;gap:5px;padding:2px 14px 8px}
+  #menu .chips{display:flex;gap:5px;padding:2px 14px var(--chips-b)}
   #menu .chips.wrap{flex-wrap:wrap}
   #menu .chips.wrap .chip{flex:1 0 22%}
-  #menu .chip{flex:1;text-align:center;padding:4px 0;border-radius:7px;background:#34343f;cursor:pointer;font-size:11.5px;border:1px solid transparent;white-space:nowrap}
+  #menu .chip{flex:1;text-align:center;padding:var(--chip-y) 0;border-radius:7px;background:#34343f;cursor:pointer;font-size:11.5px;border:1px solid transparent;white-space:nowrap}
   #menu .chip.on{background:var(--accent);color:#fff;font-weight:600}
   #menu .chip:hover:not(.off){filter:brightness(1.15)}
   #menu .chip.off{opacity:.3;cursor:default}
@@ -76,7 +81,6 @@
   <div class="item" data-act="remove" id="remove-item">선택한 사도 보내기</div>
   <div class="item" data-act="respawn">다시 등장</div>
   <div class="item" data-act="settings">설정… <span>⚙</span></div>
-  <div class="item" data-act="debug">진단 정보 표시 <span id="debug-state"></span></div>
   <div class="sep"></div>
   <div class="item danger" data-act="quit">사도 데스크 종료</div>
 </div>

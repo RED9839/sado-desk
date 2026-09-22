@@ -99,6 +99,33 @@ module.exports = function installTestHooks(ctx) {
     app.exit(fails.length ? 1 : 0);
   }, 6000);
 
+  // --second-test — 이미 켜져 있는데 또 실행했을 때(second-instance). 사도가 안 보여서 다시 누른 사람에게
+  // 설정 창을 열어 주던 것을 "사도가 있는 자리에서 손 흔들기 + 한마디"로 바꿨다. 세 갈래를 다 본다:
+  // 에셋 없음 → 가져오기 창 / 전체화면 뒤 → 트레이 풍선만 / 보통 → 등장 동작 + 말풍선. CI(에셋 없음)는 첫 갈래만 실제로 탄다
+  if (argHas("--second-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`SECONDTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const id = (ctx.settings.characters[0] || {}).id, inst = id && ctx.instances.get(id), hasMascot = !!(inst && inst.rect);
+    const r1 = ctx.onSecondInstance(); await sleep(1500);
+    if (!hasMascot) {
+      const setupWin = ctx.setup.setupWin;
+      if (r1 === "setup") ok(!!(setupWin && !setupWin.isDestroyed()), "에셋 없음 → 가져오기 창이 열린다");
+      else ok(r1 === "balloon", `사도가 아직 없음 → 트레이 풍선만 (${r1})`);
+      console.log("SECONDTEST 에셋이 없어 '손 흔들기' 갈래는 이 환경에서 못 본다");
+    } else {
+      ok(r1 === "wave", `사도가 있으면 손 흔들기 (${r1})`);
+      const bw = ctx.bubbleWin;
+      ok(!!(bw && !bw.isDestroyed() && bw.isVisible()), "말풍선이 떠 있다");
+      if (bw && !bw.isDestroyed()) { const t = await bw.webContents.executeJavaScript("document.body.innerText"); ok(/이미 켜져 있어요/.test(t), "말풍선에 '이미 켜져 있어요'"); }
+      ok(!(ctx.settingsWin && !ctx.settingsWin.isDestroyed() && ctx.settingsWin.isVisible()), "설정 창은 열지 않는다");
+      // 전체화면 뒤에 숨어 있을 때는 풍선만 — 말풍선이 게임 위로 올라오면 안 된다
+      ctx.setFsHidden(true); const r2 = ctx.onSecondInstance(); ctx.setFsHidden(false);
+      ok(r2 === "balloon", `전체화면 뒤 → 트레이 풍선만 (${r2})`);
+    }
+    console.log(`SECONDTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 7000);
+
   if (argHas("--persona-test")) setTimeout(async () => { // 여러 사도의 말투 확인: 스킨마다 같은 질문 → 답 로그
     const skins = (argVal("--persona-test", "") || "Mini_Crepe").split(","); const q = argVal("--persona-q", "") || "안녕! 오늘 뭐 하고 있었어?";
     for (const skin of skins) {
@@ -427,6 +454,69 @@ module.exports = function installTestHooks(ctx) {
     ok((await cur()) === "tab-guide", `Home 으로 첫 탭 (${await cur()})`);
     ok((await js("document.activeElement.getAttribute('aria-selected')")) === "true", "고른 탭에 aria-selected");
     console.log(`KEYSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
+  // --hints-test — 설정 창의 긴 설명 접기. 한 줄로 접히고, '더 보기'가 펼치고, 라벨 안의 버튼이라 체크박스를 건드리지 않아야 한다
+  if (argHas("--hints-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`HINTSTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    ctx.openSettings("display"); await sleep(2500);
+    const wc = ctx.settingsWin.webContents;
+    await wc.executeJavaScript(`document.querySelector('nav button[data-tab="display"]').click()`); await sleep(300);   // "tab" 메시지가 로드보다 먼저 닿으면 사도 탭에 남는다 — 확실히 넘긴다
+    const r = await wc.executeJavaScript(`(() => {
+      const all = [...document.querySelectorAll(".row label .hint.clamp")];
+      const on = document.querySelector("main section.on");   // 보이는 탭에서만 재야 높이가 나온다
+      const h = on && on.querySelector("label:has(input[type=checkbox]) .hint.clamp"), b = h && h.nextElementSibling, cb = h && h.closest("label").querySelector("input[type=checkbox]");
+      if (!h || !b || !cb) return { n: all.length, err: "보이는 탭(" + (on && on.id) + ")에 체크박스 딸린 접힌 설명이 없다" };
+      const before = cb.checked, h0 = h.getBoundingClientRect().height;
+      b.click(); const open = h.classList.contains("open"), h1 = h.getBoundingClientRect().height, t1 = b.textContent, after1 = cb.checked;
+      b.click(); const closed = !h.classList.contains("open"), after2 = cb.checked;
+      return { n: all.length, btn: b.className, before, after1, after2, open, closed, h0, h1, t1, short: [...document.querySelectorAll(".row label .hint:not(.clamp)")].every(x => x.textContent.trim().length < 70 || x.querySelector("a, code")) };
+    })()`);
+    ok(!r.err, r.err || `접힌 설명 ${r.n}개`);
+    if (!r.err) {
+      ok(r.n >= 8, `긴 설명이 접혔다 (${r.n}개)`);
+      ok(r.btn === "more", "'더 보기' 버튼이 붙었다");
+      ok(r.open && r.h1 > r.h0, `누르면 펼쳐진다 (${Math.round(r.h0)} → ${Math.round(r.h1)}px, "${r.t1}")`);
+      ok(r.closed, "다시 누르면 접힌다");
+      ok(r.before === r.after1 && r.before === r.after2, "체크박스는 그대로다 (라벨 안 버튼)");
+      ok(r.short, "짧은 설명·링크 든 설명은 접지 않는다");
+    }
+    console.log(`HINTSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 4000);
+
+  // --bounds-test — 창 크기·위치 기억. 설정 창을 끌어 옮기고 크기를 바꾼 뒤 닫고 다시 열면 그 자리·크기여야 한다.
+  // 저장된 값이 화면 밖(모니터가 빠진 경우)이면 안으로 끌어오는지, 메뉴 간격 설정이 메뉴에 닿는지도 본다
+  if (argHas("--bounds-test")) setTimeout(async () => {
+    const fails = [], ok = (cond, msg) => { console.log(`BOUNDSTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const wa = screen.getPrimaryDisplay().workArea;
+    ctx.openSettings("display"); await sleep(2000);
+    const w1 = ctx.settingsWin, want = { x: wa.x + 60, y: wa.y + 40, width: 760, height: 540 };
+    w1.setBounds(want); await sleep(900);   // 400ms 디바운스 뒤 저장
+    const saved = (ctx.settings.global.windows || {}).settings;
+    ok(!!saved && saved.w === 760 && saved.h === 540 && saved.x === want.x && saved.y === want.y, `끌어 맞춘 크기·자리가 저장된다 (${JSON.stringify(saved)})`);
+    w1.close(); await sleep(500);
+    ctx.openSettings("display"); await sleep(1500);
+    const b2 = ctx.settingsWin.getBounds();
+    ok(b2.width === 760 && b2.height === 540 && b2.x === want.x && b2.y === want.y, `다시 열면 그 크기·자리 (${JSON.stringify(b2)})`);
+    ctx.settingsWin.close(); await sleep(500);
+    // 화면 밖에 저장돼 있던 경우 (옛 오른쪽 모니터 자리) → 안으로
+    ctx.updateSettings({ windows: { settings: { x: wa.x + wa.width + 500, y: wa.y + 30, w: 700, h: 500 } } });
+    ctx.openSettings("display"); await sleep(1500);
+    const b3 = ctx.settingsWin.getBounds();
+    ok(b3.x + b3.width <= wa.x + wa.width && b3.x >= wa.x && b3.width === 720, `화면 밖·최소보다 작은 값은 키워서 안으로 끌어온다 (x=${b3.x}, w=${b3.width}, 작업영역 ${wa.width})`);
+    // 메뉴 간격 고정이 메뉴에 닿는가
+    ctx.updateSettings({ display: { menuDensity: "compact" } });
+    const id = ctx.settings.characters[0].id; ctx.openMenu(id, wa.x + 300, wa.y + 200); await sleep(1500);
+    const d1 = await ctx.menuWin.webContents.executeJavaScript("document.body.dataset.density");
+    ctx.updateSettings({ display: { menuDensity: "auto" } }); await sleep(400);
+    const d2 = await ctx.menuWin.webContents.executeJavaScript("document.body.dataset.density");
+    ok(d1 === "compact", `메뉴 간격 '조밀' 고정 → 메뉴가 compact (${d1})`);
+    ok(["roomy", "normal", "compact"].includes(d2), `자동으로 돌리면 화면 높이로 정한다 (${d2})`);
+    console.log(`BOUNDSTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
     app.exit(fails.length ? 1 : 0);
   }, 4000);
 

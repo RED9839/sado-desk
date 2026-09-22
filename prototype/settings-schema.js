@@ -22,7 +22,9 @@ const GLOBAL_DEFAULTS = {
   // bulkEdit: 사도별 값(형태·크기·불투명도·표정·행동)을 바꿀 때 모든 사도에 함께 넣는다.
   // 설정 창과 우클릭 메뉴가 같은 값을 본다 — 메뉴 창은 열 때마다 새로 만들어지므로 껐다 켤 때마다
   // 다시 체크하게 두면 쓸모가 없어서 설정에 남긴다. 사도 바꾸기(skin)만은 함께 가지 않는다
-  display: { debug: false, confineMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false }, // fps: "auto"(손댈 때만 60) | 30 | 60
+  display: { debug: false, confineMonitor: true, overTaskbar: true, autoStart: false, fps: "auto", guideShown: false, hideFullscreen: true, bulkEdit: false, keepOnTop: false, menuDensity: "auto" }, // fps: "auto"(손댈 때만 60) | 30 | 60 · menuDensity: 우클릭 메뉴 간격 auto(화면 높이로) | roomy | normal | compact
+  // 창 크기·위치 기억 — 사용자가 모서리를 끌어 맞춘 것을 다음에도 (win-bounds.js). 렌더러는 안 보내고 main 이 닫힐 때 적는다
+  windows: { settings: null, setup: null },   // {x, y, w, h} | null(기본 크기)
   assets: { root: "" },
   ai: Ai.DEFAULTS, // AI 대화 (ai.js) // 비어 있으면 userData/assets
   // 대본으로 하는 말 (혼잣말 self-talk.json). AI 와 무관하고 돈이 들지 않아
@@ -51,7 +53,7 @@ function deepMerge(base, patch) {
 // 저장되고 아무도 읽지 않던 다섯 판(v0.12.8~v0.13.2)은 "모르는 키" 경고 한 줄만 있었어도 첫날에 잡혔다.
 // 수치는 범위로 잘라 넣는다(거부하면 손으로 고친 파일이 통째로 기본값이 된다) · 열거형·문자열은 틀리면 버린다.
 // 설정 창(settings.html data-s)의 슬라이더 범위보다 넉넉하게 — 파일을 손으로 고치는 사람이 있다
-const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk"]);  // talk = 대본으로 하는 말(혼잣말). 렌더러(settings.js)와 같은 목록이어야 한다
+const GLOBAL_KEYS = new Set(["sound", "display", "news", "assets", "ai", "talk", "windows"]);  // talk = 대본으로 하는 말(혼잣말). 렌더러(settings.js)와 같은 목록이어야 한다
 const CHAR_KEYS = new Set(Object.keys(CHAR_DEFAULTS));
 const RANGES = { // "점.경로": [최소, 최대]
   scale: [0.1, 3], opacity: [0.05, 1],
@@ -63,9 +65,13 @@ const RANGES = { // "점.경로": [최소, 최대]
   "news.intervalMin": [1, 1440], "news.ttlSec": [3, 300],
   "ai.proactiveMin": [1, 600], "ai.screenProactive": [0, 100], "ai.chatAutoCloseSec": [0, 3600], "ai.maxTurns": [1, 100],
   "ai.ollama.temperature": [0, 2], "ai.ollama.numPredict": [16, 4096], // ai.js chatOllama 의 options — 기본값엔 없고 파일로만 넣는 값
+  // 창 위치는 음수일 수 있다(왼쪽·위쪽 모니터). 화면 밖 값은 win-bounds.fit 이 열 때 끌어온다
+  "windows.settings.x": [-20000, 20000], "windows.settings.y": [-20000, 20000], "windows.settings.w": [200, 10000], "windows.settings.h": [200, 10000],
+  "windows.setup.x": [-20000, 20000], "windows.setup.y": [-20000, 20000], "windows.setup.w": [200, 10000], "windows.setup.h": [200, 10000],
 };
 const ENUMS = {
   mode: ["minimi", "sd", "ingame"], mood: ["", "smile", "anger", "sad", "happy", "eat", "sulky", "surprise"],
+  "display.menuDensity": ["auto", "roomy", "normal", "compact"],
   "display.fps": ["auto", "30", "60", "vsync"], // vsync = 모니터 주사율대로(rAF 마다) // 숫자 30·60 도 받아 문자열로 (렌더러 select 는 문자열, 손으로 고친 파일은 숫자)
   "ai.provider": ["auto", "ollama", "gemini", "anthropic", "openai"], // ai.js chat() 이 아는 것
   "ai.screenScope": ["windows", "display"], // 고른 창만 / 모니터 전체

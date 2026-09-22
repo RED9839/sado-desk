@@ -351,6 +351,14 @@
   }
   const spineVersion = () => "4.1.56";
   for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => host.openPath(b.dataset.open));
+  // 행 설명이 길면(대략 두 줄 넘게) 한 줄로 접고 '더 보기'를 단다. 라벨 안의 버튼이라 preventDefault — 안 하면 체크박스가 같이 토글된다
+  for (const h of document.querySelectorAll(".row label .hint")) {
+    if (h.textContent.trim().length < 70 || h.querySelector("a, code")) continue;   // 짧은 것, 링크·경로가 든 것은 그대로
+    h.classList.add("clamp");
+    const b = document.createElement("button"); b.type = "button"; b.className = "more"; b.textContent = "더 보기";
+    b.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); const open = h.classList.toggle("open"); b.textContent = open ? "접기" : "더 보기"; });
+    h.after(b);
+  }
   document.getElementById("assets-setup")?.addEventListener("click", () => host.assetsOpenSetup());
   // ---- 업데이트 ----
   let updTimer = null;
