@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-이 라이선스는 이 저장소의 소스 코드에만 적용됩니다.
-- 트릭컬 리바이브의 캐릭터·애니메이션·음성 등 게임 자산은 EPID Games의 저작물이며 이 저장소에 포함되지 않습니다.
-  사용자가 자신이 설치한 게임에서 개인 사용 목적으로 추출해 쓰며, 추출물을 재배포해서는 안 됩니다.
-- prototype/data/talk-ko.json 의 대사 표본과 말투 분석은 나무위키 트릭컬 리바이브 문서(https://namu.wiki)의 대사표를 바탕으로 하며
-  나무위키 라이선스(CC BY-NC-SA 2.0 KR)에 따릅니다: 출처 표시, 비영리, 동일조건변경허락.

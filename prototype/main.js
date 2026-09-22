@@ -111,7 +111,7 @@ const viewFor = (id) => { const c = charOf(id) || settings.characters[0]; return
 function updateSettings(patch, id, sourceId) {
   // 창 기하·자동시작·전체화면 숨김을 다시 걸지 말지 볼 때, 화면과 무관한 표시용 값은 빼고 본다.
   // 안 빼면 '모든 사도에 함께' 를 누를 때마다 setLoginItemSettings 가 레지스트리를 건드린다
-  const dispSig = () => { const { bulkEdit, guideShown, keepOnTop, confineMonitor, ...d } = settings.global.display || {}; return JSON.stringify(d); };
+  const dispSig = () => { const { bulkEdit, guideShown, keepOnTop, confineMonitor, menuDensity, ...d } = settings.global.display || {}; return JSON.stringify(d); };
   const prevDisp = dispSig();
   const g = {}, c = {};
   for (const [k, v] of Object.entries(patch || {})) (GLOBAL_KEYS.has(k) ? g : c)[k] = v;
@@ -223,6 +223,20 @@ function placeHit(id) {
 // 보조 창(설정·가져오기·메뉴·말풍선·대화)의 화면 좌표 표. 커서 폴링이 16ms 마다 창마다 isDestroyed/isVisible/getBounds 를
 // 물었다 — 전부 네이티브 호출이라 하루 종일 초당 수백 번. 창 자리는 옮기고·키우고·보이고·숨길 때만 바뀌니 그때 받아 두고 폴링은 표만 읽는다
 const auxBounds = new Map(); // BrowserWindow → Rect(보임) | null(숨김)
+// 창 크기·위치 기억 (설정·가져오기 창). 사용자가 모서리를 끌어 맞춘 크기를 다음에도 — 픽셀 입력 대신 이 길을 택했다.
+// savedBounds: 저장된 것을 지금 모니터 안으로 끌어와 돌려준다(없거나 못 쓰면 null → 기본 크기). rememberBounds: 움직이거나 크기가 바뀌면 적는다
+const WB = require("./win-bounds.js");
+function savedBounds(key) {
+  const saved = (settings.global.windows || {})[key]; if (!saved) return null;
+  const min = { settings: [720, 480], setup: [600, 480] }[key] || [200, 200];   // BrowserWindow 의 minWidth·minHeight 와 같아야 한다
+  return WB.fit(saved, screen.getAllDisplays().map(d => d.workArea), { minW: min[0], minH: min[1] });
+}
+function rememberBounds(w, key) {
+  let t = null;
+  const save = () => { t = null; if (w.isDestroyed() || w.isMinimized() || w.isMaximized()) return; const b = WB.fromBounds(w.getBounds()); if (b) updateSettings({ windows: { [key]: b } }); };
+  for (const ev of ["move", "resize"]) w.on(ev, () => { if (t) clearTimeout(t); t = setTimeout(save, 400); });   // 끄는 동안 매 픽셀 저장하지 않게
+  w.on("close", () => { if (t) clearTimeout(t); save(); });
+}
 function trackBounds(w) {
   const upd = () => { if (w.isDestroyed()) { auxBounds.delete(w); return; } auxBounds.set(w, w.isVisible() ? w.getBounds() : null); };
   for (const ev of ["move", "resize", "show", "hide"]) w.on(ev, upd);
@@ -313,8 +327,10 @@ const sendMascot = (id, cmd, arg) => { if (mascotWin && !mascotWin.isDestroyed()
 function openSettings(tab, forId) {
   const tell = () => { if (tab) settingsWin.webContents.send("tab", tab); if (forId) settingsWin.webContents.send("select", forId); };
   if (settingsWin && !settingsWin.isDestroyed()) { settingsWin.show(); settingsWin.focus(); tell(); return; }
+  const wa = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workAreaSize;   // 해상도·배율이 제각각 — 작업영역보다 크게 열지 않는다
+  const sb = savedBounds("settings");   // 지난번에 끌어 맞춘 크기·자리가 있으면 그것
   settingsWin = new BrowserWindow({
-    width: 900, height: 660, minWidth: 720, minHeight: 520, title: "사도 데스크 설정", show: false,
+    ...(sb || { width: Math.min(900, wa.width - 40), height: Math.min(660, wa.height - 40) }), minWidth: 720, minHeight: 480, title: "사도 데스크 설정", show: false,
     backgroundColor: "#1f1f24", autoHideMenuBar: true, icon: path.join(__dirname, "renderer", "tray.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
@@ -342,7 +358,7 @@ function openSettings(tab, forId) {
       console.log("SHOT", tabs[i], more ? "(위+아래)" : ""); i++; shoot(); }, 1800); };  // 창 목록처럼 IPC 로 채우는 칸이 있어 넉넉히
     setTimeout(shoot, 5000);
   }
-  const w = settingsWin; trackBounds(w);
+  const w = settingsWin; trackBounds(w); rememberBounds(w, "settings");
   w.on("closed", () => { if (settingsWin === w) settingsWin = null; });
   if (argHas("--devtools")) settingsWin.webContents.openDevTools({ mode: "detach" });
 }
@@ -668,7 +684,7 @@ ipcMain.handle("catalog:get", (e) => {
 ipcMain.on("mascot", (e, cmd, arg, id) => sendMascot(id || instanceOf(e.sender) || menuFor || settings.characters[0].id, cmd, arg));
 // ---- 에셋 가져오기(추출) 창 — setup-window.js ----
 // 바깥 상태는 getter 로 넘긴다: ASSET_ROOT 는 '폴더 사용'에서 바뀌고, STANDING 은 다시 훑을 때 바뀐다
-const setup = require("./setup-window.js")({ get assetRoot() { return ASSET_ROOT; }, get dataRoot() { return DATA_ROOT; }, get standing() { return STANDING; }, get mascotStarted() { return mascotStarted; },
+const setup = require("./setup-window.js")({ savedBounds, rememberBounds, get assetRoot() { return ASSET_ROOT; }, get dataRoot() { return DATA_ROOT; }, get standing() { return STANDING; }, get mascotStarted() { return mascotStarted; },
   hasAssets, toSlash, updateSettings, rescanAssets, startMascot, refreshTray: () => { if (tray) buildTray(); }, trackBounds, argHas, argVal });
 const openSetup = setup.openSetup;
 
@@ -710,7 +726,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(CP.FAST); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
+require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(CP.FAST); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get onSecondInstance() { return onSecondInstance; }, get bubbleWin() { return bubbleWin; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -742,7 +758,22 @@ function buildTray() {
   tray.on("click", () => hasAssets(ASSET_ROOT) ? openSettings() : openSetup()); // 에셋이 없으면 설정보다 가져오기 창이 먼저
 }
 
-if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { if (!hasAssets(ASSET_ROOT)) { openSetup(); return; } if (settingsWin && !settingsWin.isDestroyed()) settingsWin.show(); else openSettings(); });
+// 이미 켜져 있는데 또 실행하면(바로가기 두 번, "사도가 안 보여서" 다시 누름) 두 번째는 조용히 끝나고 첫 번째가 이 신호를 받는다.
+// 전에는 설정 창을 열었는데, 사도가 안 보여서 누른 사람에게 설정 창은 답이 아니었다 — 사도가 있는 자리에서 손을 흔들고 한마디 한다.
+// 전체화면 뒤에 숨어 있으면(fsHidden) 보여 줄 수 없으니 트레이 풍선으로만 알린다
+function onSecondInstance() {
+  if (!hasAssets(ASSET_ROOT)) { openSetup(); return "setup"; }
+  const id = settings.characters[0] && settings.characters[0].id;
+  if (fsHidden || !id || !instances.get(id) || !instances.get(id).rect) {
+    try { if (tray) tray.displayBalloon({ title: "사도 데스크", content: "이미 켜져 있어요. 전체화면 앱 뒤에 숨어 있거나 아직 나오는 중이에요 — 트레이 아이콘으로 설정을 열 수 있어요." }); } catch {}
+    return "balloon";
+  }
+  for (const w of [mascotWin, hitShown ? hitWin : null]) { if (!w || w.isDestroyed() || !w.isVisible()) continue; try { w.setAlwaysOnTop(true, "screen-saver"); w.moveTop(); } catch {} }
+  sendMascot(id, "respawn");   // 등장 동작 + 인사 음성 — 눈이 가게
+  showBubble(id, { items: [], ttl: 12000, text: { head: "이미 켜져 있어요", body: "여기 있어요! 우클릭하면 메뉴, 작업표시줄 오른쪽 트레이 아이콘이 설정이에요.", tail: "", who: koSkin(settings.characters[0].skin) } });
+  return "wave";
+}
+if (!app.requestSingleInstanceLock()) { app.quit(); } else app.on("second-instance", () => { console.log("second-instance →", onSecondInstance()); });
 // ---- 업데이트 확인 — updater.js ----
 const UP = require("./updater.js")({
   refreshTray: () => { if (tray) buildTray(); }, startUpdate: () => startUpdate(),

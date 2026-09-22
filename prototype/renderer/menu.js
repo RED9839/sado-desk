@@ -1,7 +1,11 @@
 /* 우클릭 메뉴 — 별도 작은 창. 설정은 메인과 공유(host.setSettings), 캐릭터 명령은 host.mascot(). 창 높이는 내용에 맞춰 메인에 알림. */
 (async () => {
   const host = window.host;
+  // 화면 높이에 맞춘 밀도 — 창이 아니라 이 창이 뜬 모니터의 작업영역(DIP). 사람마다 해상도·배율이 달라 한 값으로는 어디선가 넘친다
+  const density = (h) => h >= 860 ? "roomy" : h >= 700 ? "normal" : "compact";
   let S = await host.getSettings();
+  const applyDensity = () => { const d = (S.display || {}).menuDensity; document.body.dataset.density = d && d !== "auto" ? d : density(screen.availHeight); };   // 설정 → 화면에서 고정할 수 있다
+  applyDensity();
   const catalog = await host.getCatalog();
   KO.load(catalog.dataRoot || catalog.assetRoot);
   const menuEl = document.getElementById("menu");
@@ -51,7 +55,6 @@
     document.getElementById("mute-state").textContent = (S.sound.muted ? "꺼짐" : `${Math.round(S.sound.master * 100)}%`) + " ▸";
     document.getElementById("mute-item").textContent = S.sound.muted ? "소리 켜기" : "소리 끄기";
     for (const row of menuEl.querySelectorAll("[data-vol]")) { const k = row.dataset.vol, v = Math.round(S.sound[k] * 100); row.querySelector("input").value = v; row.querySelector(".val").textContent = v + "%"; row.classList.toggle("off", S.sound.muted); }
-    document.getElementById("debug-state").textContent = S.display.debug ? "켜짐" : "꺼짐";
     document.getElementById("remove-item").style.display = (S.count || 1) > 1 ? "" : "none";
     { // '모든 사도에 함께' — 혼자면 의미가 없으니 숨긴다
       const it = document.getElementById("bulk-item"), on = bulkOn();
@@ -80,7 +83,6 @@
 
       case "bulk": set({ display: { bulkEdit: !(S.display && S.display.bulkEdit) } }); break;
       case "mute": set({ sound: { muted: !S.sound.muted } }); break;
-      case "debug": set({ display: { debug: !S.display.debug } }); break;
       case "settings": host.openSettings(); host.menuClose(); break;
       case "chat": host.chatOpen(); host.menuClose(); break;
       case "selftalk": host.selfTalk(); host.menuClose(); break;
@@ -104,6 +106,6 @@
     if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); const n = list.length ? list[(i + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length] : null; if (n) n.focus(); }
     else if ((e.key === "Enter" || e.key === " ") && i >= 0 && list[i].tagName !== "INPUT") { e.preventDefault(); list[i].click(); }
   });
-  host.on("settings", (s) => { S = s; render(); });
+  host.on("settings", (s) => { S = s; applyDensity(); render(); });   // 창은 재사용되니 열릴 때마다 — 다른 모니터로 옮겨 열릴 수 있다
   render();
 })();

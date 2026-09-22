@@ -106,7 +106,7 @@ module.exports = function createChat(ctx) {
       if (aiNow.memory !== false) Ai.saveHistory(ud, id, saved, aiNow.maxTurns || ai.maxTurns || 12);
       if (opts.say) chatSendFor(seq, "chat:say", { text: r.text }); else chatSendFor(seq, "chat:done", { text: r.text, emotion: r.emotion });
       ctx.sendMascot(id, "emote", { mood: r.emotion, role: "speak", pose: Math.min(15000, 3000 + r.text.length * 90), hold: 15000 });
-      console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.slice(0, 60)} [${r.raw}]`);
+      console.log(`chat[${id}] ${r.provider}/${r.model} → ${r.text.length}자 [${r.raw}]`);   // 본문은 찍지 않는다 — app.log 에 남는다
       return r;
     } catch (e) {
       const aborted = ctl.signal.aborted || e.name === "AbortError" || e.name === "TimeoutError"; // 창 닫기(사용자) 또는 90초 시한. Gemini 재시도 대기 중이면 "취소됨" Error 로 온다
