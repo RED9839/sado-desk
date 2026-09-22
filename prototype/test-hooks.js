@@ -105,7 +105,14 @@ module.exports = function installTestHooks(ctx) {
   if (argHas("--second-test")) setTimeout(async () => {
     const fails = [], ok = (cond, msg) => { console.log(`SECONDTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-    const id = (ctx.settings.characters[0] || {}).id, inst = id && ctx.instances.get(id), hasMascot = !!(inst && inst.rect);
+    // 사도가 자리를 잡을 때까지 기다린다 — 고정 7초로는 PC 사정에 따라 "아직 없음" 갈래로 새어 시험이 흔들렸다
+    const id = (ctx.settings.characters[0] || {}).id;
+    for (let i = 0; i < 60 && !(ctx.instances.get(id) || {}).rect; i++) await sleep(200);
+    const inst = id && ctx.instances.get(id);
+    // 전체화면 앱(게임)이 앞에 있으면 사도는 숨어 있는 게 정상이라 "손 흔들기" 갈래가 아예 성립하지 않는다 — 그 상황은 건너뛴다
+    const fsNow = ctx.fsHidden;
+    const hasMascot = !!(inst && inst.rect) && !fsNow;
+    if (fsNow) console.log("SECONDTEST 전체화면 앱이 앞에 있어 사도가 숨은 상태 — 손 흔들기 갈래는 건너뛴다");
     const r1 = ctx.onSecondInstance(); await sleep(1500);
     if (!hasMascot) {
       const setupWin = ctx.setup.setupWin;
@@ -503,11 +510,15 @@ module.exports = function installTestHooks(ctx) {
     const b2 = ctx.settingsWin.getBounds();
     ok(b2.width === 760 && b2.height === 540 && b2.x === want.x && b2.y === want.y, `다시 열면 그 크기·자리 (${JSON.stringify(b2)})`);
     ctx.settingsWin.close(); await sleep(500);
-    // 화면 밖에 저장돼 있던 경우 (옛 오른쪽 모니터 자리) → 안으로
-    ctx.updateSettings({ windows: { settings: { x: wa.x + wa.width + 500, y: wa.y + 30, w: 700, h: 500 } } });
+    // 화면 밖에 저장돼 있던 경우 (옛 오른쪽 모니터 자리) → 안으로.
+    // 모니터가 여럿인 PC 에선 '주 모니터 오른쪽' 이 아직 화면 위다 — 모든 작업영역의 오른쪽 끝보다 더 밖에 둔다
+    const areas = screen.getAllDisplays().map(d => d.workArea);
+    const rightMost = Math.max(...areas.map(a => a.x + a.width));
+    ctx.updateSettings({ windows: { settings: { x: rightMost + 500, y: wa.y + 30, w: 700, h: 500 } } });
     ctx.openSettings("display"); await sleep(1500);
     const b3 = ctx.settingsWin.getBounds();
-    ok(b3.x + b3.width <= wa.x + wa.width && b3.x >= wa.x && b3.width === 720, `화면 밖·최소보다 작은 값은 키워서 안으로 끌어온다 (x=${b3.x}, w=${b3.width}, 작업영역 ${wa.width})`);
+    const inSome = areas.some(a => b3.x >= a.x && b3.y >= a.y && b3.x + b3.width <= a.x + a.width && b3.y + b3.height <= a.y + a.height);
+    ok(inSome && b3.width === 720, `화면 밖·최소보다 작은 값은 키워서 안으로 끌어온다 (x=${b3.x}, w=${b3.width}, 모니터 ${areas.length}대)`);
     // 메뉴 간격 고정이 메뉴에 닿는가
     ctx.updateSettings({ display: { menuDensity: "compact" } });
     const id = ctx.settings.characters[0].id; ctx.openMenu(id, wa.x + 300, wa.y + 200); await sleep(1500);
