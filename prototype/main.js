@@ -761,7 +761,7 @@ function catalogPayload(id) { return { ...catalog, sdAnimations: (id && sdAnimsO
 
 // ---- 개발·검사용 훅 — test-hooks.js (--selftalk-test 같은 실행 인자) ----
 // 훅은 main 의 상태를 getter 로 본다. 제품 코드가 훅을 부르는 일은 없다
-require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => { fsHidden = v; if (!v) startCursorPoll(CP.FAST); else stopCursorPoll(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", v); }; }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get onSecondInstance() { return onSecondInstance; }, get fsHidden() { return fsHidden; }, get bubbleWin() { return bubbleWin; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
+require("./test-hooks.js")({ get cursorPoll() { return { on: !!cursorT, ms: cursorMs }; }, get setFsHidden() { return (v) => setFullscreenHidden(!!v); }, get chatFor() { return CH.for; }, get mascotWin() { return mascotWin; }, get addCharacter() { return addCharacter; }, get bible() { return bible; }, get chatBusy() { return CH.busy; }, get chatProfile() { return chatProfile; }, get chatWin() { return CH.win; }, get geo() { return geo; }, get hitFor() { return hitFor; }, get hitShown() { return hitShown; }, get hitWin() { return hitWin; }, get instances() { return instances; }, get koOfHero() { return koOfHero; }, get menuFor() { return menuFor; }, get menuWin() { return menuWin; }, get openChat() { return openChat; }, get openMenu() { return openMenu; }, get relations() { return relations; }, get removeCharacter() { return removeCharacter; }, get saySelfTalk() { return saySelfTalk; }, get screenRect() { return screenRect; }, get screenTalk() { return screenTalk; }, get selfTalk() { return selfTalk; }, get selfTalkSaid() { return selfTalkSaid; }, get settings() { return settings; }, get talkData() { return talkData; }, get talkStyle() { return talkStyle; }, get theaters() { return theaters; }, get updateHitTarget() { return updateHitTarget; }, get updateSettings() { return updateSettings; }, get viewFor() { return viewFor; }, get vsamples() { return vsamples; }, get captureScreenFor() { return captureScreenFor; }, set captureScreenFor(v) { captureScreenFor = v; }, get setup() { return setup; }, get onSecondInstance() { return onSecondInstance; }, get fsHidden() { return fsHidden; }, get bubbleWin() { return bubbleWin; }, get tray() { return tray; }, get openSettings() { return openSettings; }, get settingsWin() { return settingsWin; }, get hasAssets() { return hasAssets; }, get assetRoot() { return ASSET_ROOT; }, get flushSettings() { return flushSettings; } });
 
 // ---- 트레이 ----
 function buildTray() {
@@ -844,15 +844,23 @@ function startFullscreenWatch() {
   } });
   fsWatch.start();
 }
-function applyFullscreenHide() {
-  const want = fsNow && hideFsOn();
+function applyFullscreenHide() { setFullscreenHidden(!!(fsNow && hideFsOn())); }
+// 숨기고 되돌리는 일은 여기 하나로 — 시험도 이 함수를 탄다(상태만 바꾸면 창·타이머·메모리 정리가 빠진다)
+function setFullscreenHidden(want) {
   if (want === fsHidden) return;
   fsHidden = want;
   if (!want) startCursorPoll(CP.FAST); else stopCursorPoll();   // 숨는 동안엔 커서를 묻지 않는다
   const wins = [mascotWin, hitWin, bubbleWin].filter(w => w && !w.isDestroyed());
   if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("pause", want); // 창을 숨겨도 렌더 루프는 돈다(backgroundThrottling:false) — 멈추라고 알려 준다
-  if (want) { for (const w of wins) w.hide(); }
-  else { for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
+  if (want) {
+    for (const w of wins) w.hide();
+    // 게임이 앞에 있는 동안은 히트 창(렌더러 하나 ≈ 70MB)을 아예 놓아 준다. 손짓을 받을 일이 없고,
+    // 그때야말로 사용자가 메모리를 게임에 쓰고 싶어 한다. 돌아올 때 다시 만든다(빈 페이지라 금방 뜬다)
+    if (hitWin && !hitWin.isDestroyed()) { hitWin.destroy(); hitWin = null; hitShown = false; hitFor = null; hitBounds = null; }
+  } else {
+    for (const w of wins) { if (w === hitWin) continue; w.showInactive(); w.setAlwaysOnTop(true, "screen-saver"); } // 히트 창은 커서 폴링이 필요할 때 스스로 뜬다
+    createHitWindow();   // 숨는 동안 놓아 준 것을 다시
+  }
 }
 // ---- 맨 위로 올리기 ----
 // 최상위(screen-saver) 창끼리는 나중에 최상위를 잡은 쪽이 위다. 게임·오버레이가 켜지면 사도가 그 밑에 깔린다.

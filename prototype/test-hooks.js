@@ -24,10 +24,12 @@ module.exports = function installTestHooks(ctx) {
     const hidden = await count(1000);
     ok(hidden <= 2, `숨으면 초당 ${hidden}번 — 예약이 멈춘다 (전에는 평소와 같았다)`);
     ok(!ctx.cursorPoll.on, `숨는 동안 커서 확인도 멈춘다 (on=${ctx.cursorPoll.on})`);
+    ok(!ctx.hitWin || ctx.hitWin.isDestroyed(), "숨는 동안 히트 창(렌더러 하나)을 놓아 준다");
     ctx.setFsHidden(false); await sleep(500);
     const after = await count(1000);
     ok(after > 20, `돌아오면 다시 ${after}번 — 멈춘 뒤에도 깨어난다`);
     ok(ctx.cursorPoll.on, "커서 확인도 다시 돈다");
+    ok(!!(ctx.hitWin && !ctx.hitWin.isDestroyed()), "히트 창도 다시 만들어진다");
     // 간격이 상황에 맞는 값인지는 순수 계산이라 단위 시험(test/cursor-poll.test.js)에서 본다. 여기서는 돌고 있는 값만 적어 둔다
     console.log(`PERFTEST 지금 커서 간격 ${ctx.cursorPoll.ms}ms`);
     console.log(`PERFTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
