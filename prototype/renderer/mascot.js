@@ -224,6 +224,8 @@
   // 상주 프로그램이라 이 빈 깨어남이 배터리·전력으로 그대로 나간다. 깨우는 곳은 세 군데뿐 — pause 해제 · 컨텍스트 복구 · 처음 시작
   function wake() { if (looping || paused || glLost) return; looping = true; last = performance.now(); acc = 0; requestAnimationFrame(loop); }
   host.on("pause", (p) => { paused = !!p; if (!paused) wake(); }); // 돌아올 때 dt 가 한꺼번에 튀지 않게(wake 가 last 를 다시 잡는다)
+  // 절전에서 깨어나면 시계가 몇 시간을 건너뛴 상태다 — 그대로 두면 dt 가 폭발해 사도가 순간이동한다
+  host.on("resume", () => { last = performance.now(); acc = 0; for (const mas of mascots.values()) mas.onGeo(); wake(); });
   function loop(now) {
     if (paused || glLost) { looping = false; return; }   // 예약하지 않고 끝낸다 — 다시 깨우는 건 wake()
     const raw = now - last; last = now;

@@ -1,7 +1,8 @@
 /* 창 크기·위치 기억 — 저장된 사각형을 지금 모니터 안으로 */
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { fit, fromBounds } = require("../win-bounds.js");
+const WB = require("../win-bounds.js");
+const { fit, fromBounds } = WB;
 
 const FHD = { x: 0, y: 0, width: 1920, height: 1032 };            // 작업표시줄 뺀 작업영역
 const SIDE = { x: 1920, y: 0, width: 1280, height: 720 };          // 오른쪽에 붙은 작은 모니터
@@ -37,4 +38,20 @@ test("fromBounds: 최소화 좌표(-32000)는 버린다", () => {
   assert.deepEqual(fromBounds({ x: 10, y: 20, width: 900, height: 660 }), { x: 10, y: 20, w: 900, h: 660 });
   assert.equal(fromBounds({ x: -32000, y: -32000, width: 900, height: 660 }), null);
   assert.equal(fromBounds(null), null);
+});
+
+// 분수 배율(125%·150%)에서 지정한 크기와 돌려받는 크기가 몇 px 어긋난다.
+// 그 차이를 그대로 저장하면 열 때마다 창이 커졌다(실측: 125% 에서 다섯 번에 폭 +23px)
+test("shouldSave — 몇 px 차이는 저장하지 않는다 (배율 반올림)", () => {
+  const prev = { x: 100, y: 100, w: 900, h: 660 };
+  assert.equal(WB.shouldSave({ x: 100, y: 100, w: 905, h: 663 }, prev), false, "5px 는 반올림");
+  assert.equal(WB.shouldSave({ x: 106, y: 107, w: 900, h: 660 }, prev), false, "자리가 조금 밀린 것도");
+});
+
+test("shouldSave — 사람이 끈 크기는 저장한다", () => {
+  const prev = { x: 100, y: 100, w: 900, h: 660 };
+  assert.equal(WB.shouldSave({ x: 100, y: 100, w: 940, h: 660 }, prev), true);
+  assert.equal(WB.shouldSave({ x: 300, y: 100, w: 900, h: 660 }, prev), true, "창을 옮긴 것도");
+  assert.equal(WB.shouldSave({ x: 100, y: 100, w: 900, h: 660 }, null), true, "저장된 값이 없으면 저장한다");
+  assert.equal(WB.shouldSave(null, prev), false, "읽지 못한 값은 저장하지 않는다");
 });
