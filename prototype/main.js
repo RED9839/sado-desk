@@ -34,6 +34,18 @@ function resolveAssetRoot() {
 // 사용자가 문제를 알릴 때 설정 → 정보 → '로그 열기' 로 찾아 붙인다. 시험 실행(--userdata)도 그 폴더에 남긴다
 const LOG_FILE = path.join(app.getPath("userData"), "app.log");
 const appLog = require("./app-log.js").create({ file: LOG_FILE });
+// 창이 죽으면(렌더러·GPU) 그 사실을 파일에 적어 둔다. 크래시 덤프(crashReporter)도 대 봤지만 심벌 없이는 읽을 수 없어
+// 제보에 붙여도 쓸모가 없었다. "언제·어느 창이·왜" 만 남기면 앱 로그와 맞춰 보기에 충분하다
+const CRASH_FILE = path.join(app.getPath("userData"), "crashes.json");
+function noteCrash(where, reason, exitCode) {
+  try {
+    const list = (() => { try { const v = JSON.parse(fs.readFileSync(CRASH_FILE, "utf8")); return Array.isArray(v) ? v : []; } catch { return []; } })();
+    list.push({ t: new Date().toISOString(), where, reason: String(reason || ""), exitCode: exitCode == null ? null : +exitCode, v: app.getVersion() });
+    fs.writeFileSync(CRASH_FILE, JSON.stringify(list.slice(-20)));   // 최근 20건만
+  } catch (e) { console.warn("crashes.json 쓰기 실패:", e.message); }
+  console.error(`창이 죽었습니다: ${where} · ${reason} · exit ${exitCode}`);
+}
+const crashList = () => { try { const v = JSON.parse(fs.readFileSync(CRASH_FILE, "utf8")); return Array.isArray(v) ? v : []; } catch { return []; } };
 appLog.install(`사도 데스크 v${app.getVersion()} 시작 · Electron ${process.versions.electron} · ${process.platform} ${require("node:os").release()} · ${app.isPackaged ? "설치판" : "개발 실행"} · 인자 ${process.argv.slice(1).join(" ") || "(없음)"}`);
 // 앱 이름 변경(trickcal-crepe-mascot-proto → sado-desk): 예전 userData의 설정·소식 상태를 새 폴더로 한 번 옮긴다
 (() => { try {
@@ -207,7 +219,7 @@ function createHitWindow() {
   const w = hitWin;
   w.on("closed", () => { if (hitWin !== w) return; hitWin = null; hitShown = false; });
   // 렌더러가 죽으면 창은 남는데 입력을 아무 데도 전하지 않는다 — 사도가 '클릭이 안 되는' 상태. 다시 띄운다
-  w.webContents.on("render-process-gone", (_e, d) => { console.log("hit renderer gone:", d.reason); if (hitWin === w && !w.isDestroyed()) w.webContents.reload(); });
+  w.webContents.on("render-process-gone", (_e, d) => { noteCrash("히트 창", d.reason, d.exitCode); if (hitWin === w && !w.isDestroyed()) w.webContents.reload(); });
 }
 const screenRect = (r) => ({ x: Math.round(geo.x + r.x), y: Math.round(geo.y + r.y), width: Math.max(8, Math.round(r.w)), height: Math.max(8, Math.round(r.h)) });
 const inRect = (r, x, y, pad) => r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
@@ -290,7 +302,7 @@ function createMascotWindow() {
   // 렌더러(스파인·WebGL)가 죽으면 창은 투명하게 남고 사도만 사라진다 — 트레이는 살아 있으니 사용자는 이유를 모른다.
   // 옛 바운딩은 다 지워 히트 창이 빈자리를 잡지 않게 하고, 잠시 뒤 다시 로드한다 (did-finish-load 가 config 를 다시 보낸다)
   win.webContents.on("render-process-gone", (_e, d) => {
-    console.log("mascot renderer gone:", d.reason, d.exitCode);
+    noteCrash("사도 창", d.reason, d.exitCode);
     for (const inst of instances.values()) inst.rect = null;
     placeHit(null); mascotLoaded = false;
     // 로드마다 죽는 상태(GPU·메모리)면 1초마다 영원히 다시 띄우게 된다. 5분에 세 번까지만
@@ -336,6 +348,7 @@ function openSettings(tab, forId) {
   });
   settingsWin.loadFile(path.join(__dirname, "renderer", "settings.html"));
   settingsWin.webContents.on("console-message", (ev) => console.log(`[settings:${ev.level}] ${ev.message} (${path.basename(ev.sourceId || "")}:${ev.lineNumber})`));
+  settingsWin.webContents.on("render-process-gone", (_e, d) => { noteCrash("설정 창", d.reason, d.exitCode); if (settingsWin && !settingsWin.isDestroyed()) settingsWin.destroy(); settingsWin = null; }); // 다시 열면 새 창
   { const w = settingsWin; w.once("ready-to-show", () => { if (settingsWin === w && !w.isDestroyed()) { w.show(); tell(); } }); }
   if (argHas("--shot-settings")) {
     const tabs = ["guide", "character", "behavior", "sound", "display", "news", "ai", "about"]; let i = 0;
@@ -412,7 +425,7 @@ function showBubble(id, payload) {
     bubbleWin.webContents.on("console-message", (ev) => console.log(`[bubble:${ev.level}] ${ev.message}`));
     const w = bubbleWin; trackBounds(w);
     w.on("closed", () => { if (bubbleWin !== w) return; bubbleWin = null; bubbleFor = null; bubbleBounds = null; bubbleAnchor = null; });
-    w.webContents.on("render-process-gone", (_e, d) => { console.log("bubble renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 말풍선이 새 창을 만든다
+    w.webContents.on("render-process-gone", (_e, d) => { noteCrash("말풍선", d.reason, d.exitCode); if (!w.isDestroyed()) w.close(); }); // 다음 말풍선이 새 창을 만든다
     w.webContents.once("did-finish-load", () => { if (w.isDestroyed()) return; w.webContents.send("show", payload); bubblePlace(id); w.showInactive(); });
   } else { bubbleAnchor = null; bubbleWin.webContents.send("show", payload); bubblePlace(id); if (!bubbleWin.isVisible()) bubbleWin.showInactive(); }
 }
@@ -457,7 +470,7 @@ let captureScreenFor = SC.captureScreenFor;   // let — 화면 시험 훅이 �
 const screenAllowed = SC.screenAllowed, screenReady = SC.screenReady;
 // 대화 창·턴·화면 보고 한마디는 chat.js — 상태는 getter 로. captureScreenFor 는 화면 시험 훅이 갈아 끼우므로 매번 읽는다
 const CH = require("./chat.js")({ get settings() { return settings; }, get geo() { return geo; }, get instances() { return instances; }, get captureScreenFor() { return captureScreenFor; },
-  chatProfile: (id) => chatProfile(id), sendMascot: (id, cmd, arg) => sendMascot(id, cmd, arg), trackBounds: (w) => trackBounds(w), instanceOf: (wc) => instanceOf(wc), screenAllowed, heightOf: (h, lo) => heightOf(h, lo) });
+  chatProfile: (id) => chatProfile(id), sendMascot: (id, cmd, arg) => sendMascot(id, cmd, arg), noteCrash: (where, reason, code) => noteCrash(where, reason, code), trackBounds: (w) => trackBounds(w), instanceOf: (wc) => instanceOf(wc), screenAllowed, heightOf: (h, lo) => heightOf(h, lo) });
 const openChat = CH.openChat, closeChat = CH.closeChat, chatTurn = CH.chatTurn, screenTalk = CH.screenTalk;
 // 말풍선이 떠 있는 시간: 기본 초 + 글자당 0.1초
 const bubbleMs = (t) => Math.round((Math.max(2, +((settings.global.talk || {}).bubbleSec) || 4) * 1000) + Math.min(80, t.length) * 100);
@@ -508,6 +521,15 @@ ipcMain.on("update:start", () => startUpdate());
 ipcMain.on("update:cancel", () => { UP.cancel(); buildTray(); });
 ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));
 // 진단 정보 — 문제를 알릴 때 붙이라고 한 덩이로. API 키·대화 내용·창 제목은 넣지 않는다 (키는 있고 없고만)
+// 죽은 기록 한 줄 — 없으면 "없음". 있으면 마지막 것과 횟수를 적는다(제보에서 "가끔 사라져요" 를 확인할 근거)
+function crashLine() {
+  const list = crashList();
+  if (!list.length) return "죽은 기록: 없음";
+  const last = list[list.length - 1];
+  const when = new Date(last.t).toLocaleString("ko-KR");
+  return `죽은 기록: ${list.length}건 · 마지막 ${when} ${last.where}(${last.reason}${last.exitCode == null ? "" : ` exit ${last.exitCode}`}) v${last.v}`;
+}
+
 // 메모리 한 줄 — "느려요·무거워요" 제보에서 제일 먼저 보고 싶은 값이다. 종류별로 묶어 적는다(렌더러가 여럿이라)
 function memLine() {
   try {
@@ -535,6 +557,7 @@ ipcMain.handle("diag:get", async () => {
     `AI 대화: 먼저 말 걸기 ${ai.proactive ? "켬" : "끔"} · 화면 보기 ${ai.screen ? `켬(${ai.screenScope === "display" ? "모니터 전체" : `앱 ${(ai.screenWindows || []).length}개`})` : "끔"} · 기록 ${ai.memory !== false ? "켬" : "끔"}`,
     `새 소식: ${g.news && g.news.enabled === false ? "끔" : "켬"} · 마지막 확인 ${news && news.status.lastCheck ? new Date(news.status.lastCheck).toLocaleString("ko-KR") : "없음"} · 마지막 오류 ${(news && news.status.lastError) || "없음"}`,
     `경로: 설정 ${SETTINGS_FILE} · 게임 데이터 ${ASSET_ROOT} · 로그 ${LOG_FILE}`,
+    crashLine(),
   ];
   return L.join("\n");
 });   // 키가 실제로 암호화돼 저장되는지 — 설정 창이 사실대로 적는다

@@ -78,7 +78,7 @@ AI 없이도 사도는 대본으로 혼잣말을 합니다. **말을 걸어 대�
 cd prototype
 npm install
 run.cmd                 # 개발 실행 (assets/ 가 있으면 그것을, 없으면 %APPDATA% 의 가져온 데이터를 사용)
-npm test                # 순수 로직 88개 (Electron 불필요)
+npm test                # 순수 로직 96개 (Electron 불필요)
 npm run test:flow       # 사용 흐름 — 대화 경쟁 · 가져오기 제어 · 설정 복구 · 손짓 전달 · 두 번째 실행 · 설명 접기 · 창 크기 기억 · AI 실패 복구
 npm run pyruntime       # 설치판용 임베디드 Python(UnityPy·Pillow·opusenc) 준비 → pyruntime/ (약 66MB)
 npm run dist            # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe

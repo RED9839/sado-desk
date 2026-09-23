@@ -12,6 +12,8 @@ const SCENARIOS = {
   settings: { flag: "--settings-test", tag: "SETTINGSTEST", limit: 60_000, seed: "{{{ 깨진 설정 파일" },   // 깨진 settings.json 으로 시작
   // 손짓이 닿는 길: 히트 창에 진짜 입력을 넣어 ipc 까지 오는지. 에셋 없이도 돈다(CI). CSP 가 이 창 스크립트를 막은 적이 있다
   hit: { flag: "--hit-test", tag: "HITTEST", limit: 60_000 },
+  // 창이 죽었을 때 기록이 남고 스스로 되살아나는지 (사도가 없으면 설정 창으로)
+  crash: { flag: "--crash-test", tag: "CRASHTEST", limit: 90_000 },
   // 이미 켜져 있는데 또 실행: 설정 창 대신 사도가 손을 흔든다. 에셋 없이는(CI) 가져오기 창 갈래만 본다
   second: { flag: "--second-test", tag: "SECONDTEST", limit: 60_000 },
   hints: { flag: "--hints-test", tag: "HINTSTEST", limit: 60_000 },   // 설정 창의 긴 설명 접기 — 펼침·접힘·체크박스 무관

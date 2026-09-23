@@ -66,7 +66,7 @@ module.exports = function createChat(ctx) {
     const w = chatWin; ctx.trackBounds(w);
     // 창을 닫으면 진행 중인 턴은 끊는다. chatBusy 는 그 턴의 finally 가 스스로 내린다 (여기서 내리면 다음 턴과 엇갈린다)
     w.on("closed", () => { if (chatWin !== w) return; if (chatFor) ctx.sendMascot(chatFor, "stay", false); chatSeq++; chatWin = null; chatFor = null; chatBounds = null; chatAnchor = null; if (chatAbort) chatAbort.abort(); });
-    w.webContents.on("render-process-gone", (_e, d) => { console.log("chat renderer gone:", d.reason); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
+    w.webContents.on("render-process-gone", (_e, d) => { if (ctx.noteCrash) ctx.noteCrash("대화창", d.reason, d.exitCode); if (!w.isDestroyed()) w.close(); }); // 다음 '말 걸기'가 새 창을 만든다
     w.webContents.once("did-finish-load", () => chatReady.add(w));
     send();   // 로드를 기다리는 건 send 안에서 한다
   }
