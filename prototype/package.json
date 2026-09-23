@@ -11,7 +11,8 @@
     "test:first-run": "node test/first-run.js",
     "pack": "electron-builder --win dir --x64",
     "dist": "electron-builder --win nsis --x64",
-    "pyruntime": "python tools/make-pyruntime.py"
+    "pyruntime": "python tools/make-pyruntime.py",
+    "release": "node tools/release.js"
   },
   "devDependencies": {
     "electron": "^44.4.3",
