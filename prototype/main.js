@@ -245,7 +245,14 @@ function savedBounds(key) {
 }
 function rememberBounds(w, key) {
   let t = null;
-  const save = () => { t = null; if (w.isDestroyed() || w.isMinimized() || w.isMaximized()) return; const b = WB.fromBounds(w.getBounds()); if (b) updateSettings({ windows: { [key]: b } }); };
+  const save = () => {
+    t = null;
+    if (w.isDestroyed() || w.isMinimized() || w.isMaximized()) return;
+    // 분수 배율(125%·150%)에서는 지정한 크기와 돌려받는 크기가 몇 px 어긋난다. 그 차이를 저장하면
+    // 열 때마다 창이 조금씩 커진다(실측: 125% 에서 다섯 번에 폭 +23px) — 작은 차이는 저장하지 않는다
+    const b = WB.fromBounds(w.getBounds());
+    if (b && WB.shouldSave(b, (settings.global.windows || {})[key])) updateSettings({ windows: { [key]: b } });
+  };
   for (const ev of ["move", "resize"]) w.on(ev, () => { if (t) clearTimeout(t); t = setTimeout(save, 400); });   // 끄는 동안 매 픽셀 저장하지 않게
   w.on("close", () => { if (t) clearTimeout(t); save(); });
 }
@@ -895,6 +902,21 @@ app.whenReady().then(() => {
   setTimeout(() => checkUpdate(), 8000); setInterval(() => checkUpdate(), 6 * 3600 * 1000); // 깃허브 최신 릴리스 확인 (시작 8초 뒤, 이후 6시간마다)
   if (argHas("--settings")) setTimeout(() => openSettings(), +argVal("--settings-delay", 0) || 0);
   for (const ev of ["display-added", "display-removed", "display-metrics-changed"]) screen.on(ev, () => setTimeout(applyGeometry, 300));
+  // 절전(잠자기)에서 깨어나면: 자던 사이 모니터가 바뀌었을 수 있고, 렌더러의 시계는 몇 시간을 건너뛴 상태다.
+  // 기하를 다시 잡고, 커서 확인을 되살리고, 렌더러엔 시계를 다시 맞추라고 알린다. 잠들고 깬 사실은 로그에 남는다(제보용)
+  try {
+    const pm = require("electron").powerMonitor;
+    pm.on("suspend", () => console.log("절전으로 들어갑니다"));
+    pm.on("resume", () => {
+      console.log("절전에서 깨어났습니다 — 화면 기하·커서 확인을 다시 잡습니다");
+      setTimeout(() => {
+        applyGeometry();
+        if (!fsHidden) startCursorPoll(CP.FAST);
+        if (mascotWin && !mascotWin.isDestroyed()) mascotWin.webContents.send("resume");
+        if (tray) buildTray();
+      }, 1200);   // 깬 직후엔 모니터 목록이 아직 정리되지 않는다 — 조금 기다렸다 잡는다
+    });
+  } catch (e) { console.warn("powerMonitor 등록 실패:", e.message); }
 });
 app.on("window-all-closed", () => { /* 트레이 상주 */ });
 app.on("before-quit", () => { appLog.flush(); if (saveTimer) flushSettings(); /* 150ms 디바운스 안에 끄면 마지막 변경이 파일에 안 남았다 */ setup.stopExtract(); if (pullProc) { try { pullProc.kill(); } catch {} } if (news) news.stop(); if (fsWatch) fsWatch.stop(); closeBubble(); for (const id of [...instances.keys()]) destroyInstance(id); if (hitWin && !hitWin.isDestroyed()) hitWin.destroy(); if (mascotWin && !mascotWin.isDestroyed()) mascotWin.destroy(); });

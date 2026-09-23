@@ -35,4 +35,13 @@ function fromBounds(b) {
   return { x: b.x, y: b.y, w: b.width, h: b.height };
 }
 
-module.exports = { fit, fromBounds, nearestArea };
+// 저장할 값인가 — 분수 배율에서는 지정한 크기와 돌려받는 크기가 1~4px 어긋난다(760 → 762).
+// 그 차이를 그대로 저장하면 열 때마다 조금씩 커진다. 사람이 모서리를 끌면 그보다 훨씬 크게 바뀐다
+function shouldSave(next, prev, slop = 8) {
+  if (!next) return false;
+  if (!prev) return true;
+  for (const k of ["x", "y", "w", "h"]) if (Math.abs((next[k] || 0) - (prev[k] || 0)) > slop) return true;
+  return false;
+}
+
+module.exports = { fit, fromBounds, nearestArea, shouldSave };

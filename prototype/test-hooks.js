@@ -426,6 +426,107 @@ module.exports = function installTestHooks(ctx) {
   // --quit-in <초> — 그만큼 뒤에 앱을 정상 종료한다(app.quit → before-quit 이 돈다). 끝날 때 치우는 것들을 시험할 때
   if (argHas("--quit-in")) setTimeout(() => { console.log("QUITIN 정상 종료"); app.quit(); }, (+argVal("--quit-in", 10) || 10) * 1000);
 
+  // --bounds-creep-test — 창 크기 기억이 배율(125%·150%)에서 어긋나 누적되지 않는지. 열고 닫기를 되풀이하며 폭을 적는다
+  if (argHas("--bounds-creep-test")) setTimeout(async () => {
+    const fails = [], ok = (c, m) => { console.log(`CREEP ${c ? "PASS" : "FAIL"} ${m}`); if (!c) fails.push(m); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const openOnce = async () => {
+      ctx.openSettings("display");
+      for (let i = 0; i < 60 && !(ctx.settingsWin && !ctx.settingsWin.isDestroyed()); i++) await sleep(200);
+      await sleep(1200);
+      const b = ctx.settingsWin.getBounds();
+      const cb = ctx.settingsWin.getContentBounds();
+      const sv0 = JSON.stringify((ctx.settings.global.windows||{}).settings);
+      ctx.settingsWin.close(); await sleep(900);
+      const sv1 = JSON.stringify((ctx.settings.global.windows||{}).settings);
+      console.log("CREEP dbg 프레임=" + b.width + "x" + b.height + " 내용=" + cb.width + "x" + cb.height + " 저장(열때)=" + sv0 + " 저장(닫은뒤)=" + sv1);
+      return b;
+    };
+    const first = await openOnce();
+    const widths = [first.width], heights = [first.height];
+    for (let i = 0; i < 4; i++) { const b = await openOnce(); widths.push(b.width); heights.push(b.height); }
+    // 분수 배율에서는 처음 한 번 반올림으로 몇 px 달라질 수 있다. 중요한 건 "계속 커지지 않는가" 다 — 뒤 세 번이 같아야 한다
+    const tail = widths.slice(-3), tailH = heights.slice(-3);
+    const stable = tail.every(v => v === tail[0]) && tailH.every(v => v === tailH[0]);
+    const grewW = widths[widths.length - 1] - widths[0], grewH = heights[heights.length - 1] - heights[0];
+    ok(stable && Math.abs(grewW) <= 8 && Math.abs(grewH) <= 8, `다섯 번 열고 닫아도 크기가 그대로 (폭 ${widths.join("→")} · 높이 ${heights.join("→")})`);
+    console.log(`CREEP ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 8000);
+
+  // --thumb-mem-test — 사도 목록을 끝까지 둘러본 뒤 설정창이 얼마나 무거워지는가.
+  // 지연 생성으로 첫 비용은 줄었지만 한 번 그린 캔버스는 남는다 — 실제로 얼마나 되는지 재 본다.
+  if (argHas("--thumb-mem-test")) setTimeout(async () => {
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    ctx.openSettings("character");
+    for (let i = 0; i < 60 && !(ctx.settingsWin && !ctx.settingsWin.isDestroyed()); i++) await sleep(200);
+    await sleep(3000);
+    const wc = ctx.settingsWin.webContents, pid = wc.getOSProcessId();
+    const mem = () => { const r = app.getAppMetrics().find(x => x.pid === pid); return r ? Math.round(r.memory.workingSetSize / 1024) : -1; };
+    const drawn = () => wc.executeJavaScript('[...document.querySelectorAll("#skin-grid canvas")].filter(c => c.width > 0).length');
+    const total = await wc.executeJavaScript('document.querySelectorAll("#skin-grid canvas").length');
+    const m0 = mem(), d0 = await drawn();
+    console.log(`THUMBMEM 처음: 그린 캔버스 ${d0}/${total} · 렌더러 ${m0}MB`);
+    // 끝까지 훑는다 — 사람이 목록을 쭉 내려 보는 것과 같게
+    const dbg = await wc.executeJavaScript("(() => { const g = document.getElementById(String.fromCharCode(115,107,105,110,45,103,114,105,100)); const p = g.parentElement; const sc = (el) => el && el.scrollHeight > el.clientHeight + 4; return JSON.stringify({ grid: { sh: g.scrollHeight, ch: g.clientHeight, scrolls: sc(g) }, parent: { tag: p.tagName + (p.className ? \"|\" + p.className : \"\"), sh: p.scrollHeight, ch: p.clientHeight, scrolls: sc(p) }, body: { sh: document.body.scrollHeight, ch: document.body.clientHeight, scrolls: sc(document.body) } }); })()");
+    console.log("THUMBMEM dbg " + dbg);
+    const maxTop = await wc.executeJavaScript('(() => { const g = document.getElementById("skin-grid"); return g.scrollHeight - g.clientHeight; })()');
+    for (let y = 0; y <= maxTop; y += 400) {
+      await wc.executeJavaScript(`(() => { document.getElementById("skin-grid").scrollTop = ${y}; return true; })()`);
+      await sleep(200);
+      if (y % 2000 === 0) console.log("THUMBMEM 스크롤 " + y + " → 그린 것 " + (await drawn()));
+    }
+    await sleep(2500);
+    const m1 = mem(), d1 = await drawn();
+    console.log(`THUMBMEM 끝까지 둘러본 뒤: 그린 캔버스 ${d1}/${total} · 렌더러 ${m1}MB (+${m1 - m0}MB)`);
+    // 목록을 닫았다 다시 열면? (창을 닫으면 렌더러가 통째로 사라진다)
+    ctx.settingsWin.close(); await sleep(1500);
+    ctx.openSettings("character");
+    for (let i = 0; i < 60 && !(ctx.settingsWin && !ctx.settingsWin.isDestroyed()); i++) await sleep(200);
+    await sleep(2500);
+    const pid2 = ctx.settingsWin.webContents.getOSProcessId();
+    const r2 = app.getAppMetrics().find(x => x.pid === pid2);
+    console.log(`THUMBMEM 닫았다 다시 연 뒤: 렌더러 ${r2 ? Math.round(r2.memory.workingSetSize / 1024) : -1}MB`);
+    app.exit(0);
+  }, 8000);
+
+  // --fs-cycle-test — 전체화면(게임) 뒤로 숨었다 나오기를 되풀이해도 손짓이 곧바로 돌아오는가.
+  // 숨을 때 히트 창을 없애므로(메모리 반납) 돌아올 때 다시 만들어지고 입력이 이어지는지가 핵심이다.
+  if (argHas("--fs-cycle-test")) setTimeout(async () => {
+    const fails = [], ok = (c, m) => { console.log(`FSCYCLE ${c ? "PASS" : "FAIL"} ${m}`); if (!c) fails.push(m); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const got = []; ipcMain.on("hit-ev", (_e, ev) => got.push(ev));
+    const rounds = +argVal("--fs-rounds", 5);
+    const memMB = () => Math.round(app.getAppMetrics().reduce((n, x) => n + ((x.memory && x.memory.workingSetSize) || 0), 0) / 1024);
+    if (!ctx.hitWin || ctx.hitWin.isDestroyed()) { console.log("FSCYCLE 히트 창이 없는 환경(에셋 없음) — 건너뛴다"); console.log("FSCYCLE ALL PASS"); return app.exit(0); }
+    const mem0 = memMB();
+    let worst = 0;
+    for (let i = 1; i <= rounds; i++) {
+      ctx.setFsHidden(true); await sleep(700);
+      ok(!ctx.hitWin || ctx.hitWin.isDestroyed(), `${i}회차: 숨으면 히트 창을 놓아 준다`);
+      const t0 = Date.now();
+      ctx.setFsHidden(false);
+      let up = false;
+      for (let k = 0; k < 60 && !up; k++) { await sleep(100); up = !!(ctx.hitWin && !ctx.hitWin.isDestroyed()); }
+      const back = Date.now() - t0; worst = Math.max(worst, back);
+      ok(up, `${i}회차: 돌아오면 히트 창이 ${back}ms 만에 다시 선다`);
+      // 진짜 입력을 넣어 ipc 까지 오는지 — 창만 살아 있고 스크립트가 죽어 있으면 손짓이 안 먹는다(v0.24.10 의 그 버그)
+      const w = ctx.hitWin; got.length = 0;
+      if (w && !w.isDestroyed()) {
+        w.setBounds({ x: 200, y: 200, width: 200, height: 200 }); w.showInactive(); await sleep(250);
+        w.webContents.sendInputEvent({ type: "mouseDown", x: 100, y: 100, globalX: 300, globalY: 300, button: "left", clickCount: 1 });
+        w.webContents.sendInputEvent({ type: "mouseUp", x: 100, y: 100, globalX: 300, globalY: 300, button: "left", clickCount: 1 });
+        await sleep(300);
+      }
+      ok(got.some(e => e.type === "mousedown"), `${i}회차: 손짓이 곧바로 먹는다 (${got.map(e => e.type).join(",") || "아무것도 안 옴"})`);
+    }
+    await sleep(1500);
+    const mem1 = memMB();
+    ok(mem1 - mem0 < 120, `왕복 ${rounds}번 뒤 메모리 ${mem0} → ${mem1}MB (새지 않는다)`);   // 왕복마다 렌더러를 만들고 없애니, 새면 여기서 드러난다
+    console.log(`FSCYCLE ${fails.length ? "FAILED " + fails.length : "ALL PASS"} · 가장 느린 복구 ${worst}ms`);
+    app.exit(fails.length ? 1 : 0);
+  }, 8000);
+
   // --crash-test — 사도 창이 죽었을 때: 기록이 남는가, 스스로 되살아나는가, 진단에 보이는가. 진짜로 죽여 본다
   if (argHas("--crash-test")) setTimeout(async () => {
     const fails = [], ok = (c, m) => { console.log(`CRASHTEST ${c ? "PASS" : "FAIL"} ${m}`); if (!c) fails.push(m); };

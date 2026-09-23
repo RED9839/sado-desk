@@ -14,6 +14,8 @@ const SCENARIOS = {
   hit: { flag: "--hit-test", tag: "HITTEST", limit: 60_000 },
   // 창이 죽었을 때 기록이 남고 스스로 되살아나는지 (사도가 없으면 설정 창으로)
   crash: { flag: "--crash-test", tag: "CRASHTEST", limit: 90_000 },
+  // 게임 전환(전체화면 숨김) 왕복 — 히트 창을 없앴다 다시 만들어도 손짓이 이어지는지
+  fscycle: { flag: "--fs-cycle-test", tag: "FSCYCLE", limit: 120_000 },
   // 이미 켜져 있는데 또 실행: 설정 창 대신 사도가 손을 흔든다. 에셋 없이는(CI) 가져오기 창 갈래만 본다
   second: { flag: "--second-test", tag: "SECONDTEST", limit: 60_000 },
   hints: { flag: "--hints-test", tag: "HINTSTEST", limit: 60_000 },   // 설정 창의 긴 설명 접기 — 펼침·접힘·체크박스 무관
