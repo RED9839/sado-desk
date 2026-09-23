@@ -424,6 +424,34 @@ module.exports = function installTestHooks(ctx) {
   // --quit-in <초> — 그만큼 뒤에 앱을 정상 종료한다(app.quit → before-quit 이 돈다). 끝날 때 치우는 것들을 시험할 때
   if (argHas("--quit-in")) setTimeout(() => { console.log("QUITIN 정상 종료"); app.quit(); }, (+argVal("--quit-in", 10) || 10) * 1000);
 
+  // --crash-test — 사도 창이 죽었을 때: 기록이 남는가, 스스로 되살아나는가, 진단에 보이는가. 진짜로 죽여 본다
+  if (argHas("--crash-test")) setTimeout(async () => {
+    const fails = [], ok = (c, m) => { console.log(`CRASHTEST ${c ? "PASS" : "FAIL"} ${m}`); if (!c) fails.push(m); };
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const file = path.join(app.getPath("userData"), "crashes.json");
+    const list = () => { try { const v = JSON.parse(fs.readFileSync(file, "utf8")); return Array.isArray(v) ? v : []; } catch { return []; } };
+    const before = list().length;
+    // 에셋이 없는 곳(CI)에는 사도 창이 없다 — 그때는 설정 창을 죽여 같은 길을 본다
+    let target = ctx.mascotWin, name = "사도 창";
+    if (!target || target.isDestroyed()) { ctx.openSettings("about"); for (let i = 0; i < 40 && !(ctx.settingsWin && !ctx.settingsWin.isDestroyed()); i++) await sleep(200); await sleep(800); target = ctx.settingsWin; name = "설정 창"; console.log("CRASHTEST 사도가 없어 설정 창으로 본다"); }
+    if (!target || target.isDestroyed()) { console.log("CRASHTEST FAIL 죽일 창이 없다"); return app.exit(1); }
+    target.webContents.forcefullyCrashRenderer();
+    let after = before;
+    for (let i = 0; i < 40 && after <= before; i++) { await sleep(500); after = list().length; }
+    ok(after > before, `죽으면 기록이 남는다 (${before} → ${after}건)`);
+    const last = list()[list().length - 1] || {};
+    ok(last.where === name && !!last.reason && !!last.t, `기록에 어느 창·왜·언제 (${last.where} / ${last.reason} / exit ${last.exitCode})`);
+    if (name === "사도 창") {
+      for (let i = 0; i < 40 && !(ctx.mascotWin && !ctx.mascotWin.isDestroyed() && !ctx.mascotWin.webContents.isCrashed()); i++) await sleep(500);
+      ok(!!(ctx.mascotWin && !ctx.mascotWin.isDestroyed() && !ctx.mascotWin.webContents.isCrashed()), "죽은 뒤 스스로 되살아난다");
+    }
+    ctx.openSettings("about"); await sleep(2500);
+    const diag = await ctx.settingsWin.webContents.executeJavaScript("window.host.diagGet()");
+    ok(/죽은 기록: [1-9]/.test(diag), `진단 정보에 죽은 기록 줄 (${(diag.split(String.fromCharCode(10)).find(l => l.startsWith("죽은 기록")) || "").slice(0, 70)})`);
+    console.log(`CRASHTEST ${fails.length ? "FAILED " + fails.length : "ALL PASS"}`);
+    app.exit(fails.length ? 1 : 0);
+  }, 8000);
+
   // --diag-test — 진단 정보에 필요한 줄이 다 있고, API 키·대화 내용 같은 비밀이 섞이지 않는지
   if (argHas("--diag-test")) setTimeout(async () => {
     const fails = [], ok = (cond, msg) => { console.log(`DIAGTEST ${cond ? "PASS" : "FAIL"} ${msg}`); if (!cond) fails.push(msg); };
