@@ -82,6 +82,7 @@ npm test                # 순수 로직 88개 (Electron 불필요)
 npm run test:flow       # 사용 흐름 — 대화 경쟁 · 가져오기 제어 · 설정 복구 · 손짓 전달 · 두 번째 실행 · 설명 접기 · 창 크기 기억 · AI 실패 복구
 npm run pyruntime       # 설치판용 임베디드 Python(UnityPy·Pillow·opusenc) 준비 → pyruntime/ (약 66MB)
 npm run dist            # 설치판 빌드 → dist/SadoDesk-Setup-<ver>.exe
+npm run release         # 빌드 → 깃허브 릴리스 초안 → exe·blockmap 올리고 검사값 대조 → 공개 (--check 로 상태만)
 ```
 
 - 추출기 단독 실행: `python tools/extract-all.py --out <폴더> --steps minimi,sfx,standing,voice` (Python 3.10+, `pip install UnityPy Pillow imageio-ffmpeg`)
