@@ -65,7 +65,7 @@ python tools/render-all-gifs.py [--anim Idle_1] [--skins base|all] [--size 480] 
 ```
 npm test          # 순수 로직 88개 — 설정 검사·AI 파서(끊김 재시도·오류 안내·사양 읽기)·혼잣말 검사기·데이터 짝·동작별 음성·새 소식(로컬 가짜 서버)·애니 풀·화면 기하·커서 간격·앱 로그·창 크기 기억. Node 내장 node --test, 의존성 없음
 npm run test:flow # 사용 흐름 — Electron 을 새 프로필로 띄워 시나리오 여덟을 돌린다 (약 115초). chat: 대화 상태 경쟁 11가지(대상 전환·기록 지우기·연속 열기·캡처 중 닫기/전환/끄기·답하는 중 닫기·재열기)를 모의 AI(SADO_AI_MOCK)로 · extract: 가짜 추출기(test/fake-extract.js)로 실패·재시도·취소(손자 프로세스까지 죽는지) · settings: 깨진 설정 파일 복구·저장 걸러내기·초기화·연결 확인 버튼 복구 · hit: 히트 창에 진짜 마우스 입력을 넣어 ipc 까지 오는지(CSP 로 막힌 적이 있다) · second: 이미 켜져 있는데 또 실행하면 설정 창 대신 사도가 손을 흔들고 한마디(에셋 없는 CI 는 가져오기 창 갈래만) · hints: 설정 창의 긴 설명 접기(펼침·접힘·체크박스 무관) · bounds: 설정 창을 끌어 옮기고 닫았다 열면 그 자리(화면 밖 값은 안으로), 메뉴 간격 설정 · aifail: 가짜 OpenAI 호환 서버(test/fake-ai.js)가 스트림 끊김 → 429 → 401 → 정상 순으로 답할 때 안내 문구·받은 조각 보존·입력 복구·기록. `node test/flow.js chat` 처럼 하나만도 됨
-npm run release   # 릴리스 한 번에 — 깨끗한 트리·푸시 완료·같은 태그 없음을 먼저 보고, 빌드 → 초안 → **exe 와 .blockmap 둘 다** 올리고 → 깃허브가 계산한 sha256 을 이 PC 것과 대조 → 공개.  필수,  로 이미 빌드한 것 사용,  는 낼 수 있는 상태인지만. blockmap 은 나중에 차등 업데이트(123MB → 수 MB)를 붙일 때 필요해서 반드시 함께 올린다
+npm run release   # 릴리스 한 번에 — 깨끗한 트리·푸시 완료·같은 태그 없음을 먼저 보고, 빌드 → 초안 → **exe 와 .blockmap 둘 다** 올리고 → 깃허브가 계산한 sha256 을 이 PC 것과 대조 → 공개. `--notes <파일>` 필수, `--no-build` 로 이미 빌드한 것 사용, `--check` 는 낼 수 있는 상태인지만. blockmap 은 나중에 차등 업데이트(123MB → 수 MB)를 붙일 때 필요해서 반드시 함께 올린다
 npm run test:first-run # 설치판 첫 실행 — 빌드된 exe(dist/win-unpacked 또는 설치본)를 빈 프로필로 띄워 '가져오기' 창이 첫 화면으로 뜨는지 (먼저 npm run pack 또는 npm run dist)
 ```
 설정 창 키보드 조작(탭 줄 ←→·Home·End)은 `--keys-test`, 진단 정보(설정 → 정보 → '진단 정보 복사')는 `--diag-test` 로 검사한다 — 필요한 줄이 다 있고 API 키·대화 내용이 섞이지 않는지.
