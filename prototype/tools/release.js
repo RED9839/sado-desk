@@ -24,7 +24,9 @@ const sha = (f) => require("node:crypto").createHash("sha256").update(fs.readFil
 function preflight() {
   const status = sh("git", ["status", "--porcelain"]);
   if (status) die("작업 트리에 커밋하지 않은 변경이 있습니다:\n" + status);
-  const ahead = sh("git", ["rev-list", "--count", "@{u}..HEAD"]);
+  // upstream(@{u}) 이 잡혀 있지 않은 저장소도 있다 — origin/main 과 직접 견준다
+  sh("git", ["fetch", "-q", "origin", "main"]);
+  const ahead = sh("git", ["rev-list", "--count", "origin/main..HEAD"]);
   if (ahead !== "0") die(`푸시하지 않은 커밋이 ${ahead}개 있습니다`);
   const exists = spawnSync("gh", ["release", "view", tag], { cwd: root, encoding: "utf8" });
   if (exists.status === 0) die(`${tag} 릴리스가 이미 있습니다`);
