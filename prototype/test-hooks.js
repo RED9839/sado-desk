@@ -430,7 +430,7 @@ module.exports = function installTestHooks(ctx) {
     ctx.openSettings("about"); await new Promise(r => setTimeout(r, 2500));   // handle 은 직접 못 부르니 설정 창의 다리로 부른다
     const out = await ctx.settingsWin.webContents.executeJavaScript("window.host.diagGet()");
     console.log("DIAGTEST ----" + String.fromCharCode(10) + out + String.fromCharCode(10) + "DIAGTEST ----");
-    for (const must of ["사도 데스크 v", "게임 데이터:", "사도 ", "화면:", "소리:", "AI:", "새 소식:", "경로:"]) ok(out.includes(must), `줄 있음: ${must}`);
+    for (const must of ["사도 데스크 v", "메모리: 합계", "게임 데이터:", "사도 ", "화면:", "소리:", "AI:", "새 소식:", "경로:"]) ok(out.includes(must), `줄 있음: ${must}`);
     const key = Ai.decKey(Ai.merge(ctx.settings.global.ai).keys.gemini || "");
     ok(!/sk-ant-|AIza|"keys"/.test(out) && (!key || !out.includes(key)), "API 키가 들어가지 않는다");
     ok(!/혼잣말\[|chat\[/.test(out), "대화·혼잣말 내용이 들어가지 않는다");

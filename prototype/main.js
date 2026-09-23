@@ -508,6 +508,17 @@ ipcMain.on("update:start", () => startUpdate());
 ipcMain.on("update:cancel", () => { UP.cancel(); buildTray(); });
 ipcMain.handle("ai:status", async () => ({ ...(await Ai.status(settings.global.ai)), keysEncrypted: Ai.keysEncrypted() }));
 // 진단 정보 — 문제를 알릴 때 붙이라고 한 덩이로. API 키·대화 내용·창 제목은 넣지 않는다 (키는 있고 없고만)
+// 메모리 한 줄 — "느려요·무거워요" 제보에서 제일 먼저 보고 싶은 값이다. 종류별로 묶어 적는다(렌더러가 여럿이라)
+function memLine() {
+  try {
+    const m = app.getAppMetrics();
+    const sum = (rows) => rows.reduce((n, x) => n + ((x.memory && x.memory.workingSetSize) || 0), 0) / 1024;   // KB → MB
+    const by = {};
+    for (const x of m) { const t = x.type === "Tab" ? "렌더러" : x.type === "GPU" ? "GPU" : x.type === "Browser" ? "메인" : x.type === "Utility" ? "유틸" : x.type; by[t] = (by[t] || []).concat(x); }
+    const parts = Object.entries(by).sort((p1, p2) => sum(p2[1]) - sum(p1[1])).map(([t, rows]) => `${t} ${Math.round(sum(rows))}${rows.length > 1 ? `(${rows.length}개)` : ""}`);
+    return `메모리: 합계 ${Math.round(sum(m))}MB — ${parts.join(" · ")} · 프로세스 ${m.length}개`;
+  } catch (e) { return `메모리: 읽지 못했습니다 (${e.message})`; }
+}
 ipcMain.handle("diag:get", async () => {
   const g = settings.global, ai = g.ai || {};
   let st = null; try { st = await Ai.status(ai); } catch (e) { st = { error: e.message }; }
@@ -515,6 +526,7 @@ ipcMain.handle("diag:get", async () => {
   const L = [
     `사도 데스크 v${app.getVersion()} · Electron ${process.versions.electron} · ${process.platform} ${require("os").release()}`,
     `설치판: ${app.isPackaged ? "예" : "아니오(개발 실행)"} · 켠 지 ${Math.round((Date.now() - (app._startedAt || Date.now())) / 60000)}분`,
+    memLine(),
     `게임 데이터: ${hasAssets(ASSET_ROOT) ? "있음" : "없음"} — 스탠딩 ${Object.keys(STANDING.game).length} · 전투 SD ${Object.keys(STANDING.ingame).length} · 외형 ${(catalog.skins || []).length}벌`,
     `사도 ${settings.characters.length}명: ${settings.characters.map(c => `${koSkin(c.skin)}(${c.mode})`).join(", ")}`,
     `화면: ${disp.length}대 [${disp.join(" · ")}] · 모니터 가두기 ${g.display.confineMonitor !== false ? "켬" : "끔"} · 맨 앞 유지 ${g.display.keepOnTop ? "켬" : "끔"} · 전체화면 숨김 ${g.display.hideFullscreen !== false ? "켬" : "끔"} · 갱신 ${g.display.fps}`,
