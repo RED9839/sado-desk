@@ -550,4 +550,4 @@ function bibleBrief(b, o = {}) {
 }
 module.exports = { explainError, keysEncrypted, pickOllamaModel, sampleLinesFor, trimToBubble, DEFAULTS, EMOTIONS, merge, status, chat, buildSystem, parseEmotion, normalizeMessages, encKey, decKey, loadHistory, saveHistory, clearHistory,
   // 테스트용 — 스트림 파서와 제공자 함수. 앱 코드는 위의 것만 쓴다
-  _test: { stripNoise, partialField, ndjson, sse, chatGemini, detectMachine, detectMachineAsync, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };
+  _test: { stripNoise, partialField, ndjson, sse, chatGemini, detectMachine, detectMachineAsync, resolve, setMockStatusDelay: (ms) => { mockStatusDelay = +ms || 0; } } };

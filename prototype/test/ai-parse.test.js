@@ -156,3 +156,67 @@ test("사양 읽기 — 동시에 물어도 한 번만 조회하고 같은 답�
   assert.ok(Date.now() - t0 < 4000, `제한 시간 안에 끝난다 (${Date.now() - t0}ms)`);
   assert.equal(Ai._test.detectMachine(), a, "그 뒤 동기 호출도 읽어 둔 값을 쓴다");
 });
+
+// ---- buildSystem: 사도의 성격을 프롬프트로 만드는 곳. 여기가 틀어지면 모든 답이 어긋난다 ----
+const P = { ko: "쥬비", style: "casual", addr: "교주님", me: "쥬비", skin: "기본",
+  lines: ["꿀은 맛있다비", "쥬비는 부지런하다비"], interj: ["우와"], sampleLines: ["꿀 좀 나눠 줄까비?"] };
+
+test("buildSystem — 이름·호칭·자칭이 그대로 들어간다", () => {
+  const s = Ai.buildSystem(P);
+  assert.match(s, /너는 "쥬비"/);
+  assert.match(s, /"교주님"라고 부른다/);
+  assert.match(s, /"쥬비"라고 한다/);
+  assert.match(s, /지금 입은 옷: 기본/);
+});
+
+test("buildSystem — 프로필이 없어도 기본 사도로 만들어진다 (첫 실행·데이터 없음)", () => {
+  const s = Ai.buildSystem(null);
+  assert.match(s, /너는 "크레페"/);
+  assert.ok(s.length > 500, `그래도 규칙은 다 들어간다 (${s.length}자)`);
+});
+
+test("buildSystem — 화면이 붙었는지에 따라 화면 이야기 지침이 갈린다", () => {
+  const seeing = Ai.buildSystem(P, { image: "data:image/png;base64,AAA" });
+  const blind = Ai.buildSystem(P);
+  assert.match(seeing, /화면 스크린샷이 첨부되었다/);
+  assert.ok(!/화면 스크린샷이 첨부되었다/.test(blind), "안 붙었으면 그 줄이 없다");
+  assert.match(blind, /화면은 보이지 않는다/);
+});
+
+test("buildSystem — 말버릇 비율이 말로 풀려 들어간다 (낮으면 아예 빠진다)", () => {
+  const withTic = (ratio) => Ai.buildSystem({ ...P, styleInfo: { tic: { form: "dabi", label: "~다비", ratio } } });
+  assert.match(withTic(0.9), /거의 매 문장/);
+  assert.match(withTic(0.6), /문장 절반쯤/);
+  assert.match(withTic(0.35), /서너 문장에 한 번꼴/);
+  assert.ok(!/말버릇 어미/.test(withTic(0.02)), "8% 미만이면 말버릇 줄을 넣지 않는다");
+});
+
+test("buildSystem — 대사 표본은 개수를 제한한다 (프롬프트가 부풀지 않게)", () => {
+  const many = Array.from({ length: 40 }, (_, i) => `줄${i}`);
+  const noInfo = Ai.buildSystem({ ...P, lines: many });
+  assert.equal((noInfo.match(/^- 줄\d+$/gm) || []).length, 10, "실측치가 없으면 위키 줄 10개까지");
+  const withInfo = Ai.buildSystem({ ...P, lines: many, styleInfo: { samples: ["표본1", "표본2"] } });
+  assert.equal((withInfo.match(/^- 줄\d+$/gm) || []).length, 6, "실측치가 있으면 위키는 6개로 줄이고 표본을 붙인다");
+  assert.match(withInfo, /- 표본1/);
+});
+
+test("buildSystem — 규칙은 늘 붙는다: 감정 태그·금지 낱말·길이", () => {
+  const s = Ai.buildSystem(P);
+  for (const must of ["[감정:행복]", "과금", "코드 짜기", "1~3문장"]) assert.ok(s.includes(must), must);
+});
+
+test("buildSystem — extra(지금 시각 등)는 맨 끝에 붙는다", () => {
+  const s = Ai.buildSystem(P, { extra: "지금은 3월 5일 밤 11시." });
+  assert.ok(s.trimEnd().endsWith("지금은 3월 5일 밤 11시."), "맨 끝");
+});
+
+test("resolve — 자동 선택은 키 있는 클라우드 → Ollama → OpenAI 호환 순", () => {
+  const st = (o = {}) => ({ gemini: { key: false }, anthropic: { key: false }, openai: { key: false }, ollama: { running: false, hasModel: false }, ...o });
+  const auto = { provider: "auto" };
+  assert.equal(Ai._test.resolve(auto, st({ gemini: { key: true }, anthropic: { key: true } })), "gemini");
+  assert.equal(Ai._test.resolve(auto, st({ anthropic: { key: true }, ollama: { running: true, hasModel: true } })), "anthropic");
+  assert.equal(Ai._test.resolve(auto, st({ ollama: { running: true, hasModel: true }, openai: { key: true } })), "ollama");
+  assert.equal(Ai._test.resolve(auto, st({ ollama: { running: true, hasModel: false }, openai: { key: true } })), "openai", "모델이 없으면 Ollama 는 건너뛴다");
+  assert.equal(Ai._test.resolve(auto, st()), "", "쓸 수 있는 것이 없으면 빈 값");
+  assert.equal(Ai._test.resolve({ provider: "openai" }, st({ gemini: { key: true } })), "openai", "직접 고르면 그대로");
+});
