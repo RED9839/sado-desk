@@ -6,7 +6,6 @@
  * 깃허브 인증은 gh CLI 를 쓴다(gh auth token). 올린 뒤 깃허브가 알려 주는 sha256 을 우리 것과 대조한다.
  */
 const fs = require("node:fs"), path = require("node:path"), { execFileSync, spawnSync } = require("node:child_process");
-const { Readable } = require("node:stream");
 
 const root = path.join(__dirname, "..");
 const arg = (f, d) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : d; };
@@ -43,10 +42,11 @@ function build() {
 // ---- 3. 올리기 (exe + blockmap 둘 다 — blockmap 이 있어야 나중에 차등 업데이트를 붙일 수 있다) ----
 async function upload(id, file, token) {
   const name = path.basename(file), size = fs.statSync(file).size;
+  // 본문은 스트림이 아니라 버퍼로 보낸다 — 깃허브 업로드는 리디렉션을 태우는데, 스트림 본문은 다시 보낼 수 없어 거기서 끊긴다
   const r = await fetch(`https://uploads.github.com/repos/RED9839/sado-desk/releases/${id}/assets?name=${encodeURIComponent(name)}`, {
-    method: "POST", duplex: "half",
+    method: "POST",
     headers: { Authorization: `token ${token}`, "Content-Type": "application/octet-stream", "Content-Length": String(size) },
-    body: Readable.toWeb(fs.createReadStream(file)),
+    body: fs.readFileSync(file),
   });
   if (!r.ok) die(`${name} 올리기 실패 (HTTP ${r.status}) ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
@@ -64,13 +64,24 @@ async function upload(id, file, token) {
   for (const f of [exe, map]) if (!fs.existsSync(f)) die(`없습니다: ${f}`);
 
   const token = sh("gh", ["auth", "token"]);
-  console.log(`· 초안 만들기 ${tag}`);
-  sh("gh", ["release", "create", tag, "--draft", "--title", arg("--title", tag), "--notes-file", notesFile]);
-  // 초안은 아직 태그가 없어 /releases/tags/<tag> 로는 404 다 — 목록에서 tag_name 으로 찾는다
-  const id = sh("gh", ["api", "repos/RED9839/sado-desk/releases", "--jq", `[.[] | select(.tag_name=="${tag}")][0].id`]);
+  // 초안은 아직 태그가 없어 /releases/tags/<tag> 로는 404 다 — 목록에서 tag_name 으로 찾는다.
+  // 앞선 시도가 중간에 멈춰 빈 초안이 남아 있으면 그것을 쓴다(초안이 쌓이지 않게)
+  const findDraft = () => sh("gh", ["api", "repos/RED9839/sado-desk/releases", "--jq", `[.[] | select(.tag_name=="${tag}")][0].id // ""`]);
+  let id = findDraft();
+  if (id) console.log(`· 이미 있는 초안을 씁니다 (${id})`);
+  else {
+    console.log(`· 초안 만들기 ${tag}`);
+    sh("gh", ["release", "create", tag, "--draft", "--title", arg("--title", tag), "--notes-file", notesFile]);
+    id = findDraft();
+  }
+  if (!id) die("초안을 찾지 못했습니다");
 
+  const have = new Set(JSON.parse(sh("gh", ["api", `repos/RED9839/sado-desk/releases/${id}`, "--jq", "[.assets[].name]"])));
   const up = [];
-  for (const f of [exe, map]) up.push([f, await upload(id, f, token)]);
+  for (const f of [exe, map]) {
+    if (have.has(path.basename(f))) { console.log(`· 이미 올라가 있음 ${path.basename(f)}`); up.push([f, null]); continue; }
+    up.push([f, await upload(id, f, token)]);
+  }
 
   // 깃허브가 계산한 검사값과 우리 것이 같은가 — 올리다 깨지면 앱 안 업데이트가 설치를 거부한다
   const assets = JSON.parse(sh("gh", ["api", `repos/RED9839/sado-desk/releases/${id}`, "--jq", "[.assets[] | {name, digest, size}]"]));
