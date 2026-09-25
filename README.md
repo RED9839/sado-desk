@@ -88,7 +88,7 @@ npm run release         # 빌드 → 깃허브 릴리스 초안 → exe·blockma
 
 - 추출기 단독 실행: `python tools/extract-all.py --out <폴더> --steps minimi,sfx,standing,voice` (Python 3.10+, `pip install UnityPy Pillow imageio-ffmpeg`)
 - 상세 구조·조작·설정·디버그 플래그: [prototype/README.md](prototype/README.md)
-- 분석·변경 기록: [docs/](docs/) — Little LUMI 분석, 트릭컬 클라이언트 리소스 분석, 음성 카탈로그(STT로 카테고리 실측), 버전 기록, [실사용 검증 체크리스트](docs/05-실사용-검증.md), [말투 재점검](docs/07-말투-재점검.md)
+- 분석·변경 기록: [docs/](docs/) — Little LUMI 분석, 트릭컬 클라이언트 리소스 분석, 음성 카탈로그(STT로 카테고리 실측), 버전 기록, [실사용 검증 체크리스트](docs/06-실사용-검증.md), [말투 재점검](docs/07-말투-재점검.md)
 
 ## 라이선스와 출처
 
