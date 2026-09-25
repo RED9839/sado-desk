@@ -27,8 +27,13 @@ function preflight() {
   sh("git", ["fetch", "-q", "origin", "main"]);
   const ahead = sh("git", ["rev-list", "--count", "origin/main..HEAD"]);
   if (ahead !== "0") die(`푸시하지 않은 커밋이 ${ahead}개 있습니다`);
-  const exists = spawnSync("gh", ["release", "view", tag], { cwd: root, encoding: "utf8" });
-  if (exists.status === 0) die(`${tag} 릴리스가 이미 있습니다`);
+  // 이미 공개된 릴리스면 멈춘다. 초안이면(앞선 시도가 중간에 멈춘 것) 이어서 쓴다
+  const exists = spawnSync("gh", ["release", "view", tag, "--json", "isDraft"], { cwd: root, encoding: "utf8" });
+  if (exists.status === 0) {
+    const draft = (() => { try { return JSON.parse(exists.stdout).isDraft === true; } catch { return false; } })();
+    if (!draft) die(`${tag} 릴리스가 이미 공개돼 있습니다`);
+    console.log(`· ${tag} 초안이 남아 있습니다 — 이어서 씁니다`);
+  }
   console.log(`· 작업 트리 깨끗 · 푸시 완료 · ${tag} 아직 없음`);
 }
 
