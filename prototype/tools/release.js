@@ -36,7 +36,8 @@ function preflight() {
 // ---- 2. 빌드 ----
 function build() {
   console.log("· 설치판 빌드 (2~3분)");
-  execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "dist"], { cwd: root, stdio: "inherit", env: { ...process.env, ELECTRON_RUN_AS_NODE: "" } });
+  // 윈도우에서 .cmd 는 셸을 거쳐야 한다 — Node 20+ 는 보안상 execFile 로 직접 띄우면 EINVAL 을 낸다
+  execFileSync("npm", ["run", "dist"], { cwd: root, stdio: "inherit", shell: true, env: { ...process.env, ELECTRON_RUN_AS_NODE: "" } });
 }
 
 // ---- 3. 올리기 (exe + blockmap 둘 다 — blockmap 이 있어야 나중에 차등 업데이트를 붙일 수 있다) ----
