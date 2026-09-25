@@ -66,7 +66,8 @@ async function upload(id, file, token) {
   const token = sh("gh", ["auth", "token"]);
   console.log(`· 초안 만들기 ${tag}`);
   sh("gh", ["release", "create", tag, "--draft", "--title", arg("--title", tag), "--notes-file", notesFile]);
-  const id = sh("gh", ["api", `repos/RED9839/sado-desk/releases/tags/${tag}`, "--jq", ".id"]);
+  // 초안은 아직 태그가 없어 /releases/tags/<tag> 로는 404 다 — 목록에서 tag_name 으로 찾는다
+  const id = sh("gh", ["api", "repos/RED9839/sado-desk/releases", "--jq", `[.[] | select(.tag_name=="${tag}")][0].id`]);
 
   const up = [];
   for (const f of [exe, map]) up.push([f, await upload(id, f, token)]);
